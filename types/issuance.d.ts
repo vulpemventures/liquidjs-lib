@@ -5,7 +5,7 @@ export interface IssuanceContract {
     precision: number;
 }
 export interface OutPoint {
-    txHash: string;
+    txHash: Buffer;
     vout: number;
 }
 /**
@@ -18,7 +18,7 @@ export declare function generateEntropy(outPoint: OutPoint, contractHash?: Buffe
  * calculate the asset tag from a given entropy.
  * @param entropy the entropy used to compute the asset tag.
  */
-export declare function calculateAsset(entropy: Buffer): string;
+export declare function calculateAsset(entropy: Buffer): Buffer;
 /**
  * Compute the reissuance token.
  * @param entropy the entropy used to compute the reissuance token.

@@ -1,6 +1,6 @@
 import { BufferWriter } from './bufferutils';
-import { sha256 } from './crypto';
 import * as bcrypto from './crypto';
+import { sha256Midstate } from './sha256d';
 
 export interface IssuanceContract {
   name: string;
@@ -10,7 +10,7 @@ export interface IssuanceContract {
 }
 
 export interface OutPoint {
-  txHash: string;
+  txHash: Buffer;
   vout: number;
 }
 // export function assetToHex
@@ -24,29 +24,26 @@ export function generateEntropy(
   outPoint: OutPoint,
   contractHash: Buffer = Buffer.alloc(32),
 ): Buffer {
-  if (outPoint.txHash.length !== 64) {
+  if (outPoint.txHash.length !== 32) {
     throw new Error('Invalid txHash length');
   }
 
   const tBuffer: Buffer = Buffer.allocUnsafe(36);
   const s: BufferWriter = new BufferWriter(tBuffer, 0);
-  s.writeSlice(Buffer.from(outPoint.txHash, 'hex').reverse());
-  s.writeUInt32(outPoint.vout);
-
-  return bcrypto.sha256(
-    Buffer.concat([bcrypto.hash256(tBuffer), contractHash]),
-  );
+  s.writeSlice(outPoint.txHash);
+  s.writeInt32(outPoint.vout);
+  const prevoutHash = bcrypto.hash256(s.buffer);
+  const concatened = Buffer.concat([prevoutHash, contractHash]);
+  return sha256Midstate(concatened);
 }
 
 /**
  * calculate the asset tag from a given entropy.
  * @param entropy the entropy used to compute the asset tag.
  */
-export function calculateAsset(entropy: Buffer): string {
+export function calculateAsset(entropy: Buffer): Buffer {
   const kZero = Buffer.alloc(32);
-  const assetBuffer = sha256(Buffer.concat([entropy, kZero]));
-  const assetHex = assetBuffer.toString('hex');
-  return assetHex;
+  return sha256Midstate(Buffer.concat([entropy, kZero]));
 }
 
 /**
@@ -68,5 +65,5 @@ export function calculateReissuanceToken(
         'hex',
       );
 
-  return sha256(Buffer.concat([entropy, k]));
+  return sha256Midstate(Buffer.concat([entropy, k]));
 }

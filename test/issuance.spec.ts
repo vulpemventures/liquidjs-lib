@@ -4,30 +4,42 @@ import * as issuance from '../ts_src/issuance';
 
 import * as fixture from './fixtures/issuance.json';
 
-console.log(fixture);
-
 describe('Issuance', () => {
-  describe(`entropy from ${fixture.prevout}`, () => {
-    it('should be equals to ' + fixture.entropy);
-    const prevout: issuance.OutPoint = {
-      txHash: fixture.prevout.txid,
-      vout: fixture.prevout.vout,
-    };
+  let entropy: Buffer;
+  let asset: Buffer;
+  let token: Buffer;
 
-    const entropy = issuance.generateEntropy(prevout);
-    assert.strictEqual(entropy.toString('hex'), fixture.entropy);
+  describe(`entropy from txhash = ${fixture.prevout.txHash} and index = ${
+    fixture.prevout.index
+  }`, () => {
+    it('should be equals to ' + fixture.expectedEntropy, () => {
+      const prevout: issuance.OutPoint = {
+        txHash: Buffer.from(fixture.prevout.txHash, 'hex').reverse(),
+        vout: fixture.prevout.index,
+      };
+
+      entropy = issuance.generateEntropy(prevout);
+      assert.strictEqual(entropy.toString('hex'), fixture.expectedEntropy);
+    });
   });
 
   describe('asset calculation from entropy', () => {
     it('should compute the right asset hex', () => {
-      const expectedAssetHex: string = fixture.asset;
-      const asset = issuance.calculateAsset(
-        Buffer.from(fixture.entropy, 'hex').reverse(),
+      asset = issuance.calculateAsset(entropy);
+      assert.strictEqual(
+        asset.reverse().toString('hex'),
+        fixture.expectedAsset,
       );
+    });
+  });
 
-      console.log('asset', asset);
-
-      assert.strictEqual(asset, expectedAssetHex);
+  describe('token calculation from entropy', () => {
+    it('should compute the right reissuance token hex', () => {
+      token = issuance.calculateReissuanceToken(entropy);
+      assert.strictEqual(
+        token.reverse().toString('hex'),
+        fixture.expectedToken,
+      );
     });
   });
 });

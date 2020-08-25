@@ -1,8 +1,8 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 const bufferutils_1 = require('./bufferutils');
-const crypto_1 = require('./crypto');
 const bcrypto = require('./crypto');
+const sha256d_1 = require('./sha256d');
 // export function assetToHex
 /**
  * Generate the entropy.
@@ -10,17 +10,16 @@ const bcrypto = require('./crypto');
  * @param contractHash the 32 bytes contract hash.
  */
 function generateEntropy(outPoint, contractHash = Buffer.alloc(32)) {
-  console.log('prevout', outPoint);
-  if (outPoint.txHash.length !== 64) {
+  if (outPoint.txHash.length !== 32) {
     throw new Error('Invalid txHash length');
   }
   const tBuffer = Buffer.allocUnsafe(36);
   const s = new bufferutils_1.BufferWriter(tBuffer, 0);
-  s.writeSlice(Buffer.from(outPoint.txHash, 'hex').reverse());
-  s.writeUInt32(outPoint.vout);
-  return bcrypto.sha256(
-    Buffer.concat([bcrypto.hash256(tBuffer), contractHash]),
-  );
+  s.writeSlice(outPoint.txHash);
+  s.writeInt32(outPoint.vout);
+  const prevoutHash = bcrypto.hash256(s.buffer);
+  const concatened = Buffer.concat([prevoutHash, contractHash]);
+  return sha256d_1.sha256Midstate(concatened);
 }
 exports.generateEntropy = generateEntropy;
 /**
@@ -29,9 +28,7 @@ exports.generateEntropy = generateEntropy;
  */
 function calculateAsset(entropy) {
   const kZero = Buffer.alloc(32);
-  const assetBuffer = crypto_1.sha256(Buffer.concat([entropy, kZero]));
-  const assetHex = assetBuffer.toString('hex');
-  return assetHex;
+  return sha256d_1.sha256Midstate(Buffer.concat([entropy, kZero]));
 }
 exports.calculateAsset = calculateAsset;
 /**
@@ -49,6 +46,6 @@ function calculateReissuanceToken(entropy, confidential = false) {
         '0000000000000000000000000000000000000000000000000000000000000001',
         'hex',
       );
-  return crypto_1.sha256(Buffer.concat([entropy, k]));
+  return sha256d_1.sha256Midstate(Buffer.concat([entropy, k]));
 }
 exports.calculateReissuanceToken = calculateReissuanceToken;
