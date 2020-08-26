@@ -37,15 +37,8 @@ exports.calculateAsset = calculateAsset;
  * @param confidential true if confidential.
  */
 function calculateReissuanceToken(entropy, confidential = false) {
-  const k = confidential
-    ? Buffer.from(
-        '0000000000000000000000000000000000000000000000000000000000000002',
-        'hex',
-      )
-    : Buffer.from(
-        '0000000000000000000000000000000000000000000000000000000000000001',
-        'hex',
-      );
-  return sha256d_1.sha256Midstate(Buffer.concat([entropy, k]));
+  const buffer = Buffer.alloc(32);
+  confidential ? (buffer[0] = 2) : (buffer[0] = 1);
+  return sha256d_1.sha256Midstate(Buffer.concat([entropy, buffer]));
 }
 exports.calculateReissuanceToken = calculateReissuanceToken;

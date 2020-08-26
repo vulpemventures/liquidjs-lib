@@ -55,15 +55,8 @@ export function calculateReissuanceToken(
   entropy: Buffer,
   confidential: boolean = false,
 ): Buffer {
-  const k = confidential
-    ? Buffer.from(
-        '0000000000000000000000000000000000000000000000000000000000000002',
-        'hex',
-      )
-    : Buffer.from(
-        '0000000000000000000000000000000000000000000000000000000000000001',
-        'hex',
-      );
+  const buffer = Buffer.alloc(32);
+  confidential ? (buffer[0] = 2) : (buffer[0] = 1);
 
-  return sha256Midstate(Buffer.concat([entropy, k]));
+  return sha256Midstate(Buffer.concat([entropy, buffer]));
 }
