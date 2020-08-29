@@ -1,4 +1,7 @@
 import { Issuance } from './transaction';
+export interface IssuanceEntity {
+    domain: string;
+}
 /**
  * Ricardian asset contract.
  */
@@ -7,6 +10,7 @@ export interface IssuanceContract {
     ticker: string;
     version: number;
     precision: number;
+    entity: IssuanceEntity;
 }
 /**
  * An object describing an output point of the blockchain.

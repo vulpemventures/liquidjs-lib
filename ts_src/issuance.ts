@@ -4,6 +4,11 @@ import * as bcrypto from './crypto';
 import { sha256Midstate } from './sha256d';
 import { Issuance } from './transaction';
 
+// one of the field of the IssuanceContract interface.
+export interface IssuanceEntity {
+  domain: string;
+}
+
 /**
  * Ricardian asset contract.
  */
@@ -12,6 +17,7 @@ export interface IssuanceContract {
   ticker: string;
   version: number;
   precision: number;
+  entity: IssuanceEntity;
 }
 
 /**
