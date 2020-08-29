@@ -1,9 +1,47 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 const bufferutils_1 = require('./bufferutils');
+const confidential_1 = require('./confidential');
 const bcrypto = require('./crypto');
 const sha256d_1 = require('./sha256d');
-// export function assetToHex
+/**
+ * Checks if a contract given as parameter is valid or not.
+ * @param contract contract to validate.
+ */
+function validateIssuanceContract(contract) {
+  const precisionIsValid = contract.precision >= 0 && contract.precision <= 8;
+  return precisionIsValid;
+}
+exports.validateIssuanceContract = validateIssuanceContract;
+/**
+ * Returns an Issuance object for issuance transaction input.
+ * @param assetAmount the number of asset to issue.
+ * @param tokenAmount the number of token to issue.
+ * @param vout the out point (txhash and vout index).
+ * @param precision the number of digit after the decimal point (8 for satoshi).
+ * @param contract the asset ricarding contract of the issuance.
+ */
+function newIssuance(assetAmount, tokenAmount, vout, precision = 8, contract) {
+  if (assetAmount < 0) throw new Error('Invalid asset amount');
+  if (tokenAmount < 0) throw new Error('Invalid token amount');
+  if (precision < 0 || precision > 8) throw new Error('Invalid precision');
+  let contractHash = Buffer.alloc(32);
+  if (contract) {
+    if (!validateIssuanceContract(contract))
+      throw new Error('Invalid asset contract');
+    if (contract.precision !== precision)
+      throw new Error('precision is not equal to the asset contract precision');
+    contractHash = bcrypto.sha256(Buffer.from(JSON.stringify(contract)));
+  }
+  const iss = {
+    assetAmount: toConfidentialAssetAmount(assetAmount, precision),
+    tokenAmount: toConfidentialTokenAmount(tokenAmount, precision),
+    assetBlindingNonce: Buffer.alloc(32),
+    assetEntropy: generateEntropy(vout, contractHash),
+  };
+  return iss;
+}
+exports.newIssuance = newIssuance;
 /**
  * Generate the entropy.
  * @param outPoint the prevout point used to compute the entropy.
@@ -42,3 +80,21 @@ function calculateReissuanceToken(entropy, confidential = false) {
   return sha256d_1.sha256Midstate(Buffer.concat([entropy, buffer]));
 }
 exports.calculateReissuanceToken = calculateReissuanceToken;
+/**
+ * converts asset amount to confidential value.
+ * @param assetAmount the asset amount.
+ * @param precision the precision, 8 by default.
+ */
+function toConfidentialAssetAmount(assetAmount, precision = 8) {
+  const amount = Math.pow(10, precision) * assetAmount;
+  return confidential_1.satoshiToConfidentialValue(amount);
+}
+/**
+ * converts token amount to confidential value.
+ * @param assetAmount the token amount.
+ * @param precision the precision, 8 by default.
+ */
+function toConfidentialTokenAmount(tokenAmount, precision = 8) {
+  if (tokenAmount === 0) return Buffer.from('00', 'hex');
+  return toConfidentialAssetAmount(tokenAmount, precision);
+}

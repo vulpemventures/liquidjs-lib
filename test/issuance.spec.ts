@@ -1,8 +1,11 @@
 import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import * as issuance from '../ts_src/issuance';
+import * as types from '../ts_src/types';
 
 import * as fixture from './fixtures/issuance.json';
+
+const typeforce = require('typeforce');
 
 describe('Issuance', () => {
   let entropy: Buffer;
@@ -40,6 +43,47 @@ describe('Issuance', () => {
         token.reverse().toString('hex'),
         fixture.expectedToken,
       );
+    });
+  });
+
+  describe('create issuance object', () => {
+    it('should create a correct Issuance object', () => {
+      const {
+        assetEntropy,
+        assetBlindingNonce,
+        assetAmount,
+        tokenAmount,
+      } = issuance.newIssuance(10, 22, {
+        txHash: Buffer.from(fixture.prevout.txHash, 'hex').reverse(),
+        vout: 1,
+      });
+      const validate = (): boolean => {
+        try {
+          typeforce(types.Hash256bit, assetBlindingNonce);
+          typeforce(types.Hash256bit, assetEntropy);
+          typeforce(
+            types.oneOf(
+              types.ConfidentialValue,
+              types.ConfidentialCommitment,
+              types.BufferOne,
+            ),
+            assetAmount,
+          );
+          typeforce(
+            types.oneOf(
+              types.ConfidentialValue,
+              types.ConfidentialCommitment,
+              types.BufferOne,
+            ),
+            tokenAmount,
+          );
+          return true;
+        } catch (err) {
+          return false;
+        }
+      };
+
+      assert.strictEqual(validate(), true);
     });
   });
 });
