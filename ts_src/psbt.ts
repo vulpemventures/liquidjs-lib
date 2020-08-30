@@ -639,6 +639,7 @@ export class Psbt {
         },
       });
     }
+
     this.data.updateInput(inputIndex, updateData);
     if (updateData.nonWitnessUtxo) {
       addNonWitnessTxCache(
@@ -827,13 +828,13 @@ export class Psbt {
 }
 
 interface PsbtCache {
-  __NON_WITNESS_UTXO_TX_CACHE: Transaction[];
   __NON_WITNESS_UTXO_BUF_CACHE: Buffer[];
   __TX_IN_CACHE: { [index: string]: number };
   __TX: Transaction;
   __FEE_RATE?: number;
   __FEE?: number;
   __EXTRACTED_TX?: Transaction;
+  __NON_WITNESS_UTXO_TX_CACHE: Transaction[];
 }
 
 interface PsbtOptsOptional {

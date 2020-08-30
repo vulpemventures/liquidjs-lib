@@ -1,5 +1,13 @@
+import { address } from '.';
 import { BufferReader, BufferWriter, reverseBuffer } from './bufferutils';
 import * as bcrypto from './crypto';
+import {
+  calculateAsset,
+  calculateReissuanceToken,
+  IssuanceContract,
+  newIssuance,
+} from './issuance';
+import { Network } from './networks';
 import * as bscript from './script';
 import { OPS as opcodes } from './script';
 import * as types from './types';
@@ -50,6 +58,17 @@ export interface Issuance {
   assetEntropy: Buffer;
   assetAmount: Buffer;
   tokenAmount: Buffer;
+}
+
+export interface AddIssuanceArgs {
+  assetAmount: number;
+  assetAddress: string;
+  tokenAmount: number;
+  tokenAddress: string;
+  confidential: boolean;
+  precision: number;
+  contract?: IssuanceContract;
+  net?: Network;
 }
 
 export interface Input {
@@ -266,6 +285,61 @@ export class Transaction {
         script: scriptSig || EMPTY_SCRIPT,
         sequence: sequence || Transaction.DEFAULT_SEQUENCE,
       }) - 1
+    );
+  }
+
+  addIssuance(args: AddIssuanceArgs): void {
+    if (this.ins.filter(i => !i.issuance).length === 0)
+      throw new Error(
+        'transaction must contain at least one input with no issuance data.',
+      );
+
+    if (args.assetAmount <= 0)
+      throw new Error('asset amount must be greater than zero.');
+
+    if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+
+    const inputIndex: number = this.ins.findIndex(i => !i.issuance);
+
+    const { hash, index } = this.ins[inputIndex];
+    const issuance: Issuance = newIssuance(
+      args.assetAmount,
+      args.tokenAmount,
+      {
+        txHash: hash,
+        vout: index,
+      },
+      args.precision,
+      args.contract,
+    );
+    this.ins[inputIndex].issuance = issuance;
+
+    const assetHash = Buffer.concat([
+      Buffer.from('01', 'hex'),
+      calculateAsset(issuance.assetEntropy),
+    ]);
+
+    const assetScript = address.toOutputScript(args.assetAddress, args.net);
+
+    this.addOutput(
+      assetScript,
+      issuance.assetAmount,
+      assetHash,
+      Buffer.from('00', 'hex'),
+    );
+
+    const tokenHash = Buffer.concat([
+      Buffer.from('01', 'hex'),
+      calculateReissuanceToken(issuance.assetEntropy, args.confidential),
+    ]);
+
+    const tokenScript = address.toOutputScript(args.tokenAddress, args.net);
+
+    this.addOutput(
+      tokenScript,
+      issuance.tokenAmount,
+      tokenHash,
+      Buffer.from('00', 'hex'),
     );
   }
 

@@ -2,6 +2,8 @@ import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import * as issuance from '../ts_src/issuance';
 import * as types from '../ts_src/types';
+import { regtest } from './../ts_src/networks';
+import { AddIssuanceArgs, Transaction } from './../ts_src/transaction';
 
 import * as fixtures from './fixtures/issuance.json';
 
@@ -145,6 +147,29 @@ describe('Issuance', () => {
       };
 
       assert.strictEqual(validate(), true);
+    });
+  });
+
+  describe('issuance transaction creation', () => {
+    it('should create a valid transaction', () => {
+      const f = fixtures.unspent;
+      const tx = new Transaction();
+      tx.addInput(Buffer.from(f.txid, 'hex').reverse(), f.vout);
+
+      const args: AddIssuanceArgs = {
+        assetAmount: 100,
+        assetAddress: f.assetAddress,
+        tokenAmount: 1,
+        tokenAddress: f.tokenAddress,
+        precision: 8,
+        confidential: false,
+        net: regtest,
+      };
+
+      tx.addIssuance(args);
+
+      console.log(tx);
+      assert.strictEqual(true, true);
     });
   });
 });

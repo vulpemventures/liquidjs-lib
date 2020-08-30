@@ -1,3 +1,5 @@
+import { IssuanceContract } from './issuance';
+import { Network } from './networks';
 export interface Output {
     script: Buffer;
     value: Buffer;
@@ -11,6 +13,16 @@ export interface Issuance {
     assetEntropy: Buffer;
     assetAmount: Buffer;
     tokenAmount: Buffer;
+}
+export interface AddIssuanceArgs {
+    assetAmount: number;
+    assetAddress: string;
+    tokenAmount: number;
+    tokenAddress: string;
+    confidential: boolean;
+    precision: number;
+    contract?: IssuanceContract;
+    net?: Network;
 }
 export interface Input {
     hash: Buffer;
@@ -43,6 +55,7 @@ export declare class Transaction {
     isCoinbase(): boolean;
     validateIssuance(assetBlindingNonce: Buffer, assetEntropy: Buffer, assetAmount: Buffer, tokenAmount: Buffer): boolean;
     addInput(hash: Buffer, index: number, sequence?: number, scriptSig?: Buffer, issuance?: Issuance): number;
+    addIssuance(args: AddIssuanceArgs): void;
     addOutput(scriptPubKey: Buffer, value: Buffer, asset: Buffer, nonce: Buffer, rangeProof?: Buffer, surjectionProof?: Buffer): number;
     hasWitnesses(): boolean;
     weight(): number;

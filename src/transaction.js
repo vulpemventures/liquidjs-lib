@@ -1,7 +1,9 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
+const _1 = require('.');
 const bufferutils_1 = require('./bufferutils');
 const bcrypto = require('./crypto');
+const issuance_1 = require('./issuance');
 const bscript = require('./script');
 const script_1 = require('./script');
 const types = require('./types');
@@ -201,6 +203,53 @@ class Transaction {
         script: scriptSig || EMPTY_SCRIPT,
         sequence: sequence || Transaction.DEFAULT_SEQUENCE,
       }) - 1
+    );
+  }
+  addIssuance(args) {
+    if (this.ins.filter(i => !i.issuance).length === 0)
+      throw new Error(
+        'transaction must contain at least one input with no issuance data.',
+      );
+    if (args.assetAmount <= 0)
+      throw new Error('asset amount must be greater than zero.');
+    if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+    const inputIndex = this.ins.findIndex(i => !i.issuance);
+    const { hash, index } = this.ins[inputIndex];
+    const issuance = issuance_1.newIssuance(
+      args.assetAmount,
+      args.tokenAmount,
+      {
+        txHash: hash,
+        vout: index,
+      },
+      args.precision,
+      args.contract,
+    );
+    this.ins[inputIndex].issuance = issuance;
+    const assetHash = Buffer.concat([
+      Buffer.from('01', 'hex'),
+      issuance_1.calculateAsset(issuance.assetEntropy),
+    ]);
+    const assetScript = _1.address.toOutputScript(args.assetAddress, args.net);
+    this.addOutput(
+      assetScript,
+      issuance.assetAmount,
+      assetHash,
+      Buffer.from('00', 'hex'),
+    );
+    const tokenHash = Buffer.concat([
+      Buffer.from('01', 'hex'),
+      issuance_1.calculateReissuanceToken(
+        issuance.assetEntropy,
+        args.confidential,
+      ),
+    ]);
+    const tokenScript = _1.address.toOutputScript(args.tokenAddress, args.net);
+    this.addOutput(
+      tokenScript,
+      issuance.tokenAmount,
+      tokenHash,
+      Buffer.from('00', 'hex'),
     );
   }
   addOutput(scriptPubKey, value, asset, nonce, rangeProof, surjectionProof) {
