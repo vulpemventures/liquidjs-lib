@@ -55,7 +55,6 @@ export function newIssuance(
   if (assetAmount < 0) throw new Error('Invalid asset amount');
   if (tokenAmount < 0) throw new Error('Invalid token amount');
   if (precision < 0 || precision > 8) throw new Error('Invalid precision');
-
   let contractHash = Buffer.alloc(32);
   if (contract) {
     if (!validateIssuanceContract(contract))
@@ -64,14 +63,12 @@ export function newIssuance(
       throw new Error('precision is not equal to the asset contract precision');
     contractHash = bcrypto.sha256(Buffer.from(JSON.stringify(contract)));
   }
-
   const iss: Issuance = {
     assetAmount: toConfidentialAssetAmount(assetAmount, precision),
     tokenAmount: toConfidentialTokenAmount(tokenAmount, precision),
     assetBlindingNonce: Buffer.alloc(32),
     assetEntropy: generateEntropy(vout, contractHash),
   };
-
   return iss;
 }
 
@@ -87,7 +84,6 @@ export function generateEntropy(
   if (outPoint.txHash.length !== 32) {
     throw new Error('Invalid txHash length');
   }
-
   const tBuffer: Buffer = Buffer.allocUnsafe(36);
   const s: BufferWriter = new BufferWriter(tBuffer, 0);
   s.writeSlice(outPoint.txHash);
@@ -102,6 +98,7 @@ export function generateEntropy(
  * @param entropy the entropy used to compute the asset tag.
  */
 export function calculateAsset(entropy: Buffer): Buffer {
+  if (entropy.length !== 32) throw new Error('Invalid entropy length');
   const kZero = Buffer.alloc(32);
   return sha256Midstate(Buffer.concat([entropy, kZero]));
 }
@@ -115,9 +112,9 @@ export function calculateReissuanceToken(
   entropy: Buffer,
   confidential: boolean = false,
 ): Buffer {
+  if (entropy.length !== 32) throw new Error('Invalid entropy length');
   const buffer = Buffer.alloc(32);
   confidential ? (buffer[0] = 2) : (buffer[0] = 1);
-
   return sha256Midstate(Buffer.concat([entropy, buffer]));
 }
 

@@ -65,6 +65,7 @@ exports.generateEntropy = generateEntropy;
  * @param entropy the entropy used to compute the asset tag.
  */
 function calculateAsset(entropy) {
+  if (entropy.length !== 32) throw new Error('Invalid entropy length');
   const kZero = Buffer.alloc(32);
   return sha256d_1.sha256Midstate(Buffer.concat([entropy, kZero]));
 }
@@ -75,6 +76,7 @@ exports.calculateAsset = calculateAsset;
  * @param confidential true if confidential.
  */
 function calculateReissuanceToken(entropy, confidential = false) {
+  if (entropy.length !== 32) throw new Error('Invalid entropy length');
   const buffer = Buffer.alloc(32);
   confidential ? (buffer[0] = 2) : (buffer[0] = 1);
   return sha256d_1.sha256Midstate(Buffer.concat([entropy, buffer]));

@@ -17,35 +17,53 @@ const typeforce = require('typeforce');
 describe('Issuance', () => {
   const fixture = fixtures.emptyContract;
   const fixtureWithContract = fixtures.withContract;
+  const entropy31bytes = Buffer.from(
+    '2b73af1c9ae64a6903b3055361dd7b75082003a85374049982fc1e8f31b9a8',
+    'hex',
+  );
   const prevout: issuance.OutPoint = {
     txHash: Buffer.from(fixture.prevout.txHash, 'hex').reverse(),
     vout: fixture.prevout.index,
   };
 
   describe('Issuance artifacts generation (entropy, asset value and token value)', () => {
-    it('should properly generate the entropy from a prevout point of the blockchain', () => {
-      const entropy = issuance.generateEntropy(prevout);
-      assert.strictEqual(entropy.toString('hex'), fixture.expectedEntropy);
+    describe('Entropy generation', () => {
+      it('should properly generate the entropy from a prevout point of the blockchain', () => {
+        const entropy = issuance.generateEntropy(prevout);
+        assert.strictEqual(entropy.toString('hex'), fixture.expectedEntropy);
+      });
     });
 
-    it('should compute the asset value from an entropy previously generated', () => {
-      const asset = issuance.calculateAsset(
-        Buffer.from(fixture.expectedEntropy, 'hex'),
-      );
-      assert.strictEqual(
-        asset.reverse().toString('hex'),
-        fixture.expectedAsset,
-      );
+    describe('Asset calculation', () => {
+      it('should compute the asset value from an entropy previously generated', () => {
+        const asset = issuance.calculateAsset(
+          Buffer.from(fixture.expectedEntropy, 'hex'),
+        );
+        assert.strictEqual(
+          asset.reverse().toString('hex'),
+          fixture.expectedAsset,
+        );
+      });
+
+      it('should throw an error if the entropy has not a lenght of 32 bytes', () => {
+        assert.throws(() => issuance.calculateAsset(entropy31bytes));
+      });
     });
 
-    it('should compute the reissuance token value from an entropy previously generated', () => {
-      const token = issuance.calculateReissuanceToken(
-        Buffer.from(fixture.expectedEntropy, 'hex'),
-      );
-      assert.strictEqual(
-        token.reverse().toString('hex'),
-        fixture.expectedToken,
-      );
+    describe('Token calculation', () => {
+      it('should compute the reissuance token value from an entropy previously generated', () => {
+        const token = issuance.calculateReissuanceToken(
+          Buffer.from(fixture.expectedEntropy, 'hex'),
+        );
+        assert.strictEqual(
+          token.reverse().toString('hex'),
+          fixture.expectedToken,
+        );
+      });
+
+      it('should throw an error if the entropy has not a lenght of 32 bytes', () => {
+        assert.throws(() => issuance.calculateReissuanceToken(entropy31bytes));
+      });
     });
   });
 
@@ -120,19 +138,40 @@ describe('Issuance', () => {
       return tx;
     }
 
+    function createTxWithNoInput(): Transaction {
+      const f = fixtures.unspent;
+      const tx = new Transaction();
+      tx.addOutput(
+        Buffer.alloc(0),
+        satoshiToConfidentialValue(f.amount),
+        Buffer.concat([
+          Buffer.from('01', 'hex'),
+          Buffer.from(f.asset, 'hex').reverse(),
+        ]),
+        Buffer.from('00', 'hex'),
+      );
+      return tx;
+    }
+
+    const args: AddIssuanceArgs = {
+      assetAmount: 100,
+      assetAddress: fixtures.unspent.assetAddress,
+      tokenAmount: 1,
+      tokenAddress: fixtures.unspent.tokenAddress,
+      precision: 8,
+      confidential: false,
+      net: regtest,
+    };
+
     it('should keep the transaction serializable and deserializable after adding an issuance input', () => {
-      const args: AddIssuanceArgs = {
-        assetAmount: 100,
-        assetAddress: fixtures.unspent.assetAddress,
-        tokenAmount: 1,
-        tokenAddress: fixtures.unspent.tokenAddress,
-        precision: 8,
-        confidential: false,
-        net: regtest,
-      };
       const tx = createTx();
       tx.addIssuance(args);
       assert.deepStrictEqual(tx, Transaction.fromHex(tx.toHex()));
+    });
+
+    it('should throw an error after adding issuance to a transaction with no inputs', () => {
+      const tx = createTxWithNoInput();
+      assert.throws(() => tx.addIssuance(args));
     });
   });
 });
