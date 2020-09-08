@@ -29,9 +29,24 @@
     "expectedToken": "5b706edc0f72ea114e7a1f867c8b63a698944435e62699b9821deecc6d81bcef"
   },
   "unspent": {
-    "txid": "4aca1c34b07506e5a4d206ae212085275d1f5fc3ec7fa17f704545ddaabf41f9",
-    "vout": 1,
-    "tokenAddress": "CTEjvB86aMipUXmEKrPHQjQrLPwSUygwmPeedaWy3WCPhP72ma8io76G2u4zBrRFJkp7koBGVgzHWZ9e",
-    "assetAddress": "CTEjvB86aMipUXmEKrPHQjQrLPwSUygwmPeedaWy3WCPhP72ma8io76G2u4zBrRFJkp7koBGVgzHWZ9e"
+    "txid": "f7e9d22d56098353e8c7135d9fa0e77ec7754154eab5a2340c3c5c0882938c75",
+    "vout": 0,
+    "address": "XYjescV1mfZzYbgc9yX7uopKC7QW7Aap6w",
+    "label": "",
+    "redeemScript": "00144a54172662321d675a7cd73f92a7a6cacabfb62c",
+    "scriptPubKey": "a914ea97d9122f894382a0ea49ce3e39f155e4b75e7487",
+    "amount": 100000000,
+    "assetcommitment": "0b92b337d626a147c6806be5d34de9e05053b45ce8c3619c3e4de4afda55a3f3b1",
+    "asset": "b2e15d0d7a0c94e4e2ce0fe6e8691b9e451377f6e46e8045a86f7c4b5d4f0f23",
+    "amountcommitment": "09e46f5b14d72e5ea2ee265647b0d8c4a65ac80192f40017b6f215e47baae05115",
+    "amountblinder": "f322663216f14a560f00ed473724fa18f6617a1cecbaacda40f14dcfb079ba5d",
+    "assetblinder": "5dc0bd890653381daff9d429de6f27ebaf686731d0125fc44fe85e0e2efe6583",
+    "confirmations": 1,
+    "spendable": true,
+    "solvable": true,
+    "desc": "sh(wpkh([b99be98f/0'/0'/0']03fedfa5b96f60507d8d1f06ec143d93542f493d8d6591d560a01a50cb9a0c410b))#n5s3dreg",
+    "safe": true,
+    "tokenAddress": "AzpkiMHdC4LoifuLD2YSoR9bNwwZd4AGpHrBKMF7JMwieMECVX2JJMYGorBm6JMnv1NrQzyCQto1JyEG",
+    "assetAddress": "AzpkiMHdC4LoifuLD2YSoR9bNwwZd4AGpHrBKMF7JMwieMECVX2JJMYGorBm6JMnv1NrQzyCQto1JyEG"
   }
 }

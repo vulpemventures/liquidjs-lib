@@ -314,31 +314,39 @@ export class Transaction {
     );
     this.ins[inputIndex].issuance = issuance;
 
-    const assetHash = Buffer.concat([
-      Buffer.from('01', 'hex'),
-      calculateAsset(issuance.assetEntropy),
-    ]);
+    const kOne = Buffer.from('01', 'hex');
+
+    const asset = Buffer.concat([kOne, calculateAsset(issuance.assetEntropy)]);
+
+    // const assetHash = Buffer.concat([
+    //   Buffer.from('01', 'hex'),
+    //   asset.reverse(),
+    // ]);
 
     const assetScript = address.toOutputScript(args.assetAddress, args.net);
 
     this.addOutput(
       assetScript,
       issuance.assetAmount,
-      assetHash,
+      asset,
       Buffer.from('00', 'hex'),
     );
 
-    const tokenHash = Buffer.concat([
-      Buffer.from('01', 'hex'),
+    const token = Buffer.concat([
+      kOne,
       calculateReissuanceToken(issuance.assetEntropy, args.confidential),
     ]);
+    // const tokenHash = Buffer.concat([
+    //   Buffer.from('01', 'hex'),
+    //   token.reverse(),
+    // ]);
 
     const tokenScript = address.toOutputScript(args.tokenAddress, args.net);
 
     this.addOutput(
       tokenScript,
       issuance.tokenAmount,
-      tokenHash,
+      token,
       Buffer.from('00', 'hex'),
     );
   }
