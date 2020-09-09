@@ -26,7 +26,7 @@ import {
 import { liquid as btcNetwork, Network } from './networks';
 import * as payments from './payments';
 import * as bscript from './script';
-import { Output, Transaction } from './transaction';
+import { AddIssuanceArgs, Output, Transaction } from './transaction';
 const _randomBytes = require('randombytes');
 
 /**
@@ -976,6 +976,10 @@ class PsbtTransaction implements ITransaction {
           reverseBuffer(Buffer.from(output.asset, 'hex')),
         ]);
     this.tx.addOutput(script, value, asset, nonce);
+  }
+
+  addIssuance(args: AddIssuanceArgs): void {
+    this.tx.addIssuance(args);
   }
 
   toBuffer(): Buffer {

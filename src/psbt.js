@@ -768,6 +768,9 @@ class PsbtTransaction {
         ]);
     this.tx.addOutput(script, value, asset, nonce);
   }
+  addIssuance(args) {
+    this.tx.addIssuance(args);
+  }
   toBuffer() {
     return this.tx.toBuffer();
   }

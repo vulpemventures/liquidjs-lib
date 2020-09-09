@@ -183,7 +183,19 @@ describe('Issuance', () => {
       const tx = createTxWith1IssuanceInput();
       assert.throws(() => tx.addIssuance(issueArgs));
     });
+
+    it('should throw an error if the token amount is < 0', () => {
+      const tx = createTx();
+      const argsInvalidToken = { ...issueArgs, tokenAmount: -2 };
+      assert.throws(() => tx.addIssuance(argsInvalidToken));
+    });
+
+    it('should throw an error if the asset amount is <= 0', () => {
+      const tx = createTx();
+      const argsInvalidAsset = { ...issueArgs, assetAmount: 0 };
+      assert.throws(() => tx.addIssuance(argsInvalidAsset));
+    });
   });
 
-  describe('Psbt class: add issuance to input', () => {});
+  // describe('Psbt class: add issuance to input', () => {});
 });

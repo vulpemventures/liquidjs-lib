@@ -213,8 +213,10 @@ class Transaction {
     if (args.assetAmount <= 0)
       throw new Error('asset amount must be greater than zero.');
     if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+    // search and extract vout
     const inputIndex = this.ins.findIndex(i => !i.issuance);
     const { hash, index } = this.ins[inputIndex];
+    // create an issuance object using the vout and the args
     const issuance = issuance_1.newIssuance(
       args.assetAmount,
       args.tokenAmount,
@@ -225,17 +227,15 @@ class Transaction {
       args.precision,
       args.contract,
     );
+    // add the issuance to the input.
     this.ins[inputIndex].issuance = issuance;
     const kOne = Buffer.from('01', 'hex');
     const asset = Buffer.concat([
       kOne,
       issuance_1.calculateAsset(issuance.assetEntropy),
     ]);
-    // const assetHash = Buffer.concat([
-    //   Buffer.from('01', 'hex'),
-    //   asset.reverse(),
-    // ]);
     const assetScript = _1.address.toOutputScript(args.assetAddress, args.net);
+    // add the output sending the asset amount.
     this.addOutput(
       assetScript,
       issuance.assetAmount,
@@ -249,11 +249,8 @@ class Transaction {
         args.confidential,
       ),
     ]);
-    // const tokenHash = Buffer.concat([
-    //   Buffer.from('01', 'hex'),
-    //   token.reverse(),
-    // ]);
     const tokenScript = _1.address.toOutputScript(args.tokenAddress, args.net);
+    // add the output sending the token amount.
     this.addOutput(
       tokenScript,
       issuance.tokenAmount,
