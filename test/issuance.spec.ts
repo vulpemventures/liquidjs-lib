@@ -153,7 +153,7 @@ describe('Issuance', () => {
       return tx;
     }
 
-    const args: AddIssuanceArgs = {
+    const issueArgs: AddIssuanceArgs = {
       assetAmount: 100,
       assetAddress: fixtures.unspent.assetAddress,
       tokenAmount: 1,
@@ -163,15 +163,27 @@ describe('Issuance', () => {
       net: regtest,
     };
 
-    it('should keep the transaction serializable and deserializable after adding an issuance input', () => {
+    function createTxWith1IssuanceInput(): Transaction {
       const tx = createTx();
-      tx.addIssuance(args);
+      tx.addIssuance(issueArgs);
+      return tx;
+    }
+
+    it('should keep the transaction serializable and deserializable after adding an issuance input', () => {
+      const tx = createTxWith1IssuanceInput();
       assert.deepStrictEqual(tx, Transaction.fromHex(tx.toHex()));
     });
 
-    it('should throw an error after adding issuance to a transaction with no inputs', () => {
+    it('should throw an error after adding an issuance to a transaction with no inputs', () => {
       const tx = createTxWithNoInput();
-      assert.throws(() => tx.addIssuance(args));
+      assert.throws(() => tx.addIssuance(issueArgs));
+    });
+
+    it('should throw an error if the transaction inputs have already issuances', () => {
+      const tx = createTxWith1IssuanceInput();
+      assert.throws(() => tx.addIssuance(issueArgs));
     });
   });
+
+  describe('Psbt class: add issuance to input', () => {});
 });
