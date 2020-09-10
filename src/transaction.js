@@ -205,16 +205,27 @@ class Transaction {
       }) - 1
     );
   }
-  addIssuance(args) {
-    if (this.ins.filter(i => !i.issuance).length === 0)
-      throw new Error(
-        'transaction must contain at least one input with no issuance data.',
-      );
+  addIssuance(args, inputIndex) {
+    // check the amounts.
     if (args.assetAmount <= 0)
       throw new Error('asset amount must be greater than zero.');
     if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
-    // search and extract vout
-    const inputIndex = this.ins.findIndex(i => !i.issuance);
+    if (inputIndex) {
+      // check if the input exists
+      if (!this.ins[inputIndex])
+        throw new Error(`The input ${inputIndex} does not exist.`);
+      // check if the input is available for issuance.
+      if (this.ins[inputIndex].issuance)
+        throw new Error(`The input ${inputIndex} already has issuance data.`);
+    } else {
+      // verify if there is at least one input available.
+      if (this.ins.filter(i => !i.issuance).length === 0)
+        throw new Error(
+          'transaction needs at least one input without issuance data.',
+        );
+      // search and extract the input index.
+      inputIndex = this.ins.findIndex(i => !i.issuance);
+    }
     const { hash, index } = this.ins[inputIndex];
     // create an issuance object using the vout and the args
     const issuance = issuance_1.newIssuance(
@@ -235,7 +246,7 @@ class Transaction {
       issuance_1.calculateAsset(issuance.assetEntropy),
     ]);
     const assetScript = _1.address.toOutputScript(args.assetAddress, args.net);
-    // add the output sending the asset amount.
+    // send the asset amount to the asset address.
     this.addOutput(
       assetScript,
       issuance.assetAmount,
@@ -250,7 +261,7 @@ class Transaction {
       ),
     ]);
     const tokenScript = _1.address.toOutputScript(args.tokenAddress, args.net);
-    // add the output sending the token amount.
+    // send the token amount to the token address.
     this.addOutput(
       tokenScript,
       issuance.tokenAmount,

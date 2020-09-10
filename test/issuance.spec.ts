@@ -126,6 +126,7 @@ describe('Issuance', () => {
       const f = fixtures.unspent;
       const tx = new Transaction();
       tx.addInput(Buffer.from(f.txid, 'hex').reverse(), f.vout);
+      // explicit fee output
       tx.addOutput(
         Buffer.alloc(0),
         satoshiToConfidentialValue(f.amount),
@@ -194,6 +195,22 @@ describe('Issuance', () => {
       const tx = createTx();
       const argsInvalidAsset = { ...issueArgs, assetAmount: 0 };
       assert.throws(() => tx.addIssuance(argsInvalidAsset));
+    });
+
+    it('should allow the user to choose the input where to add the issuance', () => {
+      const tx = createTx();
+      tx.addIssuance(issueArgs, 0);
+      assert.ok(tx.ins[0].issuance);
+    });
+
+    it('should throw an error if the chosen input does not exist', () => {
+      const tx = createTxWithNoInput();
+      assert.throws(() => tx.addIssuance(issueArgs, 1));
+    });
+
+    it('should throw an error if the chose input has already issuance data', () => {
+      const tx = createTxWith1IssuanceInput();
+      assert.throws(() => tx.addIssuance(issueArgs, 0));
     });
   });
 
