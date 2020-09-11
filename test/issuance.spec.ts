@@ -197,6 +197,24 @@ describe('Issuance', () => {
       assert.throws(() => tx.addIssuance(argsInvalidAsset));
     });
 
+    it('should throw an error if token amount > 0 and token address is undefined', () => {
+      const tx = createTx();
+      assert.throws(() =>
+        tx.addIssuance({ ...issueArgs, tokenAddress: undefined }),
+      );
+    });
+
+    it('should not throw an error if token amount = 0 and token address is undefined', () => {
+      const tx = createTx();
+      assert.doesNotThrow(() => {
+        tx.addIssuance({
+          ...issueArgs,
+          tokenAmount: 0,
+          tokenAddress: undefined,
+        });
+      });
+    });
+
     it('should add two outputs if token amount > 0', () => {
       const tx = createTx();
       const lenOutsBeforeIssuance = tx.outs.length;
