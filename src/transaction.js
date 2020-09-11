@@ -253,21 +253,29 @@ class Transaction {
       asset,
       Buffer.from('00', 'hex'),
     );
-    const token = Buffer.concat([
-      kOne,
-      issuance_1.calculateReissuanceToken(
-        issuance.assetEntropy,
-        args.confidential,
-      ),
-    ]);
-    const tokenScript = _1.address.toOutputScript(args.tokenAddress, args.net);
-    // send the token amount to the token address.
-    this.addOutput(
-      tokenScript,
-      issuance.tokenAmount,
-      token,
-      Buffer.from('00', 'hex'),
-    );
+    // check if the token amount is not 0
+    if (args.tokenAmount !== 0) {
+      if (!args.tokenAddress)
+        throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
+      const token = Buffer.concat([
+        kOne,
+        issuance_1.calculateReissuanceToken(
+          issuance.assetEntropy,
+          args.confidential,
+        ),
+      ]);
+      const tokenScript = _1.address.toOutputScript(
+        args.tokenAddress,
+        args.net,
+      );
+      // send the token amount to the token address.
+      this.addOutput(
+        tokenScript,
+        issuance.tokenAmount,
+        token,
+        Buffer.from('00', 'hex'),
+      );
+    }
   }
   addOutput(scriptPubKey, value, asset, nonce, rangeProof, surjectionProof) {
     typeforce(

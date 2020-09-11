@@ -197,6 +197,22 @@ describe('Issuance', () => {
       assert.throws(() => tx.addIssuance(argsInvalidAsset));
     });
 
+    it('should add two outputs if token amount > 0', () => {
+      const tx = createTx();
+      const lenOutsBeforeIssuance = tx.outs.length;
+      tx.addIssuance(issueArgs);
+      const lenOutsAfterIssuance = tx.outs.length;
+      assert.equal(lenOutsAfterIssuance - lenOutsBeforeIssuance, 2);
+    });
+
+    it('should add one output if token amount = 0', () => {
+      const tx = createTx();
+      const lenOutsBeforeIssuance = tx.outs.length;
+      tx.addIssuance({ ...issueArgs, tokenAmount: 0 });
+      const lenOutsAfterIssuance = tx.outs.length;
+      assert.equal(lenOutsAfterIssuance - lenOutsBeforeIssuance, 1);
+    });
+
     it('should allow the user to choose the input where to add the issuance', () => {
       const tx = createTx();
       tx.addIssuance(issueArgs, 0);
