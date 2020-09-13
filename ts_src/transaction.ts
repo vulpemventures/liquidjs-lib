@@ -4,6 +4,7 @@ import * as bcrypto from './crypto';
 import {
   calculateAsset,
   calculateReissuanceToken,
+  generateEntropy,
   IssuanceContract,
   newIssuance,
 } from './issuance';
@@ -317,19 +318,21 @@ export class Transaction {
     const issuance: Issuance = newIssuance(
       args.assetAmount,
       args.tokenAmount,
-      {
-        txHash: hash,
-        vout: index,
-      },
       args.precision,
       args.contract,
+    );
+
+    // generate the entropy
+    const entropy: Buffer = generateEntropy(
+      { txHash: hash, vout: index },
+      issuance.assetEntropy,
     );
 
     // add the issuance to the input.
     this.ins[inputIndex].issuance = issuance;
 
     const kOne = Buffer.from('01', 'hex');
-    const asset = Buffer.concat([kOne, calculateAsset(issuance.assetEntropy)]);
+    const asset = Buffer.concat([kOne, calculateAsset(entropy)]);
     const assetScript = address.toOutputScript(args.assetAddress, args.net);
 
     // send the asset amount to the asset address.
@@ -346,7 +349,7 @@ export class Transaction {
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
       const token = Buffer.concat([
         kOne,
-        calculateReissuanceToken(issuance.assetEntropy, args.confidential),
+        calculateReissuanceToken(entropy, args.confidential),
       ]);
       const tokenScript = address.toOutputScript(args.tokenAddress, args.net);
       // send the token amount to the token address.

@@ -231,20 +231,18 @@ class Transaction {
     const issuance = issuance_1.newIssuance(
       args.assetAmount,
       args.tokenAmount,
-      {
-        txHash: hash,
-        vout: index,
-      },
       args.precision,
       args.contract,
+    );
+    // generate the entropy
+    const entropy = issuance_1.generateEntropy(
+      { txHash: hash, vout: index },
+      issuance.assetEntropy,
     );
     // add the issuance to the input.
     this.ins[inputIndex].issuance = issuance;
     const kOne = Buffer.from('01', 'hex');
-    const asset = Buffer.concat([
-      kOne,
-      issuance_1.calculateAsset(issuance.assetEntropy),
-    ]);
+    const asset = Buffer.concat([kOne, issuance_1.calculateAsset(entropy)]);
     const assetScript = _1.address.toOutputScript(args.assetAddress, args.net);
     // send the asset amount to the asset address.
     this.addOutput(
@@ -259,10 +257,7 @@ class Transaction {
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
       const token = Buffer.concat([
         kOne,
-        issuance_1.calculateReissuanceToken(
-          issuance.assetEntropy,
-          args.confidential,
-        ),
+        issuance_1.calculateReissuanceToken(entropy, args.confidential),
       ]);
       const tokenScript = _1.address.toOutputScript(
         args.tokenAddress,

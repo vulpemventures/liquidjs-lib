@@ -25,14 +25,18 @@ export interface OutPoint {
  */
 export declare function validateIssuanceContract(contract: IssuanceContract): boolean;
 /**
+ * Returns the SHA256 value of the JSON encoded Issuance contract.
+ * @param contract the contract to digest.
+ */
+export declare function hashContract(contract: IssuanceContract): Buffer;
+/**
  * Returns an Issuance object for issuance transaction input.
  * @param assetAmount the number of asset to issue.
  * @param tokenAmount the number of token to issue.
- * @param vout the out point (txhash and vout index).
  * @param precision the number of digit after the decimal point (8 for satoshi).
  * @param contract the asset ricarding contract of the issuance.
  */
-export declare function newIssuance(assetAmount: number, tokenAmount: number, vout: OutPoint, precision?: number, contract?: IssuanceContract): Issuance;
+export declare function newIssuance(assetAmount: number, tokenAmount: number, precision?: number, contract?: IssuanceContract): Issuance;
 /**
  * Generate the entropy.
  * @param outPoint the prevout point used to compute the entropy.

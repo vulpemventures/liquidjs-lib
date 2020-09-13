@@ -96,24 +96,15 @@ describe('Issuance', () => {
 
     it('should create a correct Issuance object without an issuance contract', () => {
       if (!fixture.prevout) throw new Error('no prevout in issuance.json');
-      const iss: Issuance = issuance.newIssuance(10, 22, {
-        txHash: Buffer.from(fixture.prevout.txHash, 'hex').reverse(),
-        vout: 1,
-      });
-
+      const iss: Issuance = issuance.newIssuance(10, 22);
       assert.strictEqual(validate(iss), true);
     });
 
     it('should create a valid Issuance object with an issuance contract', () => {
       const contract = fixtureWithContract.contract as issuance.IssuanceContract;
-      const out: issuance.OutPoint = {
-        txHash: Buffer.from(fixtureWithContract.txHash, 'hex').reverse(),
-        vout: fixtureWithContract.index,
-      };
       const iss: Issuance = issuance.newIssuance(
         fixtureWithContract.assetAmount,
         fixtureWithContract.tokenAmount,
-        out,
         fixtureWithContract.precision,
         contract,
       );
