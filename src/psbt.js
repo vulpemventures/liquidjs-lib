@@ -171,6 +171,10 @@ class Psbt {
     c.__EXTRACTED_TX = undefined;
     return this;
   }
+  addIssuance(args, inputIndex) {
+    this.__CACHE.__TX.addIssuance(args, inputIndex);
+    return this;
+  }
   addOutputs(outputDatas) {
     outputDatas.forEach(outputData => this.addOutput(outputData));
     return this;

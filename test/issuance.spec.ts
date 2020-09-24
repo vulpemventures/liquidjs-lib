@@ -3,12 +3,14 @@ import { describe, it } from 'mocha';
 import * as issuance from '../ts_src/issuance';
 import * as types from '../ts_src/types';
 import { regtest } from './../ts_src/networks';
+import { Psbt } from './../ts_src/psbt';
 import {
   AddIssuanceArgs,
   Issuance,
   Transaction,
 } from './../ts_src/transaction';
 
+import { ECPair, networks } from '../ts_src';
 import { satoshiToConfidentialValue } from './../ts_src/confidential';
 import * as fixtures from './fixtures/issuance.json';
 
@@ -112,6 +114,17 @@ describe('Issuance', () => {
     });
   });
 
+  // a set of arguments using with the function addIssuance.
+  const issueArgs: AddIssuanceArgs = {
+    assetAmount: 100,
+    assetAddress: fixtures.unspent.assetAddress,
+    tokenAmount: 1,
+    tokenAddress: fixtures.unspent.tokenAddress,
+    precision: 8,
+    confidential: false,
+    net: regtest,
+  };
+
   describe('Transaction class: add issuance to input', () => {
     function createTx(): Transaction {
       const f = fixtures.unspent;
@@ -144,16 +157,6 @@ describe('Issuance', () => {
       );
       return tx;
     }
-
-    const issueArgs: AddIssuanceArgs = {
-      assetAmount: 100,
-      assetAddress: fixtures.unspent.assetAddress,
-      tokenAmount: 1,
-      tokenAddress: fixtures.unspent.tokenAddress,
-      precision: 8,
-      confidential: false,
-      net: regtest,
-    };
 
     function createTxWith1IssuanceInput(): Transaction {
       const tx = createTx();
@@ -211,7 +214,7 @@ describe('Issuance', () => {
       const lenOutsBeforeIssuance = tx.outs.length;
       tx.addIssuance(issueArgs);
       const lenOutsAfterIssuance = tx.outs.length;
-      assert.equal(lenOutsAfterIssuance - lenOutsBeforeIssuance, 2);
+      assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 2);
     });
 
     it('should add one output if token amount = 0', () => {
@@ -219,7 +222,7 @@ describe('Issuance', () => {
       const lenOutsBeforeIssuance = tx.outs.length;
       tx.addIssuance({ ...issueArgs, tokenAmount: 0 });
       const lenOutsAfterIssuance = tx.outs.length;
-      assert.equal(lenOutsAfterIssuance - lenOutsBeforeIssuance, 1);
+      assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 1);
     });
 
     it('should allow the user to choose the input where to add the issuance', () => {
@@ -239,5 +242,81 @@ describe('Issuance', () => {
     });
   });
 
-  // describe('Psbt class: add issuance to input', () => {});
+  describe('Psbt: add issuance to input', () => {
+    // key pair using to test
+    const alice = ECPair.fromWIF(
+      'cPNMJD4VyFnQjGbGs3kcydRzAbDCXrLAbvH6wTCqs88qg1SkZT3J',
+      networks.regtest,
+    );
+
+    const input = {
+      hash: '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
+      index: 0,
+      nonWitnessUtxo: Buffer.from(
+        '0200000000010caf381d44f094661f2da71a11946251a27d656d6c141577e27c483a6' +
+          'd428f01010000006a47304402205ac99f5988d699d6d9f72004098c2e52c8f342838e' +
+          '9009dde33d204108cc930d022077238cd40a4e4234f1e70ceab8fd6b51c5325954387' +
+          '2e5d9f4bad544918b82ce012102b5214a4f0d6962fe547f0b9cbb241f9df1b61c3c40' +
+          '1dbfb04cdd59efd552bea1ffffffff020125b251070e29ca19043cf33ccd7324e2dda' +
+          'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000005f5df70001976a914659bedb5d3d3' +
+          'c7ab12d7f85323c3a1b6c060efbe88ac0125b251070e29ca19043cf33ccd7324e2dda' +
+          'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000000000190000000000000',
+        'hex',
+      ),
+      sighashType: 1,
+    };
+
+    const output = {
+      asset: Buffer.concat([
+        Buffer.from('01', 'hex'),
+        Buffer.from(
+          '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
+          'hex',
+        ).reverse(),
+      ]),
+      nonce: Buffer.from('00', 'hex'),
+      script: Buffer.from(
+        '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
+        'hex',
+      ),
+      value: satoshiToConfidentialValue(80000),
+    };
+
+    function signAndfinalizeWithAlice(psbt: Psbt, inputIndex: number): Psbt {
+      return psbt.signInput(inputIndex, alice).finalizeInput(inputIndex);
+    }
+
+    // factory function ->
+    function createPsbt(): Psbt {
+      return new Psbt().addInput(input).addOutput(output);
+    }
+
+    function createPsbtWithNoInput(): Psbt {
+      return new Psbt().addOutput(output);
+    }
+
+    it('should create a valid psbt (if the input index is undefined)', () => {
+      const psbt = createPsbt().addIssuance(issueArgs);
+      const finalizedPsbt = signAndfinalizeWithAlice(psbt, 0);
+      const tx = finalizedPsbt.extractTransaction();
+      assert.deepStrictEqual(tx, Transaction.fromHex(tx.toHex()));
+    });
+
+    it('should create a valid psbt (if the input index is specified)', () => {
+      const psbt = createPsbt().addIssuance(issueArgs, 0);
+      const finalizedPsbt = signAndfinalizeWithAlice(psbt, 0);
+      const tx = finalizedPsbt.extractTransaction();
+      assert.deepStrictEqual(tx, Transaction.fromHex(tx.toHex()));
+    });
+
+    it('should throw an error if the input has already an issuance', () => {
+      const psbt = createPsbt().addIssuance(issueArgs, 0);
+      assert.throws(() => psbt.addIssuance(issueArgs, 0));
+    });
+
+    it('should throw an error if the psbt has 0 inputs', () => {
+      const psbt = createPsbtWithNoInput();
+      assert.throws(() => psbt.addIssuance(issueArgs, 0));
+    });
+  });
 });

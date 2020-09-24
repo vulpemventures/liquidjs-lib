@@ -213,6 +213,11 @@ export class Psbt {
     return this;
   }
 
+  addIssuance(args: AddIssuanceArgs, inputIndex?: number): this {
+    this.__CACHE.__TX.addIssuance(args, inputIndex);
+    return this;
+  }
+
   addOutputs(outputDatas: PsbtOutputExtended[]): this {
     outputDatas.forEach(outputData => this.addOutput(outputData));
     return this;
