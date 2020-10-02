@@ -31,9 +31,9 @@ export async function fetchUtxo(txId: string): Promise<any> {
   return { txHex, ...resp.data };
 }
 
-export async function broadcast(txHex: string): Promise<string> {
+export async function broadcast(txHex: string): Promise<any> {
   const resp = await Axios.get(`${APIURL}/broadcast?tx=${txHex}`);
-  return resp.data;
+  return resp;
 }
 
 function sleep(ms: number): Promise<any> {
