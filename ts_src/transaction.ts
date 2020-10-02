@@ -1,13 +1,6 @@
-import { address } from '.';
 import { BufferReader, BufferWriter, reverseBuffer } from './bufferutils';
 import * as bcrypto from './crypto';
-import {
-  calculateAsset,
-  calculateReissuanceToken,
-  generateEntropy,
-  IssuanceContract,
-  newIssuance,
-} from './issuance';
+import { IssuanceContract } from './issuance';
 import { Network } from './networks';
 import * as bscript from './script';
 import { OPS as opcodes } from './script';
@@ -18,7 +11,6 @@ const varuint = require('varuint-bitcoin');
 
 function varSliceSize(someScript: Buffer): number {
   const length = someScript.length;
-
   return varuint.encodingLength(length) + length;
 }
 
@@ -287,79 +279,6 @@ export class Transaction {
         sequence: sequence || Transaction.DEFAULT_SEQUENCE,
       }) - 1
     );
-  }
-
-  addIssuance(args: AddIssuanceArgs, inputIndex?: number): void {
-    // check the amounts.
-    if (args.assetAmount <= 0)
-      throw new Error('asset amount must be greater than zero.');
-    if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
-
-    if (inputIndex) {
-      // check if the input exists
-      if (!this.ins[inputIndex])
-        throw new Error(`The input ${inputIndex} does not exist.`);
-      // check if the input is available for issuance.
-      if (this.ins[inputIndex].issuance)
-        throw new Error(`The input ${inputIndex} already has issuance data.`);
-    } else {
-      // verify if there is at least one input available.
-      if (this.ins.filter(i => !i.issuance).length === 0)
-        throw new Error(
-          'transaction needs at least one input without issuance data.',
-        );
-      // search and extract the input index.
-      inputIndex = this.ins.findIndex(i => !i.issuance);
-    }
-
-    const { hash, index } = this.ins[inputIndex];
-
-    // create an issuance object using the vout and the args
-    const issuance: Issuance = newIssuance(
-      args.assetAmount,
-      args.tokenAmount,
-      args.precision,
-      args.contract,
-    );
-
-    // generate the entropy
-    const entropy: Buffer = generateEntropy(
-      { txHash: hash, vout: index },
-      issuance.assetEntropy,
-    );
-
-    // add the issuance to the input.
-    this.ins[inputIndex].issuance = issuance;
-
-    const kOne = Buffer.from('01', 'hex');
-    const asset = Buffer.concat([kOne, calculateAsset(entropy)]);
-    const assetScript = address.toOutputScript(args.assetAddress, args.net);
-
-    // send the asset amount to the asset address.
-    this.addOutput(
-      assetScript,
-      issuance.assetAmount,
-      asset,
-      Buffer.from('00', 'hex'),
-    );
-
-    // check if the token amount is not 0
-    if (args.tokenAmount !== 0) {
-      if (!args.tokenAddress)
-        throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
-      const token = Buffer.concat([
-        kOne,
-        calculateReissuanceToken(entropy, args.confidential),
-      ]);
-      const tokenScript = address.toOutputScript(args.tokenAddress, args.net);
-      // send the token amount to the token address.
-      this.addOutput(
-        tokenScript,
-        issuance.tokenAmount,
-        token,
-        Buffer.from('00', 'hex'),
-      );
-    }
   }
 
   addOutput(

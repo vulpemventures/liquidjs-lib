@@ -8,6 +8,7 @@ const bufferutils_1 = require('./bufferutils');
 const confidential = require('./confidential');
 const crypto_1 = require('./crypto');
 const ecpair_1 = require('./ecpair');
+const issuance_1 = require('./issuance');
 const networks_1 = require('./networks');
 const payments = require('./payments');
 const bscript = require('./script');
@@ -172,7 +173,68 @@ class Psbt {
     return this;
   }
   addIssuance(args, inputIndex) {
-    this.__CACHE.__TX.addIssuance(args, inputIndex);
+    // check the amounts.
+    if (args.assetAmount <= 0)
+      throw new Error('asset amount must be greater than zero.');
+    if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+    if (inputIndex) {
+      // check if the input exists
+      if (!this.data.inputs[inputIndex])
+        throw new Error(`The input ${inputIndex} does not exist.`);
+      // check if the input is available for issuance.
+      if (this.__CACHE.__TX.ins[inputIndex].issuance)
+        throw new Error(`The input ${inputIndex} already has issuance data.`);
+    } else {
+      // verify if there is at least one input available.
+      if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
+        throw new Error(
+          'transaction needs at least one input without issuance data.',
+        );
+      // search and extract the input index.
+      inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
+    }
+    const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
+    // create an issuance object using the vout and the args
+    const issuance = issuance_1.newIssuance(
+      args.assetAmount,
+      args.tokenAmount,
+      args.precision,
+      args.contract,
+    );
+    // generate the entropy
+    const entropy = issuance_1.generateEntropy(
+      { txHash: hash, vout: index },
+      issuance.assetEntropy,
+    );
+    // add the issuance to the input.
+    this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
+    const kOne = Buffer.from('01', 'hex');
+    const asset = Buffer.concat([kOne, issuance_1.calculateAsset(entropy)]);
+    const assetScript = address_1.toOutputScript(args.assetAddress, args.net);
+    // send the asset amount to the asset address.
+    this.addOutput({
+      value: issuance.assetAmount,
+      script: assetScript,
+      asset,
+      nonce: Buffer.from('00', 'hex'),
+    });
+    // check if the token amount is not 0
+    if (args.tokenAmount !== 0) {
+      if (!args.tokenAddress)
+        throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
+      const token = Buffer.concat([
+        kOne,
+        issuance_1.calculateReissuanceToken(entropy, args.confidential),
+      ]);
+      const tokenScript = address_1.toOutputScript(args.tokenAddress, args.net);
+      // send the token amount to the token address.
+      this.addOutput({
+        script: tokenScript,
+        value: issuance.tokenAmount,
+        asset: token,
+        nonce: Buffer.from('00', 'hex'),
+      });
+    }
     return this;
   }
   addOutputs(outputDatas) {
@@ -771,9 +833,6 @@ class PsbtTransaction {
           bufferutils_1.reverseBuffer(Buffer.from(output.asset, 'hex')),
         ]);
     this.tx.addOutput(script, value, asset, nonce);
-  }
-  addIssuance(args) {
-    this.tx.addIssuance(args);
   }
   toBuffer() {
     return this.tx.toBuffer();

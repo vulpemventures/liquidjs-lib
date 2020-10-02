@@ -23,10 +23,16 @@ import {
   Signer,
   SignerAsync,
 } from './ecpair';
+import {
+  calculateAsset,
+  calculateReissuanceToken,
+  generateEntropy,
+  newIssuance,
+} from './issuance';
 import { liquid as btcNetwork, Network } from './networks';
 import * as payments from './payments';
 import * as bscript from './script';
-import { AddIssuanceArgs, Output, Transaction } from './transaction';
+import { AddIssuanceArgs, Issuance, Output, Transaction } from './transaction';
 const _randomBytes = require('randombytes');
 
 /**
@@ -214,7 +220,78 @@ export class Psbt {
   }
 
   addIssuance(args: AddIssuanceArgs, inputIndex?: number): this {
-    this.__CACHE.__TX.addIssuance(args, inputIndex);
+    // check the amounts.
+    if (args.assetAmount <= 0)
+      throw new Error('asset amount must be greater than zero.');
+    if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+
+    if (inputIndex) {
+      // check if the input exists
+      if (!this.data.inputs[inputIndex])
+        throw new Error(`The input ${inputIndex} does not exist.`);
+      // check if the input is available for issuance.
+      if (this.__CACHE.__TX.ins[inputIndex].issuance)
+        throw new Error(`The input ${inputIndex} already has issuance data.`);
+    } else {
+      // verify if there is at least one input available.
+      if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
+        throw new Error(
+          'transaction needs at least one input without issuance data.',
+        );
+      // search and extract the input index.
+      inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
+    }
+
+    const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
+
+    // create an issuance object using the vout and the args
+    const issuance: Issuance = newIssuance(
+      args.assetAmount,
+      args.tokenAmount,
+      args.precision,
+      args.contract,
+    );
+
+    // generate the entropy
+    const entropy: Buffer = generateEntropy(
+      { txHash: hash, vout: index },
+      issuance.assetEntropy,
+    );
+
+    // add the issuance to the input.
+    this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
+
+    const kOne = Buffer.from('01', 'hex');
+    const asset = Buffer.concat([kOne, calculateAsset(entropy)]);
+    const assetScript = toOutputScript(args.assetAddress, args.net);
+
+    // send the asset amount to the asset address.
+    this.addOutput({
+      value: issuance.assetAmount,
+      script: assetScript,
+      asset,
+      nonce: Buffer.from('00', 'hex'),
+    });
+
+    // check if the token amount is not 0
+    if (args.tokenAmount !== 0) {
+      if (!args.tokenAddress)
+        throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
+      const token = Buffer.concat([
+        kOne,
+        calculateReissuanceToken(entropy, args.confidential),
+      ]);
+      const tokenScript = toOutputScript(args.tokenAddress, args.net);
+
+      // send the token amount to the token address.
+      this.addOutput({
+        script: tokenScript,
+        value: issuance.tokenAmount,
+        asset: token,
+        nonce: Buffer.from('00', 'hex'),
+      });
+    }
+
     return this;
   }
 
@@ -981,10 +1058,6 @@ class PsbtTransaction implements ITransaction {
           reverseBuffer(Buffer.from(output.asset, 'hex')),
         ]);
     this.tx.addOutput(script, value, asset, nonce);
-  }
-
-  addIssuance(args: AddIssuanceArgs): void {
-    this.tx.addIssuance(args);
   }
 
   toBuffer(): Buffer {

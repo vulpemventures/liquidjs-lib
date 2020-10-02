@@ -114,7 +114,7 @@ describe('Issuance', () => {
     });
   });
 
-  // a set of arguments using with the function addIssuance.
+  // a static set of arguments using with the function addIssuance.
   const issueArgs: AddIssuanceArgs = {
     assetAmount: 100,
     assetAddress: fixtures.unspent.assetAddress,
@@ -124,123 +124,6 @@ describe('Issuance', () => {
     confidential: false,
     net: regtest,
   };
-
-  describe('Transaction class: add issuance to input', () => {
-    function createTx(): Transaction {
-      const f = fixtures.unspent;
-      const tx = new Transaction();
-      tx.addInput(Buffer.from(f.txid, 'hex').reverse(), f.vout);
-      // explicit fee output
-      tx.addOutput(
-        Buffer.alloc(0),
-        satoshiToConfidentialValue(f.amount),
-        Buffer.concat([
-          Buffer.from('01', 'hex'),
-          Buffer.from(f.asset, 'hex').reverse(),
-        ]),
-        Buffer.from('00', 'hex'),
-      );
-      return tx;
-    }
-
-    function createTxWithNoInput(): Transaction {
-      const f = fixtures.unspent;
-      const tx = new Transaction();
-      tx.addOutput(
-        Buffer.alloc(0),
-        satoshiToConfidentialValue(f.amount),
-        Buffer.concat([
-          Buffer.from('01', 'hex'),
-          Buffer.from(f.asset, 'hex').reverse(),
-        ]),
-        Buffer.from('00', 'hex'),
-      );
-      return tx;
-    }
-
-    function createTxWith1IssuanceInput(): Transaction {
-      const tx = createTx();
-      tx.addIssuance(issueArgs);
-      return tx;
-    }
-
-    it('should keep the transaction serializable and deserializable after adding an issuance input', () => {
-      const tx = createTxWith1IssuanceInput();
-      assert.deepStrictEqual(tx, Transaction.fromHex(tx.toHex()));
-    });
-
-    it('should throw an error after adding an issuance to a transaction with no inputs', () => {
-      const tx = createTxWithNoInput();
-      assert.throws(() => tx.addIssuance(issueArgs));
-    });
-
-    it('should throw an error if the transaction inputs have already issuances', () => {
-      const tx = createTxWith1IssuanceInput();
-      assert.throws(() => tx.addIssuance(issueArgs));
-    });
-
-    it('should throw an error if the token amount is < 0', () => {
-      const tx = createTx();
-      const argsInvalidToken = { ...issueArgs, tokenAmount: -2 };
-      assert.throws(() => tx.addIssuance(argsInvalidToken));
-    });
-
-    it('should throw an error if the asset amount is <= 0', () => {
-      const tx = createTx();
-      const argsInvalidAsset = { ...issueArgs, assetAmount: 0 };
-      assert.throws(() => tx.addIssuance(argsInvalidAsset));
-    });
-
-    it('should throw an error if token amount > 0 and token address is undefined', () => {
-      const tx = createTx();
-      assert.throws(() =>
-        tx.addIssuance({ ...issueArgs, tokenAddress: undefined }),
-      );
-    });
-
-    it('should not throw an error if token amount = 0 and token address is undefined', () => {
-      const tx = createTx();
-      assert.doesNotThrow(() => {
-        tx.addIssuance({
-          ...issueArgs,
-          tokenAmount: 0,
-          tokenAddress: undefined,
-        });
-      });
-    });
-
-    it('should add two outputs if token amount > 0', () => {
-      const tx = createTx();
-      const lenOutsBeforeIssuance = tx.outs.length;
-      tx.addIssuance(issueArgs);
-      const lenOutsAfterIssuance = tx.outs.length;
-      assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 2);
-    });
-
-    it('should add one output if token amount = 0', () => {
-      const tx = createTx();
-      const lenOutsBeforeIssuance = tx.outs.length;
-      tx.addIssuance({ ...issueArgs, tokenAmount: 0 });
-      const lenOutsAfterIssuance = tx.outs.length;
-      assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 1);
-    });
-
-    it('should allow the user to choose the input where to add the issuance', () => {
-      const tx = createTx();
-      tx.addIssuance(issueArgs, 0);
-      assert.ok(tx.ins[0].issuance);
-    });
-
-    it('should throw an error if the chosen input does not exist', () => {
-      const tx = createTxWithNoInput();
-      assert.throws(() => tx.addIssuance(issueArgs, 1));
-    });
-
-    it('should throw an error if the chose input has already issuance data', () => {
-      const tx = createTxWith1IssuanceInput();
-      assert.throws(() => tx.addIssuance(issueArgs, 0));
-    });
-  });
 
   describe('Psbt: add issuance to input', () => {
     // key pair using to test
@@ -295,8 +178,14 @@ describe('Issuance', () => {
       return new Psbt().addOutput(output);
     }
 
+    function createPsbtWithIssuance(): Psbt {
+      return createPsbt().addIssuance(issueArgs);
+    }
+
+    // <- factory
+
     it('should create a valid psbt (if the input index is undefined)', () => {
-      const psbt = createPsbt().addIssuance(issueArgs);
+      const psbt = createPsbtWithIssuance();
       const finalizedPsbt = signAndfinalizeWithAlice(psbt, 0);
       const tx = finalizedPsbt.extractTransaction();
       assert.deepStrictEqual(tx, Transaction.fromHex(tx.toHex()));
@@ -316,6 +205,74 @@ describe('Issuance', () => {
 
     it('should throw an error if the psbt has 0 inputs', () => {
       const psbt = createPsbtWithNoInput();
+      assert.throws(() => psbt.addIssuance(issueArgs, 0));
+    });
+
+    it('should throw an error if the transaction inputs have already issuances', () => {
+      const psbt = createPsbtWithIssuance();
+      assert.throws(() => psbt.addIssuance(issueArgs));
+    });
+
+    it('should throw an error if the token amount is < 0', () => {
+      const psbt = createPsbt();
+      const argsInvalidToken = { ...issueArgs, tokenAmount: -2 };
+      assert.throws(() => psbt.addIssuance(argsInvalidToken));
+    });
+
+    it('should throw an error if the asset amount is <= 0', () => {
+      const psbt = createPsbt();
+      const argsInvalidAsset = { ...issueArgs, assetAmount: 0 };
+      assert.throws(() => psbt.addIssuance(argsInvalidAsset));
+    });
+
+    it('should throw an error if token amount > 0 and token address is undefined', () => {
+      const psbt = createPsbt();
+      assert.throws(() =>
+        psbt.addIssuance({ ...issueArgs, tokenAddress: undefined }),
+      );
+    });
+
+    it('should not throw an error if token amount = 0 and token address is undefined', () => {
+      const psbt = createPsbt();
+      assert.doesNotThrow(() => {
+        psbt.addIssuance({
+          ...issueArgs,
+          tokenAmount: 0,
+          tokenAddress: undefined,
+        });
+      });
+    });
+
+    it('should add two outputs if token amount > 0', () => {
+      const psbt = createPsbt();
+      const lenOutsBeforeIssuance = psbt.data.outputs.length;
+      psbt.addIssuance(issueArgs);
+      const lenOutsAfterIssuance = psbt.data.outputs.length;
+      assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 2);
+    });
+
+    it('should add one output if token amount = 0', () => {
+      const psbt = createPsbt();
+      const lenOutsBeforeIssuance = psbt.data.outputs.length;
+      psbt.addIssuance({ ...issueArgs, tokenAmount: 0 });
+      const lenOutsAfterIssuance = psbt.data.outputs.length;
+      assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 1);
+    });
+
+    it('should allow the user to choose the input where to add the issuance', () => {
+      const psbt = createPsbt();
+      psbt.addIssuance(issueArgs, 0);
+      const finalizedPsbt = signAndfinalizeWithAlice(psbt, 0);
+      assert.ok(finalizedPsbt.extractTransaction().ins[0].issuance);
+    });
+
+    it('should throw an error if the chosen input does not exist', () => {
+      const psbt = createPsbtWithNoInput();
+      assert.throws(() => psbt.addIssuance(issueArgs, 1));
+    });
+
+    it('should throw an error if the chose input has already issuance data', () => {
+      const psbt = createPsbtWithIssuance();
       assert.throws(() => psbt.addIssuance(issueArgs, 0));
     });
   });
