@@ -100,6 +100,11 @@ describe('Issuance', () => {
       if (!fixture.prevout) throw new Error('no prevout in issuance.json');
       const iss: Issuance = issuance.newIssuance(10, 22);
       assert.strictEqual(validate(iss), true);
+      // check if the asset entropy (i.e the contract hash) is empty
+      assert.strictEqual(
+        iss.assetEntropy.toString('hex'),
+        Buffer.alloc(32).toString('hex'),
+      );
     });
 
     it('should create a valid Issuance object with an issuance contract', () => {
@@ -111,6 +116,10 @@ describe('Issuance', () => {
         contract,
       );
       assert.strictEqual(validate(iss), true);
+      assert.strictEqual(
+        iss.assetEntropy.toString('hex'),
+        issuance.hashContract(contract).toString('hex'),
+      );
     });
   });
 
