@@ -272,8 +272,7 @@ export class Psbt {
     });
 
     // check if the token amount is not 0
-    if (args.tokenAmount !== 0) {
-      if (!args.tokenAddress)
+    if (args.tokenAmount !== 0 && !args.tokenAddress) {
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
       const token = Buffer.concat([
         kOne,
