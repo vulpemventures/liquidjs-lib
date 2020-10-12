@@ -239,10 +239,8 @@ export class Psbt {
     if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
 
     if (inputIndex && !this.data.inputs[inputIndex]) {
-        throw new Error(`The input ${inputIndex} does not exist.`);
+      throw new Error(`The input ${inputIndex} does not exist.`);
       // check if the input is available for issuance.
-      if (this.__CACHE.__TX.ins[inputIndex].issuance)
-        throw new Error(`The input ${inputIndex} already has issuance data.`);
     } else {
       // verify if there is at least one input available.
       if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
@@ -252,6 +250,9 @@ export class Psbt {
       // search and extract the input index.
       inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
     }
+
+    if (this.__CACHE.__TX.ins[inputIndex].issuance)
+      throw new Error(`The input ${inputIndex} already has issuance data.`);
 
     const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
 
@@ -285,8 +286,10 @@ export class Psbt {
     });
 
     // check if the token amount is not 0
-    if (args.tokenAmount !== 0 && !args.tokenAddress) {
+    if (args.tokenAmount !== 0) {
+      if (!args.tokenAddress)
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
+
       const token = Buffer.concat([
         kOne,
         calculateReissuanceToken(entropy, args.confidential),
