@@ -483,7 +483,6 @@ class Transaction {
     bufferWriter.writeSlice(value);
     bufferWriter.writeUInt32(input.sequence);
     if (hasIssuance) {
-      console.log('write issuance');
       bufferWriter.writeSlice(input.issuance.assetBlindingNonce);
       bufferWriter.writeSlice(input.issuance.assetEntropy);
       bufferWriter.writeSlice(input.issuance.assetAmount);

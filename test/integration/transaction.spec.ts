@@ -1523,8 +1523,8 @@ describe('liquidjs-lib (transactions with psbt)', () => {
 
   it('can create (and broadcast via 3PBP) an issuance transaction (unblinded)', async () => {
     // these are { payment: Payment; keys: ECPair[] }
-    const alice1 = createPayment('p2pkh');
-    const inputData1 = await getInputData(alice1.payment, false, 'noredeem');
+    const alice1 = createPayment('p2sh-p2wpkh');
+    const inputData1 = await getInputData(alice1.payment, true, 'p2sh');
     const psbt = new liquid.Psbt({ network: regtest })
       .addInput(inputData1) // alice1 unspent
       .addIssuance({
@@ -1540,26 +1540,23 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       })
       .addOutputs([
         {
-          asset,
-          nonce,
+          asset: inputData1.witnessUtxo.asset,
+          nonce: Buffer.from('00', 'hex'),
           script: alice1.payment.output,
           value: liquid.confidential.satoshiToConfidentialValue(99996500),
         },
         {
-          asset,
-          nonce,
+          // fees in Liquid are explicit
+          asset: inputData1.witnessUtxo.asset,
+          nonce: Buffer.from('00', 'hex'),
           script: Buffer.alloc(0),
           value: liquid.confidential.satoshiToConfidentialValue(3500),
         },
       ])
-      // fees in Liquid are explicit
-      .signInput(0, alice1.keys[0]);
+      .signAllInputs(alice1.keys[0])
+      .finalizeAllInputs();
 
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
-
-    psbt.finalizeAllInputs();
     const hex = psbt.extractTransaction().toHex();
-    console.log(hex);
     await regtestUtils.broadcast(hex);
   });
 });
