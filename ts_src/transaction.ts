@@ -1,7 +1,6 @@
 import { BufferReader, BufferWriter, reverseBuffer } from './bufferutils';
 import * as bcrypto from './crypto';
-import { IssuanceContract } from './issuance';
-import { Network } from './networks';
+import { Issuance } from './issuance';
 import * as bscript from './script';
 import { OPS as opcodes } from './script';
 import * as types from './types';
@@ -44,24 +43,6 @@ export interface Output {
   nonce: Buffer;
   rangeProof?: Buffer;
   surjectionProof?: Buffer;
-}
-
-export interface Issuance {
-  assetBlindingNonce: Buffer;
-  assetEntropy: Buffer;
-  assetAmount: Buffer;
-  tokenAmount: Buffer;
-}
-
-export interface AddIssuanceArgs {
-  assetAmount: number;
-  assetAddress: string;
-  tokenAmount: number;
-  tokenAddress?: string;
-  confidential: boolean;
-  precision: number;
-  contract?: IssuanceContract;
-  net?: Network;
 }
 
 export interface Input {

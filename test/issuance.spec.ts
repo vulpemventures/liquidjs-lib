@@ -3,12 +3,8 @@ import { describe, it } from 'mocha';
 import * as issuance from '../ts_src/issuance';
 import * as types from '../ts_src/types';
 import { regtest } from './../ts_src/networks';
-import { Psbt } from './../ts_src/psbt';
-import {
-  AddIssuanceArgs,
-  Issuance,
-  Transaction,
-} from './../ts_src/transaction';
+import { AddIssuanceArgs, Psbt } from './../ts_src/psbt';
+import { Transaction } from './../ts_src/transaction';
 
 import { ECPair, networks } from '../ts_src';
 import { satoshiToConfidentialValue } from './../ts_src/confidential';
@@ -70,7 +66,7 @@ describe('Issuance', () => {
   });
 
   describe('Issuance object generation', () => {
-    function validate(i: Issuance): boolean {
+    function validate(i: issuance.Issuance): boolean {
       try {
         typeforce(types.Hash256bit, i.assetBlindingNonce);
         typeforce(types.Hash256bit, i.assetEntropy);
@@ -98,7 +94,7 @@ describe('Issuance', () => {
 
     it('should create a correct Issuance object without an issuance contract', () => {
       if (!fixture.prevout) throw new Error('no prevout in issuance.json');
-      const iss: Issuance = issuance.newIssuance(10, 22);
+      const iss: issuance.Issuance = issuance.newIssuance(10, 22);
       assert.strictEqual(validate(iss), true);
       // check if the asset entropy (i.e the contract hash) is empty
       assert.strictEqual(
@@ -109,7 +105,7 @@ describe('Issuance', () => {
 
     it('should create a valid Issuance object with an issuance contract', () => {
       const contract = fixtureWithContract.contract as issuance.IssuanceContract;
-      const iss: Issuance = issuance.newIssuance(
+      const iss: issuance.Issuance = issuance.newIssuance(
         fixtureWithContract.assetAmount,
         fixtureWithContract.tokenAmount,
         fixtureWithContract.precision,

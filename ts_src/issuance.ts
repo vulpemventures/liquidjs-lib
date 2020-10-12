@@ -2,7 +2,6 @@ import { BufferWriter } from './bufferutils';
 import { satoshiToConfidentialValue } from './confidential';
 import * as bcrypto from './crypto';
 import { sha256Midstate } from './sha256d';
-import { Issuance } from './transaction';
 
 // one of the field of the IssuanceContract interface.
 export interface IssuanceEntity {
@@ -26,6 +25,16 @@ export interface IssuanceContract {
 export interface OutPoint {
   txHash: Buffer;
   vout: number;
+}
+
+/**
+ * An object describing an issuance. Can be attached to a Tx input.
+ */
+export interface Issuance {
+  assetBlindingNonce: Buffer;
+  assetEntropy: Buffer;
+  assetAmount: Buffer;
+  tokenAmount: Buffer;
 }
 
 /**

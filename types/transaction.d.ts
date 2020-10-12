@@ -1,5 +1,4 @@
-import { IssuanceContract } from './issuance';
-import { Network } from './networks';
+import { Issuance } from './issuance';
 export interface Output {
     script: Buffer;
     value: Buffer;
@@ -7,22 +6,6 @@ export interface Output {
     nonce: Buffer;
     rangeProof?: Buffer;
     surjectionProof?: Buffer;
-}
-export interface Issuance {
-    assetBlindingNonce: Buffer;
-    assetEntropy: Buffer;
-    assetAmount: Buffer;
-    tokenAmount: Buffer;
-}
-export interface AddIssuanceArgs {
-    assetAmount: number;
-    assetAddress: string;
-    tokenAmount: number;
-    tokenAddress?: string;
-    confidential: boolean;
-    precision: number;
-    contract?: IssuanceContract;
-    net?: Network;
 }
 export interface Input {
     hash: Buffer;

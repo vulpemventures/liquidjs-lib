@@ -1,8 +1,19 @@
 import { Psbt as PsbtBase } from 'bip174';
 import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput } from 'bip174/src/lib/interfaces';
 import { Signer, SignerAsync } from './ecpair';
+import { IssuanceContract } from './issuance';
 import { Network } from './networks';
-import { AddIssuanceArgs, Transaction } from './transaction';
+import { Transaction } from './transaction';
+export interface AddIssuanceArgs {
+    assetAmount: number;
+    assetAddress: string;
+    tokenAmount: number;
+    tokenAddress?: string;
+    confidential: boolean;
+    precision: number;
+    contract?: IssuanceContract;
+    net?: Network;
+}
 /**
  * Psbt class can parse and generate a PSBT binary based off of the BIP174.
  * There are 6 roles that this class fulfills. (Explained in BIP174)

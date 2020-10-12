@@ -27,12 +27,14 @@ import {
   calculateAsset,
   calculateReissuanceToken,
   generateEntropy,
+  Issuance,
+  IssuanceContract,
   newIssuance,
 } from './issuance';
 import { liquid as btcNetwork, Network } from './networks';
 import * as payments from './payments';
 import * as bscript from './script';
-import { AddIssuanceArgs, Issuance, Output, Transaction } from './transaction';
+import { Output, Transaction } from './transaction';
 const _randomBytes = require('randombytes');
 
 /**
@@ -51,6 +53,17 @@ const DEFAULT_OPTS: PsbtOpts = {
    */
   maximumFeeRate: 5000, // satoshi per byte
 };
+
+export interface AddIssuanceArgs {
+  assetAmount: number;
+  assetAddress: string;
+  tokenAmount: number;
+  tokenAddress?: string;
+  confidential: boolean;
+  precision: number;
+  contract?: IssuanceContract;
+  net?: Network;
+}
 
 /**
  * Psbt class can parse and generate a PSBT binary based off of the BIP174.

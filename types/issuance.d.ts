@@ -1,4 +1,3 @@
-import { Issuance } from './transaction';
 export interface IssuanceEntity {
     domain: string;
 }
@@ -18,6 +17,15 @@ export interface IssuanceContract {
 export interface OutPoint {
     txHash: Buffer;
     vout: number;
+}
+/**
+ * An object describing an issuance. Can be attached to a Tx input.
+ */
+export interface Issuance {
+    assetBlindingNonce: Buffer;
+    assetEntropy: Buffer;
+    assetAmount: Buffer;
+    tokenAmount: Buffer;
 }
 /**
  * Checks if a contract given as parameter is valid or not.
