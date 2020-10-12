@@ -225,9 +225,7 @@ export class Psbt {
       throw new Error('asset amount must be greater than zero.');
     if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
 
-    if (inputIndex) {
-      // check if the input exists
-      if (!this.data.inputs[inputIndex])
+    if (inputIndex && !this.data.inputs[inputIndex]) {
         throw new Error(`The input ${inputIndex} does not exist.`);
       // check if the input is available for issuance.
       if (this.__CACHE.__TX.ins[inputIndex].issuance)
