@@ -1528,13 +1528,10 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     const psbt = new liquid.Psbt({ network: regtest })
       .addInput(inputData1) // alice1 unspent
       .addIssuance({
-        assetAddress:
-          'AzpkiMHdC4LoifuLD2YSoR9bNwwZd4AGpHrBKMF7JMwieMECVX2JJMYGorBm6JMnv1NrQzyCQto1JyEG',
+        assetAddress: 'XBXiDkFNneyPtpXvqVWQoHA1MhoXa8FZLn',
         assetAmount: 100,
-        tokenAddress:
-          'AzpkiMHdC4LoifuLD2YSoR9bNwwZd4AGpHrBKMF7JMwieMECVX2JJMYGorBm6JMnv1NrQzyCQto1JyEG',
+        tokenAddress: 'XBXiDkFNneyPtpXvqVWQoHA1MhoXa8FZLn',
         tokenAmount: 1,
-        confidential: false,
         precision: 8,
         net: regtest,
       })

@@ -27,3 +27,8 @@ export declare function toBlech32(data: Buffer, pubkey: Buffer, prefix: string):
 export declare function toConfidential(address: string, blindingKey: Buffer): string;
 export declare function fromOutputScript(output: Buffer, network?: Network): string;
 export declare function toOutputScript(address: string, network?: Network): Buffer;
+/**
+ * A quick check used to verify if a string could be a valid confidential address.
+ * @param address address to check.
+ */
+export declare function isConfidential(address: string): boolean;

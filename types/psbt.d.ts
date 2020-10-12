@@ -9,7 +9,6 @@ export interface AddIssuanceArgs {
     assetAddress: string;
     tokenAmount: number;
     tokenAddress?: string;
-    confidential: boolean;
     precision: number;
     contract?: IssuanceContract;
     net?: Network;

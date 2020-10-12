@@ -13,7 +13,7 @@ import {
   TransactionInput,
 } from 'bip174/src/lib/interfaces';
 import { checkForInput } from 'bip174/src/lib/utils';
-import { toOutputScript } from './address';
+import { isConfidential, toOutputScript } from './address';
 import { reverseBuffer } from './bufferutils';
 import * as confidential from './confidential';
 import { hash160 } from './crypto';
@@ -59,7 +59,6 @@ export interface AddIssuanceArgs {
   assetAddress: string;
   tokenAmount: number;
   tokenAddress?: string;
-  confidential: boolean;
   precision: number;
   contract?: IssuanceContract;
   net?: Network;
@@ -254,6 +253,20 @@ export class Psbt {
     if (this.__CACHE.__TX.ins[inputIndex].issuance)
       throw new Error(`The input ${inputIndex} already has issuance data.`);
 
+    const assetAddrIsConfidential = isConfidential(args.assetAddress);
+    const tokenAddrIsConfidential = args.tokenAddress
+      ? isConfidential(args.tokenAddress)
+      : undefined;
+
+    if (
+      tokenAddrIsConfidential !== undefined &&
+      assetAddrIsConfidential !== tokenAddrIsConfidential
+    ) {
+      throw new Error(
+        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
+      );
+    }
+
     const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
 
     // create an issuance object using the vout and the args
@@ -292,7 +305,7 @@ export class Psbt {
 
       const token = Buffer.concat([
         kOne,
-        calculateReissuanceToken(entropy, args.confidential),
+        calculateReissuanceToken(entropy, isConfidential(args.tokenAddress)),
       ]);
       const tokenScript = toOutputScript(args.tokenAddress, args.net);
 

@@ -126,7 +126,6 @@ describe('Issuance', () => {
     tokenAmount: 1,
     tokenAddress: fixtures.unspent.tokenAddress,
     precision: 8,
-    confidential: false,
     net: regtest,
   };
 

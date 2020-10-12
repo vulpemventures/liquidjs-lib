@@ -213,3 +213,29 @@ function toConfidentialSegwit(address, blindingKey, network) {
   const data = toOutputScript(address, network);
   return toBlech32(data, blindingKey, network.blech32);
 }
+/**
+ * A quick check used to verify if a string could be a confidential segwit address.
+ * @param address address to test.
+ */
+function isConfidentialSegwit(address) {
+  if (address.length !== 80) return false;
+  if (address.startsWith('Az')) return true;
+  return false;
+}
+/**
+ * A quick check function used to verify if a string could be a valid confidential legacy address.
+ * @param address address to test.
+ */
+function isConfidentialLegacy(address) {
+  if (address.length !== 80) return false;
+  if (address.startsWith('CTE')) return true;
+  return false;
+}
+/**
+ * A quick check used to verify if a string could be a valid confidential address.
+ * @param address address to check.
+ */
+function isConfidential(address) {
+  return isConfidentialLegacy(address) || isConfidentialSegwit(address);
+}
+exports.isConfidential = isConfidential;

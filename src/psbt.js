@@ -191,6 +191,18 @@ class Psbt {
     }
     if (this.__CACHE.__TX.ins[inputIndex].issuance)
       throw new Error(`The input ${inputIndex} already has issuance data.`);
+    const assetAddrIsConfidential = address_1.isConfidential(args.assetAddress);
+    const tokenAddrIsConfidential = args.tokenAddress
+      ? address_1.isConfidential(args.tokenAddress)
+      : undefined;
+    if (
+      tokenAddrIsConfidential !== undefined &&
+      assetAddrIsConfidential !== tokenAddrIsConfidential
+    ) {
+      throw new Error(
+        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
+      );
+    }
     const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
     // create an issuance object using the vout and the args
     const issuance = issuance_1.newIssuance(
@@ -222,7 +234,10 @@ class Psbt {
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
       const token = Buffer.concat([
         kOne,
-        issuance_1.calculateReissuanceToken(entropy, args.confidential),
+        issuance_1.calculateReissuanceToken(
+          entropy,
+          address_1.isConfidential(args.tokenAddress),
+        ),
       ]);
       const tokenScript = address_1.toOutputScript(args.tokenAddress, args.net);
       // send the token amount to the token address.
