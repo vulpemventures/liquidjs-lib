@@ -106,10 +106,13 @@ describe('Psbt', () => {
           '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
           'hex',
         ),
-        asset: Buffer.from(
-          '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
-          'hex',
-        ),
+        asset: Buffer.concat([
+          Buffer.from('0a', 'hex'),
+          Buffer.from(
+            '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
+            'hex',
+          ).reverse(),
+        ]),
         value: satoshiToConfidentialValue(10),
         nonce: Buffer.from(
           '031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f',
