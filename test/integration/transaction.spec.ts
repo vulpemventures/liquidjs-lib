@@ -119,6 +119,8 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     const bliningPubkeys = [''].map(
       () => liquid.ECPair.makeRandom({ network: regtest }).publicKey,
     );
+
+    console.log('test', bliningPubkeys[0], bliningPubkeys[0].length);
     const psbt = new liquid.Psbt();
     psbt.setVersion(2); // These are defaults. This line is not needed.
     psbt.setLocktime(0); // These are defaults. This line is not needed.

@@ -786,6 +786,9 @@ export class Psbt {
         'Blinding public keys do not match the number of outputs (fee excluded)',
       );
 
+    console.log('pubkey', blindingPubkeys, blindingPubkeys[0].length);
+    console.log('privkey', blindingPrivkeys, blindingPrivkeys[0].length);
+
     const c = this.__CACHE;
     const outputValues = c.__TX.outs.map(v =>
       confidential.confidentialValueToSatoshi(v.value).toString(10),
