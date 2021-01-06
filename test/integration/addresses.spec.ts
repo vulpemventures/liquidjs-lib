@@ -7,7 +7,7 @@ const REGTEST = liquid.networks.regtest;
 describe('liquidjs-lib (addresses)', () => {
   it(
     'can generate a random address [and support the retrieval of ' +
-    'transactions for that address (via 3PBP)]',
+      'transactions for that address (via 3PBP)]',
     async () => {
       const keyPair = liquid.ECPair.makeRandom();
       const { address } = liquid.payments.p2pkh({ pubkey: keyPair.publicKey });
@@ -137,7 +137,7 @@ describe('liquidjs-lib (addresses)', () => {
     assert.strictEqual(
       confidentialAddress,
       'lq1qqfj8wy2es8lfsxnfrznzjlvcq0zdcp8n9rezqsd7mlugdw7zjchqragn56e2q0c3u90ey8qrgklwynrrlllx8znnaj5z8mzc4tk97wxxu' +
-      '2pwz4u8lcxz',
+        '2pwz4u8lcxz',
     );
   });
 

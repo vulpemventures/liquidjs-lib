@@ -12,6 +12,7 @@ const networks_1 = require('./networks');
 const payments = require('./payments');
 const bscript = require('./script');
 const transaction_1 = require('./transaction');
+const txutils_1 = require('./txutils');
 const _randomBytes = require('randombytes');
 /**
  * These are the default arguments for a Psbt instance.
@@ -559,18 +560,20 @@ class Psbt {
     this.data.updateOutput(outputIndex, updateData);
     return this;
   }
-  blindOutputs(blindingPrivkeys, blindingPubkeys, opts) {
+  blindOutputs(blindingPrivkeys, blindingPubkeys, outputsIndexToBlind, opts) {
     if (this.data.inputs.some(v => !v.nonWitnessUtxo && !v.witnessUtxo))
       throw new Error(
-        'All inputs must contain a non witness utxo or a witness utxo',
+        'All inputs must contain a witness utxo or a non witness utxo',
       );
-    if (blindingPrivkeys.length !== this.data.inputs.length)
+    if (!outputsIndexToBlind) {
+      outputsIndexToBlind = [];
+      this.__CACHE.__TX.outs.forEach((out, index) => {
+        if (out.script.length > 0) outputsIndexToBlind.push(index);
+      });
+    }
+    if (outputsIndexToBlind.length != blindingPubkeys.length)
       throw new Error(
-        'Blinding private keys do not match the number of inputs',
-      );
-    if (blindingPubkeys.length !== this.data.outputs.length - 1)
-      throw new Error(
-        'Blinding public keys do not match the number of outputs (fee excluded)',
+        'not enough blinding public keys to blind all the outputs to blind',
       );
     const c = this.__CACHE;
     const outputValues = c.__TX.outs.map(v =>
@@ -588,31 +591,28 @@ class Psbt {
         const prevoutIndex = c.__TX.ins[index].index;
         prevout = prevTx.outs[prevoutIndex];
       } else {
-        prevout = Object.assign({}, input.witnessUtxo);
+        prevout = input.witnessUtxo;
       }
-      const unblindPrevout = {
-        value: '',
-        ag: Buffer.alloc(0),
-        abf: Buffer.alloc(0),
-        vbf: Buffer.alloc(0),
-      };
-      if (prevout.rangeProof.length > 0 && prevout.surjectionProof.length > 0) {
-        const unblindProof = confidential.unblindOutput(
-          prevout.nonce,
-          blindingPrivkeys[index],
-          prevout.rangeProof,
-          prevout.value,
-          prevout.asset,
-          prevout.script,
+      let unblindPrevout;
+      if (txutils_1.isConfidentialUtxo(prevout)) {
+        const { result, success } = txutils_1.tryToUnblindWithSetOfPrivKeys(
+          prevout,
+          blindingPrivkeys,
         );
-        unblindPrevout.ag = unblindProof.asset;
-        unblindPrevout.value = unblindProof.value;
-        unblindPrevout.abf = unblindProof.assetBlindingFactor;
-        unblindPrevout.vbf = unblindProof.valueBlindingFactor;
+        if (!success || !result)
+          throw new Error(
+            'Unable to unblind the witness utxo with any blinding private keys',
+          );
+        unblindPrevout = result;
       } else {
-        unblindPrevout.value = confidential
-          .confidentialValueToSatoshi(prevout.value)
-          .toString(10);
+        unblindPrevout = {
+          value: confidential
+            .confidentialValueToSatoshi(prevout.value)
+            .toString(10),
+          abf: Buffer.alloc(0),
+          ag: Buffer.alloc(0),
+          vbf: Buffer.alloc(0),
+        };
       }
       inputAgs.push(unblindPrevout.ag);
       inputValues.push(unblindPrevout.value);
@@ -620,13 +620,17 @@ class Psbt {
       inputVbfs.push(unblindPrevout.vbf);
     });
     // generate output blinding factors
-    const numOutputs = this.data.outputs.length - 1; // exclude fees output
-    const outputAbfs = this.data.outputs
-      .slice(0, numOutputs)
-      .map(() => randomBytes(opts));
-    const outputVbfs = this.data.outputs
-      .slice(0, numOutputs - 1)
-      .map(() => randomBytes(opts));
+    const numOutputs = c.__TX.outs.length - 1; // excluding fee output
+    const outputAbfs = range(numOutputs).map(index =>
+      outputsIndexToBlind.includes(index)
+        ? randomBytes(opts)
+        : Buffer.alloc(32),
+    );
+    const outputVbfs = range(numOutputs - 1).map(index =>
+      outputsIndexToBlind.includes(index)
+        ? randomBytes(opts)
+        : Buffer.alloc(32),
+    );
     const finalVbf = confidential.valueBlindingFactor(
       inputValues,
       outputValues,
@@ -636,39 +640,40 @@ class Psbt {
       outputVbfs,
     );
     outputVbfs.push(finalVbf);
-    range(this.data.outputs.length).forEach(outputIndex => {
+    outputsIndexToBlind.forEach((outputIndex, indexInArray) => {
       const outputAsset = c.__TX.outs[outputIndex].asset.slice(1);
       const outputScript = c.__TX.outs[outputIndex].script;
       const outputValue = outputValues[outputIndex];
       // if script output is null it means that the current is a fee output
-      // thus, it does not need to be blinded
-      if (outputScript.length === 0) return;
+      // thus, throw an error
+      if (outputScript.length === 0)
+        throw new Error("cant't blind the fee output");
       // blind output
       const randomSeed = randomBytes(opts);
       const ephemeralPrivKey = randomBytes(opts);
       const outputNonce = ecpair_1.fromPrivateKey(ephemeralPrivKey).publicKey;
       const assetCommitment = confidential.assetCommitment(
         outputAsset,
-        outputAbfs[outputIndex],
+        outputAbfs[indexInArray],
       );
       const valueCommitment = confidential.valueCommitment(
         outputValue,
         assetCommitment,
-        outputVbfs[outputIndex],
+        outputVbfs[indexInArray],
       );
       const rangeProof = confidential.rangeProof(
         outputValue,
-        blindingPubkeys[outputIndex],
+        blindingPubkeys[indexInArray],
         ephemeralPrivKey,
         outputAsset,
-        outputAbfs[outputIndex],
-        outputVbfs[outputIndex],
+        outputAbfs[indexInArray],
+        outputVbfs[indexInArray],
         valueCommitment,
         outputScript,
       );
       const surjectionProof = confidential.surjectionProof(
         outputAsset,
-        outputAbfs[outputIndex],
+        outputAbfs[indexInArray],
         inputAgs,
         inputAbfs,
         randomSeed,
@@ -679,6 +684,13 @@ class Psbt {
       c.__TX.setOutputRangeProof(outputIndex, rangeProof);
       c.__TX.setOutputSurjectionProof(outputIndex, surjectionProof);
     });
+    range(numOutputs)
+      .filter(index => !outputsIndexToBlind.includes(index))
+      .forEach(unconfidentialIndex => {
+        c.__TX.setOutputNonce(unconfidentialIndex, Buffer.alloc(0));
+        // c.__TX.setOutputRangeProof(unconfidentialIndex, Buffer.alloc(0))
+        // c.__TX.setOutputSurjectionProof(unconfidentialIndex, Buffer.alloc(0))
+      });
     c.__FEE = undefined;
     c.__FEE_RATE = undefined;
     c.__EXTRACTED_TX = undefined;

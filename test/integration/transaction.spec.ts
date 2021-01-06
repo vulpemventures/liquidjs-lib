@@ -567,12 +567,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         script: Buffer.alloc(0),
         value: satoshiToConfidentialValue(7000),
       }) // fees in Liquid are explicit
-      .blindOutputs(alice.blindingKeys, [aliceBlindingPubKey])
+      .blindOutputs(alice.blindingKeys, [aliceBlindingPubKey], [1])
       .signAllInputs(alice.keys[0]);
 
     assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
     psbt.finalizeAllInputs();
 
+    console.log(psbt.extractTransaction().toHex())
     // build and broadcast our RegTest network
     await regtestUtils.broadcast(psbt.extractTransaction().toHex());
   });
