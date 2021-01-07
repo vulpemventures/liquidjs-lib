@@ -694,7 +694,7 @@ export class Psbt {
 
     if (outputsIndexToBlind.length !== blindingPubkeys.length)
       throw new Error(
-        'not enough blinding public keys to blind all the outputs to blind',
+        'not enough blinding public keys to blind the requested outputs',
       );
 
     const c = this.__CACHE;
