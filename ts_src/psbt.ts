@@ -1751,13 +1751,6 @@ export function unblindWitnessUtxo(
   prevout: WitnessUtxo,
   blindingPrivKey: Buffer,
 ): UnblindWitnessUtxoResult {
-  const unblindPrevout: UnblindWitnessUtxoResult = {
-    value: '',
-    ag: Buffer.alloc(0),
-    abf: Buffer.alloc(0),
-    vbf: Buffer.alloc(0),
-  };
-
   const unblindProof = confidential.unblindOutput(
     prevout.nonce,
     blindingPrivKey,
@@ -1767,10 +1760,10 @@ export function unblindWitnessUtxo(
     prevout.script,
   );
 
-  unblindPrevout.ag = unblindProof.asset;
-  unblindPrevout.value = unblindProof.value;
-  unblindPrevout.abf = unblindProof.assetBlindingFactor;
-  unblindPrevout.vbf = unblindProof.valueBlindingFactor;
-
-  return unblindPrevout;
+  return {
+    value: unblindProof.value,
+    ag: unblindProof.asset,
+    abf: unblindProof.assetBlindingFactor,
+    vbf: unblindProof.valueBlindingFactor,
+  };
 }
