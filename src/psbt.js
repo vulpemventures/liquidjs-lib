@@ -577,17 +577,23 @@ class Psbt {
       throw new Error(
         'All inputs must contain a witness utxo or a non witness utxo',
       );
+    const c = this.__CACHE;
+    if (c.__TX.ins.length !== blindingPrivkeys.length) {
+      throw new Error(
+        'blindingPrivkeys length does not match the number of inputs (null for unconfidential utxo)',
+      );
+    }
     if (!outputsIndexToBlind) {
       outputsIndexToBlind = [];
+      // fill the outputsIndexToBlind array with all the output index (except the fee output)
       this.__CACHE.__TX.outs.forEach((out, index) => {
         if (out.script.length > 0) outputsIndexToBlind.push(index);
       });
     }
     if (outputsIndexToBlind.length !== blindingPubkeys.length)
       throw new Error(
-        'not enough blinding public keys to blind all the outputs to blind',
+        'not enough blinding public keys to blind the requested outputs',
       );
-    const c = this.__CACHE;
     const outputValues = c.__TX.outs.map(v =>
       confidential.confidentialValueToSatoshi(v.value).toString(10),
     );
@@ -608,11 +614,12 @@ class Psbt {
         prevout = input.witnessUtxo;
       }
       let unblindPrevout;
+      // check if confidential
       if (prevout.rangeProof != null && prevout.surjectionProof != null) {
         const blindingPrivKey = blindingPrivkeys[confidentialUtxoIndex];
         if (!blindingPrivKey) {
           throw new Error(
-            'the number of blinding private keys does not match the number of confidential inputs',
+            'There is no blinding private key for input #' + index,
           );
         }
         const result = unblindWitnessUtxo(prevout, blindingPrivKey);
@@ -1393,12 +1400,6 @@ function randomBytes(options) {
   return rng(32);
 }
 function unblindWitnessUtxo(prevout, blindingPrivKey) {
-  const unblindPrevout = {
-    value: '',
-    ag: Buffer.alloc(0),
-    abf: Buffer.alloc(0),
-    vbf: Buffer.alloc(0),
-  };
   const unblindProof = confidential.unblindOutput(
     prevout.nonce,
     blindingPrivKey,
@@ -1407,10 +1408,11 @@ function unblindWitnessUtxo(prevout, blindingPrivKey) {
     prevout.asset,
     prevout.script,
   );
-  unblindPrevout.ag = unblindProof.asset;
-  unblindPrevout.value = unblindProof.value;
-  unblindPrevout.abf = unblindProof.assetBlindingFactor;
-  unblindPrevout.vbf = unblindProof.valueBlindingFactor;
-  return unblindPrevout;
+  return {
+    value: unblindProof.value,
+    ag: unblindProof.asset,
+    abf: unblindProof.assetBlindingFactor,
+    vbf: unblindProof.valueBlindingFactor,
+  };
 }
 exports.unblindWitnessUtxo = unblindWitnessUtxo;
