@@ -716,7 +716,7 @@ export class Psbt {
       if (input.nonWitnessUtxo) {
         const prevTx = nonWitnessUtxoTxFromCache(c, input, index);
         const prevoutIndex = c.__TX.ins[index].index;
-        prevout = prevTx.outs[prevoutIndex];
+        prevout = prevTx.outs[prevoutIndex] as WitnessUtxo;
       } else {
         prevout = input.witnessUtxo!;
       }
