@@ -650,7 +650,7 @@ class Psbt {
     const outputVbfs = range(numOutputs - 1).map(() => randomBytes(opts));
     const finalVbf = confidential.valueBlindingFactor(
       inputValues,
-      outputValues,
+      outputValues.filter((_, index) => outputsIndexToBlind.includes(index)),
       inputAbfs,
       outputAbfs,
       inputVbfs,
