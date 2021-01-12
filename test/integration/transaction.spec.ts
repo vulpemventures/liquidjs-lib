@@ -527,7 +527,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
 
   it(
     'can create (and broadcast via 3PBP) a confidential Transaction' +
-      'with confidential AND unconfidential outputs',
+      ' with confidential AND unconfidential outputs',
     async () => {
       // these are { payment: Payment; keys: ECPair[] }
       const alice0 = createPayment('p2pkh', undefined, undefined, true); // confidential
