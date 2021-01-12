@@ -611,7 +611,7 @@ class Psbt {
         const prevoutIndex = c.__TX.ins[index].index;
         prevout = prevTx.outs[prevoutIndex];
       } else {
-        prevout = input.witnessUtxo;
+        prevout = Object.assign({}, input.witnessUtxo);
       }
       let unblindPrevout;
       // check if confidential

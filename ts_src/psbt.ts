@@ -725,7 +725,7 @@ export class Psbt {
         const prevoutIndex = c.__TX.ins[index].index;
         prevout = prevTx.outs[prevoutIndex] as WitnessUtxo;
       } else {
-        prevout = input.witnessUtxo!;
+        prevout = { ...input.witnessUtxo! };
       }
 
       let unblindPrevout: UnblindWitnessUtxoResult;
