@@ -537,6 +537,8 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         alice0.blindingKeys[0],
       ).publicKey!;
 
+      const aliceBlindingPrivateKey: Buffer = alice0.blindingKeys[0];
+
       // give Alice unspent outputs
       const inputData1 = await getInputData(alice0.payment, false, 'noredeem');
       {
@@ -576,10 +578,9 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           script: Buffer.alloc(0),
           value: satoshiToConfidentialValue(7000),
         }) // fees in Liquid are explicit
-        .blindOutputsIndex(
-          alice0.blindingKeys,
-          [aliceBlindingPubKey, aliceBlindingPubKey],
-          [1, 2],
+        .blindOutputsByIndex(
+          new Map().set(0, aliceBlindingPrivateKey),
+          new Map().set(1, aliceBlindingPubKey).set(2, aliceBlindingPubKey),
         )
         .signAllInputs(alice0.keys[0]);
 

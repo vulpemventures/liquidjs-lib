@@ -560,14 +560,31 @@ class Psbt {
     return this;
   }
   blindOutputs(blindingPrivkeys, blindingPubkeys, opts) {
-    return this.blindOutputsIndex(
+    return this.RawBlindOutputs(
       blindingPrivkeys,
       blindingPubkeys,
       undefined,
       opts,
     );
   }
-  blindOutputsIndex(
+  blindOutputsByIndex(inputsBlindingPrivKeys, outputsBlindingPubKeys, opts) {
+    const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
+      inputIndex => inputsBlindingPrivKeys.get(inputIndex),
+    );
+    const outputsIndexToBlind = [];
+    const blindingPublicKey = [];
+    for (const [outputIndex, pubBlindingKey] of outputsBlindingPubKeys) {
+      outputsIndexToBlind.push(outputIndex);
+      blindingPublicKey.push(pubBlindingKey);
+    }
+    return this.RawBlindOutputs(
+      blindingPrivKeysArgs,
+      blindingPublicKey,
+      outputsIndexToBlind,
+      opts,
+    );
+  }
+  RawBlindOutputs(
     blindingPrivkeys,
     blindingPubkeys,
     outputsIndexToBlind,

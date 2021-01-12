@@ -661,7 +661,7 @@ export class Psbt {
     blindingPubkeys: Buffer[],
     opts?: RngOpts,
   ): this {
-    return this.blindOutputsIndex(
+    return this.RawBlindOutputs(
       blindingPrivkeys,
       blindingPubkeys,
       undefined,
@@ -669,8 +669,32 @@ export class Psbt {
     );
   }
 
-  blindOutputsIndex(
-    blindingPrivkeys: Buffer[],
+  blindOutputsByIndex(
+    inputsBlindingPrivKeys: Map<number, Buffer>,
+    outputsBlindingPubKeys: Map<number, Buffer>,
+    opts?: RngOpts,
+  ): this {
+    const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
+      (inputIndex: number) => inputsBlindingPrivKeys.get(inputIndex),
+    );
+    const outputsIndexToBlind: Array<number> = [];
+    const blindingPublicKey: Array<Buffer> = [];
+
+    for (const [outputIndex, pubBlindingKey] of outputsBlindingPubKeys) {
+      outputsIndexToBlind.push(outputIndex);
+      blindingPublicKey.push(pubBlindingKey);
+    }
+
+    return this.RawBlindOutputs(
+      blindingPrivKeysArgs,
+      blindingPublicKey,
+      outputsIndexToBlind,
+      opts,
+    );
+  }
+
+  private RawBlindOutputs(
+    blindingPrivkeys: Array<Buffer | undefined>,
     blindingPubkeys: Buffer[],
     outputsIndexToBlind?: number[],
     opts?: RngOpts,

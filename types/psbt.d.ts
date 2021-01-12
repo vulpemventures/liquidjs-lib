@@ -76,7 +76,8 @@ export declare class Psbt {
     updateInput(inputIndex: number, updateData: PsbtInputUpdate): this;
     updateOutput(outputIndex: number, updateData: PsbtOutputUpdate): this;
     blindOutputs(blindingPrivkeys: Buffer[], blindingPubkeys: Buffer[], opts?: RngOpts): this;
-    blindOutputsIndex(blindingPrivkeys: Buffer[], blindingPubkeys: Buffer[], outputsIndexToBlind?: number[], opts?: RngOpts): this;
+    blindOutputsByIndex(inputsBlindingPrivKeys: Map<number, Buffer>, outputsBlindingPubKeys: Map<number, Buffer>, opts?: RngOpts): this;
+    private RawBlindOutputs;
     addUnknownKeyValToGlobal(keyVal: KeyValue): this;
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;
