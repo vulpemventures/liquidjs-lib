@@ -1,5 +1,5 @@
 import { Psbt as PsbtBase } from 'bip174';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174/src/lib/interfaces';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput } from 'bip174/src/lib/interfaces';
 import { Signer, SignerAsync } from './ecpair';
 import { Network } from './networks';
 import { Transaction } from './transaction';
@@ -77,11 +77,11 @@ export declare class Psbt {
     updateOutput(outputIndex: number, updateData: PsbtOutputUpdate): this;
     blindOutputs(blindingPrivkeys: Buffer[], blindingPubkeys: Buffer[], opts?: RngOpts): this;
     blindOutputsByIndex(inputsBlindingPrivKeys: Map<number, Buffer>, outputsBlindingPubKeys: Map<number, Buffer>, opts?: RngOpts): this;
-    private RawBlindOutputs;
     addUnknownKeyValToGlobal(keyVal: KeyValue): this;
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;
     clearFinalizedInput(inputIndex: number): this;
+    private rawBlindOutputs;
 }
 interface PsbtOptsOptional {
     network?: Network;
@@ -140,5 +140,4 @@ export interface UnblindWitnessUtxoResult {
     abf: Buffer;
     vbf: Buffer;
 }
-export declare function unblindWitnessUtxo(prevout: WitnessUtxo, blindingPrivKey: Buffer): UnblindWitnessUtxoResult;
 export {};

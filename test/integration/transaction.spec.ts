@@ -530,17 +530,21 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       ' with confidential AND unconfidential outputs',
     async () => {
       // these are { payment: Payment; keys: ECPair[] }
-      const alice0 = createPayment('p2pkh', undefined, undefined, true); // confidential
-      const bob0 = createPayment('p2pkh', undefined, undefined, false); // unconfidential
+      const alicePayment = createPayment('p2pkh', undefined, undefined, true); // confidential
+      const bobPayment = createPayment('p2pkh', undefined, undefined, false); // unconfidential
 
       const aliceBlindingPubKey = liquid.ECPair.fromPrivateKey(
-        alice0.blindingKeys[0],
+        alicePayment.blindingKeys[0],
       ).publicKey!;
 
-      const aliceBlindingPrivateKey: Buffer = alice0.blindingKeys[0];
+      const aliceBlindingPrivateKey: Buffer = alicePayment.blindingKeys[0];
 
       // give Alice unspent outputs
-      const inputData1 = await getInputData(alice0.payment, false, 'noredeem');
+      const inputData1 = await getInputData(
+        alicePayment.payment,
+        false,
+        'noredeem',
+      );
       {
         const {
           hash, // string of txid or Buffer of tx hash. (txid and hash are reverse order)
@@ -553,24 +557,24 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       // network is only needed if you pass an address to addOutput
       // using script (Buffer of scriptPubkey) instead will avoid needed network.
       const psbt = new liquid.Psbt({ network: regtest })
-        .addInput(inputData1) // alice1 unspent
+        .addInput(inputData1) // alice unspent
         .addOutput({
           asset,
           nonce,
-          script: bob0.payment.output,
-          value: satoshiToConfidentialValue(5000_0000),
+          script: bobPayment.payment.output,
+          value: satoshiToConfidentialValue(50000000),
         }) // the actual spend to bob
         .addOutput({
           asset,
           nonce,
-          script: alice0.payment.output,
-          value: satoshiToConfidentialValue(2999_3000),
+          script: alicePayment.payment.output,
+          value: satoshiToConfidentialValue(29993000),
         }) // Alice's change
         .addOutput({
           asset,
           nonce,
-          script: alice0.payment.output,
-          value: satoshiToConfidentialValue(2000_0000),
+          script: alicePayment.payment.output,
+          value: satoshiToConfidentialValue(20000000),
         }) // Alice's change bis
         .addOutput({
           asset,
@@ -582,7 +586,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           new Map().set(0, aliceBlindingPrivateKey),
           new Map().set(1, aliceBlindingPubKey).set(2, aliceBlindingPubKey),
         )
-        .signAllInputs(alice0.keys[0]);
+        .signAllInputs(alicePayment.keys[0]);
 
       assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
       psbt.finalizeAllInputs();

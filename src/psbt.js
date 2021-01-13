@@ -560,7 +560,7 @@ class Psbt {
     return this;
   }
   blindOutputs(blindingPrivkeys, blindingPubkeys, opts) {
-    return this.RawBlindOutputs(
+    return this.rawBlindOutputs(
       blindingPrivkeys,
       blindingPubkeys,
       undefined,
@@ -571,28 +571,39 @@ class Psbt {
     const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
       inputIndex => inputsBlindingPrivKeys.get(inputIndex),
     );
-    const outputsIndexToBlind = [];
+    const outputIndexes = [];
     const blindingPublicKey = [];
     for (const [outputIndex, pubBlindingKey] of outputsBlindingPubKeys) {
-      outputsIndexToBlind.push(outputIndex);
+      outputIndexes.push(outputIndex);
       blindingPublicKey.push(pubBlindingKey);
     }
-    return this.RawBlindOutputs(
+    return this.rawBlindOutputs(
       blindingPrivKeysArgs,
       blindingPublicKey,
-      outputsIndexToBlind,
+      outputIndexes,
       opts,
     );
   }
-  RawBlindOutputs(
-    blindingPrivkeys,
-    blindingPubkeys,
-    outputsIndexToBlind,
-    opts,
-  ) {
+  addUnknownKeyValToGlobal(keyVal) {
+    this.data.addUnknownKeyValToGlobal(keyVal);
+    return this;
+  }
+  addUnknownKeyValToInput(inputIndex, keyVal) {
+    this.data.addUnknownKeyValToInput(inputIndex, keyVal);
+    return this;
+  }
+  addUnknownKeyValToOutput(outputIndex, keyVal) {
+    this.data.addUnknownKeyValToOutput(outputIndex, keyVal);
+    return this;
+  }
+  clearFinalizedInput(inputIndex) {
+    this.data.clearFinalizedInput(inputIndex);
+    return this;
+  }
+  rawBlindOutputs(blindingPrivkeys, blindingPubkeys, outputIndexes, opts) {
     if (this.data.inputs.some(v => !v.nonWitnessUtxo && !v.witnessUtxo))
       throw new Error(
-        'All inputs must contain a witness utxo or a non witness utxo',
+        'All inputs must contain a non witness utxo or a witness utxo',
       );
     const c = this.__CACHE;
     if (c.__TX.ins.length !== blindingPrivkeys.length) {
@@ -600,14 +611,14 @@ class Psbt {
         'blindingPrivkeys length does not match the number of inputs (null for unconfidential utxo)',
       );
     }
-    if (!outputsIndexToBlind) {
-      outputsIndexToBlind = [];
-      // fill the outputsIndexToBlind array with all the output index (except the fee output)
-      this.__CACHE.__TX.outs.forEach((out, index) => {
-        if (out.script.length > 0) outputsIndexToBlind.push(index);
+    if (!outputIndexes) {
+      outputIndexes = [];
+      // fill the outputIndexes array with all the output index (except the fee output)
+      c.__TX.outs.forEach((out, index) => {
+        if (out.script.length > 0) outputIndexes.push(index);
       });
     }
-    if (outputsIndexToBlind.length !== blindingPubkeys.length)
+    if (outputIndexes.length !== blindingPubkeys.length)
       throw new Error(
         'not enough blinding public keys to blind the requested outputs',
       );
@@ -618,9 +629,6 @@ class Psbt {
     const inputVbfs = [];
     const inputAgs = [];
     const inputValues = [];
-    // counter for fetching blinding private key
-    let confidentialUtxoIndex = 0;
-    // unblind inputs
     this.data.inputs.forEach((input, index) => {
       let prevout;
       if (input.nonWitnessUtxo) {
@@ -630,51 +638,34 @@ class Psbt {
       } else {
         prevout = Object.assign({}, input.witnessUtxo);
       }
-      let unblindPrevout;
-      // check if confidential
-      if (prevout.rangeProof != null && prevout.surjectionProof != null) {
-        const blindingPrivKey = blindingPrivkeys[confidentialUtxoIndex];
-        if (!blindingPrivKey) {
-          throw new Error(
-            'There is no blinding private key for input #' + index,
-          );
-        }
-        const result = unblindWitnessUtxo(prevout, blindingPrivKey);
-        confidentialUtxoIndex += 1;
-        if (!result)
-          throw new Error(
-            'Unable to unblind the witness utxo with the provided blinding private key',
-          );
-        unblindPrevout = result;
-      } else {
-        unblindPrevout = {
-          value: confidential
-            .confidentialValueToSatoshi(prevout.value)
-            .toString(10),
-          abf: Buffer.alloc(0),
-          ag: Buffer.alloc(0),
-          vbf: Buffer.alloc(0),
-        };
-      }
+      const unblindPrevout = getBlindingDataForInput(
+        index,
+        prevout,
+        blindingPrivkeys[index],
+      );
       inputAgs.push(unblindPrevout.ag);
       inputValues.push(unblindPrevout.value);
       inputAbfs.push(unblindPrevout.abf);
       inputVbfs.push(unblindPrevout.vbf);
     });
     // generate output blinding factors
-    const numOutputs = outputsIndexToBlind.length;
+    const numOutputs = outputIndexes.length;
     const outputAbfs = range(numOutputs).map(() => randomBytes(opts));
     const outputVbfs = range(numOutputs - 1).map(() => randomBytes(opts));
+    // fitler outputValues to get only the confidential outputs amounts
+    const confidentialOutputValues = outputValues.filter((_, index) =>
+      outputIndexes.includes(index),
+    );
     const finalVbf = confidential.valueBlindingFactor(
       inputValues,
-      outputValues.filter((_, index) => outputsIndexToBlind.includes(index)),
+      confidentialOutputValues,
       inputAbfs,
       outputAbfs,
       inputVbfs,
       outputVbfs,
     );
     outputVbfs.push(finalVbf);
-    outputsIndexToBlind.forEach((outputIndex, indexInArray) => {
+    outputIndexes.forEach((outputIndex, indexInArray) => {
       const outputAsset = c.__TX.outs[outputIndex].asset.slice(1);
       const outputScript = c.__TX.outs[outputIndex].script;
       const outputValue = outputValues[outputIndex];
@@ -721,22 +712,6 @@ class Psbt {
     c.__FEE = undefined;
     c.__FEE_RATE = undefined;
     c.__EXTRACTED_TX = undefined;
-    return this;
-  }
-  addUnknownKeyValToGlobal(keyVal) {
-    this.data.addUnknownKeyValToGlobal(keyVal);
-    return this;
-  }
-  addUnknownKeyValToInput(inputIndex, keyVal) {
-    this.data.addUnknownKeyValToInput(inputIndex, keyVal);
-    return this;
-  }
-  addUnknownKeyValToOutput(outputIndex, keyVal) {
-    this.data.addUnknownKeyValToOutput(outputIndex, keyVal);
-    return this;
-  }
-  clearFinalizedInput(inputIndex) {
-    this.data.clearFinalizedInput(inputIndex);
     return this;
   }
 }
@@ -1416,6 +1391,27 @@ function randomBytes(options) {
   const rng = options.rng || _randomBytes;
   return rng(32);
 }
+function getBlindingDataForInput(index, prevout, blindPrivKey) {
+  // check if confidential
+  if (prevout.rangeProof != null && prevout.surjectionProof != null) {
+    if (!blindPrivKey) {
+      throw new Error('Missing blinding private key for input #' + index);
+    }
+    const result = unblindWitnessUtxo(prevout, blindPrivKey);
+    if (!result)
+      throw new Error(
+        'Unable to unblind the witness utxo with the provided blinding private key',
+      );
+    return result;
+  }
+  // if not confidential, just map values to unblindedWitnessUtxo values
+  return {
+    value: confidential.confidentialValueToSatoshi(prevout.value).toString(10),
+    abf: Buffer.alloc(0),
+    ag: Buffer.alloc(0),
+    vbf: Buffer.alloc(0),
+  };
+}
 function unblindWitnessUtxo(prevout, blindingPrivKey) {
   const unblindProof = confidential.unblindOutput(
     prevout.nonce,
@@ -1432,4 +1428,3 @@ function unblindWitnessUtxo(prevout, blindingPrivKey) {
     vbf: unblindProof.valueBlindingFactor,
   };
 }
-exports.unblindWitnessUtxo = unblindWitnessUtxo;

@@ -194,7 +194,7 @@ export class Psbt {
     ) {
       throw new Error(
         `Invalid arguments for Psbt.addInput. ` +
-          `Requires single object with at least [hash] and [index]`,
+        `Requires single object with at least [hash] and [index]`,
       );
     }
     checkInputsForPartialSig(this.data.inputs, 'addInput');
@@ -229,7 +229,7 @@ export class Psbt {
     ) {
       throw new Error(
         `Invalid arguments for Psbt.addOutput. ` +
-          `Requires single object with at least [script or address] and [value]`,
+        `Requires single object with at least [script or address] and [value]`,
       );
     }
     checkInputsForPartialSig(this.data.inputs, 'addOutput');
@@ -338,10 +338,10 @@ export class Psbt {
       const { hash, script } =
         sighashCache! !== sig.hashType
           ? getHashForSig(
-              inputIndex,
-              Object.assign({}, input, { sighashType: sig.hashType }),
-              this.__CACHE,
-            )
+            inputIndex,
+            Object.assign({}, input, { sighashType: sig.hashType }),
+            this.__CACHE,
+          )
           : { hash: hashCache!, script: scriptCache! };
       sighashCache = sig.hashType;
       hashCache = hash;
@@ -599,8 +599,8 @@ export class Psbt {
       const value = Buffer.isBuffer(witnessUtxo.value)
         ? witnessUtxo.value
         : typeof witnessUtxo.value === 'string'
-        ? Buffer.from(witnessUtxo.value, 'hex')
-        : confidential.satoshiToConfidentialValue(witnessUtxo.value);
+          ? Buffer.from(witnessUtxo.value, 'hex')
+          : confidential.satoshiToConfidentialValue(witnessUtxo.value);
       // if the asset is a string, by checking the first byte we can determine if
       // it's an asset commitment, in this case we decode the hex string as buffer,
       // or if it's an asset hash, in this case we put the unconf prefix in front of the reversed the buffer
@@ -608,8 +608,8 @@ export class Psbt {
         ? witnessUtxo.asset
         : (witnessUtxo.asset as string).startsWith('0a') ||
           (witnessUtxo.asset as string).startsWith('0b')
-        ? Buffer.from(witnessUtxo.asset, 'hex')
-        : Buffer.concat([
+          ? Buffer.from(witnessUtxo.asset, 'hex')
+          : Buffer.concat([
             Buffer.alloc(1, 1),
             reverseBuffer(Buffer.from(witnessUtxo.asset, 'hex')),
           ]);
@@ -661,7 +661,7 @@ export class Psbt {
     blindingPubkeys: Buffer[],
     opts?: RngOpts,
   ): this {
-    return this.RawBlindOutputs(
+    return this.rawBlindOutputs(
       blindingPrivkeys,
       blindingPubkeys,
       undefined,
@@ -677,26 +677,46 @@ export class Psbt {
     const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
       (inputIndex: number) => inputsBlindingPrivKeys.get(inputIndex),
     );
-    const outputsIndexToBlind: Array<number> = [];
-    const blindingPublicKey: Array<Buffer> = [];
+    const outputIndexes: number[] = [];
+    const blindingPublicKey: Buffer[] = [];
 
     for (const [outputIndex, pubBlindingKey] of outputsBlindingPubKeys) {
-      outputsIndexToBlind.push(outputIndex);
+      outputIndexes.push(outputIndex);
       blindingPublicKey.push(pubBlindingKey);
     }
 
-    return this.RawBlindOutputs(
+    return this.rawBlindOutputs(
       blindingPrivKeysArgs,
       blindingPublicKey,
-      outputsIndexToBlind,
+      outputIndexes,
       opts,
     );
   }
 
-  private RawBlindOutputs(
+  addUnknownKeyValToGlobal(keyVal: KeyValue): this {
+    this.data.addUnknownKeyValToGlobal(keyVal);
+    return this;
+  }
+
+  addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this {
+    this.data.addUnknownKeyValToInput(inputIndex, keyVal);
+    return this;
+  }
+
+  addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this {
+    this.data.addUnknownKeyValToOutput(outputIndex, keyVal);
+    return this;
+  }
+
+  clearFinalizedInput(inputIndex: number): this {
+    this.data.clearFinalizedInput(inputIndex);
+    return this;
+  }
+
+  private rawBlindOutputs(
     blindingPrivkeys: Array<Buffer | undefined>,
     blindingPubkeys: Buffer[],
-    outputsIndexToBlind?: number[],
+    outputIndexes?: number[],
     opts?: RngOpts,
   ): this {
     if (
@@ -705,7 +725,7 @@ export class Psbt {
       )
     )
       throw new Error(
-        'All inputs must contain a witness utxo or a non witness utxo',
+        'All inputs must contain a non witness utxo or a witness utxo',
       );
 
     const c = this.__CACHE;
@@ -716,15 +736,15 @@ export class Psbt {
       );
     }
 
-    if (!outputsIndexToBlind) {
-      outputsIndexToBlind = [];
-      // fill the outputsIndexToBlind array with all the output index (except the fee output)
-      this.__CACHE.__TX.outs.forEach((out: Output, index: number) => {
-        if (out.script.length > 0) outputsIndexToBlind!.push(index);
+    if (!outputIndexes) {
+      outputIndexes = [];
+      // fill the outputIndexes array with all the output index (except the fee output)
+      c.__TX.outs.forEach((out: Output, index: number) => {
+        if (out.script.length > 0) outputIndexes!.push(index);
       });
     }
 
-    if (outputsIndexToBlind.length !== blindingPubkeys.length)
+    if (outputIndexes.length !== blindingPubkeys.length)
       throw new Error(
         'not enough blinding public keys to blind the requested outputs',
       );
@@ -738,10 +758,7 @@ export class Psbt {
     const inputAgs: Buffer[] = [];
     const inputValues: string[] = [];
 
-    // counter for fetching blinding private key
-    let confidentialUtxoIndex = 0;
-
-    // unblind inputs
+    // iterate through inputs to fetch blind data
     this.data.inputs.forEach((input: PsbtInput, index: number) => {
       let prevout: WitnessUtxo;
       if (input.nonWitnessUtxo) {
@@ -752,35 +769,11 @@ export class Psbt {
         prevout = { ...input.witnessUtxo! };
       }
 
-      let unblindPrevout: UnblindWitnessUtxoResult;
-
-      // check if confidential
-      if (prevout.rangeProof != null && prevout.surjectionProof != null) {
-        const blindingPrivKey = blindingPrivkeys[confidentialUtxoIndex];
-        if (!blindingPrivKey) {
-          throw new Error(
-            'There is no blinding private key for input #' + index,
-          );
-        }
-        const result = unblindWitnessUtxo(prevout, blindingPrivKey);
-        confidentialUtxoIndex += 1;
-
-        if (!result)
-          throw new Error(
-            'Unable to unblind the witness utxo with the provided blinding private key',
-          );
-
-        unblindPrevout = result;
-      } else {
-        unblindPrevout = {
-          value: confidential
-            .confidentialValueToSatoshi(prevout.value)
-            .toString(10),
-          abf: Buffer.alloc(0),
-          ag: Buffer.alloc(0),
-          vbf: Buffer.alloc(0),
-        };
-      }
+      const unblindPrevout = getBlindingDataForInput(
+        index,
+        prevout,
+        blindingPrivkeys[index],
+      );
 
       inputAgs.push(unblindPrevout.ag);
       inputValues.push(unblindPrevout.value);
@@ -789,13 +782,17 @@ export class Psbt {
     });
 
     // generate output blinding factors
-    const numOutputs = outputsIndexToBlind.length;
+    const numOutputs = outputIndexes.length;
     const outputAbfs = range(numOutputs).map(() => randomBytes(opts!));
     const outputVbfs = range(numOutputs - 1).map(() => randomBytes(opts!));
+    // fitler outputValues to get only the confidential outputs amounts
+    const confidentialOutputValues = outputValues.filter((_, index) =>
+      outputIndexes!.includes(index),
+    );
 
     const finalVbf = confidential.valueBlindingFactor(
       inputValues,
-      outputValues.filter((_, index) => outputsIndexToBlind!.includes(index)),
+      confidentialOutputValues,
       inputAbfs,
       outputAbfs,
       inputVbfs,
@@ -803,7 +800,7 @@ export class Psbt {
     );
     outputVbfs.push(finalVbf);
 
-    outputsIndexToBlind.forEach((outputIndex: number, indexInArray: number) => {
+    outputIndexes.forEach((outputIndex: number, indexInArray: number) => {
       const outputAsset = c.__TX.outs[outputIndex].asset.slice(1);
       const outputScript = c.__TX.outs[outputIndex].script;
       const outputValue = outputValues[outputIndex];
@@ -858,26 +855,6 @@ export class Psbt {
 
     return this;
   }
-
-  addUnknownKeyValToGlobal(keyVal: KeyValue): this {
-    this.data.addUnknownKeyValToGlobal(keyVal);
-    return this;
-  }
-
-  addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this {
-    this.data.addUnknownKeyValToInput(inputIndex, keyVal);
-    return this;
-  }
-
-  addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this {
-    this.data.addUnknownKeyValToOutput(outputIndex, keyVal);
-    return this;
-  }
-
-  clearFinalizedInput(inputIndex: number): this {
-    this.data.clearFinalizedInput(inputIndex);
-    return this;
-  }
 }
 
 interface PsbtCache {
@@ -900,7 +877,7 @@ interface PsbtOpts {
   maximumFeeRate: number;
 }
 
-interface PsbtInputExtended extends PsbtInput, TransactionInput {}
+interface PsbtInputExtended extends PsbtInput, TransactionInput { }
 
 type PsbtOutputExtended = PsbtOutputExtendedScript | PsbtOutputExtendedAddress;
 
@@ -1025,9 +1002,9 @@ class PsbtTransaction implements ITransaction {
     const asset = Buffer.isBuffer(output.asset)
       ? output.asset
       : Buffer.concat([
-          Buffer.alloc(1, 1),
-          reverseBuffer(Buffer.from(output.asset, 'hex')),
-        ]);
+        Buffer.alloc(1, 1),
+        reverseBuffer(Buffer.from(output.asset, 'hex')),
+      ]);
     this.tx.addOutput(script, value, asset, nonce);
   }
 
@@ -1114,10 +1091,10 @@ function checkFees(psbt: Psbt, cache: PsbtCache, opts: PsbtOpts): void {
   if (feeRate >= opts.maximumFeeRate) {
     throw new Error(
       `Warning: You are paying around ${(satoshis / 1e8).toFixed(8)} in ` +
-        `fees, which is ${feeRate} satoshi per byte for a transaction ` +
-        `with a VSize of ${vsize} bytes (segwit counted as 0.25 byte per ` +
-        `byte). Use setMaximumFeeRate method to raise your threshold, or ` +
-        `pass true to the first arg of extractTransaction.`,
+      `fees, which is ${feeRate} satoshi per byte for a transaction ` +
+      `with a VSize of ${vsize} bytes (segwit counted as 0.25 byte per ` +
+      `byte). Use setMaximumFeeRate method to raise your threshold, or ` +
+      `pass true to the first arg of extractTransaction.`,
     );
   }
 }
@@ -1349,7 +1326,7 @@ function getHashForSig(
     const str = sighashTypeToString(sighashType);
     throw new Error(
       `Sighash type is not allowed. Retry the sign method passing the ` +
-        `sighashTypes array of whitelisted types. Sighash type: ${str}`,
+      `sighashTypes array of whitelisted types. Sighash type: ${str}`,
     );
   }
   let hash: Buffer;
@@ -1444,7 +1421,7 @@ function getHashForSig(
     } else {
       throw new Error(
         `Input #${inputIndex} has witnessUtxo but non-segwit script: ` +
-          `${_script.toString('hex')}`,
+        `${_script.toString('hex')}`,
       );
     }
   } else {
@@ -1779,7 +1756,35 @@ export interface UnblindWitnessUtxoResult {
   vbf: Buffer;
 }
 
-export function unblindWitnessUtxo(
+function getBlindingDataForInput(
+  index: number,
+  prevout: WitnessUtxo,
+  blindPrivKey?: Buffer,
+): UnblindWitnessUtxoResult {
+  // check if confidential
+  if (prevout.rangeProof != null && prevout.surjectionProof != null) {
+    if (!blindPrivKey) {
+      throw new Error('Missing blinding private key for input #' + index);
+    }
+    const result = unblindWitnessUtxo(prevout, blindPrivKey);
+    if (!result)
+      throw new Error(
+        'Unable to unblind the witness utxo with the provided blinding private key',
+      );
+
+    return result;
+  }
+
+  // if not confidential, just map values to unblindedWitnessUtxo values
+  return {
+    value: confidential.confidentialValueToSatoshi(prevout.value).toString(10),
+    abf: Buffer.alloc(0),
+    ag: Buffer.alloc(0),
+    vbf: Buffer.alloc(0),
+  };
+}
+
+function unblindWitnessUtxo(
   prevout: WitnessUtxo,
   blindingPrivKey: Buffer,
 ): UnblindWitnessUtxoResult {
