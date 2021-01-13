@@ -629,6 +629,7 @@ class Psbt {
     const inputVbfs = [];
     const inputAgs = [];
     const inputValues = [];
+    // iterate through inputs to fetch blind data
     this.data.inputs.forEach((input, index) => {
       let prevout;
       if (input.nonWitnessUtxo) {
@@ -639,14 +640,15 @@ class Psbt {
         prevout = Object.assign({}, input.witnessUtxo);
       }
       const unblindPrevout = getBlindingDataForInput(
-        index,
         prevout,
         blindingPrivkeys[index],
       );
-      inputAgs.push(unblindPrevout.ag);
-      inputValues.push(unblindPrevout.value);
-      inputAbfs.push(unblindPrevout.abf);
-      inputVbfs.push(unblindPrevout.vbf);
+      if (unblindPrevout) {
+        inputAgs.push(unblindPrevout.ag);
+        inputValues.push(unblindPrevout.value);
+        inputAbfs.push(unblindPrevout.abf);
+        inputVbfs.push(unblindPrevout.vbf);
+      }
     });
     // generate output blinding factors
     const numOutputs = outputIndexes.length;
@@ -1391,26 +1393,17 @@ function randomBytes(options) {
   const rng = options.rng || _randomBytes;
   return rng(32);
 }
-function getBlindingDataForInput(index, prevout, blindPrivKey) {
-  // check if confidential
-  if (prevout.rangeProof != null && prevout.surjectionProof != null) {
-    if (!blindPrivKey) {
-      throw new Error('Missing blinding private key for input #' + index);
-    }
-    const result = unblindWitnessUtxo(prevout, blindPrivKey);
-    if (!result)
-      throw new Error(
-        'Unable to unblind the witness utxo with the provided blinding private key',
-      );
-    return result;
+function getBlindingDataForInput(prevout, blindPrivKey) {
+  if (!blindPrivKey) {
+    return undefined;
   }
-  // if not confidential, just map values to unblindedWitnessUtxo values
-  return {
-    value: confidential.confidentialValueToSatoshi(prevout.value).toString(10),
-    abf: Buffer.alloc(0),
-    ag: Buffer.alloc(0),
-    vbf: Buffer.alloc(0),
-  };
+  // check if confidential
+  const result = unblindWitnessUtxo(prevout, blindPrivKey);
+  if (!result)
+    throw new Error(
+      'Unable to unblind the witness utxo with the provided blinding private key',
+    );
+  return result;
 }
 function unblindWitnessUtxo(prevout, blindingPrivKey) {
   const unblindProof = confidential.unblindOutput(
