@@ -639,15 +639,21 @@ class Psbt {
       } else {
         prevout = Object.assign({}, input.witnessUtxo);
       }
-      const unblindPrevout = getBlindingDataForInput(
-        prevout,
-        blindingPrivkeys[index],
-      );
-      if (unblindPrevout) {
+      const privKey = blindingPrivkeys[index];
+      if (privKey) {
+        const unblindPrevout = getBlindingDataForInput(prevout, privKey);
         inputAgs.push(unblindPrevout.ag);
         inputValues.push(unblindPrevout.value);
         inputAbfs.push(unblindPrevout.abf);
         inputVbfs.push(unblindPrevout.vbf);
+      } else {
+        const zeroBuffer32bytes = Buffer.alloc(32);
+        inputValues.push(
+          confidential.confidentialValueToSatoshi(prevout.value).toString(10),
+        );
+        inputAgs.push(prevout.asset.slice(1));
+        inputAbfs.push(zeroBuffer32bytes);
+        inputVbfs.push(zeroBuffer32bytes);
       }
     });
     // generate output blinding factors
@@ -1394,9 +1400,6 @@ function randomBytes(options) {
   return rng(32);
 }
 function getBlindingDataForInput(prevout, blindPrivKey) {
-  if (!blindPrivKey) {
-    return undefined;
-  }
   // check if confidential
   const result = unblindWitnessUtxo(prevout, blindPrivKey);
   if (!result)
