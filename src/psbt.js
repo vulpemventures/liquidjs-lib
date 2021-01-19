@@ -639,22 +639,12 @@ class Psbt {
       } else {
         prevout = Object.assign({}, input.witnessUtxo);
       }
-      const privKey = blindingPrivkeys[index];
-      if (privKey) {
-        const unblindPrevout = getBlindingDataForInput(prevout, privKey);
-        inputAgs.push(unblindPrevout.ag);
-        inputValues.push(unblindPrevout.value);
-        inputAbfs.push(unblindPrevout.abf);
-        inputVbfs.push(unblindPrevout.vbf);
-      } else {
-        const zeroBuffer32bytes = Buffer.alloc(32);
-        inputValues.push(
-          confidential.confidentialValueToSatoshi(prevout.value).toString(10),
-        );
-        inputAgs.push(prevout.asset.slice(1));
-        inputAbfs.push(zeroBuffer32bytes);
-        inputVbfs.push(zeroBuffer32bytes);
-      }
+      const blindingPrivKey = blindingPrivkeys[index];
+      const blindingData = getBlindingDataForInput(prevout, blindingPrivKey);
+      inputAgs.push(blindingData.ag);
+      inputValues.push(blindingData.value);
+      inputAbfs.push(blindingData.abf);
+      inputVbfs.push(blindingData.vbf);
     });
     // generate output blinding factors
     const numOutputs = outputIndexes.length;
@@ -1401,12 +1391,16 @@ function randomBytes(options) {
 }
 function getBlindingDataForInput(prevout, blindPrivKey) {
   // check if confidential
-  const result = unblindWitnessUtxo(prevout, blindPrivKey);
-  if (!result)
-    throw new Error(
-      'Unable to unblind the witness utxo with the provided blinding private key',
-    );
-  return result;
+  if (blindPrivKey) {
+    return unblindWitnessUtxo(prevout, blindPrivKey);
+  }
+  const unblindedInputBlindingData = {
+    value: confidential.confidentialValueToSatoshi(prevout.value).toString(10),
+    ag: prevout.asset.slice(1),
+    abf: transaction_1.ZERO,
+    vbf: transaction_1.ZERO,
+  };
+  return unblindedInputBlindingData;
 }
 function unblindWitnessUtxo(prevout, blindingPrivKey) {
   const unblindProof = confidential.unblindOutput(

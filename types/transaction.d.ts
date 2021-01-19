@@ -1,3 +1,4 @@
+export declare const ZERO: Buffer;
 export interface Output {
     script: Buffer;
     value: Buffer;

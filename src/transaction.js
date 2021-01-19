@@ -13,7 +13,7 @@ function varSliceSize(someScript) {
 }
 const EMPTY_SCRIPT = Buffer.allocUnsafe(0);
 const EMPTY_WITNESS = [];
-const ZERO = Buffer.from(
+exports.ZERO = Buffer.from(
   '0000000000000000000000000000000000000000000000000000000000000000',
   'hex',
 );
@@ -29,8 +29,8 @@ const MINUS_1 = 4294967295;
 const VALUE_UINT64_MAX = Buffer.from('ffffffffffffffff', 'hex');
 const BLANK_OUTPUT = {
   script: EMPTY_SCRIPT,
-  asset: ZERO,
-  nonce: ZERO,
+  asset: exports.ZERO,
+  nonce: exports.ZERO,
   value: VALUE_UINT64_MAX,
 };
 class Transaction {
@@ -418,10 +418,10 @@ class Transaction {
       });
       return bcrypto.hash256(tBuffer);
     }
-    let hashOutputs = ZERO;
-    let hashPrevouts = ZERO;
-    let hashSequences = ZERO;
-    let hashIssuances = ZERO;
+    let hashOutputs = exports.ZERO;
+    let hashPrevouts = exports.ZERO;
+    let hashSequences = exports.ZERO;
+    let hashIssuances = exports.ZERO;
     // Inputs
     if (!(hashType & Transaction.SIGHASH_ANYONECANPAY)) {
       hashPrevouts = writeInputs(this.ins);

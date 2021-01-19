@@ -134,10 +134,4 @@ interface HDSignerAsync extends HDSignerBase {
 interface RngOpts {
     rng?(arg0: number): Buffer;
 }
-export interface UnblindWitnessUtxoResult {
-    value: string;
-    ag: Buffer;
-    abf: Buffer;
-    vbf: Buffer;
-}
 export {};

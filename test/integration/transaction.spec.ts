@@ -1791,7 +1791,6 @@ async function getInputData(
 
   return {
     hash: Buffer.from(unspent.txid, 'hex').reverse(),
-
     index: unspent.vout,
     ...mixin,
     ...mixin2,
