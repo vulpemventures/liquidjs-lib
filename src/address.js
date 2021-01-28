@@ -93,7 +93,7 @@ function fromOutputScript(output, network) {
 }
 exports.fromOutputScript = fromOutputScript;
 function toOutputScript(address, network) {
-  network = network || networks.liquid;
+  network = network || getNetwork(address);
   let decodeBase58;
   let decodeBech32;
   let decodeConfidential;
@@ -160,6 +160,7 @@ function getNetwork(address) {
     return networks.regtest;
   throw new Error(address + ' has an invalid prefix');
 }
+exports.getNetwork = getNetwork;
 function fromConfidentialLegacy(address, network) {
   const payload = bs58check.decode(address);
   const prefix = payload.readUInt8(1);
