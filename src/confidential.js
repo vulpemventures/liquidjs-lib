@@ -62,6 +62,23 @@ function unblindOutput(
   };
 }
 exports.unblindOutput = unblindOutput;
+function unblindWitnessUtxo(prevout, blindingPrivKey) {
+  const unblindProof = unblindOutput(
+    prevout.nonce,
+    blindingPrivKey,
+    prevout.rangeProof,
+    prevout.value,
+    prevout.asset,
+    prevout.script,
+  );
+  return {
+    satoshis: parseInt(unblindProof.value, 10),
+    amountBlinder: unblindProof.valueBlindingFactor.toString('hex'),
+    asset: unblindProof.asset.toString('hex'),
+    assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
+  };
+}
+exports.unblindWitnessUtxo = unblindWitnessUtxo;
 function rangeProofInfo(proof) {
   const { exp, mantissa, minValue, maxValue } = secp256k1.rangeproof.info(
     proof,

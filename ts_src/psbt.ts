@@ -657,12 +657,12 @@ export class Psbt {
   }
 
   blindOutputs(
-    blindingPrivkeys: Buffer[],
+    blindingDataLike: BlindingDataLike[],
     blindingPubkeys: Buffer[],
     opts?: RngOpts,
   ): this {
     return this.rawBlindOutputs(
-      blindingPrivkeys,
+      blindingDataLike,
       blindingPubkeys,
       undefined,
       opts,
@@ -670,12 +670,12 @@ export class Psbt {
   }
 
   blindOutputsByIndex(
-    inputsBlindingPrivKeys: Map<number, Buffer>,
+    inputsBlindingData: Map<number, BlindingDataLike>,
     outputsBlindingPubKeys: Map<number, Buffer>,
     opts?: RngOpts,
   ): this {
     const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
-      (inputIndex: number) => inputsBlindingPrivKeys.get(inputIndex),
+      (inputIndex: number) => inputsBlindingData.get(inputIndex),
     );
     const outputIndexes: number[] = [];
     const blindingPublicKey: Buffer[] = [];
@@ -1816,12 +1816,12 @@ export function toBlindingData(
 ): BlindingData {
   if (!blindDataLike) {
     if (!witnessUtxo) throw new Error('need witnessUtxo');
-    return getUnblindedWitnessUtxoBlindingData(witnessUtxo);
+    return getUnconfidentialWitnessUtxoBlindingData(witnessUtxo);
   }
 
   if (Buffer.isBuffer(blindDataLike)) {
     if (!witnessUtxo) throw new Error('need witnessUtxo');
-    return getBlindedWitnessUtxoBlindingData(witnessUtxo, blindDataLike);
+    return confidential.unblindWitnessUtxo(witnessUtxo, blindDataLike);
   }
 
   return blindDataLike as BlindingData;
@@ -1831,7 +1831,7 @@ function randomBlinder(): string {
   return randomBytes().toString('hex');
 }
 
-function getUnblindedWitnessUtxoBlindingData(
+function getUnconfidentialWitnessUtxoBlindingData(
   prevout: WitnessUtxo,
 ): BlindingData {
   const unblindedInputBlindingData: BlindingData = {
@@ -1842,25 +1842,4 @@ function getUnblindedWitnessUtxoBlindingData(
   };
 
   return unblindedInputBlindingData;
-}
-
-function getBlindedWitnessUtxoBlindingData(
-  prevout: WitnessUtxo,
-  blindingPrivKey: Buffer,
-): BlindingData {
-  const unblindProof = confidential.unblindOutput(
-    prevout.nonce,
-    blindingPrivKey,
-    prevout.rangeProof!,
-    prevout.value,
-    prevout.asset,
-    prevout.script,
-  );
-
-  return {
-    satoshis: parseInt(unblindProof.value, 10),
-    amountBlinder: unblindProof.valueBlindingFactor.toString('hex'),
-    asset: unblindProof.asset.toString('hex'),
-    assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
-  };
 }

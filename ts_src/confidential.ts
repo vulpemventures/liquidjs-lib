@@ -1,7 +1,9 @@
+import { WitnessUtxo } from 'bip174/src/lib/interfaces';
 import * as secp256k1 from 'secp256k1-zkp';
 
 import * as bufferutils from './bufferutils';
 import * as crypto from './crypto';
+import { BlindingData } from './psbt';
 
 function nonceHash(pubkey: Buffer, privkey: Buffer): Buffer {
   return crypto.sha256(secp256k1.ecdh.ecdh(pubkey, privkey));
@@ -72,6 +74,27 @@ export function unblindOutput(
     asset: message.slice(0, 32),
     valueBlindingFactor: blindFactor,
     assetBlindingFactor: message.slice(32),
+  };
+}
+
+export function unblindWitnessUtxo(
+  prevout: WitnessUtxo,
+  blindingPrivKey: Buffer,
+): BlindingData {
+  const unblindProof = unblindOutput(
+    prevout.nonce,
+    blindingPrivKey,
+    prevout.rangeProof!,
+    prevout.value,
+    prevout.asset,
+    prevout.script,
+  );
+
+  return {
+    satoshis: parseInt(unblindProof.value, 10),
+    amountBlinder: unblindProof.valueBlindingFactor.toString('hex'),
+    asset: unblindProof.asset.toString('hex'),
+    assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
   };
 }
 

@@ -1,3 +1,5 @@
+import { WitnessUtxo } from 'bip174/src/lib/interfaces';
+import { BlindingData } from './psbt';
 export declare function valueBlindingFactor(inValues: string[], outValues: string[], inGenerators: Buffer[], outGenerators: Buffer[], inFactors: Buffer[], outFactors: Buffer[]): Buffer;
 export declare function valueCommitment(value: string, generator: Buffer, factor: Buffer): Buffer;
 export declare function assetCommitment(asset: Buffer, factor: Buffer): Buffer;
@@ -8,6 +10,7 @@ export interface UnblindOutputResult {
     assetBlindingFactor: Buffer;
 }
 export declare function unblindOutput(ephemeralPubkey: Buffer, blindingPrivkey: Buffer, rangeproof: Buffer, valueCommit: Buffer, asset: Buffer, scriptPubkey: Buffer): UnblindOutputResult;
+export declare function unblindWitnessUtxo(prevout: WitnessUtxo, blindingPrivKey: Buffer): BlindingData;
 export interface RangeProofInfoResult {
     ctExp: number;
     ctBits: number;
