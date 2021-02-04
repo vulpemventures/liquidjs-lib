@@ -1,5 +1,5 @@
 import { Psbt as PsbtBase } from 'bip174';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput } from 'bip174/src/lib/interfaces';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174/src/lib/interfaces';
 import { Signer, SignerAsync } from './ecpair';
 import { Network } from './networks';
 import { Transaction } from './transaction';
@@ -134,4 +134,19 @@ interface HDSignerAsync extends HDSignerBase {
 interface RngOpts {
     rng?(arg0: number): Buffer;
 }
+export interface BlindingData {
+    satoshis: number;
+    amountBlinder: string;
+    asset: string;
+    assetBlinder: string;
+}
+export declare type BlindingDataLike = Buffer | BlindingData | undefined;
+/**
+ * Compute outputs blinders
+ * @param inputsBlindingData the transaction inputs blinding data
+ * @param outputsData data = [satoshis, asset] of output to blind
+ * @returns an array of BlindingData[] corresponding of blinders to blind outputs specified in outputsData
+ */
+export declare function computeOutputsBlindingData(inputsBlindingData: BlindingData[], outputsData: Array<[number, string]>): BlindingData[];
+export declare function toBlindingData(blindDataLike: BlindingDataLike, witnessUtxo?: WitnessUtxo): BlindingData;
 export {};

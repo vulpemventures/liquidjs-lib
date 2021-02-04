@@ -155,9 +155,6 @@ describe('Psbt', () => {
       const decodedTx = Psbt.fromBase64(encodedBase64Tx);
       const decodedWitnessUtxo = decodedTx.data.inputs[0].witnessUtxo;
 
-      // console.log(witnessUtxo);
-      // console.log(decodedWitnessUtxo);
-
       assert.deepStrictEqual(decodedWitnessUtxo, witnessUtxo);
     });
   });
