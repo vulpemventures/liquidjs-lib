@@ -1383,49 +1383,54 @@ function randomBytes(options) {
  */
 function computeOutputsBlindingData(inputsBlindingData, outputsData) {
   const outputsBlindingData = [];
-  outputsData.forEach(([satoshis, asset], outputIndex) => {
+  // tslint:disable-next-line:no-shadowed-variable
+  outputsData.slice(0, outputsData.length - 1).forEach(([satoshis, asset]) => {
     const blindingData = {
       satoshis,
       asset,
       assetBlinder: randomBlinder(),
-      amountBlinder: '',
+      amountBlinder: randomBlinder(),
     };
-    if (outputIndex === outputsData.length - 1) {
-      // tslint:disable-next-line:no-shadowed-variable
-      const inputsValues = inputsBlindingData.map(({ satoshis }) =>
-        satoshis.toString(10),
-      );
-      const outputsValues = outputsData
-        .map(([amount]) => amount.toString(10))
-        .concat(satoshis.toString(10));
-      const inputsAssetBlinders = inputsBlindingData.map(({ assetBlinder }) =>
-        Buffer.from(assetBlinder, 'hex'),
-      );
-      const outputsAssetBlinders = outputsBlindingData
-        .map(({ assetBlinder }) => Buffer.from(assetBlinder, 'hex'))
-        .concat(Buffer.from(blindingData.assetBlinder, 'hex'));
-      const inputsAmountBlinders = inputsBlindingData.map(({ amountBlinder }) =>
-        Buffer.from(amountBlinder, 'hex'),
-      );
-      const outputsAmountBlinders = outputsBlindingData.map(
-        ({ amountBlinder }) => Buffer.from(amountBlinder, 'hex'),
-      );
-      const finalAmountBlinder = confidential
-        .valueBlindingFactor(
-          inputsValues,
-          outputsValues,
-          inputsAssetBlinders,
-          outputsAssetBlinders,
-          inputsAmountBlinders,
-          outputsAmountBlinders,
-        )
-        .toString('hex');
-      blindingData.amountBlinder = finalAmountBlinder;
-    } else {
-      blindingData.amountBlinder = randomBlinder();
-    }
     outputsBlindingData.push(blindingData);
   });
+  // tslint:disable-next-line:no-shadowed-variable
+  const [satoshis, asset] = outputsData[outputsData.length - 1];
+  const finalBlindingData = {
+    satoshis,
+    asset,
+    assetBlinder: randomBlinder(),
+    amountBlinder: '',
+  };
+  const inputsValues = inputsBlindingData.map(({ satoshis: amount }) =>
+    amount.toString(10),
+  );
+  const outputsValues = outputsData
+    .map(([amount]) => amount.toString(10))
+    .concat(satoshis.toString(10));
+  const inputsAssetBlinders = inputsBlindingData.map(({ assetBlinder }) =>
+    Buffer.from(assetBlinder, 'hex'),
+  );
+  const outputsAssetBlinders = outputsBlindingData
+    .map(({ assetBlinder }) => Buffer.from(assetBlinder, 'hex'))
+    .concat(Buffer.from(finalBlindingData.assetBlinder, 'hex'));
+  const inputsAmountBlinders = inputsBlindingData.map(({ amountBlinder }) =>
+    Buffer.from(amountBlinder, 'hex'),
+  );
+  const outputsAmountBlinders = outputsBlindingData.map(({ amountBlinder }) =>
+    Buffer.from(amountBlinder, 'hex'),
+  );
+  const finalAmountBlinder = confidential
+    .valueBlindingFactor(
+      inputsValues,
+      outputsValues,
+      inputsAssetBlinders,
+      outputsAssetBlinders,
+      inputsAmountBlinders,
+      outputsAmountBlinders,
+    )
+    .toString('hex');
+  finalBlindingData.amountBlinder = finalAmountBlinder;
+  outputsBlindingData.push(finalBlindingData);
   return outputsBlindingData;
 }
 exports.computeOutputsBlindingData = computeOutputsBlindingData;
@@ -1440,7 +1445,6 @@ function toBlindingData(blindDataLike, witnessUtxo) {
   }
   return blindDataLike;
 }
-exports.toBlindingData = toBlindingData;
 function randomBlinder() {
   return randomBytes().toString('hex');
 }

@@ -1,5 +1,10 @@
 import { WitnessUtxo } from 'bip174/src/lib/interfaces';
-import { BlindingData } from './psbt';
+export interface BlindingData {
+    satoshis: number;
+    amountBlinder: string;
+    asset: string;
+    assetBlinder: string;
+}
 export declare function valueBlindingFactor(inValues: string[], outValues: string[], inGenerators: Buffer[], outGenerators: Buffer[], inFactors: Buffer[], outFactors: Buffer[]): Buffer;
 export declare function valueCommitment(value: string, generator: Buffer, factor: Buffer): Buffer;
 export declare function assetCommitment(asset: Buffer, factor: Buffer): Buffer;

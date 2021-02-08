@@ -3,7 +3,13 @@ import * as secp256k1 from 'secp256k1-zkp';
 
 import * as bufferutils from './bufferutils';
 import * as crypto from './crypto';
-import { BlindingData } from './psbt';
+
+export interface BlindingData {
+  satoshis: number;
+  amountBlinder: string;
+  asset: string;
+  assetBlinder: string;
+}
 
 function nonceHash(pubkey: Buffer, privkey: Buffer): Buffer {
   return crypto.sha256(secp256k1.ecdh.ecdh(pubkey, privkey));
