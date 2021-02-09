@@ -656,11 +656,11 @@ export class Psbt {
     return this;
   }
 
-  blindOutputs(
+  async blindOutputs(
     blindingPrivkeys: Buffer[],
     blindingPubkeys: Buffer[],
     opts?: RngOpts,
-  ): this {
+  ): Promise<this> {
     return this.rawBlindOutputs(
       blindingPrivkeys,
       blindingPubkeys,
@@ -669,11 +669,11 @@ export class Psbt {
     );
   }
 
-  blindOutputsByIndex(
+  async blindOutputsByIndex(
     inputsBlindingPrivKeys: Map<number, Buffer>,
     outputsBlindingPubKeys: Map<number, Buffer>,
     opts?: RngOpts,
-  ): this {
+  ): Promise<this> {
     const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
       (inputIndex: number) => inputsBlindingPrivKeys.get(inputIndex),
     );
@@ -713,12 +713,12 @@ export class Psbt {
     return this;
   }
 
-  private rawBlindOutputs(
+  private async rawBlindOutputs(
     blindingPrivkeys: Array<Buffer | undefined>,
     blindingPubkeys: Buffer[],
     outputIndexes?: number[],
     opts?: RngOpts,
-  ): this {
+  ): Promise<this> {
     if (
       this.data.inputs.some(
         (v: PsbtInput) => !v.nonWitnessUtxo && !v.witnessUtxo,
@@ -759,24 +759,29 @@ export class Psbt {
     const inputValues: string[] = [];
 
     // iterate through inputs to fetch blind data
-    this.data.inputs.forEach((input: PsbtInput, index: number) => {
+    let inputIndex = 0;
+    for (const input of this.data.inputs) {
       let prevout: WitnessUtxo;
       if (input.nonWitnessUtxo) {
-        const prevTx = nonWitnessUtxoTxFromCache(c, input, index);
-        const prevoutIndex = c.__TX.ins[index].index;
+        const prevTx = nonWitnessUtxoTxFromCache(c, input, inputIndex);
+        const prevoutIndex = c.__TX.ins[inputIndex].index;
         prevout = prevTx.outs[prevoutIndex] as WitnessUtxo;
       } else {
         prevout = { ...input.witnessUtxo! };
       }
 
-      const blindingPrivKey = blindingPrivkeys[index];
-      const blindingData = getBlindingDataForInput(prevout, blindingPrivKey);
+      const blindingPrivKey = blindingPrivkeys[inputIndex];
+      const blindingData = await getBlindingDataForInput(
+        prevout,
+        blindingPrivKey,
+      );
 
       inputAgs.push(blindingData.ag);
       inputValues.push(blindingData.value);
       inputAbfs.push(blindingData.abf);
       inputVbfs.push(blindingData.vbf);
-    });
+      inputIndex++;
+    }
 
     // generate output blinding factors
     const numOutputs = outputIndexes.length;
@@ -787,7 +792,7 @@ export class Psbt {
       outputIndexes!.includes(index),
     );
 
-    const finalVbf = confidential.valueBlindingFactor(
+    const finalVbf = await confidential.valueBlindingFactor(
       inputValues,
       confidentialOutputValues,
       inputAbfs,
@@ -797,7 +802,8 @@ export class Psbt {
     );
     outputVbfs.push(finalVbf);
 
-    outputIndexes.forEach((outputIndex: number, indexInArray: number) => {
+    let indexInArray = 0;
+    for (const outputIndex of outputIndexes) {
       const outputAsset = c.__TX.outs[outputIndex].asset.slice(1);
       const outputScript = c.__TX.outs[outputIndex].script;
       const outputValue = outputValues[outputIndex];
@@ -811,16 +817,18 @@ export class Psbt {
       const randomSeed = randomBytes(opts);
       const ephemeralPrivKey = randomBytes(opts);
       const outputNonce = ecPairFromPrivateKey(ephemeralPrivKey).publicKey;
-      const assetCommitment = confidential.assetCommitment(
+      const assetCommitment = await confidential.assetCommitment(
         outputAsset,
         outputAbfs[indexInArray],
       );
-      const valueCommitment = confidential.valueCommitment(
+
+      const valueCommitment = await confidential.valueCommitment(
         outputValue,
         assetCommitment,
         outputVbfs[indexInArray],
       );
-      const rangeProof = confidential.rangeProof(
+
+      const rangeProof = await confidential.rangeProof(
         outputValue,
         blindingPubkeys[indexInArray],
         ephemeralPrivKey,
@@ -831,7 +839,7 @@ export class Psbt {
         outputScript,
       );
 
-      const surjectionProof = confidential.surjectionProof(
+      const surjectionProof = await confidential.surjectionProof(
         outputAsset,
         outputAbfs[indexInArray],
         inputAgs,
@@ -844,7 +852,8 @@ export class Psbt {
       c.__TX.setOutputNonce(outputIndex, outputNonce);
       c.__TX.setOutputRangeProof(outputIndex, rangeProof);
       c.__TX.setOutputSurjectionProof(outputIndex, surjectionProof);
-    });
+      indexInArray++;
+    }
 
     c.__FEE = undefined;
     c.__FEE_RATE = undefined;
@@ -1753,10 +1762,10 @@ interface BlindingData {
   vbf: Buffer;
 }
 
-function getBlindingDataForInput(
+export async function getBlindingDataForInput(
   prevout: WitnessUtxo,
   blindPrivKey?: Buffer,
-): BlindingData {
+): Promise<BlindingData> {
   // check if confidential
   if (blindPrivKey) {
     return unblindWitnessUtxo(prevout, blindPrivKey);
@@ -1772,11 +1781,11 @@ function getBlindingDataForInput(
   return unblindedInputBlindingData;
 }
 
-function unblindWitnessUtxo(
+async function unblindWitnessUtxo(
   prevout: WitnessUtxo,
   blindingPrivKey: Buffer,
-): BlindingData {
-  const unblindProof = confidential.unblindOutput(
+): Promise<BlindingData> {
+  const unblindProof = await confidential.unblindOutput(
     prevout.nonce,
     blindingPrivKey,
     prevout.rangeProof!,

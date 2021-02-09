@@ -1,5 +1,5 @@
 import { Psbt as PsbtBase } from 'bip174';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput } from 'bip174/src/lib/interfaces';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174/src/lib/interfaces';
 import { Signer, SignerAsync } from './ecpair';
 import { Network } from './networks';
 import { Transaction } from './transaction';
@@ -75,8 +75,8 @@ export declare class Psbt {
     updateGlobal(updateData: PsbtGlobalUpdate): this;
     updateInput(inputIndex: number, updateData: PsbtInputUpdate): this;
     updateOutput(outputIndex: number, updateData: PsbtOutputUpdate): this;
-    blindOutputs(blindingPrivkeys: Buffer[], blindingPubkeys: Buffer[], opts?: RngOpts): this;
-    blindOutputsByIndex(inputsBlindingPrivKeys: Map<number, Buffer>, outputsBlindingPubKeys: Map<number, Buffer>, opts?: RngOpts): this;
+    blindOutputs(blindingPrivkeys: Buffer[], blindingPubkeys: Buffer[], opts?: RngOpts): Promise<this>;
+    blindOutputsByIndex(inputsBlindingPrivKeys: Map<number, Buffer>, outputsBlindingPubKeys: Map<number, Buffer>, opts?: RngOpts): Promise<this>;
     addUnknownKeyValToGlobal(keyVal: KeyValue): this;
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;
@@ -134,4 +134,11 @@ interface HDSignerAsync extends HDSignerBase {
 interface RngOpts {
     rng?(arg0: number): Buffer;
 }
+interface BlindingData {
+    value: string;
+    ag: Buffer;
+    abf: Buffer;
+    vbf: Buffer;
+}
+export declare function getBlindingDataForInput(prevout: WitnessUtxo, blindPrivKey?: Buffer): Promise<BlindingData>;
 export {};

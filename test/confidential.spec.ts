@@ -18,19 +18,19 @@ const initBuffers = (object: any): typeof preFixtures =>
 const fixtures = initBuffers(preFixtures);
 
 describe('confidential', () => {
-  it('valueCommitment', () => {
-    fixtures.valid.valueCommitment.forEach((f: any) => {
-      assert.strictEqual(
-        confidential
-          .valueCommitment(f.value, f.generator, f.factor)
-          .toString('hex'),
-        f.expected,
+  it('valueCommitment', async () => {
+    for (const f of fixtures.valid.valueCommitment) {
+      const valueCommitment = await confidential.valueCommitment(
+        f.value,
+        Buffer.from(f.generator, 'hex'),
+        Buffer.from(f.factor, 'hex'),
       );
-    });
+      assert.strictEqual(valueCommitment.toString('hex'), f.expected);
+    }
   });
 
-  it('valueBlindingFactor', () => {
-    fixtures.valid.valueBlindingFactor.forEach((f: any) => {
+  it('valueBlindingFactor', async () => {
+    for (const f of fixtures.valid.valueBlindingFactor) {
       const inGenerators = f.inGenerators.map((v: any) =>
         Buffer.from(v, 'hex'),
       );
@@ -39,7 +39,7 @@ describe('confidential', () => {
       );
       const inFactors = f.inFactors.map((v: any) => Buffer.from(v, 'hex'));
       const outFactors = f.outFactors.map((v: any) => Buffer.from(v, 'hex'));
-      const vbf = confidential.valueBlindingFactor(
+      const vbf = await confidential.valueBlindingFactor(
         f.inValues,
         f.outValues,
         inGenerators,
@@ -48,28 +48,30 @@ describe('confidential', () => {
         outFactors,
       );
       assert.strictEqual(vbf.toString('hex'), f.expected);
-    });
+    }
   });
 
-  it('assetCommitment', () => {
-    fixtures.valid.assetCommitment.forEach((f: any) => {
-      assert.strictEqual(
-        confidential.assetCommitment(f.asset, f.factor).toString('hex'),
-        f.expected,
+  it('assetCommitment', async () => {
+    for (const f of fixtures.valid.assetCommitment) {
+      const assetCommitment = await confidential.assetCommitment(
+        Buffer.from(f.asset, 'hex'),
+        Buffer.from(f.factor, 'hex'),
       );
-    });
+      assert.strictEqual(assetCommitment.toString('hex'), f.expected);
+    }
   });
 
-  it('unblind', () => {
-    fixtures.valid.unblind.forEach((f: any) => {
-      const unblindProof = confidential.unblindOutput(
-        f.ephemeralPubkey,
-        f.blindingPrivkey,
-        f.rangeproof,
-        f.valueCommitment,
-        f.assetGenerator,
-        f.scriptPubkey,
+  it('unblind', async () => {
+    for (const f of fixtures.valid.unblind) {
+      const unblindProof = await confidential.unblindOutput(
+        Buffer.from(f.ephemeralPubkey, 'hex'),
+        Buffer.from(f.blindingPrivkey, 'hex'),
+        Buffer.from(f.rangeproof, 'hex'),
+        Buffer.from(f.valueCommitment, 'hex'),
+        Buffer.from(f.assetGenerator, 'hex'),
+        Buffer.from(f.scriptPubkey, 'hex'),
       );
+
       assert.strictEqual(unblindProof.value, f.expected.value);
       assert.strictEqual(
         unblindProof.valueBlindingFactor.toString('hex'),
@@ -80,56 +82,58 @@ describe('confidential', () => {
         unblindProof.assetBlindingFactor.toString('hex'),
         f.expected.assetBlindingFactor,
       );
-    });
+    }
   });
 
-  it('rangeProofInfo', () => {
-    fixtures.valid.rangeproofInfo.forEach((f: any) => {
-      const proofInfo = confidential.rangeProofInfo(f.proof);
+  it('rangeProofInfo', async () => {
+    for (const f of fixtures.valid.rangeproofInfo) {
+      const proofInfo = await confidential.rangeProofInfo(
+        Buffer.from(f.proof, 'hex'),
+      );
       assert.strictEqual(proofInfo.ctExp, f.expected.ctExp);
       assert.strictEqual(proofInfo.ctBits, f.expected.ctBits);
       assert.strictEqual(proofInfo.minValue, f.expected.minValue);
       assert.strictEqual(proofInfo.maxValue, f.expected.maxValue);
-    });
+    }
   });
 
-  it('rangeProof', () => {
-    fixtures.valid.rangeproof.forEach((f: any) => {
+  it('rangeProof', async () => {
+    for (const f of fixtures.valid.rangeproof) {
       const minValue = '1';
       const exp = 0;
       const minBits = 36;
 
-      const proof = confidential.rangeProof(
+      const proof = await confidential.rangeProof(
         f.value,
-        f.blindingPubkey,
-        f.ephemeralPrivkey,
-        f.asset,
-        f.assetBlindingFactor,
-        f.valueBlindingFactor,
-        f.valueCommitment,
-        f.scriptPubkey,
+        Buffer.from(f.blindingPubkey, 'hex'),
+        Buffer.from(f.ephemeralPrivkey, 'hex'),
+        Buffer.from(f.asset, 'hex'),
+        Buffer.from(f.assetBlindingFactor, 'hex'),
+        Buffer.from(f.valueBlindingFactor, 'hex'),
+        Buffer.from(f.valueCommitment, 'hex'),
+        Buffer.from(f.scriptPubkey, 'hex'),
         minValue,
         exp,
         minBits,
       );
       assert.strictEqual(proof.toString('hex'), f.expected);
-    });
+    }
   });
 
-  it('surjectionProof', () => {
-    fixtures.valid.surjectionproof.forEach((f: any) => {
+  it('surjectionProof', async () => {
+    for (const f of fixtures.valid.surjectionproof) {
       const inputAssets = f.inputAssets.map((v: any) => Buffer.from(v, 'hex'));
       const inputAssetBlindingFactors = f.inputAssetBlindingFactors.map(
         (v: any) => Buffer.from(v, 'hex'),
       );
-      const proof = confidential.surjectionProof(
-        f.outputAsset,
-        f.outputAssetBlindingFactor,
+      const proof = await confidential.surjectionProof(
+        Buffer.from(f.outputAsset, 'hex'),
+        Buffer.from(f.outputAssetBlindingFactor, 'hex'),
         inputAssets,
         inputAssetBlindingFactors,
-        f.seed,
+        Buffer.from(f.seed, 'hex'),
       );
       assert.strictEqual(proof.toString('hex'), f.expected);
-    });
+    }
   });
 });
