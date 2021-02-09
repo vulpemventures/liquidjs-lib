@@ -1808,7 +1808,7 @@ export function computeOutputsBlindingData(
   return outputsBlindingData;
 }
 
-function toBlindingData(
+export function toBlindingData(
   blindDataLike: BlindingDataLike,
   witnessUtxo?: WitnessUtxo,
 ): confidential.BlindingData {

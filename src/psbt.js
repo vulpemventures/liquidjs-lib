@@ -1445,6 +1445,7 @@ function toBlindingData(blindDataLike, witnessUtxo) {
   }
   return blindDataLike;
 }
+exports.toBlindingData = toBlindingData;
 function randomBlinder() {
   return randomBytes().toString('hex');
 }

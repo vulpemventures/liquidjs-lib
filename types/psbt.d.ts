@@ -1,5 +1,5 @@
 import { Psbt as PsbtBase } from 'bip174';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput } from 'bip174/src/lib/interfaces';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174/src/lib/interfaces';
 import * as confidential from './confidential';
 import { Signer, SignerAsync } from './ecpair';
 import { Network } from './networks';
@@ -143,4 +143,5 @@ export declare type BlindingDataLike = Buffer | confidential.BlindingData | unde
  * @returns an array of BlindingData[] corresponding of blinders to blind outputs specified in outputsData
  */
 export declare function computeOutputsBlindingData(inputsBlindingData: confidential.BlindingData[], outputsData: Array<[number, string]>): confidential.BlindingData[];
+export declare function toBlindingData(blindDataLike: BlindingDataLike, witnessUtxo?: WitnessUtxo): confidential.BlindingData;
 export {};
