@@ -1,9 +1,20 @@
 'use strict';
 // m [pubKeys ...] n OP_CHECKMULTISIG
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const bscript = require('../../script');
+const bscript = __importStar(require('../../script'));
 const script_1 = require('../../script');
-const types = require('../../types');
+const types = __importStar(require('../../types'));
 const OP_INT_BASE = script_1.OPS.OP_RESERVED; // OP_1 - 1
 function check(script, allowIncomplete) {
   const chunks = bscript.decompile(script);

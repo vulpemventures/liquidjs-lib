@@ -27,13 +27,30 @@ var __awaiter =
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
   };
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
+var __importDefault =
+  (this && this.__importDefault) ||
+  function(mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const bufferutils = require('./bufferutils');
-const crypto = require('./crypto');
-const secp256k1 = require('secp256k1-zkp')();
+const bufferutils = __importStar(require('./bufferutils'));
+const crypto = __importStar(require('./crypto'));
+const secp256k1_zkp_1 = __importDefault(require('secp256k1-zkp'));
+const secp256k1Promise = secp256k1_zkp_1.default();
 function nonceHash(pubkey, privkey) {
   return __awaiter(this, void 0, void 0, function*() {
-    const { ecdh } = yield secp256k1;
+    const { ecdh } = yield secp256k1Promise;
     return crypto.sha256(ecdh(pubkey, privkey));
   });
 }
@@ -46,7 +63,7 @@ function valueBlindingFactor(
   outFactors,
 ) {
   return __awaiter(this, void 0, void 0, function*() {
-    const { pedersen } = yield secp256k1;
+    const { pedersen } = yield secp256k1Promise;
     const values = inValues.concat(outValues);
     const nInputs = inValues.length;
     const generators = inGenerators.concat(outGenerators);
@@ -62,7 +79,7 @@ function valueBlindingFactor(
 exports.valueBlindingFactor = valueBlindingFactor;
 function valueCommitment(value, gen, factor) {
   return __awaiter(this, void 0, void 0, function*() {
-    const { generator, pedersen } = yield secp256k1;
+    const { generator, pedersen } = yield secp256k1Promise;
     const generatorParsed = generator.parse(gen);
     const commit = pedersen.commit(factor, value, generatorParsed);
     return pedersen.commitSerialize(commit);
@@ -71,7 +88,7 @@ function valueCommitment(value, gen, factor) {
 exports.valueCommitment = valueCommitment;
 function assetCommitment(asset, factor) {
   return __awaiter(this, void 0, void 0, function*() {
-    const { generator } = yield secp256k1;
+    const { generator } = yield secp256k1Promise;
     const gen = generator.generateBlinded(asset, factor);
     return generator.serialize(gen);
   });
@@ -86,7 +103,7 @@ function unblindOutput(
   scriptPubkey,
 ) {
   return __awaiter(this, void 0, void 0, function*() {
-    const secp = yield secp256k1;
+    const secp = yield secp256k1Promise;
     const gen = secp.generator.parse(asset);
     const nonce = yield nonceHash(ephemeralPubkey, blindingPrivkey);
     const { value, blindFactor, message } = secp.rangeproof.rewind(
@@ -107,7 +124,7 @@ function unblindOutput(
 exports.unblindOutput = unblindOutput;
 function rangeProofInfo(proof) {
   return __awaiter(this, void 0, void 0, function*() {
-    const { rangeproof } = yield secp256k1;
+    const { rangeproof } = yield secp256k1Promise;
     const { exp, mantissa, minValue, maxValue } = rangeproof.info(proof);
     return {
       minValue: parseInt(minValue, 10),
@@ -132,7 +149,7 @@ function rangeProof(
   minBits,
 ) {
   return __awaiter(this, void 0, void 0, function*() {
-    const { generator, pedersen, rangeproof } = yield secp256k1;
+    const { generator, pedersen, rangeproof } = yield secp256k1Promise;
     const nonce = yield nonceHash(blindingPubkey, ephemeralPrivkey);
     const gen = generator.generateBlinded(asset, assetBlindingFactor);
     const message = Buffer.concat([asset, assetBlindingFactor]);
@@ -163,7 +180,7 @@ function surjectionProof(
   seed,
 ) {
   return __awaiter(this, void 0, void 0, function*() {
-    const { generator, surjectionproof } = yield secp256k1;
+    const { generator, surjectionproof } = yield secp256k1Promise;
     const outputGenerator = generator.generateBlinded(
       outputAsset,
       outputAssetBlindingFactor,

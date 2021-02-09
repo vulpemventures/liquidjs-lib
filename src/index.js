@@ -1,20 +1,31 @@
 'use strict';
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const bip32 = require('bip32');
+const bip32 = __importStar(require('bip32'));
 exports.bip32 = bip32;
-const address = require('./address');
+const address = __importStar(require('./address'));
 exports.address = address;
-const confidential = require('./confidential');
+const confidential = __importStar(require('./confidential'));
 exports.confidential = confidential;
-const crypto = require('./crypto');
+const crypto = __importStar(require('./crypto'));
 exports.crypto = crypto;
-const ECPair = require('./ecpair');
+const ECPair = __importStar(require('./ecpair'));
 exports.ECPair = ECPair;
-const networks = require('./networks');
+const networks = __importStar(require('./networks'));
 exports.networks = networks;
-const payments = require('./payments');
+const payments = __importStar(require('./payments'));
 exports.payments = payments;
-const script = require('./script');
+const script = __importStar(require('./script'));
 exports.script = script;
 var block_1 = require('./block');
 exports.Block = block_1.Block;

@@ -27,18 +27,29 @@ var __awaiter =
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
   };
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
 const bip174_1 = require('bip174');
-const varuint = require('bip174/src/lib/converter/varint');
+const varuint = __importStar(require('bip174/src/lib/converter/varint'));
 const utils_1 = require('bip174/src/lib/utils');
 const address_1 = require('./address');
 const bufferutils_1 = require('./bufferutils');
-const confidential = require('./confidential');
+const confidential = __importStar(require('./confidential'));
 const crypto_1 = require('./crypto');
 const ecpair_1 = require('./ecpair');
 const networks_1 = require('./networks');
-const payments = require('./payments');
-const bscript = require('./script');
+const payments = __importStar(require('./payments'));
+const bscript = __importStar(require('./script'));
 const transaction_1 = require('./transaction');
 const _randomBytes = require('randombytes');
 /**

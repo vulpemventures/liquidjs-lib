@@ -1,8 +1,19 @@
 'use strict';
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
 const networks_1 = require('../networks');
-const bscript = require('../script');
-const lazy = require('./lazy');
+const bscript = __importStar(require('../script'));
+const lazy = __importStar(require('./lazy'));
 const typef = require('typeforce');
 const OPS = bscript.OPS;
 function stacksEqual(a, b) {

@@ -1,9 +1,20 @@
 'use strict';
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
 const bufferutils_1 = require('./bufferutils');
-const bcrypto = require('./crypto');
+const bcrypto = __importStar(require('./crypto'));
 const transaction_1 = require('./transaction');
-const types = require('./types');
+const types = __importStar(require('./types'));
 const fastMerkleRoot = require('merkle-lib/fastRoot');
 const typeforce = require('typeforce');
 const varuint = require('varuint-bitcoin');
