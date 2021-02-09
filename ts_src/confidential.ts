@@ -1,6 +1,6 @@
+import secp256k1 from 'secp256k1-zkp';
 import * as bufferutils from './bufferutils';
 import * as crypto from './crypto';
-import secp256k1 from 'secp256k1-zkp';
 
 const secp256k1Promise = secp256k1();
 
