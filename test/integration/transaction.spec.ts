@@ -6,7 +6,10 @@ import { networks as NETWORKS } from '../..';
 import * as regtestUtils from './_regtest';
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
-const { satoshiToConfidentialValue, unblindWitnessUtxo } = liquid.confidential;
+const {
+  satoshiToConfidentialValue,
+  unblindOutputWithKey,
+} = liquid.confidential;
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
@@ -708,7 +711,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         'noredeem',
       );
 
-      const inputBlindingData = unblindWitnessUtxo(
+      const inputBlindingData = unblindOutputWithKey(
         inputDataConfidential.witnessUtxo,
         aliceBlindingPrivateKey,
       );

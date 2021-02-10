@@ -15,7 +15,8 @@ export interface UnblindOutputResult {
     assetBlindingFactor: Buffer;
 }
 export declare function unblindOutput(ephemeralPubkey: Buffer, blindingPrivkey: Buffer, rangeproof: Buffer, valueCommit: Buffer, asset: Buffer, scriptPubkey: Buffer): UnblindOutputResult;
-export declare function unblindWitnessUtxo(prevout: WitnessUtxo, blindingPrivKey: Buffer): BlindingData;
+export declare function unblindOutputWithKey(prevout: WitnessUtxo, blindingPrivKey: Buffer): BlindingData;
+export declare function unblindOutputWithNonce(prevout: WitnessUtxo, nonce: Buffer): BlindingData;
 export interface RangeProofInfoResult {
     ctExp: number;
     ctBits: number;

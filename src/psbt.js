@@ -1441,7 +1441,7 @@ function toBlindingData(blindDataLike, witnessUtxo) {
   }
   if (Buffer.isBuffer(blindDataLike)) {
     if (!witnessUtxo) throw new Error('need witnessUtxo');
-    return confidential.unblindWitnessUtxo(witnessUtxo, blindDataLike);
+    return confidential.unblindOutputWithKey(witnessUtxo, blindDataLike);
   }
   return blindDataLike;
 }

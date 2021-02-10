@@ -37,16 +37,8 @@ function assetCommitment(asset, factor) {
   return secp256k1.generator.serialize(generator);
 }
 exports.assetCommitment = assetCommitment;
-function unblindOutput(
-  ephemeralPubkey,
-  blindingPrivkey,
-  rangeproof,
-  valueCommit,
-  asset,
-  scriptPubkey,
-) {
+function unblindWithNonce(nonce, rangeproof, valueCommit, asset, scriptPubkey) {
   const gen = secp256k1.generator.parse(asset);
-  const nonce = nonceHash(ephemeralPubkey, blindingPrivkey);
   const { value, blindFactor, message } = secp256k1.rangeproof.rewind(
     valueCommit,
     rangeproof,
@@ -61,8 +53,19 @@ function unblindOutput(
     assetBlindingFactor: message.slice(32),
   };
 }
+function unblindOutput(
+  ephemeralPubkey,
+  blindingPrivkey,
+  rangeproof,
+  valueCommit,
+  asset,
+  scriptPubkey,
+) {
+  const nonce = nonceHash(ephemeralPubkey, blindingPrivkey);
+  return unblindWithNonce(nonce, rangeproof, valueCommit, asset, scriptPubkey);
+}
 exports.unblindOutput = unblindOutput;
-function unblindWitnessUtxo(prevout, blindingPrivKey) {
+function unblindOutputWithKey(prevout, blindingPrivKey) {
   const unblindProof = unblindOutput(
     prevout.nonce,
     blindingPrivKey,
@@ -78,7 +81,23 @@ function unblindWitnessUtxo(prevout, blindingPrivKey) {
     assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
   };
 }
-exports.unblindWitnessUtxo = unblindWitnessUtxo;
+exports.unblindOutputWithKey = unblindOutputWithKey;
+function unblindOutputWithNonce(prevout, nonce) {
+  const unblindProof = unblindWithNonce(
+    nonce,
+    prevout.rangeProof,
+    prevout.value,
+    prevout.asset,
+    prevout.script,
+  );
+  return {
+    satoshis: parseInt(unblindProof.value, 10),
+    amountBlinder: unblindProof.valueBlindingFactor.toString('hex'),
+    asset: unblindProof.asset.toString('hex'),
+    assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
+  };
+}
+exports.unblindOutputWithNonce = unblindOutputWithNonce;
 function rangeProofInfo(proof) {
   const { exp, mantissa, minValue, maxValue } = secp256k1.rangeproof.info(
     proof,
