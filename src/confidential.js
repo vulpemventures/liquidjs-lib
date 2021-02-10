@@ -27,6 +27,11 @@ var __awaiter =
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
   };
+var __importDefault =
+  (this && this.__importDefault) ||
+  function(mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -38,15 +43,10 @@ var __importStar =
     result['default'] = mod;
     return result;
   };
-var __importDefault =
-  (this && this.__importDefault) ||
-  function(mod) {
-    return mod && mod.__esModule ? mod : { default: mod };
-  };
 Object.defineProperty(exports, '__esModule', { value: true });
+const secp256k1_zkp_1 = __importDefault(require('secp256k1-zkp'));
 const bufferutils = __importStar(require('./bufferutils'));
 const crypto = __importStar(require('./crypto'));
-const secp256k1_zkp_1 = __importDefault(require('secp256k1-zkp'));
 const secp256k1Promise = secp256k1_zkp_1.default();
 function nonceHash(pubkey, privkey) {
   return __awaiter(this, void 0, void 0, function*() {
