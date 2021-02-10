@@ -642,8 +642,10 @@ class Psbt {
       // prevent blinding the fee output
       if (output.script.length === 0)
         throw new Error("cant't blind the fee output");
-      const value = confidential.confidentialValueToSatoshi(output.value);
-      return [value, output.asset.slice(1).toString('hex')];
+      const value = confidential
+        .confidentialValueToSatoshi(output.value)
+        .toString(10);
+      return [value, output.asset.slice(1)];
     });
     // compute the outputs blinders
     const outputsBlindingData = computeOutputsBlindingData(
@@ -658,31 +660,31 @@ class Psbt {
       const outputBlindingData = outputsBlindingData[indexInArray];
       // commitments
       const assetCommitment = confidential.assetCommitment(
-        Buffer.from(outputBlindingData.asset, 'hex'),
-        Buffer.from(outputBlindingData.assetBlinder, 'hex'),
+        outputBlindingData.asset,
+        outputBlindingData.assetBlindingFactor,
       );
       const valueCommitment = confidential.valueCommitment(
-        outputBlindingData.satoshis.toString(10),
+        outputBlindingData.value,
         assetCommitment,
-        Buffer.from(outputBlindingData.amountBlinder, 'hex'),
+        outputBlindingData.valueBlindingFactor,
       );
       // proofs
       const rangeProof = confidential.rangeProof(
-        outputBlindingData.satoshis.toString(10),
+        outputBlindingData.value,
         blindingPubkeys[indexInArray],
         ephemeralPrivKey,
-        Buffer.from(outputBlindingData.asset, 'hex'),
-        Buffer.from(outputBlindingData.assetBlinder, 'hex'),
-        Buffer.from(outputBlindingData.amountBlinder, 'hex'),
+        outputBlindingData.asset,
+        outputBlindingData.assetBlindingFactor,
+        outputBlindingData.valueBlindingFactor,
         valueCommitment,
         c.__TX.outs[outputIndex].script,
       );
       const surjectionProof = confidential.surjectionProof(
-        Buffer.from(outputBlindingData.asset, 'hex'),
-        Buffer.from(outputBlindingData.assetBlinder, 'hex'),
-        inputsBlindingData.map(({ asset }) => Buffer.from(asset, 'hex')),
-        inputsBlindingData.map(({ assetBlinder }) =>
-          Buffer.from(assetBlinder, 'hex'),
+        outputBlindingData.asset,
+        outputBlindingData.assetBlindingFactor,
+        inputsBlindingData.map(({ asset }) => asset),
+        inputsBlindingData.map(
+          ({ assetBlindingFactor }) => assetBlindingFactor,
         ),
         randomSeed,
       );
@@ -1378,62 +1380,67 @@ function randomBytes(options) {
 /**
  * Compute outputs blinders
  * @param inputsBlindingData the transaction inputs blinding data
- * @param outputsData data = [satoshis, asset] of output to blind
+ * @param outputsData data = [satoshis, asset] of output to blind ([string Buffer])
  * @returns an array of BlindingData[] corresponding of blinders to blind outputs specified in outputsData
  */
 function computeOutputsBlindingData(inputsBlindingData, outputsData) {
   const outputsBlindingData = [];
-  // tslint:disable-next-line:no-shadowed-variable
   outputsData.slice(0, outputsData.length - 1).forEach(([satoshis, asset]) => {
     const blindingData = {
-      satoshis,
+      value: satoshis,
       asset,
-      assetBlinder: randomBlinder(),
-      amountBlinder: randomBlinder(),
+      valueBlindingFactor: randomBytes(),
+      assetBlindingFactor: randomBytes(),
     };
     outputsBlindingData.push(blindingData);
   });
-  // tslint:disable-next-line:no-shadowed-variable
-  const [satoshis, asset] = outputsData[outputsData.length - 1];
+  const [lastOutputValue, lastOutputAsset] = outputsData[
+    outputsData.length - 1
+  ];
   const finalBlindingData = {
-    satoshis,
-    asset,
-    assetBlinder: randomBlinder(),
-    amountBlinder: '',
+    value: lastOutputValue,
+    asset: lastOutputAsset,
+    assetBlindingFactor: randomBytes(),
+    valueBlindingFactor: Buffer.from([]),
   };
-  const inputsValues = inputsBlindingData.map(({ satoshis: amount }) =>
-    amount.toString(10),
-  );
+  // values
+  const inputsValues = inputsBlindingData.map(({ value }) => value);
   const outputsValues = outputsData
-    .map(([amount]) => amount.toString(10))
-    .concat(satoshis.toString(10));
-  const inputsAssetBlinders = inputsBlindingData.map(({ assetBlinder }) =>
-    Buffer.from(assetBlinder, 'hex'),
+    .map(([amount]) => amount)
+    .concat(lastOutputValue);
+  // asset blinders
+  const inputsAssetBlinders = inputsBlindingData.map(
+    ({ assetBlindingFactor }) => assetBlindingFactor,
   );
   const outputsAssetBlinders = outputsBlindingData
-    .map(({ assetBlinder }) => Buffer.from(assetBlinder, 'hex'))
-    .concat(Buffer.from(finalBlindingData.assetBlinder, 'hex'));
-  const inputsAmountBlinders = inputsBlindingData.map(({ amountBlinder }) =>
-    Buffer.from(amountBlinder, 'hex'),
+    .map(({ assetBlindingFactor }) => assetBlindingFactor)
+    .concat(finalBlindingData.assetBlindingFactor);
+  // value blinders
+  const inputsAmountBlinders = inputsBlindingData.map(
+    ({ valueBlindingFactor }) => valueBlindingFactor,
   );
-  const outputsAmountBlinders = outputsBlindingData.map(({ amountBlinder }) =>
-    Buffer.from(amountBlinder, 'hex'),
+  const outputsAmountBlinders = outputsBlindingData.map(
+    ({ valueBlindingFactor }) => valueBlindingFactor,
   );
-  const finalAmountBlinder = confidential
-    .valueBlindingFactor(
-      inputsValues,
-      outputsValues,
-      inputsAssetBlinders,
-      outputsAssetBlinders,
-      inputsAmountBlinders,
-      outputsAmountBlinders,
-    )
-    .toString('hex');
-  finalBlindingData.amountBlinder = finalAmountBlinder;
+  // compute output final amount blinder
+  const finalAmountBlinder = confidential.valueBlindingFactor(
+    inputsValues,
+    outputsValues,
+    inputsAssetBlinders,
+    outputsAssetBlinders,
+    inputsAmountBlinders,
+    outputsAmountBlinders,
+  );
+  finalBlindingData.valueBlindingFactor = finalAmountBlinder;
   outputsBlindingData.push(finalBlindingData);
   return outputsBlindingData;
 }
 exports.computeOutputsBlindingData = computeOutputsBlindingData;
+/**
+ * toBlindingData convert a BlindingDataLike to UnblindOutputResult
+ * @param blindDataLike blinding data "like" associated to a specific input I
+ * @param witnessUtxo the prevout of the input I
+ */
 function toBlindingData(blindDataLike, witnessUtxo) {
   if (!blindDataLike) {
     if (!witnessUtxo) throw new Error('need witnessUtxo');
@@ -1446,15 +1453,12 @@ function toBlindingData(blindDataLike, witnessUtxo) {
   return blindDataLike;
 }
 exports.toBlindingData = toBlindingData;
-function randomBlinder() {
-  return randomBytes().toString('hex');
-}
 function getUnconfidentialWitnessUtxoBlindingData(prevout) {
   const unblindedInputBlindingData = {
-    satoshis: confidential.confidentialValueToSatoshi(prevout.value),
-    amountBlinder: transaction_1.ZERO.toString('hex'),
-    asset: prevout.asset.slice(1).toString('hex'),
-    assetBlinder: transaction_1.ZERO.toString('hex'),
+    value: confidential.confidentialValueToSatoshi(prevout.value).toString(10),
+    valueBlindingFactor: transaction_1.ZERO,
+    asset: prevout.asset.slice(1),
+    assetBlindingFactor: transaction_1.ZERO,
   };
   return unblindedInputBlindingData;
 }

@@ -1,3 +1,4 @@
+import { WitnessUtxo } from 'bip174/src/lib/interfaces';
 import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import * as confidential from '../src/confidential';
@@ -62,13 +63,16 @@ describe('confidential', () => {
 
   it('unblind', () => {
     fixtures.valid.unblind.forEach((f: any) => {
-      const unblindProof = confidential.unblindOutput(
-        f.ephemeralPubkey,
+      const out: WitnessUtxo = {
+        value: f.valueCommitment,
+        asset: f.assetGenerator,
+        script: f.scriptPubkey,
+        rangeProof: f.rangeproof,
+        nonce: f.ephemeralPubkey,
+      };
+      const unblindProof = confidential.unblindOutputWithKey(
+        out,
         f.blindingPrivkey,
-        f.rangeproof,
-        f.valueCommitment,
-        f.assetGenerator,
-        f.scriptPubkey,
       );
       assert.strictEqual(unblindProof.value, f.expected.value);
       assert.strictEqual(

@@ -135,13 +135,18 @@ interface HDSignerAsync extends HDSignerBase {
 interface RngOpts {
     rng?(arg0: number): Buffer;
 }
-export declare type BlindingDataLike = Buffer | confidential.BlindingData | undefined;
+export declare type BlindingDataLike = Buffer | confidential.UnblindOutputResult | undefined;
 /**
  * Compute outputs blinders
  * @param inputsBlindingData the transaction inputs blinding data
- * @param outputsData data = [satoshis, asset] of output to blind
+ * @param outputsData data = [satoshis, asset] of output to blind ([string Buffer])
  * @returns an array of BlindingData[] corresponding of blinders to blind outputs specified in outputsData
  */
-export declare function computeOutputsBlindingData(inputsBlindingData: confidential.BlindingData[], outputsData: Array<[number, string]>): confidential.BlindingData[];
-export declare function toBlindingData(blindDataLike: BlindingDataLike, witnessUtxo?: WitnessUtxo): confidential.BlindingData;
+export declare function computeOutputsBlindingData(inputsBlindingData: confidential.UnblindOutputResult[], outputsData: Array<[string, Buffer]>): confidential.UnblindOutputResult[];
+/**
+ * toBlindingData convert a BlindingDataLike to UnblindOutputResult
+ * @param blindDataLike blinding data "like" associated to a specific input I
+ * @param witnessUtxo the prevout of the input I
+ */
+export declare function toBlindingData(blindDataLike: BlindingDataLike, witnessUtxo?: WitnessUtxo): confidential.UnblindOutputResult;
 export {};

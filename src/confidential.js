@@ -1,8 +1,8 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-const secp256k1 = require('secp256k1-zkp');
 const bufferutils = require('./bufferutils');
 const crypto = require('./crypto');
+const secp256k1 = require('secp256k1-zkp');
 function nonceHash(pubkey, privkey) {
   return crypto.sha256(secp256k1.ecdh.ecdh(pubkey, privkey));
 }
@@ -37,64 +37,25 @@ function assetCommitment(asset, factor) {
   return secp256k1.generator.serialize(generator);
 }
 exports.assetCommitment = assetCommitment;
-function unblindWithNonce(nonce, rangeproof, valueCommit, asset, scriptPubkey) {
-  const gen = secp256k1.generator.parse(asset);
+function unblindOutputWithKey(prevout, blindingPrivKey) {
+  const nonce = nonceHash(prevout.nonce, blindingPrivKey);
+  return unblindOutputWithNonce(prevout, nonce);
+}
+exports.unblindOutputWithKey = unblindOutputWithKey;
+function unblindOutputWithNonce(prevout, nonce) {
+  const gen = secp256k1.generator.parse(prevout.asset);
   const { value, blindFactor, message } = secp256k1.rangeproof.rewind(
-    valueCommit,
-    rangeproof,
+    prevout.value,
+    prevout.rangeProof,
     nonce,
     gen,
-    scriptPubkey,
+    prevout.script,
   );
   return {
     value,
     asset: message.slice(0, 32),
     valueBlindingFactor: blindFactor,
     assetBlindingFactor: message.slice(32),
-  };
-}
-function unblindOutput(
-  ephemeralPubkey,
-  blindingPrivkey,
-  rangeproof,
-  valueCommit,
-  asset,
-  scriptPubkey,
-) {
-  const nonce = nonceHash(ephemeralPubkey, blindingPrivkey);
-  return unblindWithNonce(nonce, rangeproof, valueCommit, asset, scriptPubkey);
-}
-exports.unblindOutput = unblindOutput;
-function unblindOutputWithKey(prevout, blindingPrivKey) {
-  const unblindProof = unblindOutput(
-    prevout.nonce,
-    blindingPrivKey,
-    prevout.rangeProof,
-    prevout.value,
-    prevout.asset,
-    prevout.script,
-  );
-  return {
-    satoshis: parseInt(unblindProof.value, 10),
-    amountBlinder: unblindProof.valueBlindingFactor.toString('hex'),
-    asset: unblindProof.asset.toString('hex'),
-    assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
-  };
-}
-exports.unblindOutputWithKey = unblindOutputWithKey;
-function unblindOutputWithNonce(prevout, nonce) {
-  const unblindProof = unblindWithNonce(
-    nonce,
-    prevout.rangeProof,
-    prevout.value,
-    prevout.asset,
-    prevout.script,
-  );
-  return {
-    satoshis: parseInt(unblindProof.value, 10),
-    amountBlinder: unblindProof.valueBlindingFactor.toString('hex'),
-    asset: unblindProof.asset.toString('hex'),
-    assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
   };
 }
 exports.unblindOutputWithNonce = unblindOutputWithNonce;

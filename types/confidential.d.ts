@@ -1,10 +1,4 @@
-import { WitnessUtxo } from 'bip174/src/lib/interfaces';
-export interface BlindingData {
-    satoshis: number;
-    amountBlinder: string;
-    asset: string;
-    assetBlinder: string;
-}
+import { Output } from './transaction';
 export declare function valueBlindingFactor(inValues: string[], outValues: string[], inGenerators: Buffer[], outGenerators: Buffer[], inFactors: Buffer[], outFactors: Buffer[]): Buffer;
 export declare function valueCommitment(value: string, generator: Buffer, factor: Buffer): Buffer;
 export declare function assetCommitment(asset: Buffer, factor: Buffer): Buffer;
@@ -14,9 +8,8 @@ export interface UnblindOutputResult {
     asset: Buffer;
     assetBlindingFactor: Buffer;
 }
-export declare function unblindOutput(ephemeralPubkey: Buffer, blindingPrivkey: Buffer, rangeproof: Buffer, valueCommit: Buffer, asset: Buffer, scriptPubkey: Buffer): UnblindOutputResult;
-export declare function unblindOutputWithKey(prevout: WitnessUtxo, blindingPrivKey: Buffer): BlindingData;
-export declare function unblindOutputWithNonce(prevout: WitnessUtxo, nonce: Buffer): BlindingData;
+export declare function unblindOutputWithKey(prevout: Output, blindingPrivKey: Buffer): UnblindOutputResult;
+export declare function unblindOutputWithNonce(prevout: Output, nonce: Buffer): UnblindOutputResult;
 export interface RangeProofInfoResult {
     ctExp: number;
     ctBits: number;

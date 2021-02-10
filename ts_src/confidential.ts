@@ -1,15 +1,8 @@
-import { WitnessUtxo } from 'bip174/src/lib/interfaces';
-import * as secp256k1 from 'secp256k1-zkp';
-
 import * as bufferutils from './bufferutils';
 import * as crypto from './crypto';
+import * as secp256k1 from 'secp256k1-zkp';
 
-export interface BlindingData {
-  satoshis: number;
-  amountBlinder: string;
-  asset: string;
-  assetBlinder: string;
-}
+import { Output } from './transaction';
 
 function nonceHash(pubkey: Buffer, privkey: Buffer): Buffer {
   return crypto.sha256(secp256k1.ecdh.ecdh(pubkey, privkey));
@@ -57,20 +50,25 @@ export interface UnblindOutputResult {
   assetBlindingFactor: Buffer;
 }
 
-function unblindWithNonce(
-  nonce: Buffer,
-  rangeproof: Buffer,
-  valueCommit: Buffer,
-  asset: Buffer,
-  scriptPubkey: Buffer,
+export function unblindOutputWithKey(
+  prevout: Output,
+  blindingPrivKey: Buffer,
 ): UnblindOutputResult {
-  const gen = secp256k1.generator.parse(asset);
+  const nonce = nonceHash(prevout.nonce, blindingPrivKey);
+  return unblindOutputWithNonce(prevout, nonce);
+}
+
+export function unblindOutputWithNonce(
+  prevout: Output,
+  nonce: Buffer,
+): UnblindOutputResult {
+  const gen = secp256k1.generator.parse(prevout.asset);
   const { value, blindFactor, message } = secp256k1.rangeproof.rewind(
-    valueCommit,
-    rangeproof,
+    prevout.value,
+    prevout.rangeProof!,
     nonce,
     gen,
-    scriptPubkey,
+    prevout.script,
   );
 
   return {
@@ -78,59 +76,6 @@ function unblindWithNonce(
     asset: message.slice(0, 32),
     valueBlindingFactor: blindFactor,
     assetBlindingFactor: message.slice(32),
-  };
-}
-
-export function unblindOutput(
-  ephemeralPubkey: Buffer,
-  blindingPrivkey: Buffer,
-  rangeproof: Buffer,
-  valueCommit: Buffer,
-  asset: Buffer,
-  scriptPubkey: Buffer,
-): UnblindOutputResult {
-  const nonce = nonceHash(ephemeralPubkey, blindingPrivkey);
-  return unblindWithNonce(nonce, rangeproof, valueCommit, asset, scriptPubkey);
-}
-
-export function unblindOutputWithKey(
-  prevout: WitnessUtxo,
-  blindingPrivKey: Buffer,
-): BlindingData {
-  const unblindProof = unblindOutput(
-    prevout.nonce,
-    blindingPrivKey,
-    prevout.rangeProof!,
-    prevout.value,
-    prevout.asset,
-    prevout.script,
-  );
-
-  return {
-    satoshis: parseInt(unblindProof.value, 10),
-    amountBlinder: unblindProof.valueBlindingFactor.toString('hex'),
-    asset: unblindProof.asset.toString('hex'),
-    assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
-  };
-}
-
-export function unblindOutputWithNonce(
-  prevout: WitnessUtxo,
-  nonce: Buffer,
-): BlindingData {
-  const unblindProof = unblindWithNonce(
-    nonce,
-    prevout.rangeProof!,
-    prevout.value,
-    prevout.asset,
-    prevout.script,
-  );
-
-  return {
-    satoshis: parseInt(unblindProof.value, 10),
-    amountBlinder: unblindProof.valueBlindingFactor.toString('hex'),
-    asset: unblindProof.asset.toString('hex'),
-    assetBlinder: unblindProof.assetBlindingFactor.toString('hex'),
   };
 }
 
