@@ -1,6 +1,8 @@
-import secp256k1 from 'secp256k1-zkp';
 import * as bufferutils from './bufferutils';
 import * as crypto from './crypto';
+
+import { Output } from './transaction';
+import secp256k1 from 'secp256k1-zkp';
 
 const secp256k1Promise = secp256k1();
 
@@ -52,24 +54,26 @@ export interface UnblindOutputResult {
   assetBlindingFactor: Buffer;
 }
 
-export async function unblindOutput(
-  ephemeralPubkey: Buffer,
-  blindingPrivkey: Buffer,
-  rangeproof: Buffer,
-  valueCommit: Buffer,
-  asset: Buffer,
-  scriptPubkey: Buffer,
+export async function unblindOutputWithKey(
+  out: Output,
+  blindingPrivKey: Buffer,
+): Promise<UnblindOutputResult> {
+  const nonce = await nonceHash(out.nonce, blindingPrivKey);
+  return unblindOutputWithNonce(out, nonce);
+}
+
+export async function unblindOutputWithNonce(
+  out: Output,
+  nonce: Buffer,
 ): Promise<UnblindOutputResult> {
   const secp = await secp256k1Promise;
-  const gen = secp.generator.parse(asset);
-  const nonce = await nonceHash(ephemeralPubkey, blindingPrivkey);
-
+  const gen = secp.generator.parse(out.asset);
   const { value, blindFactor, message } = secp.rangeproof.rewind(
-    valueCommit,
-    rangeproof,
+    out.value,
+    out.rangeProof!,
     nonce,
     gen,
-    scriptPubkey,
+    out.script,
   );
 
   return {

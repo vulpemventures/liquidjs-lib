@@ -1,0 +1,49 @@
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  build:
+    name: Build, lint, and test on Node ${{ matrix.node }}
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ["8.x", "10.x", "12.x", "14.x"]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install Nigiri
+        run: |
+          mkdir -p tmp; cd tmp
+          curl https://travis.nigiri.network | bash; cd ..
+          docker-compose -f  tmp/docker-compose.yml up -d
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+
+      - name: Lint
+        run: |
+          npm run format:ci
+          npm run gitdiff:ci
+          npm run lint
+          npm run lint:tests
+
+      - name: Coverage
+        run: npm run coverage
+
+      - name: Unit Test
+        run: npm run unit
+
+      - name: Integration Test
+        env:
+          APIURL: http://localhost:3001
+        run: npm run integration

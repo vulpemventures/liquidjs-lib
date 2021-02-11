@@ -1,7 +1,10 @@
 import * as assert from 'assert';
-import { describe, it } from 'mocha';
 import * as confidential from '../src/confidential';
 import * as preFixtures from './fixtures/confidential.json';
+
+import { describe, it } from 'mocha';
+
+import { TxOutput } from '../ts_src/index';
 
 const initBuffers = (object: any): typeof preFixtures =>
   JSON.parse(JSON.stringify(object), (_, value) => {
@@ -61,15 +64,18 @@ describe('confidential', () => {
     }
   });
 
-  it('unblind', async () => {
-    for (const f of fixtures.valid.unblind) {
-      const unblindProof = await confidential.unblindOutput(
-        Buffer.from(f.ephemeralPubkey, 'hex'),
-        Buffer.from(f.blindingPrivkey, 'hex'),
-        Buffer.from(f.rangeproof, 'hex'),
-        Buffer.from(f.valueCommitment, 'hex'),
-        Buffer.from(f.assetGenerator, 'hex'),
-        Buffer.from(f.scriptPubkey, 'hex'),
+  it('unblind', () => {
+    fixtures.valid.unblind.forEach(async (f: any) => {
+      const out: TxOutput = {
+        value: f.valueCommitment,
+        asset: f.assetGenerator,
+        script: f.scriptPubkey,
+        rangeProof: f.rangeproof,
+        nonce: f.ephemeralPubkey,
+      };
+      const unblindProof = await confidential.unblindOutputWithKey(
+        out,
+        f.blindingPrivkey,
       );
 
       assert.strictEqual(unblindProof.value, f.expected.value);
@@ -82,7 +88,7 @@ describe('confidential', () => {
         unblindProof.assetBlindingFactor.toString('hex'),
         f.expected.assetBlindingFactor,
       );
-    }
+    })
   });
 
   it('rangeProofInfo', async () => {

@@ -21,6 +21,7 @@
     "no-var-requires": false,
     "no-unused-expression": false,
     "object-literal-sort-keys": false,
+    "ordered-imports": false,
     "quotemark": [true, "single", "avoid-escape"],
     "typedef": [
       true,

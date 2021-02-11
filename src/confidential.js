@@ -27,11 +27,6 @@ var __awaiter =
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
   };
-var __importDefault =
-  (this && this.__importDefault) ||
-  function(mod) {
-    return mod && mod.__esModule ? mod : { default: mod };
-  };
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -43,10 +38,15 @@ var __importStar =
     result['default'] = mod;
     return result;
   };
+var __importDefault =
+  (this && this.__importDefault) ||
+  function(mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const secp256k1_zkp_1 = __importDefault(require('secp256k1-zkp'));
 const bufferutils = __importStar(require('./bufferutils'));
 const crypto = __importStar(require('./crypto'));
+const secp256k1_zkp_1 = __importDefault(require('secp256k1-zkp'));
 const secp256k1Promise = secp256k1_zkp_1.default();
 function nonceHash(pubkey, privkey) {
   return __awaiter(this, void 0, void 0, function*() {
@@ -94,24 +94,23 @@ function assetCommitment(asset, factor) {
   });
 }
 exports.assetCommitment = assetCommitment;
-function unblindOutput(
-  ephemeralPubkey,
-  blindingPrivkey,
-  rangeproof,
-  valueCommit,
-  asset,
-  scriptPubkey,
-) {
+function unblindOutputWithKey(out, blindingPrivKey) {
+  return __awaiter(this, void 0, void 0, function*() {
+    const nonce = yield nonceHash(out.nonce, blindingPrivKey);
+    return unblindOutputWithNonce(out, nonce);
+  });
+}
+exports.unblindOutputWithKey = unblindOutputWithKey;
+function unblindOutputWithNonce(out, nonce) {
   return __awaiter(this, void 0, void 0, function*() {
     const secp = yield secp256k1Promise;
-    const gen = secp.generator.parse(asset);
-    const nonce = yield nonceHash(ephemeralPubkey, blindingPrivkey);
+    const gen = secp.generator.parse(out.asset);
     const { value, blindFactor, message } = secp.rangeproof.rewind(
-      valueCommit,
-      rangeproof,
+      out.value,
+      out.rangeProof,
       nonce,
       gen,
-      scriptPubkey,
+      out.script,
     );
     return {
       value,
@@ -121,7 +120,7 @@ function unblindOutput(
     };
   });
 }
-exports.unblindOutput = unblindOutput;
+exports.unblindOutputWithNonce = unblindOutputWithNonce;
 function rangeProofInfo(proof) {
   return __awaiter(this, void 0, void 0, function*() {
     const { rangeproof } = yield secp256k1Promise;
