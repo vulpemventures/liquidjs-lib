@@ -121,16 +121,16 @@ export function fromOutputScript(output: Buffer, network?: Network): string {
 
   try {
     return payments.p2pkh({ output, network }).address as string;
-  } catch (e) { }
+  } catch (e) {}
   try {
     return payments.p2sh({ output, network }).address as string;
-  } catch (e) { }
+  } catch (e) {}
   try {
     return payments.p2wpkh({ output, network }).address as string;
-  } catch (e) { }
+  } catch (e) {}
   try {
     return payments.p2wsh({ output, network }).address as string;
-  } catch (e) { }
+  } catch (e) {}
 
   throw new Error(bscript.toASM(output) + ' has no matching Address');
 }
@@ -143,7 +143,7 @@ export function toOutputScript(address: string, network?: Network): Buffer {
   let decodeConfidential: ConfidentialResult | undefined;
   try {
     decodeBase58 = fromBase58Check(address);
-  } catch (e) { }
+  } catch (e) {}
 
   if (decodeBase58) {
     if (decodeBase58.version === network.pubKeyHash)
@@ -153,7 +153,7 @@ export function toOutputScript(address: string, network?: Network): Buffer {
   } else {
     try {
       decodeBech32 = fromBech32(address);
-    } catch (e) { }
+    } catch (e) {}
 
     if (decodeBech32) {
       if (decodeBech32.prefix !== network.bech32)
@@ -167,7 +167,7 @@ export function toOutputScript(address: string, network?: Network): Buffer {
     } else {
       try {
         decodeConfidential = fromConfidential(address);
-      } catch (e) { }
+      } catch (e) {}
 
       if (decodeConfidential) {
         return toOutputScript(
