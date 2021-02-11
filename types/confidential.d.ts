@@ -8,8 +8,8 @@ export interface UnblindOutputResult {
     asset: Buffer;
     assetBlindingFactor: Buffer;
 }
-export declare function unblindOutputWithKey(prevout: Output, blindingPrivKey: Buffer): UnblindOutputResult;
-export declare function unblindOutputWithNonce(prevout: Output, nonce: Buffer): UnblindOutputResult;
+export declare function unblindOutputWithKey(out: Output, blindingPrivKey: Buffer): UnblindOutputResult;
+export declare function unblindOutputWithNonce(out: Output, nonce: Buffer): UnblindOutputResult;
 export interface RangeProofInfoResult {
     ctExp: number;
     ctBits: number;

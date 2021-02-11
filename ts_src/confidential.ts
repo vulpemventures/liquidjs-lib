@@ -51,24 +51,24 @@ export interface UnblindOutputResult {
 }
 
 export function unblindOutputWithKey(
-  prevout: Output,
+  out: Output,
   blindingPrivKey: Buffer,
 ): UnblindOutputResult {
-  const nonce = nonceHash(prevout.nonce, blindingPrivKey);
-  return unblindOutputWithNonce(prevout, nonce);
+  const nonce = nonceHash(out.nonce, blindingPrivKey);
+  return unblindOutputWithNonce(out, nonce);
 }
 
 export function unblindOutputWithNonce(
-  prevout: Output,
+  out: Output,
   nonce: Buffer,
 ): UnblindOutputResult {
-  const gen = secp256k1.generator.parse(prevout.asset);
+  const gen = secp256k1.generator.parse(out.asset);
   const { value, blindFactor, message } = secp256k1.rangeproof.rewind(
-    prevout.value,
-    prevout.rangeProof!,
+    out.value,
+    out.rangeProof!,
     nonce,
     gen,
-    prevout.script,
+    out.script,
   );
 
   return {

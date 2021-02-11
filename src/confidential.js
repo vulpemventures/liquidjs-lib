@@ -37,19 +37,19 @@ function assetCommitment(asset, factor) {
   return secp256k1.generator.serialize(generator);
 }
 exports.assetCommitment = assetCommitment;
-function unblindOutputWithKey(prevout, blindingPrivKey) {
-  const nonce = nonceHash(prevout.nonce, blindingPrivKey);
-  return unblindOutputWithNonce(prevout, nonce);
+function unblindOutputWithKey(out, blindingPrivKey) {
+  const nonce = nonceHash(out.nonce, blindingPrivKey);
+  return unblindOutputWithNonce(out, nonce);
 }
 exports.unblindOutputWithKey = unblindOutputWithKey;
-function unblindOutputWithNonce(prevout, nonce) {
-  const gen = secp256k1.generator.parse(prevout.asset);
+function unblindOutputWithNonce(out, nonce) {
+  const gen = secp256k1.generator.parse(out.asset);
   const { value, blindFactor, message } = secp256k1.rangeproof.rewind(
-    prevout.value,
-    prevout.rangeProof,
+    out.value,
+    out.rangeProof,
     nonce,
     gen,
-    prevout.script,
+    out.script,
   );
   return {
     value,

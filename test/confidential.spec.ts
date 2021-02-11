@@ -1,8 +1,10 @@
-import { WitnessUtxo } from 'bip174/src/lib/interfaces';
 import * as assert from 'assert';
-import { describe, it } from 'mocha';
 import * as confidential from '../src/confidential';
 import * as preFixtures from './fixtures/confidential.json';
+
+import { describe, it } from 'mocha';
+
+import { TxOutput } from '../ts_src/index';
 
 const initBuffers = (object: any): typeof preFixtures =>
   JSON.parse(JSON.stringify(object), (_, value) => {
@@ -63,7 +65,7 @@ describe('confidential', () => {
 
   it('unblind', () => {
     fixtures.valid.unblind.forEach((f: any) => {
-      const out: WitnessUtxo = {
+      const out: TxOutput = {
         value: f.valueCommitment,
         asset: f.assetGenerator,
         script: f.scriptPubkey,
