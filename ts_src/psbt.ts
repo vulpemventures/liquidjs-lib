@@ -197,7 +197,7 @@ export class Psbt {
     ) {
       throw new Error(
         `Invalid arguments for Psbt.addInput. ` +
-        `Requires single object with at least [hash] and [index]`,
+          `Requires single object with at least [hash] and [index]`,
       );
     }
     checkInputsForPartialSig(this.data.inputs, 'addInput');
@@ -232,7 +232,7 @@ export class Psbt {
     ) {
       throw new Error(
         `Invalid arguments for Psbt.addOutput. ` +
-        `Requires single object with at least [script or address] and [value]`,
+          `Requires single object with at least [script or address] and [value]`,
       );
     }
     checkInputsForPartialSig(this.data.inputs, 'addOutput');
@@ -341,10 +341,10 @@ export class Psbt {
       const { hash, script } =
         sighashCache! !== sig.hashType
           ? getHashForSig(
-            inputIndex,
-            Object.assign({}, input, { sighashType: sig.hashType }),
-            this.__CACHE,
-          )
+              inputIndex,
+              Object.assign({}, input, { sighashType: sig.hashType }),
+              this.__CACHE,
+            )
           : { hash: hashCache!, script: scriptCache! };
       sighashCache = sig.hashType;
       hashCache = hash;
@@ -602,8 +602,8 @@ export class Psbt {
       const value = Buffer.isBuffer(witnessUtxo.value)
         ? witnessUtxo.value
         : typeof witnessUtxo.value === 'string'
-          ? Buffer.from(witnessUtxo.value, 'hex')
-          : confidential.satoshiToConfidentialValue(witnessUtxo.value);
+        ? Buffer.from(witnessUtxo.value, 'hex')
+        : confidential.satoshiToConfidentialValue(witnessUtxo.value);
       // if the asset is a string, by checking the first byte we can determine if
       // it's an asset commitment, in this case we decode the hex string as buffer,
       // or if it's an asset hash, in this case we put the unconf prefix in front of the reversed the buffer
@@ -611,8 +611,8 @@ export class Psbt {
         ? witnessUtxo.asset
         : (witnessUtxo.asset as string).startsWith('0a') ||
           (witnessUtxo.asset as string).startsWith('0b')
-          ? Buffer.from(witnessUtxo.asset, 'hex')
-          : Buffer.concat([
+        ? Buffer.from(witnessUtxo.asset, 'hex')
+        : Buffer.concat([
             Buffer.alloc(1, 1),
             reverseBuffer(Buffer.from(witnessUtxo.asset, 'hex')),
           ]);
@@ -768,9 +768,9 @@ export class Psbt {
       },
     );
 
-    const inputsBlindingData = await Promise.all(blindingDataLike.map((data, i) =>
-      toBlindingData(data, witnesses[i]),
-    ));
+    const inputsBlindingData = await Promise.all(
+      blindingDataLike.map((data, i) => toBlindingData(data, witnesses[i])),
+    );
 
     // get data (satoshis & asset) outputs to blind
     const outputsData = outputIndexes.map((index: number) => {
@@ -793,7 +793,7 @@ export class Psbt {
     );
 
     // use blinders to compute proofs & commitments
-    let indexInArray = 0
+    let indexInArray = 0;
     for (const outputIndex of outputIndexes) {
       const randomSeed = randomBytes(opts);
       const ephemeralPrivKey = randomBytes(opts);
@@ -871,7 +871,7 @@ interface PsbtOpts {
   maximumFeeRate: number;
 }
 
-interface PsbtInputExtended extends PsbtInput, TransactionInput { }
+interface PsbtInputExtended extends PsbtInput, TransactionInput {}
 
 type PsbtOutputExtended = PsbtOutputExtendedScript | PsbtOutputExtendedAddress;
 
@@ -996,9 +996,9 @@ class PsbtTransaction implements ITransaction {
     const asset = Buffer.isBuffer(output.asset)
       ? output.asset
       : Buffer.concat([
-        Buffer.alloc(1, 1),
-        reverseBuffer(Buffer.from(output.asset, 'hex')),
-      ]);
+          Buffer.alloc(1, 1),
+          reverseBuffer(Buffer.from(output.asset, 'hex')),
+        ]);
     this.tx.addOutput(script, value, asset, nonce);
   }
 
@@ -1085,10 +1085,10 @@ function checkFees(psbt: Psbt, cache: PsbtCache, opts: PsbtOpts): void {
   if (feeRate >= opts.maximumFeeRate) {
     throw new Error(
       `Warning: You are paying around ${(satoshis / 1e8).toFixed(8)} in ` +
-      `fees, which is ${feeRate} satoshi per byte for a transaction ` +
-      `with a VSize of ${vsize} bytes (segwit counted as 0.25 byte per ` +
-      `byte). Use setMaximumFeeRate method to raise your threshold, or ` +
-      `pass true to the first arg of extractTransaction.`,
+        `fees, which is ${feeRate} satoshi per byte for a transaction ` +
+        `with a VSize of ${vsize} bytes (segwit counted as 0.25 byte per ` +
+        `byte). Use setMaximumFeeRate method to raise your threshold, or ` +
+        `pass true to the first arg of extractTransaction.`,
     );
   }
 }
@@ -1320,7 +1320,7 @@ function getHashForSig(
     const str = sighashTypeToString(sighashType);
     throw new Error(
       `Sighash type is not allowed. Retry the sign method passing the ` +
-      `sighashTypes array of whitelisted types. Sighash type: ${str}`,
+        `sighashTypes array of whitelisted types. Sighash type: ${str}`,
     );
   }
   let hash: Buffer;
@@ -1415,7 +1415,7 @@ function getHashForSig(
     } else {
       throw new Error(
         `Input #${inputIndex} has witnessUtxo but non-segwit script: ` +
-        `${_script.toString('hex')}`,
+          `${_script.toString('hex')}`,
       );
     }
   } else {

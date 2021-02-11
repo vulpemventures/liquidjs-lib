@@ -88,7 +88,7 @@ describe('confidential', () => {
         unblindProof.assetBlindingFactor.toString('hex'),
         f.expected.assetBlindingFactor,
       );
-    })
+    });
   });
 
   it('rangeProofInfo', async () => {
