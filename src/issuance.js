@@ -1,8 +1,19 @@
 'use strict';
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
 const bufferutils_1 = require('./bufferutils');
 const confidential_1 = require('./confidential');
-const bcrypto = require('./crypto');
+const bcrypto = __importStar(require('./crypto'));
 const sha256d_1 = require('./sha256d');
 /**
  * Checks if a contract given as parameter is valid or not.

@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import { describe, it } from 'mocha';
 import * as types from '../src/types';
 const typeforce = require('typeforce');
