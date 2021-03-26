@@ -1,10 +1,21 @@
 'use strict';
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
 const bufferutils_1 = require('./bufferutils');
-const bcrypto = require('./crypto');
-const bscript = require('./script');
+const bcrypto = __importStar(require('./crypto'));
+const bscript = __importStar(require('./script'));
 const script_1 = require('./script');
-const types = require('./types');
+const types = __importStar(require('./types'));
 const typeforce = require('typeforce');
 const varuint = require('varuint-bitcoin');
 function varSliceSize(someScript) {
@@ -13,7 +24,7 @@ function varSliceSize(someScript) {
 }
 const EMPTY_SCRIPT = Buffer.allocUnsafe(0);
 const EMPTY_WITNESS = [];
-const ZERO = Buffer.from(
+exports.ZERO = Buffer.from(
   '0000000000000000000000000000000000000000000000000000000000000000',
   'hex',
 );
@@ -29,8 +40,8 @@ const MINUS_1 = 4294967295;
 const VALUE_UINT64_MAX = Buffer.from('ffffffffffffffff', 'hex');
 const BLANK_OUTPUT = {
   script: EMPTY_SCRIPT,
-  asset: ZERO,
-  nonce: ZERO,
+  asset: exports.ZERO,
+  nonce: exports.ZERO,
   value: VALUE_UINT64_MAX,
 };
 class Transaction {
@@ -421,10 +432,10 @@ class Transaction {
       });
       return bcrypto.hash256(tBuffer);
     }
-    let hashOutputs = ZERO;
-    let hashPrevouts = ZERO;
-    let hashSequences = ZERO;
-    let hashIssuances = ZERO;
+    let hashOutputs = exports.ZERO;
+    let hashPrevouts = exports.ZERO;
+    let hashSequences = exports.ZERO;
+    let hashIssuances = exports.ZERO;
     let sizeOfIssuances = 0;
     // Inputs
     if (!(hashType & Transaction.SIGHASH_ANYONECANPAY)) {

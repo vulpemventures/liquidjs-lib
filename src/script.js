@@ -1,8 +1,19 @@
 'use strict';
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const scriptNumber = require('./script_number');
-const scriptSignature = require('./script_signature');
-const types = require('./types');
+const scriptNumber = __importStar(require('./script_number'));
+const scriptSignature = __importStar(require('./script_signature'));
+const types = __importStar(require('./types'));
 const bip66 = require('bip66');
 const ecc = require('tiny-secp256k1');
 const pushdata = require('pushdata-bitcoin');

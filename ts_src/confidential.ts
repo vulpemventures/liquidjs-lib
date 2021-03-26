@@ -1,45 +1,50 @@
-import * as secp256k1 from 'secp256k1-zkp';
-
 import * as bufferutils from './bufferutils';
 import * as crypto from './crypto';
 
-function nonceHash(pubkey: Buffer, privkey: Buffer): Buffer {
-  return crypto.sha256(secp256k1.ecdh.ecdh(pubkey, privkey));
+import { Output } from './transaction';
+import secp256k1 from 'secp256k1-zkp';
+
+const secp256k1Promise = secp256k1();
+
+async function nonceHash(pubkey: Buffer, privkey: Buffer): Promise<Buffer> {
+  const { ecdh } = await secp256k1Promise;
+  return crypto.sha256(ecdh(pubkey, privkey));
 }
 
-export function valueBlindingFactor(
+export async function valueBlindingFactor(
   inValues: string[],
   outValues: string[],
   inGenerators: Buffer[],
   outGenerators: Buffer[],
   inFactors: Buffer[],
   outFactors: Buffer[],
-): Buffer {
+): Promise<Buffer> {
+  const { pedersen } = await secp256k1Promise;
   const values = inValues.concat(outValues);
   const nInputs = inValues.length;
   const generators = inGenerators.concat(outGenerators);
   const factors = inFactors.concat(outFactors);
-  return secp256k1.pedersen.blindGeneratorBlindSum(
-    values,
-    nInputs,
-    generators,
-    factors,
-  );
+  return pedersen.blindGeneratorBlindSum(values, nInputs, generators, factors);
 }
 
-export function valueCommitment(
+export async function valueCommitment(
   value: string,
-  generator: Buffer,
+  gen: Buffer,
   factor: Buffer,
-): Buffer {
-  const gen = secp256k1.generator.parse(generator);
-  const commit = secp256k1.pedersen.commit(factor, value, gen);
-  return secp256k1.pedersen.commitSerialize(commit);
+): Promise<Buffer> {
+  const { generator, pedersen } = await secp256k1Promise;
+  const generatorParsed = generator.parse(gen);
+  const commit = pedersen.commit(factor, value, generatorParsed);
+  return pedersen.commitSerialize(commit);
 }
 
-export function assetCommitment(asset: Buffer, factor: Buffer): Buffer {
-  const generator = secp256k1.generator.generateBlinded(asset, factor);
-  return secp256k1.generator.serialize(generator);
+export async function assetCommitment(
+  asset: Buffer,
+  factor: Buffer,
+): Promise<Buffer> {
+  const { generator } = await secp256k1Promise;
+  const gen = generator.generateBlinded(asset, factor);
+  return generator.serialize(gen);
 }
 
 export interface UnblindOutputResult {
@@ -49,22 +54,26 @@ export interface UnblindOutputResult {
   assetBlindingFactor: Buffer;
 }
 
-export function unblindOutput(
-  ephemeralPubkey: Buffer,
-  blindingPrivkey: Buffer,
-  rangeproof: Buffer,
-  valueCommit: Buffer,
-  asset: Buffer,
-  scriptPubkey: Buffer,
-): UnblindOutputResult {
-  const gen = secp256k1.generator.parse(asset);
-  const nonce = nonceHash(ephemeralPubkey, blindingPrivkey);
-  const { value, blindFactor, message } = secp256k1.rangeproof.rewind(
-    valueCommit,
-    rangeproof,
+export async function unblindOutputWithKey(
+  out: Output,
+  blindingPrivKey: Buffer,
+): Promise<UnblindOutputResult> {
+  const nonce = await nonceHash(out.nonce, blindingPrivKey);
+  return unblindOutputWithNonce(out, nonce);
+}
+
+export async function unblindOutputWithNonce(
+  out: Output,
+  nonce: Buffer,
+): Promise<UnblindOutputResult> {
+  const secp = await secp256k1Promise;
+  const gen = secp.generator.parse(out.asset);
+  const { value, blindFactor, message } = secp.rangeproof.rewind(
+    out.value,
+    out.rangeProof!,
     nonce,
     gen,
-    scriptPubkey,
+    out.script,
   );
 
   return {
@@ -82,10 +91,11 @@ export interface RangeProofInfoResult {
   maxValue: number;
 }
 
-export function rangeProofInfo(proof: Buffer): RangeProofInfoResult {
-  const { exp, mantissa, minValue, maxValue } = secp256k1.rangeproof.info(
-    proof,
-  );
+export async function rangeProofInfo(
+  proof: Buffer,
+): Promise<RangeProofInfoResult> {
+  const { rangeproof } = await secp256k1Promise;
+  const { exp, mantissa, minValue, maxValue } = rangeproof.info(proof);
   return {
     minValue: parseInt(minValue, 10),
     maxValue: parseInt(maxValue, 10),
@@ -94,7 +104,7 @@ export function rangeProofInfo(proof: Buffer): RangeProofInfoResult {
   };
 }
 
-export function rangeProof(
+export async function rangeProof(
   value: string,
   blindingPubkey: Buffer,
   ephemeralPrivkey: Buffer,
@@ -106,17 +116,19 @@ export function rangeProof(
   minValue?: string,
   exp?: number,
   minBits?: number,
-): Buffer {
-  const nonce = nonceHash(blindingPubkey, ephemeralPrivkey);
-  const gen = secp256k1.generator.generateBlinded(asset, assetBlindingFactor);
+): Promise<Buffer> {
+  const { generator, pedersen, rangeproof } = await secp256k1Promise;
+
+  const nonce = await nonceHash(blindingPubkey, ephemeralPrivkey);
+  const gen = generator.generateBlinded(asset, assetBlindingFactor);
   const message = Buffer.concat([asset, assetBlindingFactor]);
-  const commit = secp256k1.pedersen.commitParse(valueCommit);
+  const commit = pedersen.commitParse(valueCommit);
 
   const mv = minValue ? minValue : '1';
   const e = exp ? exp : 0;
   const mb = minBits ? minBits : 36;
 
-  return secp256k1.rangeproof.sign(
+  return rangeproof.sign(
     commit,
     valueBlindFactor,
     nonce,
@@ -130,25 +142,26 @@ export function rangeProof(
   );
 }
 
-export function surjectionProof(
+export async function surjectionProof(
   outputAsset: Buffer,
   outputAssetBlindingFactor: Buffer,
   inputAssets: Buffer[],
   inputAssetBlindingFactors: Buffer[],
   seed: Buffer,
-): Buffer {
-  const outputGenerator = secp256k1.generator.generateBlinded(
+): Promise<Buffer> {
+  const { generator, surjectionproof } = await secp256k1Promise;
+  const outputGenerator = generator.generateBlinded(
     outputAsset,
     outputAssetBlindingFactor,
   );
 
   const inputGenerators = inputAssets.map((v, i) =>
-    secp256k1.generator.generateBlinded(v, inputAssetBlindingFactors[i]),
+    generator.generateBlinded(v, inputAssetBlindingFactors[i]),
   );
   const nInputsToUse = inputAssets.length > 3 ? 3 : inputAssets.length;
   const maxIterations = 100;
 
-  const init = secp256k1.surjectionproof.initialize(
+  const init = surjectionproof.initialize(
     inputAssets,
     nInputsToUse,
     outputAsset,
@@ -156,7 +169,7 @@ export function surjectionProof(
     seed,
   );
 
-  const proof = secp256k1.surjectionproof.generate(
+  const proof = surjectionproof.generate(
     init.proof,
     inputGenerators,
     outputGenerator,
@@ -165,7 +178,7 @@ export function surjectionProof(
     outputAssetBlindingFactor,
   );
 
-  return secp256k1.surjectionproof.serialize(proof);
+  return surjectionproof.serialize(proof);
 }
 
 const CONFIDENTIAL_VALUE = 9; // explicit size of confidential values

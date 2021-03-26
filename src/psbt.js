@@ -1,18 +1,57 @@
 'use strict';
+var __awaiter =
+  (this && this.__awaiter) ||
+  function(thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function(resolve, reject) {
+      function fulfilled(value) {
+        try {
+          step(generator.next(value));
+        } catch (e) {
+          reject(e);
+        }
+      }
+      function rejected(value) {
+        try {
+          step(generator['throw'](value));
+        } catch (e) {
+          reject(e);
+        }
+      }
+      function step(result) {
+        result.done
+          ? resolve(result.value)
+          : new P(function(resolve) {
+              resolve(result.value);
+            }).then(fulfilled, rejected);
+      }
+      step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+  };
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const bip174_1 = require('bip174');
-const varuint = require('bip174/src/lib/converter/varint');
-const utils_1 = require('bip174/src/lib/utils');
+const confidential = __importStar(require('./confidential'));
+const varuint = __importStar(require('bip174/src/lib/converter/varint'));
 const address_1 = require('./address');
 const bufferutils_1 = require('./bufferutils');
-const confidential = require('./confidential');
 const crypto_1 = require('./crypto');
+const networks_1 = require('./networks');
+const transaction_1 = require('./transaction');
 const ecpair_1 = require('./ecpair');
 const issuance_1 = require('./issuance');
-const networks_1 = require('./networks');
-const payments = require('./payments');
-const bscript = require('./script');
-const transaction_1 = require('./transaction');
+const payments = __importStar(require('./payments'));
+const bscript = __importStar(require('./script'));
+const bip174_1 = require('bip174');
+const utils_1 = require('bip174/src/lib/utils');
 const _randomBytes = require('randombytes');
 /**
  * These are the default arguments for a Psbt instance.
@@ -638,130 +677,30 @@ class Psbt {
     this.data.updateOutput(outputIndex, updateData);
     return this;
   }
-  blindOutputs(blindingPrivkeys, blindingPubkeys, opts) {
-    if (this.data.inputs.some(v => !v.nonWitnessUtxo && !v.witnessUtxo))
-      throw new Error(
-        'All inputs must contain a non witness utxo or a witness utxo',
-      );
-    if (blindingPrivkeys.length !== this.data.inputs.length)
-      throw new Error(
-        'Blinding private keys do not match the number of inputs',
-      );
-    if (blindingPubkeys.length !== this.data.outputs.length - 1)
-      throw new Error(
-        'Blinding public keys do not match the number of outputs (fee excluded)',
-      );
-    const c = this.__CACHE;
-    const outputValues = c.__TX.outs.map(v =>
-      confidential.confidentialValueToSatoshi(v.value).toString(10),
+  blindOutputs(blindingDataLike, blindingPubkeys, opts) {
+    return this.rawBlindOutputs(
+      blindingDataLike,
+      blindingPubkeys,
+      undefined,
+      opts,
     );
-    const inputAbfs = [];
-    const inputVbfs = [];
-    const inputAgs = [];
-    const inputValues = [];
-    // unblind inputs
-    this.data.inputs.forEach((input, index) => {
-      let prevout;
-      if (input.nonWitnessUtxo) {
-        const prevTx = nonWitnessUtxoTxFromCache(c, input, index);
-        const prevoutIndex = c.__TX.ins[index].index;
-        prevout = prevTx.outs[prevoutIndex];
-      } else {
-        prevout = Object.assign({}, input.witnessUtxo);
-      }
-      const unblindPrevout = {
-        value: '',
-        ag: Buffer.alloc(0),
-        abf: Buffer.alloc(0),
-        vbf: Buffer.alloc(0),
-      };
-      if (prevout.rangeProof.length > 0 && prevout.surjectionProof.length > 0) {
-        const unblindProof = confidential.unblindOutput(
-          prevout.nonce,
-          blindingPrivkeys[index],
-          prevout.rangeProof,
-          prevout.value,
-          prevout.asset,
-          prevout.script,
-        );
-        unblindPrevout.ag = unblindProof.asset;
-        unblindPrevout.value = unblindProof.value;
-        unblindPrevout.abf = unblindProof.assetBlindingFactor;
-        unblindPrevout.vbf = unblindProof.valueBlindingFactor;
-      } else {
-        unblindPrevout.value = confidential
-          .confidentialValueToSatoshi(prevout.value)
-          .toString(10);
-      }
-      inputAgs.push(unblindPrevout.ag);
-      inputValues.push(unblindPrevout.value);
-      inputAbfs.push(unblindPrevout.abf);
-      inputVbfs.push(unblindPrevout.vbf);
-    });
-    // generate output blinding factors
-    const numOutputs = this.data.outputs.length - 1; // exclude fees output
-    const outputAbfs = this.data.outputs
-      .slice(0, numOutputs)
-      .map(() => randomBytes(opts));
-    const outputVbfs = this.data.outputs
-      .slice(0, numOutputs - 1)
-      .map(() => randomBytes(opts));
-    const finalVbf = confidential.valueBlindingFactor(
-      inputValues,
-      outputValues,
-      inputAbfs,
-      outputAbfs,
-      inputVbfs,
-      outputVbfs,
+  }
+  blindOutputsByIndex(inputsBlindingData, outputsBlindingPubKeys, opts) {
+    const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
+      inputIndex => inputsBlindingData.get(inputIndex),
     );
-    outputVbfs.push(finalVbf);
-    range(this.data.outputs.length).forEach(outputIndex => {
-      const outputAsset = c.__TX.outs[outputIndex].asset.slice(1);
-      const outputScript = c.__TX.outs[outputIndex].script;
-      const outputValue = outputValues[outputIndex];
-      // if script output is null it means that the current is a fee output
-      // thus, it does not need to be blinded
-      if (outputScript.length === 0) return;
-      // blind output
-      const randomSeed = randomBytes(opts);
-      const ephemeralPrivKey = randomBytes(opts);
-      const outputNonce = ecpair_1.fromPrivateKey(ephemeralPrivKey).publicKey;
-      const assetCommitment = confidential.assetCommitment(
-        outputAsset,
-        outputAbfs[outputIndex],
-      );
-      const valueCommitment = confidential.valueCommitment(
-        outputValue,
-        assetCommitment,
-        outputVbfs[outputIndex],
-      );
-      const rangeProof = confidential.rangeProof(
-        outputValue,
-        blindingPubkeys[outputIndex],
-        ephemeralPrivKey,
-        outputAsset,
-        outputAbfs[outputIndex],
-        outputVbfs[outputIndex],
-        valueCommitment,
-        outputScript,
-      );
-      const surjectionProof = confidential.surjectionProof(
-        outputAsset,
-        outputAbfs[outputIndex],
-        inputAgs,
-        inputAbfs,
-        randomSeed,
-      );
-      c.__TX.outs[outputIndex].asset = assetCommitment;
-      c.__TX.outs[outputIndex].value = valueCommitment;
-      c.__TX.setOutputNonce(outputIndex, outputNonce);
-      c.__TX.setOutputRangeProof(outputIndex, rangeProof);
-      c.__TX.setOutputSurjectionProof(outputIndex, surjectionProof);
-    });
-    c.__FEE = undefined;
-    c.__FEE_RATE = undefined;
-    c.__EXTRACTED_TX = undefined;
-    return this;
+    const outputIndexes = [];
+    const blindingPublicKey = [];
+    for (const [outputIndex, pubBlindingKey] of outputsBlindingPubKeys) {
+      outputIndexes.push(outputIndex);
+      blindingPublicKey.push(pubBlindingKey);
+    }
+    return this.rawBlindOutputs(
+      blindingPrivKeysArgs,
+      blindingPublicKey,
+      outputIndexes,
+      opts,
+    );
   }
   addUnknownKeyValToGlobal(keyVal) {
     this.data.addUnknownKeyValToGlobal(keyVal);
@@ -778,6 +717,110 @@ class Psbt {
   clearFinalizedInput(inputIndex) {
     this.data.clearFinalizedInput(inputIndex);
     return this;
+  }
+  rawBlindOutputs(blindingDataLike, blindingPubkeys, outputIndexes, opts) {
+    return __awaiter(this, void 0, void 0, function*() {
+      if (this.data.inputs.some(v => !v.nonWitnessUtxo && !v.witnessUtxo))
+        throw new Error(
+          'All inputs must contain a non witness utxo or a witness utxo',
+        );
+      const c = this.__CACHE;
+      if (c.__TX.ins.length !== blindingDataLike.length) {
+        throw new Error(
+          'blindingDataLike length does not match the number of inputs (undefined for unconfidential utxo)',
+        );
+      }
+      if (!outputIndexes) {
+        outputIndexes = [];
+        // fill the outputIndexes array with all the output index (except the fee output)
+        c.__TX.outs.forEach((out, index) => {
+          if (out.script.length > 0) outputIndexes.push(index);
+        });
+      }
+      if (outputIndexes.length !== blindingPubkeys.length)
+        throw new Error(
+          'not enough blinding public keys to blind the requested outputs',
+        );
+      const witnesses = this.data.inputs.map((input, index) => {
+        if (input.nonWitnessUtxo) {
+          const prevTx = nonWitnessUtxoTxFromCache(c, input, index);
+          const prevoutIndex = c.__TX.ins[index].index;
+          return prevTx.outs[prevoutIndex];
+        }
+        if (input.witnessUtxo) {
+          return input.witnessUtxo;
+        }
+        throw new Error('input data needs witness utxo or nonwitness utxo');
+      });
+      const inputsBlindingData = yield Promise.all(
+        blindingDataLike.map((data, i) => toBlindingData(data, witnesses[i])),
+      );
+      // get data (satoshis & asset) outputs to blind
+      const outputsData = outputIndexes.map(index => {
+        const output = c.__TX.outs[index];
+        // prevent blinding the fee output
+        if (output.script.length === 0)
+          throw new Error("cant't blind the fee output");
+        const value = confidential
+          .confidentialValueToSatoshi(output.value)
+          .toString(10);
+        return [value, output.asset.slice(1)];
+      });
+      // compute the outputs blinders
+      const outputsBlindingData = yield computeOutputsBlindingData(
+        inputsBlindingData,
+        outputsData,
+      );
+      // use blinders to compute proofs & commitments
+      let indexInArray = 0;
+      for (const outputIndex of outputIndexes) {
+        const randomSeed = randomBytes(opts);
+        const ephemeralPrivKey = randomBytes(opts);
+        const outputNonce = ecpair_1.fromPrivateKey(ephemeralPrivKey).publicKey;
+        const outputBlindingData = outputsBlindingData[indexInArray];
+        // commitments
+        const assetCommitment = yield confidential.assetCommitment(
+          outputBlindingData.asset,
+          outputBlindingData.assetBlindingFactor,
+        );
+        const valueCommitment = yield confidential.valueCommitment(
+          outputBlindingData.value,
+          assetCommitment,
+          outputBlindingData.valueBlindingFactor,
+        );
+        // proofs
+        const rangeProof = yield confidential.rangeProof(
+          outputBlindingData.value,
+          blindingPubkeys[indexInArray],
+          ephemeralPrivKey,
+          outputBlindingData.asset,
+          outputBlindingData.assetBlindingFactor,
+          outputBlindingData.valueBlindingFactor,
+          valueCommitment,
+          c.__TX.outs[outputIndex].script,
+        );
+        const surjectionProof = yield confidential.surjectionProof(
+          outputBlindingData.asset,
+          outputBlindingData.assetBlindingFactor,
+          inputsBlindingData.map(({ asset }) => asset),
+          inputsBlindingData.map(
+            ({ assetBlindingFactor }) => assetBlindingFactor,
+          ),
+          randomSeed,
+        );
+        // set commitments & proofs & nonce
+        c.__TX.outs[outputIndex].asset = assetCommitment;
+        c.__TX.outs[outputIndex].value = valueCommitment;
+        c.__TX.setOutputNonce(outputIndex, outputNonce);
+        c.__TX.setOutputRangeProof(outputIndex, rangeProof);
+        c.__TX.setOutputSurjectionProof(outputIndex, surjectionProof);
+        indexInArray++;
+      }
+      c.__FEE = undefined;
+      c.__FEE_RATE = undefined;
+      c.__EXTRACTED_TX = undefined;
+      return this;
+    });
   }
 }
 exports.Psbt = Psbt;
@@ -1455,4 +1498,95 @@ function randomBytes(options) {
   if (options === undefined) options = {};
   const rng = options.rng || _randomBytes;
   return rng(32);
+}
+/**
+ * Compute outputs blinders
+ * @param inputsBlindingData the transaction inputs blinding data
+ * @param outputsData data = [satoshis, asset] of output to blind ([string Buffer])
+ * @returns an array of BlindingData[] corresponding of blinders to blind outputs specified in outputsData
+ */
+function computeOutputsBlindingData(inputsBlindingData, outputsData) {
+  return __awaiter(this, void 0, void 0, function*() {
+    const outputsBlindingData = [];
+    outputsData
+      .slice(0, outputsData.length - 1)
+      .forEach(([satoshis, asset]) => {
+        const blindingData = {
+          value: satoshis,
+          asset,
+          valueBlindingFactor: randomBytes(),
+          assetBlindingFactor: randomBytes(),
+        };
+        outputsBlindingData.push(blindingData);
+      });
+    const [lastOutputValue, lastOutputAsset] = outputsData[
+      outputsData.length - 1
+    ];
+    const finalBlindingData = {
+      value: lastOutputValue,
+      asset: lastOutputAsset,
+      assetBlindingFactor: randomBytes(),
+      valueBlindingFactor: Buffer.from([]),
+    };
+    // values
+    const inputsValues = inputsBlindingData.map(({ value }) => value);
+    const outputsValues = outputsData
+      .map(([amount]) => amount)
+      .concat(lastOutputValue);
+    // asset blinders
+    const inputsAssetBlinders = inputsBlindingData.map(
+      ({ assetBlindingFactor }) => assetBlindingFactor,
+    );
+    const outputsAssetBlinders = outputsBlindingData
+      .map(({ assetBlindingFactor }) => assetBlindingFactor)
+      .concat(finalBlindingData.assetBlindingFactor);
+    // value blinders
+    const inputsAmountBlinders = inputsBlindingData.map(
+      ({ valueBlindingFactor }) => valueBlindingFactor,
+    );
+    const outputsAmountBlinders = outputsBlindingData.map(
+      ({ valueBlindingFactor }) => valueBlindingFactor,
+    );
+    // compute output final amount blinder
+    const finalAmountBlinder = yield confidential.valueBlindingFactor(
+      inputsValues,
+      outputsValues,
+      inputsAssetBlinders,
+      outputsAssetBlinders,
+      inputsAmountBlinders,
+      outputsAmountBlinders,
+    );
+    finalBlindingData.valueBlindingFactor = finalAmountBlinder;
+    outputsBlindingData.push(finalBlindingData);
+    return outputsBlindingData;
+  });
+}
+exports.computeOutputsBlindingData = computeOutputsBlindingData;
+/**
+ * toBlindingData convert a BlindingDataLike to UnblindOutputResult
+ * @param blindDataLike blinding data "like" associated to a specific input I
+ * @param witnessUtxo the prevout of the input I
+ */
+function toBlindingData(blindDataLike, witnessUtxo) {
+  return __awaiter(this, void 0, void 0, function*() {
+    if (!blindDataLike) {
+      if (!witnessUtxo) throw new Error('need witnessUtxo');
+      return getUnconfidentialWitnessUtxoBlindingData(witnessUtxo);
+    }
+    if (Buffer.isBuffer(blindDataLike)) {
+      if (!witnessUtxo) throw new Error('need witnessUtxo');
+      return confidential.unblindOutputWithKey(witnessUtxo, blindDataLike);
+    }
+    return blindDataLike;
+  });
+}
+exports.toBlindingData = toBlindingData;
+function getUnconfidentialWitnessUtxoBlindingData(prevout) {
+  const unblindedInputBlindingData = {
+    value: confidential.confidentialValueToSatoshi(prevout.value).toString(10),
+    valueBlindingFactor: transaction_1.ZERO,
+    asset: prevout.asset.slice(1),
+    assetBlindingFactor: transaction_1.ZERO,
+  };
+  return unblindedInputBlindingData;
 }

@@ -1,9 +1,10 @@
-import { Psbt as PsbtBase } from 'bip174';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput } from 'bip174/src/lib/interfaces';
-import { Signer, SignerAsync } from './ecpair';
-import { IssuanceContract } from './issuance';
+import * as confidential from './confidential';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174/src/lib/interfaces';
 import { Network } from './networks';
 import { Transaction } from './transaction';
+import { Signer, SignerAsync } from './ecpair';
+import { IssuanceContract } from './issuance';
+import { Psbt as PsbtBase } from 'bip174';
 export interface AddIssuanceArgs {
     assetAmount: number;
     assetAddress: string;
@@ -86,11 +87,13 @@ export declare class Psbt {
     updateGlobal(updateData: PsbtGlobalUpdate): this;
     updateInput(inputIndex: number, updateData: PsbtInputUpdate): this;
     updateOutput(outputIndex: number, updateData: PsbtOutputUpdate): this;
-    blindOutputs(blindingPrivkeys: Buffer[], blindingPubkeys: Buffer[], opts?: RngOpts): this;
+    blindOutputs(blindingDataLike: BlindingDataLike[], blindingPubkeys: Buffer[], opts?: RngOpts): Promise<this>;
+    blindOutputsByIndex(inputsBlindingData: Map<number, BlindingDataLike>, outputsBlindingPubKeys: Map<number, Buffer>, opts?: RngOpts): Promise<this>;
     addUnknownKeyValToGlobal(keyVal: KeyValue): this;
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;
     clearFinalizedInput(inputIndex: number): this;
+    private rawBlindOutputs;
 }
 interface PsbtOptsOptional {
     network?: Network;
@@ -143,4 +146,18 @@ interface HDSignerAsync extends HDSignerBase {
 interface RngOpts {
     rng?(arg0: number): Buffer;
 }
+export declare type BlindingDataLike = Buffer | confidential.UnblindOutputResult | undefined;
+/**
+ * Compute outputs blinders
+ * @param inputsBlindingData the transaction inputs blinding data
+ * @param outputsData data = [satoshis, asset] of output to blind ([string Buffer])
+ * @returns an array of BlindingData[] corresponding of blinders to blind outputs specified in outputsData
+ */
+export declare function computeOutputsBlindingData(inputsBlindingData: confidential.UnblindOutputResult[], outputsData: Array<[string, Buffer]>): Promise<confidential.UnblindOutputResult[]>;
+/**
+ * toBlindingData convert a BlindingDataLike to UnblindOutputResult
+ * @param blindDataLike blinding data "like" associated to a specific input I
+ * @param witnessUtxo the prevout of the input I
+ */
+export declare function toBlindingData(blindDataLike: BlindingDataLike, witnessUtxo?: WitnessUtxo): Promise<confidential.UnblindOutputResult>;
 export {};

@@ -1,10 +1,21 @@
 'use strict';
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const baddress = require('../address');
-const bcrypto = require('../crypto');
+const baddress = __importStar(require('../address'));
+const bcrypto = __importStar(require('../crypto'));
 const networks_1 = require('../networks');
-const bscript = require('../script');
-const lazy = require('./lazy');
+const bscript = __importStar(require('../script'));
+const lazy = __importStar(require('./lazy'));
 const typef = require('typeforce');
 const OPS = bscript.OPS;
 const ecc = require('tiny-secp256k1');

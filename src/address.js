@@ -1,9 +1,20 @@
 'use strict';
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const networks = require('./networks');
-const payments = require('./payments');
-const bscript = require('./script');
-const types = require('./types');
+const networks = __importStar(require('./networks'));
+const payments = __importStar(require('./payments'));
+const bscript = __importStar(require('./script'));
+const types = __importStar(require('./types'));
 const bech32 = require('bech32');
 const blech32 = require('blech32');
 const bs58check = require('bs58check');
@@ -93,7 +104,7 @@ function fromOutputScript(output, network) {
 }
 exports.fromOutputScript = fromOutputScript;
 function toOutputScript(address, network) {
-  network = network || networks.liquid;
+  network = network || getNetwork(address);
   let decodeBase58;
   let decodeBech32;
   let decodeConfidential;
@@ -160,6 +171,7 @@ function getNetwork(address) {
     return networks.regtest;
   throw new Error(address + ' has an invalid prefix');
 }
+exports.getNetwork = getNetwork;
 function fromConfidentialLegacy(address, network) {
   const payload = bs58check.decode(address);
   const prefix = payload.readUInt8(1);
@@ -173,7 +185,7 @@ function fromConfidentialLegacy(address, network) {
   // Prefixes are 1 byte long, thus blinding key always starts at 3rd byte
   const blindingKey = payload.slice(2, 35);
   const unconfidential = payload.slice(35, payload.length);
-  const versionBuf = new Uint8Array(1);
+  const versionBuf = Buffer.alloc(1);
   versionBuf[0] = prefix;
   const unconfidentialAddressBuffer = Buffer.concat([
     versionBuf,
@@ -199,7 +211,7 @@ function toConfidentialLegacy(address, blindingKey, network) {
   // Check if blind key has valid length
   if (blindingKey.length < 33) throw new TypeError('Blinding key is too short');
   if (blindingKey.length > 33) throw new TypeError('Blinding key is too long');
-  const prefixBuf = new Uint8Array(2);
+  const prefixBuf = Buffer.alloc(2);
   prefixBuf[0] = network.confidentialPrefix;
   prefixBuf[1] = prefix;
   const confidentialAddress = Buffer.concat([

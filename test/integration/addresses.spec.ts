@@ -4,7 +4,7 @@ import { describe, it } from 'mocha';
 import * as liquid from '../..';
 const REGTEST = liquid.networks.regtest;
 
-describe('liquid-js (addresses)', () => {
+describe('liquidjs-lib (addresses)', () => {
   it(
     'can generate a random address [and support the retrieval of ' +
       'transactions for that address (via 3PBP)]',

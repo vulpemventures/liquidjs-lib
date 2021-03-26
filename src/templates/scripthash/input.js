@@ -1,12 +1,23 @@
 'use strict';
 // <scriptSig> {serialized scriptPubKey script}
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const bscript = require('../../script');
-const p2ms = require('../multisig');
-const p2pk = require('../pubkey');
-const p2pkh = require('../pubkeyhash');
-const p2wpkho = require('../witnesspubkeyhash/output');
-const p2wsho = require('../witnessscripthash/output');
+const bscript = __importStar(require('../../script'));
+const p2ms = __importStar(require('../multisig'));
+const p2pk = __importStar(require('../pubkey'));
+const p2pkh = __importStar(require('../pubkeyhash'));
+const p2wpkho = __importStar(require('../witnesspubkeyhash/output'));
+const p2wsho = __importStar(require('../witnessscripthash/output'));
 function check(script, allowIncomplete) {
   const chunks = bscript.decompile(script);
   if (chunks.length < 1) return false;

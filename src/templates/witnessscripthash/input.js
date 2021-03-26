@@ -1,11 +1,22 @@
 'use strict';
 // <scriptSig> {serialized scriptPubKey script}
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result['default'] = mod;
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-const bscript = require('../../script');
+const bscript = __importStar(require('../../script'));
 const typeforce = require('typeforce');
-const p2ms = require('../multisig');
-const p2pk = require('../pubkey');
-const p2pkh = require('../pubkeyhash');
+const p2ms = __importStar(require('../multisig'));
+const p2pk = __importStar(require('../pubkey'));
+const p2pkh = __importStar(require('../pubkeyhash'));
 function check(chunks, allowIncomplete) {
   typeforce(typeforce.Array, chunks);
   if (chunks.length < 1) return false;

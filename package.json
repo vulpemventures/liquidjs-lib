@@ -1,6 +1,6 @@
 {
   "name": "liquidjs-lib",
-  "version": "5.1.6",
+  "version": "5.1.11",
   "description": "Client-side Liquid JavaScript library",
   "main": "./src/index.js",
   "types": "./types/index.d.ts",
@@ -41,7 +41,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitcoinjs/bitcoinjs-lib.git"
+    "url": "https://github.com/vulpemventures/liquidjs-lib.git"
   },
   "files": [
     "src",
@@ -50,18 +50,18 @@
   "dependencies": {
     "axios": "^0.19.2",
     "bech32": "^1.1.2",
-    "bip174": "github:vulpemventures/bip174",
+    "bip174": "vulpemventures/bip174.git",
     "bip32": "^2.0.4",
     "bip66": "^1.1.0",
     "bitcoin-ops": "^1.4.0",
-    "blech32": "github:vulpemventures/blech32",
-    "secp256k1-zkp": "github:vulpemventures/secp256k1-zkp",
+    "blech32": "vulpemventures/blech32.git",
     "bs58check": "^2.0.0",
     "create-hash": "^1.1.0",
     "create-hmac": "^1.1.3",
     "merkle-lib": "^2.0.10",
     "pushdata-bitcoin": "^1.0.1",
     "randombytes": "^2.0.1",
+    "secp256k1-zkp": "github:vulpemventures/secp256k1-zkp",
     "tiny-secp256k1": "^1.1.1",
     "typeforce": "^1.11.3",
     "varuint-bitcoin": "^1.0.4",

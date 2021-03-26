@@ -15,7 +15,7 @@ function varSliceSize(someScript: Buffer): number {
 
 const EMPTY_SCRIPT: Buffer = Buffer.allocUnsafe(0);
 const EMPTY_WITNESS: Buffer[] = [];
-const ZERO: Buffer = Buffer.from(
+export const ZERO: Buffer = Buffer.from(
   '0000000000000000000000000000000000000000000000000000000000000000',
   'hex',
 );
