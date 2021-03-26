@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ["8.x", "10.x", "12.x", "14.x"]
+        node: ["12.x", "14.x", "latest"]
 
     steps:
       - name: Checkout repo
@@ -27,8 +27,9 @@ jobs:
           mkdir -p tmp; cd tmp
           curl https://travis.nigiri.network | bash; cd ..
           docker-compose -f  tmp/docker-compose.yml up -d
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+
+      - name: Install deps
+        run: npm install
 
       - name: Lint
         run: |
