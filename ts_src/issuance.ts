@@ -38,6 +38,15 @@ export interface Issuance {
 }
 
 /**
+ * returns true if the issuance's token amount is not 0x00 or null buffer.
+ * @param issuance issuance to test
+ */
+export function hasTokenAmount(issuance: Issuance): boolean {
+  if (issuance.tokenAmount && issuance.tokenAmount.length > 1) return true;
+  return false;
+}
+
+/**
  * Checks if a contract given as parameter is valid or not.
  * @param contract contract to validate.
  */

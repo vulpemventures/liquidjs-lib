@@ -16,6 +16,15 @@ const confidential_1 = require('./confidential');
 const bcrypto = __importStar(require('./crypto'));
 const sha256d_1 = require('./sha256d');
 /**
+ * returns true if the issuance's token amount is not 0x00 or null buffer.
+ * @param issuance issuance to test
+ */
+function hasTokenAmount(issuance) {
+  if (issuance.tokenAmount && issuance.tokenAmount.length > 1) return true;
+  return false;
+}
+exports.hasTokenAmount = hasTokenAmount;
+/**
  * Checks if a contract given as parameter is valid or not.
  * @param contract contract to validate.
  */

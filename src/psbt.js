@@ -755,6 +755,37 @@ class Psbt {
       const inputsBlindingData = yield Promise.all(
         blindingDataLike.map((data, i) => toBlindingData(data, witnesses[i])),
       );
+      // loop over inputs and create blindingData object in case of issuance
+      for (const input of this.__CACHE.__TX.ins) {
+        if (input.issuance) {
+          const asset = issuance_1.calculateAsset(input.issuance.assetEntropy);
+          const value = confidential
+            .confidentialValueToSatoshi(input.issuance.assetAmount)
+            .toString(10);
+          inputsBlindingData.unshift({
+            value,
+            asset,
+            assetBlindingFactor: transaction_1.ZERO,
+            valueBlindingFactor: transaction_1.ZERO,
+          });
+          if (issuance_1.hasTokenAmount(input.issuance)) {
+            const isConfidentialIssuance = false; // TODO handle confidential issuance
+            const token = issuance_1.calculateReissuanceToken(
+              input.issuance.assetEntropy,
+              isConfidentialIssuance,
+            );
+            const tokenValue = confidential
+              .confidentialValueToSatoshi(input.issuance.tokenAmount)
+              .toString(10);
+            inputsBlindingData.unshift({
+              value: tokenValue,
+              asset: token,
+              assetBlindingFactor: transaction_1.ZERO,
+              valueBlindingFactor: transaction_1.ZERO,
+            });
+          }
+        }
+      }
       // get data (satoshis & asset) outputs to blind
       const outputsData = outputIndexes.map(index => {
         const output = c.__TX.outs[index];
