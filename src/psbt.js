@@ -758,7 +758,11 @@ class Psbt {
       // loop over inputs and create blindingData object in case of issuance
       for (const input of this.__CACHE.__TX.ins) {
         if (input.issuance) {
-          const asset = issuance_1.calculateAsset(input.issuance.assetEntropy);
+          const entropy = issuance_1.generateEntropy(
+            { txHash: input.hash, vout: input.index },
+            input.issuance.assetEntropy,
+          );
+          const asset = issuance_1.calculateAsset(entropy);
           const value = confidential
             .confidentialValueToSatoshi(input.issuance.assetAmount)
             .toString(10);
@@ -771,7 +775,7 @@ class Psbt {
           if (issuance_1.hasTokenAmount(input.issuance)) {
             const isConfidentialIssuance = false; // TODO handle confidential issuance
             const token = issuance_1.calculateReissuanceToken(
-              input.issuance.assetEntropy,
+              entropy,
               isConfidentialIssuance,
             );
             const tokenValue = confidential
