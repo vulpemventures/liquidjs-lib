@@ -117,9 +117,35 @@ export async function rangeProof(
   exp?: number,
   minBits?: number,
 ): Promise<Buffer> {
+  const nonce = await nonceHash(blindingPubkey, ephemeralPrivkey);
+  return rangeProofWithoutNonceHash(
+    value,
+    nonce,
+    asset,
+    assetBlindingFactor,
+    valueBlindFactor,
+    valueCommit,
+    scriptPubkey,
+    minValue,
+    exp,
+    minBits,
+  );
+}
+
+export async function rangeProofWithoutNonceHash(
+  value: string,
+  nonce: Buffer,
+  asset: Buffer,
+  assetBlindingFactor: Buffer,
+  valueBlindFactor: Buffer,
+  valueCommit: Buffer,
+  scriptPubkey: Buffer,
+  minValue?: string,
+  exp?: number,
+  minBits?: number,
+): Promise<Buffer> {
   const { generator, pedersen, rangeproof } = await secp256k1Promise;
 
-  const nonce = await nonceHash(blindingPubkey, ephemeralPrivkey);
   const gen = generator.generateBlinded(asset, assetBlindingFactor);
   const message = Buffer.concat([asset, assetBlindingFactor]);
   const commit = pedersen.commitParse(valueCommit);

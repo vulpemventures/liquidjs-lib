@@ -682,13 +682,24 @@ class Psbt {
       blindingDataLike,
       blindingPubkeys,
       undefined,
+      undefined,
       opts,
     );
   }
-  blindOutputsByIndex(inputsBlindingData, outputsBlindingPubKeys, opts) {
+  blindOutputsByIndex(
+    inputsBlindingData,
+    outputsBlindingPubKeys,
+    issuancesBlindingKeys,
+    opts,
+  ) {
     const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
       inputIndex => inputsBlindingData.get(inputIndex),
     );
+    const blindingPrivKeysIssuancesArgs = issuancesBlindingKeys
+      ? range(this.__CACHE.__TX.ins.length).map(inputIndex =>
+          issuancesBlindingKeys.get(inputIndex),
+        )
+      : [];
     const outputIndexes = [];
     const blindingPublicKey = [];
     for (const [outputIndex, pubBlindingKey] of outputsBlindingPubKeys) {
@@ -698,6 +709,7 @@ class Psbt {
     return this.rawBlindOutputs(
       blindingPrivKeysArgs,
       blindingPublicKey,
+      blindingPrivKeysIssuancesArgs,
       outputIndexes,
       opts,
     );
@@ -718,7 +730,13 @@ class Psbt {
     this.data.clearFinalizedInput(inputIndex);
     return this;
   }
-  rawBlindOutputs(blindingDataLike, blindingPubkeys, outputIndexes, opts) {
+  rawBlindOutputs(
+    blindingDataLike,
+    blindingPubkeys,
+    issuanceBlindingPrivKeys = [],
+    outputIndexes,
+    opts,
+  ) {
     return __awaiter(this, void 0, void 0, function*() {
       if (this.data.inputs.some(v => !v.nonWitnessUtxo && !v.witnessUtxo))
         throw new Error(
@@ -756,8 +774,13 @@ class Psbt {
         blindingDataLike.map((data, i) => toBlindingData(data, witnesses[i])),
       );
       // loop over inputs and create blindingData object in case of issuance
+      let i = 0;
       for (const input of this.__CACHE.__TX.ins) {
         if (input.issuance) {
+          const isConfidentialIssuance =
+            issuanceBlindingPrivKeys && issuanceBlindingPrivKeys[i]
+              ? true
+              : false;
           const entropy = issuance_1.generateEntropy(
             { txHash: input.hash, vout: input.index },
             input.issuance.assetEntropy,
@@ -766,14 +789,43 @@ class Psbt {
           const value = confidential
             .confidentialValueToSatoshi(input.issuance.assetAmount)
             .toString(10);
-          inputsBlindingData.unshift({
+          const blindingDataIssuance = {
             value,
             asset,
-            assetBlindingFactor: transaction_1.ZERO,
-            valueBlindingFactor: transaction_1.ZERO,
-          });
+            assetBlindingFactor: isConfidentialIssuance
+              ? randomBytes()
+              : transaction_1.ZERO,
+            valueBlindingFactor: isConfidentialIssuance
+              ? randomBytes()
+              : transaction_1.ZERO,
+          };
+          inputsBlindingData.unshift(blindingDataIssuance);
+          if (isConfidentialIssuance) {
+            const assetCommitment = yield confidential.assetCommitment(
+              asset,
+              blindingDataIssuance.assetBlindingFactor,
+            );
+            const valueCommitment = yield confidential.valueCommitment(
+              value,
+              assetCommitment,
+              blindingDataIssuance.valueBlindingFactor,
+            );
+            const rangeProof = yield confidential.rangeProofWithoutNonceHash(
+              value,
+              issuanceBlindingPrivKeys[i].assetKey,
+              asset,
+              blindingDataIssuance.assetBlindingFactor,
+              blindingDataIssuance.valueBlindingFactor,
+              valueCommitment,
+              Buffer.alloc(0),
+              '1',
+              0,
+              52,
+            );
+            this.__CACHE.__TX.ins[i].issuanceRangeProof = rangeProof;
+            this.__CACHE.__TX.ins[i].issuance.assetAmount = valueCommitment;
+          }
           if (issuance_1.hasTokenAmount(input.issuance)) {
-            const isConfidentialIssuance = false; // TODO handle confidential issuance
             const token = issuance_1.calculateReissuanceToken(
               entropy,
               isConfidentialIssuance,
@@ -781,14 +833,45 @@ class Psbt {
             const tokenValue = confidential
               .confidentialValueToSatoshi(input.issuance.tokenAmount)
               .toString(10);
-            inputsBlindingData.unshift({
+            const blindingDataIssuance = {
               value: tokenValue,
               asset: token,
-              assetBlindingFactor: transaction_1.ZERO,
-              valueBlindingFactor: transaction_1.ZERO,
-            });
+              assetBlindingFactor: isConfidentialIssuance
+                ? randomBytes()
+                : transaction_1.ZERO,
+              valueBlindingFactor: isConfidentialIssuance
+                ? randomBytes()
+                : transaction_1.ZERO,
+            };
+            inputsBlindingData.unshift(blindingDataIssuance);
+            if (isConfidentialIssuance) {
+              const assetCommitment = yield confidential.assetCommitment(
+                token,
+                blindingDataIssuance.assetBlindingFactor,
+              );
+              const valueCommitment = yield confidential.valueCommitment(
+                tokenValue,
+                assetCommitment,
+                blindingDataIssuance.valueBlindingFactor,
+              );
+              const rangeProof = yield confidential.rangeProofWithoutNonceHash(
+                tokenValue,
+                issuanceBlindingPrivKeys[i].tokenKey,
+                token,
+                blindingDataIssuance.assetBlindingFactor,
+                blindingDataIssuance.valueBlindingFactor,
+                valueCommitment,
+                Buffer.alloc(0),
+                '1',
+                0,
+                52,
+              );
+              this.__CACHE.__TX.ins[i].inflationRangeProof = rangeProof;
+              this.__CACHE.__TX.ins[i].issuance.tokenAmount = valueCommitment;
+            }
           }
         }
+        i++;
       }
       // get data (satoshis & asset) outputs to blind
       const outputsData = outputIndexes.map(index => {

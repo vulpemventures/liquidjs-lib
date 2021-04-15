@@ -7,6 +7,10 @@ export declare function Signer(obj: any): boolean;
 export declare function Satoshi(value: number): boolean;
 export declare const ECPoint: any;
 export declare const Network: any;
+export interface IssuanceBlindingKeys {
+    assetKey: Buffer;
+    tokenKey: Buffer;
+}
 export declare const Buffer256bit: any;
 export declare const Hash160bit: any;
 export declare const Hash256bit: any;

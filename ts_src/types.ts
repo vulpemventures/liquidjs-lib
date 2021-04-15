@@ -42,6 +42,11 @@ export const Network = typeforce.compile({
   confidentialPrefix: typeforce.UInt8,
 });
 
+export interface IssuanceBlindingKeys {
+  assetKey: Buffer;
+  tokenKey: Buffer;
+}
+
 export const Buffer256bit = typeforce.BufferN(32);
 export const Hash160bit = typeforce.BufferN(20);
 export const Hash256bit = typeforce.BufferN(32);

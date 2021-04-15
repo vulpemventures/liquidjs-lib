@@ -148,8 +148,36 @@ function rangeProof(
   minBits,
 ) {
   return __awaiter(this, void 0, void 0, function*() {
-    const { generator, pedersen, rangeproof } = yield secp256k1Promise;
     const nonce = yield nonceHash(blindingPubkey, ephemeralPrivkey);
+    return rangeProofWithoutNonceHash(
+      value,
+      nonce,
+      asset,
+      assetBlindingFactor,
+      valueBlindFactor,
+      valueCommit,
+      scriptPubkey,
+      minValue,
+      exp,
+      minBits,
+    );
+  });
+}
+exports.rangeProof = rangeProof;
+function rangeProofWithoutNonceHash(
+  value,
+  nonce,
+  asset,
+  assetBlindingFactor,
+  valueBlindFactor,
+  valueCommit,
+  scriptPubkey,
+  minValue,
+  exp,
+  minBits,
+) {
+  return __awaiter(this, void 0, void 0, function*() {
+    const { generator, pedersen, rangeproof } = yield secp256k1Promise;
     const gen = generator.generateBlinded(asset, assetBlindingFactor);
     const message = Buffer.concat([asset, assetBlindingFactor]);
     const commit = pedersen.commitParse(valueCommit);
@@ -170,7 +198,7 @@ function rangeProof(
     );
   });
 }
-exports.rangeProof = rangeProof;
+exports.rangeProofWithoutNonceHash = rangeProofWithoutNonceHash;
 function surjectionProof(
   outputAsset,
   outputAssetBlindingFactor,
