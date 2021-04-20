@@ -2,7 +2,7 @@ import * as bufferutils from './bufferutils';
 import * as crypto from './crypto';
 
 import { Output } from './transaction';
-import secp256k1 from 'secp256k1-zkp';
+import secp256k1 from '@vulpemventures/secp256k1-zkp';
 
 const secp256k1Promise = secp256k1();
 

@@ -46,7 +46,9 @@ var __importDefault =
 Object.defineProperty(exports, '__esModule', { value: true });
 const bufferutils = __importStar(require('./bufferutils'));
 const crypto = __importStar(require('./crypto'));
-const secp256k1_zkp_1 = __importDefault(require('secp256k1-zkp'));
+const secp256k1_zkp_1 = __importDefault(
+  require('@vulpemventures/secp256k1-zkp'),
+);
 const secp256k1Promise = secp256k1_zkp_1.default();
 function nonceHash(pubkey, privkey) {
   return __awaiter(this, void 0, void 0, function*() {
