@@ -28,3 +28,8 @@ export declare function toConfidential(address: string, blindingKey: Buffer): st
 export declare function fromOutputScript(output: Buffer, network?: Network): string;
 export declare function toOutputScript(address: string, network?: Network): Buffer;
 export declare function getNetwork(address: string): Network;
+/**
+ * A quick check used to verify if a string could be a valid confidential address.
+ * @param address address to check.
+ */
+export declare function isConfidential(address: string): boolean;

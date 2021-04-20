@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import Axios from 'axios';
+import axios from 'axios';
 import { describe, it } from 'mocha';
 import * as liquid from '../..';
 const REGTEST = liquid.networks.regtest;
@@ -17,7 +17,7 @@ describe('liquidjs-lib (addresses)', () => {
         true,
       );
 
-      const result = await Axios.get(
+      const result = await axios.get(
         `https://blockstream.info/liquid/api/address/${address}/txs`,
       );
 

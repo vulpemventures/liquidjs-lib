@@ -18,6 +18,7 @@ export interface RangeProofInfoResult {
 }
 export declare function rangeProofInfo(proof: Buffer): Promise<RangeProofInfoResult>;
 export declare function rangeProof(value: string, blindingPubkey: Buffer, ephemeralPrivkey: Buffer, asset: Buffer, assetBlindingFactor: Buffer, valueBlindFactor: Buffer, valueCommit: Buffer, scriptPubkey: Buffer, minValue?: string, exp?: number, minBits?: number): Promise<Buffer>;
+export declare function rangeProofWithoutNonceHash(value: string, nonce: Buffer, asset: Buffer, assetBlindingFactor: Buffer, valueBlindFactor: Buffer, valueCommit: Buffer, scriptPubkey: Buffer, minValue?: string, exp?: number, minBits?: number): Promise<Buffer>;
 export declare function surjectionProof(outputAsset: Buffer, outputAssetBlindingFactor: Buffer, inputAssets: Buffer[], inputAssetBlindingFactors: Buffer[], seed: Buffer): Promise<Buffer>;
 export declare function confidentialValueToSatoshi(value: Buffer): number;
 export declare function satoshiToConfidentialValue(amount: number): Buffer;

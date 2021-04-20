@@ -1,3 +1,4 @@
+import { Issuance } from './issuance';
 export declare const ZERO: Buffer;
 export interface Output {
     script: Buffer;
@@ -6,12 +7,6 @@ export interface Output {
     nonce: Buffer;
     rangeProof?: Buffer;
     surjectionProof?: Buffer;
-}
-export interface Issuance {
-    assetBlindingNonce: Buffer;
-    assetEntropy: Buffer;
-    assetAmount: Buffer;
-    tokenAmount: Buffer;
 }
 export interface Input {
     hash: Buffer;

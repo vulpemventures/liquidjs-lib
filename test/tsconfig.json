@@ -13,6 +13,7 @@
       "node",
       "mocha"
     ],
+    "esModuleInterop": true,
     "allowJs": false,
     "resolveJsonModule": true,
     "strict": true,
@@ -23,7 +24,6 @@
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
-    "esModuleInterop": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "baseUrl": ".",

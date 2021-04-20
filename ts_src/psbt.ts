@@ -1,6 +1,4 @@
-import * as bscript from './script';
 import * as confidential from './confidential';
-import * as payments from './payments';
 import * as varuint from 'bip174/src/lib/converter/varint';
 
 import {
@@ -16,6 +14,9 @@ import {
   TransactionInput,
   WitnessUtxo,
 } from 'bip174/src/lib/interfaces';
+import { isConfidential, toOutputScript } from './address';
+import { reverseBuffer } from './bufferutils';
+import { hash160 } from './crypto';
 import { Network, liquid as btcNetwork } from './networks';
 import { Output, Transaction, ZERO } from './transaction';
 import {
@@ -24,12 +25,20 @@ import {
   fromPrivateKey as ecPairFromPrivateKey,
   fromPublicKey as ecPairFromPublicKey,
 } from './ecpair';
-
+import {
+  calculateAsset,
+  calculateReissuanceToken,
+  generateEntropy,
+  hasTokenAmount,
+  Issuance,
+  IssuanceContract,
+  newIssuance,
+} from './issuance';
+import * as payments from './payments';
+import * as bscript from './script';
 import { Psbt as PsbtBase } from 'bip174';
 import { checkForInput } from 'bip174/src/lib/utils';
-import { hash160 } from './crypto';
-import { reverseBuffer } from './bufferutils';
-import { toOutputScript } from './address';
+import { IssuanceBlindingKeys } from './types';
 
 const _randomBytes = require('randombytes');
 
@@ -49,6 +58,16 @@ const DEFAULT_OPTS: PsbtOpts = {
    */
   maximumFeeRate: 5000, // satoshi per byte
 };
+
+export interface AddIssuanceArgs {
+  assetAmount: number;
+  assetAddress: string;
+  tokenAmount: number;
+  tokenAddress?: string;
+  precision: number;
+  contract?: IssuanceContract;
+  net?: Network;
+}
 
 /**
  * Psbt class can parse and generate a PSBT binary based off of the BIP174.
@@ -214,6 +233,96 @@ export class Psbt {
     c.__FEE = undefined;
     c.__FEE_RATE = undefined;
     c.__EXTRACTED_TX = undefined;
+    return this;
+  }
+
+  addIssuance(args: AddIssuanceArgs, inputIndex?: number): this {
+    // check the amounts.
+    if (args.assetAmount <= 0)
+      throw new Error('asset amount must be greater than zero.');
+    if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+
+    if (inputIndex && !this.data.inputs[inputIndex]) {
+      throw new Error(`The input ${inputIndex} does not exist.`);
+      // check if the input is available for issuance.
+    } else {
+      // verify if there is at least one input available.
+      if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
+        throw new Error(
+          'transaction needs at least one input without issuance data.',
+        );
+      // search and extract the input index.
+      inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
+    }
+
+    if (this.__CACHE.__TX.ins[inputIndex].issuance)
+      throw new Error(`The input ${inputIndex} already has issuance data.`);
+
+    const assetAddrIsConfidential = isConfidential(args.assetAddress);
+    const tokenAddrIsConfidential = args.tokenAddress
+      ? isConfidential(args.tokenAddress)
+      : undefined;
+
+    if (
+      tokenAddrIsConfidential !== undefined &&
+      assetAddrIsConfidential !== tokenAddrIsConfidential
+    ) {
+      throw new Error(
+        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
+      );
+    }
+
+    const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
+
+    // create an issuance object using the vout and the args
+    const issuance: Issuance = newIssuance(
+      args.assetAmount,
+      args.tokenAmount,
+      args.precision,
+      args.contract,
+    );
+
+    // generate the entropy
+    const entropy: Buffer = generateEntropy(
+      { txHash: hash, vout: index },
+      issuance.assetEntropy,
+    );
+
+    // add the issuance to the input.
+    this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
+
+    const kOne = Buffer.from('01', 'hex');
+    const asset = Buffer.concat([kOne, calculateAsset(entropy)]);
+    const assetScript = toOutputScript(args.assetAddress, args.net);
+
+    // send the asset amount to the asset address.
+    this.addOutput({
+      value: issuance.assetAmount,
+      script: assetScript,
+      asset,
+      nonce: Buffer.from('00', 'hex'),
+    });
+
+    // check if the token amount is not 0
+    if (args.tokenAmount !== 0) {
+      if (!args.tokenAddress)
+        throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
+
+      const token = Buffer.concat([
+        kOne,
+        calculateReissuanceToken(entropy, isConfidential(args.tokenAddress)),
+      ]);
+      const tokenScript = toOutputScript(args.tokenAddress, args.net);
+
+      // send the token amount to the token address.
+      this.addOutput({
+        script: tokenScript,
+        value: issuance.tokenAmount,
+        asset: token,
+        nonce: Buffer.from('00', 'hex'),
+      });
+    }
+
     return this;
   }
 
@@ -643,6 +752,7 @@ export class Psbt {
         },
       });
     }
+
     this.data.updateInput(inputIndex, updateData);
     if (updateData.nonWitnessUtxo) {
       addNonWitnessTxCache(
@@ -668,6 +778,7 @@ export class Psbt {
       blindingDataLike,
       blindingPubkeys,
       undefined,
+      undefined,
       opts,
     );
   }
@@ -675,11 +786,17 @@ export class Psbt {
   blindOutputsByIndex(
     inputsBlindingData: Map<number, BlindingDataLike>,
     outputsBlindingPubKeys: Map<number, Buffer>,
+    issuancesBlindingKeys?: Map<number, IssuanceBlindingKeys>,
     opts?: RngOpts,
   ): Promise<this> {
     const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
       (inputIndex: number) => inputsBlindingData.get(inputIndex),
     );
+    const blindingPrivKeysIssuancesArgs = issuancesBlindingKeys
+      ? range(this.__CACHE.__TX.ins.length).map((inputIndex: number) =>
+          issuancesBlindingKeys.get(inputIndex),
+        )
+      : [];
     const outputIndexes: number[] = [];
     const blindingPublicKey: Buffer[] = [];
 
@@ -691,6 +808,7 @@ export class Psbt {
     return this.rawBlindOutputs(
       blindingPrivKeysArgs,
       blindingPublicKey,
+      blindingPrivKeysIssuancesArgs,
       outputIndexes,
       opts,
     );
@@ -719,6 +837,7 @@ export class Psbt {
   private async rawBlindOutputs(
     blindingDataLike: BlindingDataLike[],
     blindingPubkeys: Buffer[],
+    issuanceBlindingPrivKeys: (IssuanceBlindingKeys | undefined)[] = [],
     outputIndexes?: number[],
     opts?: RngOpts,
   ): Promise<this> {
@@ -772,6 +891,107 @@ export class Psbt {
       blindingDataLike.map((data, i) => toBlindingData(data, witnesses[i])),
     );
 
+    // loop over inputs and create blindingData object in case of issuance
+    let i = 0;
+    for (const input of this.__CACHE.__TX.ins) {
+      if (input.issuance) {
+        const isConfidentialIssuance =
+          issuanceBlindingPrivKeys && issuanceBlindingPrivKeys[i]
+            ? true
+            : false;
+        const entropy = generateEntropy(
+          { txHash: input.hash, vout: input.index },
+          input.issuance.assetEntropy,
+        );
+        const asset = calculateAsset(entropy);
+        const value = confidential
+          .confidentialValueToSatoshi(input.issuance.assetAmount)
+          .toString(10);
+
+        const blindingDataIssuance = {
+          value,
+          asset,
+          assetBlindingFactor: isConfidentialIssuance ? randomBytes() : ZERO,
+          valueBlindingFactor: isConfidentialIssuance ? randomBytes() : ZERO,
+        };
+
+        inputsBlindingData.unshift(blindingDataIssuance);
+
+        if (isConfidentialIssuance) {
+          const assetCommitment = await confidential.assetCommitment(
+            asset,
+            blindingDataIssuance.assetBlindingFactor,
+          );
+          const valueCommitment = await confidential.valueCommitment(
+            value,
+            assetCommitment,
+            blindingDataIssuance.valueBlindingFactor,
+          );
+          const rangeProof = await confidential.rangeProofWithoutNonceHash(
+            value,
+            issuanceBlindingPrivKeys[i]!.assetKey,
+            asset,
+            blindingDataIssuance.assetBlindingFactor,
+            blindingDataIssuance.valueBlindingFactor,
+            valueCommitment,
+            Buffer.alloc(0),
+            '1',
+            0,
+            52,
+          );
+          this.__CACHE.__TX.ins[i].issuanceRangeProof = rangeProof;
+          this.__CACHE.__TX.ins[i].issuance!.assetAmount = valueCommitment;
+        }
+
+        if (hasTokenAmount(input.issuance)) {
+          const token = calculateReissuanceToken(
+            entropy,
+            isConfidentialIssuance,
+          );
+          const tokenValue = confidential
+            .confidentialValueToSatoshi(input.issuance.tokenAmount)
+            .toString(10);
+
+          const blindingDataIssuance = {
+            value: tokenValue,
+            asset: token,
+            assetBlindingFactor: isConfidentialIssuance ? randomBytes() : ZERO,
+            valueBlindingFactor: isConfidentialIssuance ? randomBytes() : ZERO,
+          };
+
+          inputsBlindingData.unshift(blindingDataIssuance);
+
+          if (isConfidentialIssuance) {
+            const assetCommitment = await confidential.assetCommitment(
+              token,
+              blindingDataIssuance.assetBlindingFactor,
+            );
+            const valueCommitment = await confidential.valueCommitment(
+              tokenValue,
+              assetCommitment,
+              blindingDataIssuance.valueBlindingFactor,
+            );
+
+            const rangeProof = await confidential.rangeProofWithoutNonceHash(
+              tokenValue,
+              issuanceBlindingPrivKeys[i]!.tokenKey,
+              token,
+              blindingDataIssuance.assetBlindingFactor,
+              blindingDataIssuance.valueBlindingFactor,
+              valueCommitment,
+              Buffer.alloc(0),
+              '1',
+              0,
+              52,
+            );
+
+            this.__CACHE.__TX.ins[i].inflationRangeProof = rangeProof;
+            this.__CACHE.__TX.ins[i].issuance!.tokenAmount = valueCommitment;
+          }
+        }
+      }
+      i++;
+    }
     // get data (satoshis & asset) outputs to blind
     const outputsData = outputIndexes.map((index: number) => {
       const output = c.__TX.outs[index];
