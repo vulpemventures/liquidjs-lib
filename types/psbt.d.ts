@@ -1,9 +1,9 @@
 import * as confidential from './confidential';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174/src/lib/interfaces';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174-liquid/src/lib/interfaces';
 import { Network } from './networks';
 import { Transaction } from './transaction';
 import { Signer, SignerAsync } from './ecpair';
-import { Psbt as PsbtBase } from 'bip174';
+import { Psbt as PsbtBase } from 'bip174-liquid';
 /**
  * Psbt class can parse and generate a PSBT binary based off of the BIP174.
  * There are 6 roles that this class fulfills. (Explained in BIP174)

@@ -42,12 +42,12 @@ Object.defineProperty(exports, '__esModule', { value: true });
 const bscript = __importStar(require('./script'));
 const confidential = __importStar(require('./confidential'));
 const payments = __importStar(require('./payments'));
-const varuint = __importStar(require('bip174/src/lib/converter/varint'));
+const varuint = __importStar(require('bip174-liquid/src/lib/converter/varint'));
 const networks_1 = require('./networks');
 const transaction_1 = require('./transaction');
 const ecpair_1 = require('./ecpair');
-const bip174_1 = require('bip174');
-const utils_1 = require('bip174/src/lib/utils');
+const bip174_liquid_1 = require('bip174-liquid');
+const utils_1 = require('bip174-liquid/src/lib/utils');
 const crypto_1 = require('./crypto');
 const bufferutils_1 = require('./bufferutils');
 const address_1 = require('./address');
@@ -101,7 +101,10 @@ const DEFAULT_OPTS = {
  *   Transaction object. Such as fee rate not being larger than maximumFeeRate etc.
  */
 class Psbt {
-  constructor(opts = {}, data = new bip174_1.Psbt(new PsbtTransaction())) {
+  constructor(
+    opts = {},
+    data = new bip174_liquid_1.Psbt(new PsbtTransaction()),
+  ) {
     this.data = data;
     // set defaults
     this.opts = Object.assign({}, DEFAULT_OPTS, opts);
@@ -130,7 +133,10 @@ class Psbt {
     return this.fromBuffer(buffer, opts);
   }
   static fromBuffer(buffer, opts = {}) {
-    const psbtBase = bip174_1.Psbt.fromBuffer(buffer, transactionFromBuffer);
+    const psbtBase = bip174_liquid_1.Psbt.fromBuffer(
+      buffer,
+      transactionFromBuffer,
+    );
     const psbt = new Psbt(opts, psbtBase);
     checkTxForDupeIns(psbt.__CACHE.__TX, psbt.__CACHE);
     return psbt;
