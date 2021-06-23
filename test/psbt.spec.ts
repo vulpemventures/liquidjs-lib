@@ -78,7 +78,7 @@ describe('Psbt', () => {
           psbt.signInput(inputToSign, keyPair);
         });
 
-        assert.strictEqual(psbt.toBase64(), f.result);
+        assert.strictEqual(psbt.toBase64().trim(), f.result.trim());
       });
     });
 
@@ -640,13 +640,13 @@ describe('Psbt', () => {
       index: 0,
       nonWitnessUtxo: Buffer.from(
         '0200000000010caf381d44f094661f2da71a11946251a27d656d6c141577e27c483a6' +
-          'd428f01010000006a47304402205ac99f5988d699d6d9f72004098c2e52c8f342838e' +
-          '9009dde33d204108cc930d022077238cd40a4e4234f1e70ceab8fd6b51c5325954387' +
-          '2e5d9f4bad544918b82ce012102b5214a4f0d6962fe547f0b9cbb241f9df1b61c3c40' +
-          '1dbfb04cdd59efd552bea1ffffffff020125b251070e29ca19043cf33ccd7324e2dda' +
-          'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000005f5df70001976a914659bedb5d3d3' +
-          'c7ab12d7f85323c3a1b6c060efbe88ac0125b251070e29ca19043cf33ccd7324e2dda' +
-          'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000000000190000000000000',
+        'd428f01010000006a47304402205ac99f5988d699d6d9f72004098c2e52c8f342838e' +
+        '9009dde33d204108cc930d022077238cd40a4e4234f1e70ceab8fd6b51c5325954387' +
+        '2e5d9f4bad544918b82ce012102b5214a4f0d6962fe547f0b9cbb241f9df1b61c3c40' +
+        '1dbfb04cdd59efd552bea1ffffffff020125b251070e29ca19043cf33ccd7324e2dda' +
+        'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000005f5df70001976a914659bedb5d3d3' +
+        'c7ab12d7f85323c3a1b6c060efbe88ac0125b251070e29ca19043cf33ccd7324e2dda' +
+        'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000000000190000000000000',
         'hex',
       ),
       sighashType: 1,
@@ -678,12 +678,12 @@ describe('Psbt', () => {
     assert.strictEqual(
       psbt.extractTransaction().toHex(),
       '02000000000180e510ab7856a0a5cdedfcbb4cec8695349b31854102aa92994f263e34f' +
-        '0649d000000006b483045022100f91ae1cb73b3afae669ceb8768a564176effa9ccce4d' +
-        '791eabd2b47078bdebd50220154c08cf3e42f3678f5bf7cf461dc4656538dc7c1cd9fc4' +
-        '31ae08cd754f3cd4401210251464420fcc98a2e4cd347afe28a32d769287dacd861476a' +
-        'b858baa43bd308f3ffffffff010125b251070e29ca19043cf33ccd7324e2ddab03ecc4a' +
-        'e0b5e77c4fc0e5cf6c95a010000000000013880001976a91439397080b51ef22c59bd74' +
-        '69afacffbeec0da12e88ac00000000',
+      '0649d000000006b483045022100f91ae1cb73b3afae669ceb8768a564176effa9ccce4d' +
+      '791eabd2b47078bdebd50220154c08cf3e42f3678f5bf7cf461dc4656538dc7c1cd9fc4' +
+      '31ae08cd754f3cd4401210251464420fcc98a2e4cd347afe28a32d769287dacd861476a' +
+      'b858baa43bd308f3ffffffff010125b251070e29ca19043cf33ccd7324e2ddab03ecc4a' +
+      'e0b5e77c4fc0e5cf6c95a010000000000013880001976a91439397080b51ef22c59bd74' +
+      '69afacffbeec0da12e88ac00000000',
     );
   });
 
