@@ -50,7 +50,7 @@
   "dependencies": {
     "@vulpemventures/secp256k1-zkp": "^2.0.0",
     "bech32": "^1.1.2",
-    "bip174-liquid": "^1.0.2-liquid",
+    "bip174-liquid": "louisinger/bip174#hotfix",
     "bip32": "^2.0.4",
     "bip66": "^1.1.0",
     "bitcoin-ops": "^1.4.0",
