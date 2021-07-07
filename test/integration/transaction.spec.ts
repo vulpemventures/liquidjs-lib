@@ -615,6 +615,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         undefined,
         false,
       ); // unconfidential
+
       const alicePaymentConfidential = createPayment(
         'p2pkh',
         undefined,
@@ -680,6 +681,8 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       psbt = psbt
         .signInput(0, alicePaymentUnconfidential.keys[0])
         .signInput(1, alicePaymentConfidential.keys[0]);
+
+      assert.doesNotThrow(() => liquid.Psbt.fromBase64(psbt.toBase64()));
 
       assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
       assert.strictEqual(psbt.validateSignaturesOfInput(1), true);
@@ -946,13 +949,14 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       .addOutputs([outputData, outputData2, outputData3])
       .blindOutputs(blindingKeys, blindingPubkeys);
 
-    const tx = psbt
-      .signAllInputs(keyPair)
+    const tx = psbt.signAllInputs(keyPair);
+
+    const toBroadcast = liquid.Psbt.fromBase64(tx.toBase64())
       .finalizeAllInputs()
       .extractTransaction();
 
     // build and broadcast to the Bitcoin RegTest network
-    await regtestUtils.broadcast(tx.toHex());
+    await regtestUtils.broadcast(toBroadcast.toHex());
   });
 
   it('can create (and broadcast via 3PBP) a Transaction, w/ a P2SH(P2WPKH) input with nonWitnessUtxo', async () => {
