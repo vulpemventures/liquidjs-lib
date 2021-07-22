@@ -54,7 +54,7 @@
     "bip32": "^2.0.4",
     "bip66": "^1.1.0",
     "bitcoin-ops": "^1.4.0",
-    "blech32": "github:vulpemventures/blech32",
+    "blech32": "^1.0.1",
     "bs58check": "^2.0.0",
     "create-hash": "^1.1.0",
     "create-hmac": "^1.1.3",

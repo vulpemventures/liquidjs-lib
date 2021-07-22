@@ -213,9 +213,9 @@ describe('address', () => {
     fixtures.standard.forEach(f => {
       it(
         'create confidential address from ' +
-          (f.base58check || f.bech32)! +
-          ' and ' +
-          f.blindkey,
+        (f.base58check || f.bech32)! +
+        ' and ' +
+        f.blindkey,
         () => {
           const t = baddress.toConfidential(
             (f.base58check || f.bech32)!,
