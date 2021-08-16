@@ -2,7 +2,11 @@ import { IssuanceBlindingKeys } from './../../ts_src/types';
 import * as assert from 'assert';
 import { networks as NETWORKS } from '../..';
 import * as liquid from '../..';
-import { createPayment, getInputData, nonWitnessUtxoBuffer } from './transaction.spec';
+import {
+  createPayment,
+  getInputData,
+  nonWitnessUtxoBuffer,
+} from './transaction.spec';
 import { broadcast } from './_regtest';
 const { regtest } = NETWORKS;
 
@@ -76,7 +80,6 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const hex = psbt.extractTransaction().toHex();
     await broadcast(hex);
   });
-
 
   it('can create a 1-to-1 confidential Transaction (and broadcast via 3PBP) with unblinded issuance', async () => {
     const blindingPrivkeys = [
