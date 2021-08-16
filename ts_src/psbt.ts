@@ -1,5 +1,5 @@
 import * as confidential from './confidential';
-import * as varuint from 'bip174/src/lib/converter/varint';
+import * as varuint from 'bip174-liquid/src/lib/converter/varint';
 
 import {
   Transaction as ITransaction,
@@ -13,7 +13,7 @@ import {
   TransactionFromBuffer,
   TransactionInput,
   WitnessUtxo,
-} from 'bip174/src/lib/interfaces';
+} from 'bip174-liquid/src/lib/interfaces';
 import { isConfidential, toOutputScript } from './address';
 import { reverseBuffer } from './bufferutils';
 import { hash160 } from './crypto';
@@ -36,9 +36,10 @@ import {
 } from './issuance';
 import * as payments from './payments';
 import * as bscript from './script';
-import { Psbt as PsbtBase } from 'bip174';
-import { checkForInput } from 'bip174/src/lib/utils';
 import { IssuanceBlindingKeys } from './types';
+
+import { Psbt as PsbtBase } from 'bip174-liquid';
+import { checkForInput } from 'bip174-liquid/src/lib/utils';
 
 const _randomBytes = require('randombytes');
 

@@ -4,8 +4,9 @@ import * as payments from './payments';
 import * as bscript from './script';
 import * as types from './types';
 
+import { Blech32Address } from 'blech32';
+
 const bech32 = require('bech32');
-const blech32 = require('blech32');
 const bs58check = require('bs58check');
 const typeforce = require('typeforce');
 
@@ -55,13 +56,15 @@ export function fromBech32(address: string): Bech32Result {
 }
 
 export function fromBlech32(address: string): Blech32Result {
-  const prefix = address.substring(0, 2);
-  const result = blech32.decode(prefix, address);
-  const pubkey = result.words.slice(0, 33);
-  const prg = result.words.slice(33);
-  const data = Buffer.concat([Buffer.from([result.version, prg.length]), prg]);
+  const result = Blech32Address.fromString(address);
+  const pubkey = Buffer.from(result.blindingPublicKey, 'hex');
+  const prg = Buffer.from(result.witness, 'hex');
+  const data = Buffer.concat([
+    Buffer.from([result.witnessVersion, prg.length]),
+    prg,
+  ]);
   return {
-    version: result.version,
+    version: result.witnessVersion,
     pubkey,
     data,
   };
@@ -102,8 +105,11 @@ export function toBlech32(
   pubkey: Buffer,
   prefix: string,
 ): string {
-  const words = Buffer.concat([pubkey, data.slice(2)]);
-  return blech32.encode(prefix, words);
+  return Blech32Address.from(
+    data.slice(2).toString('hex'),
+    pubkey.toString('hex'),
+    prefix,
+  ).address;
 }
 
 export function toConfidential(address: string, blindingKey: Buffer): string {

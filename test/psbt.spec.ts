@@ -78,7 +78,7 @@ describe('Psbt', () => {
           psbt.signInput(inputToSign, keyPair);
         });
 
-        assert.strictEqual(psbt.toBase64(), f.result);
+        assert.strictEqual(psbt.toBase64().trim(), f.result.trim());
       });
     });
 

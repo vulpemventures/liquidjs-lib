@@ -7,5 +7,4 @@ test/integration/*.js
 !test/ts-node-register.js
 .DS_Store
 # for dev
-ts_src/*.js
-ts_src/payments/*.js
+ts_src/**/*.js

@@ -15,8 +15,8 @@ const networks = __importStar(require('./networks'));
 const payments = __importStar(require('./payments'));
 const bscript = __importStar(require('./script'));
 const types = __importStar(require('./types'));
+const blech32_1 = require('blech32');
 const bech32 = require('bech32');
-const blech32 = require('blech32');
 const bs58check = require('bs58check');
 const typeforce = require('typeforce');
 function fromBase58Check(address) {
@@ -40,13 +40,15 @@ function fromBech32(address) {
 }
 exports.fromBech32 = fromBech32;
 function fromBlech32(address) {
-  const prefix = address.substring(0, 2);
-  const result = blech32.decode(prefix, address);
-  const pubkey = result.words.slice(0, 33);
-  const prg = result.words.slice(33);
-  const data = Buffer.concat([Buffer.from([result.version, prg.length]), prg]);
+  const result = blech32_1.Blech32Address.fromString(address);
+  const pubkey = Buffer.from(result.blindingPublicKey, 'hex');
+  const prg = Buffer.from(result.witness, 'hex');
+  const data = Buffer.concat([
+    Buffer.from([result.witnessVersion, prg.length]),
+    prg,
+  ]);
   return {
-    version: result.version,
+    version: result.witnessVersion,
     pubkey,
     data,
   };
@@ -74,8 +76,11 @@ function toBech32(data, version, prefix) {
 }
 exports.toBech32 = toBech32;
 function toBlech32(data, pubkey, prefix) {
-  const words = Buffer.concat([pubkey, data.slice(2)]);
-  return blech32.encode(prefix, words);
+  return blech32_1.Blech32Address.from(
+    data.slice(2).toString('hex'),
+    pubkey.toString('hex'),
+    prefix,
+  ).address;
 }
 exports.toBlech32 = toBlech32;
 function toConfidential(address, blindingKey) {

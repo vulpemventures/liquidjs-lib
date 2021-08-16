@@ -28,13 +28,12 @@ jobs:
           curl https://travis.nigiri.network | bash; cd ..
           docker-compose -f  tmp/docker-compose.yml up -d
 
-      - name: Install deps
-        run: npm install
+      - name: Install dependencies
+        run: npm install --ci
 
       - name: Lint
         run: |
           npm run format:ci
-          npm run gitdiff:ci
           npm run lint
           npm run lint:tests
 
@@ -43,6 +42,12 @@ jobs:
 
       - name: Unit Test
         run: npm run unit
+
+      - name: Install Nigiri
+        run: |
+          mkdir -p tmp; cd tmp
+          curl https://travis.nigiri.network | bash; cd ..
+          docker-compose -f  tmp/docker-compose.yml up -d
 
       - name: Integration Test
         env:

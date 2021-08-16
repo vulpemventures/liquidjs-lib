@@ -1,11 +1,11 @@
 import * as confidential from './confidential';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174/src/lib/interfaces';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174-liquid/src/lib/interfaces';
 import { Network } from './networks';
 import { Transaction } from './transaction';
 import { Signer, SignerAsync } from './ecpair';
 import { IssuanceContract } from './issuance';
-import { Psbt as PsbtBase } from 'bip174';
 import { IssuanceBlindingKeys } from './types';
+import { Psbt as PsbtBase } from 'bip174-liquid';
 export interface AddIssuanceArgs {
     assetAmount: number;
     assetAddress: string;
