@@ -805,7 +805,7 @@ class Psbt {
               ? randomBytes()
               : transaction_1.ZERO,
           };
-          inputsBlindingData.unshift(blindingDataIssuance);
+          inputsBlindingData.push(blindingDataIssuance);
           if (isConfidentialIssuance) {
             const assetCommitment = yield confidential.assetCommitment(
               asset,
@@ -816,9 +816,17 @@ class Psbt {
               assetCommitment,
               blindingDataIssuance.valueBlindingFactor,
             );
+            const assetBlindingPrivateKey = issuanceBlindingPrivKeys[i]
+              ? issuanceBlindingPrivKeys[i].assetKey
+              : undefined;
+            if (!assetBlindingPrivateKey) {
+              throw new Error(
+                `missing asset blinding private key for issuance #${i}`,
+              );
+            }
             const rangeProof = yield confidential.rangeProofWithoutNonceHash(
               value,
-              issuanceBlindingPrivKeys[i].assetKey,
+              assetBlindingPrivateKey,
               asset,
               blindingDataIssuance.assetBlindingFactor,
               blindingDataIssuance.valueBlindingFactor,
@@ -849,7 +857,7 @@ class Psbt {
                 ? randomBytes()
                 : transaction_1.ZERO,
             };
-            inputsBlindingData.unshift(blindingDataIssuance);
+            inputsBlindingData.push(blindingDataIssuance);
             if (isConfidentialIssuance) {
               const assetCommitment = yield confidential.assetCommitment(
                 token,

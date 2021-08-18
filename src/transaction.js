@@ -516,7 +516,7 @@ class Transaction {
     return bufferutils_1.reverseBuffer(this.getHash(false)).toString('hex');
   }
   toBuffer(buffer, initialOffset) {
-    return this.__toBuffer(buffer, initialOffset, true);
+    return this.__toBuffer(buffer, initialOffset, true, false);
   }
   toHex() {
     return this.toBuffer(undefined, undefined).toString('hex');
@@ -631,24 +631,21 @@ class Transaction {
     bufferWriter.writeInt32(this.version);
     const hasWitnesses = _ALLOW_WITNESS && this.hasWitnesses();
     if (!forSignature) {
-      if (
-        hasWitnesses &&
-        (forceZeroFlag === false || forceZeroFlag === undefined)
-      )
-        bufferWriter.writeUInt8(Transaction.ADVANCED_TRANSACTION_FLAG);
-      else bufferWriter.writeUInt8(Transaction.ADVANCED_TRANSACTION_MARKER);
+      let value = Transaction.ADVANCED_TRANSACTION_MARKER;
+      if (hasWitnesses && !forceZeroFlag) {
+        value = Transaction.ADVANCED_TRANSACTION_FLAG;
+      }
+      bufferWriter.writeUInt8(value);
     }
     bufferWriter.writeVarInt(this.ins.length);
     this.ins.forEach(txIn => {
       bufferWriter.writeSlice(txIn.hash);
       let prevIndex = txIn.index;
-      if (forceZeroFlag === false || forceZeroFlag === undefined) {
-        if (txIn.issuance) {
-          prevIndex = (prevIndex | OUTPOINT_ISSUANCE_FLAG) >>> 0;
-        }
-        if (txIn.isPegin) {
-          prevIndex = (prevIndex | OUTPOINT_PEGIN_FLAG) >>> 0;
-        }
+      if (txIn.issuance) {
+        prevIndex = (prevIndex | OUTPOINT_ISSUANCE_FLAG) >>> 0;
+      }
+      if (txIn.isPegin) {
+        prevIndex = (prevIndex | OUTPOINT_PEGIN_FLAG) >>> 0;
       }
       bufferWriter.writeUInt32(prevIndex);
       bufferWriter.writeVarSlice(txIn.script);

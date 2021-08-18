@@ -487,10 +487,10 @@ export class Transaction {
         (sum, txIn) =>
           !types.Null(txIn.issuance)
             ? sum +
-              txIn.issuance!.assetBlindingNonce.length +
-              txIn.issuance!.assetEntropy.length +
-              txIn.issuance!.assetAmount.length +
-              txIn.issuance!.tokenAmount.length
+            txIn.issuance!.assetBlindingNonce.length +
+            txIn.issuance!.assetEntropy.length +
+            txIn.issuance!.assetAmount.length +
+            txIn.issuance!.tokenAmount.length
             : sum, // we'll use the empty 00 Buffer if issuance is not set
         0,
       );
@@ -633,7 +633,7 @@ export class Transaction {
   }
 
   toBuffer(buffer?: Buffer, initialOffset?: number): Buffer {
-    return this.__toBuffer(buffer, initialOffset, true);
+    return this.__toBuffer(buffer, initialOffset, true, false);
   }
 
   toHex(): string {
@@ -710,8 +710,8 @@ export class Transaction {
           varSliceSize(input.script) +
           (input.issuance
             ? 64 +
-              input.issuance.assetAmount.length +
-              input.issuance.tokenAmount.length
+            input.issuance.assetAmount.length +
+            input.issuance.tokenAmount.length
             : 0)
         );
       }, 0) +
@@ -726,29 +726,29 @@ export class Transaction {
       }, 0) +
       (hasWitnesses
         ? this.ins.reduce((sum, input) => {
-            return (
-              sum +
-              varSliceSize(input.issuanceRangeProof!) +
-              varSliceSize(input.inflationRangeProof!) +
-              varuint.encodingLength(input.witness.length) +
-              input.witness.reduce((scriptSum, scriptWit) => {
-                return scriptSum + varSliceSize(scriptWit);
-              }, 0) +
-              varuint.encodingLength(input.peginWitness!.length) +
-              input.peginWitness!.reduce((peginSum, peginWit) => {
-                return peginSum + varSliceSize(peginWit);
-              }, 0)
-            );
-          }, 0)
+          return (
+            sum +
+            varSliceSize(input.issuanceRangeProof!) +
+            varSliceSize(input.inflationRangeProof!) +
+            varuint.encodingLength(input.witness.length) +
+            input.witness.reduce((scriptSum, scriptWit) => {
+              return scriptSum + varSliceSize(scriptWit);
+            }, 0) +
+            varuint.encodingLength(input.peginWitness!.length) +
+            input.peginWitness!.reduce((peginSum, peginWit) => {
+              return peginSum + varSliceSize(peginWit);
+            }, 0)
+          );
+        }, 0)
         : 0) +
       (hasWitnesses
         ? this.outs.reduce((sum, output) => {
-            return (
-              sum +
-              varSliceSize(output.surjectionProof!) +
-              varSliceSize(output.rangeProof!)
-            );
-          }, 0)
+          return (
+            sum +
+            varSliceSize(output.surjectionProof!) +
+            varSliceSize(output.rangeProof!)
+          );
+        }, 0)
         : 0)
     );
   }
@@ -771,12 +771,12 @@ export class Transaction {
 
     const hasWitnesses = _ALLOW_WITNESS && this.hasWitnesses();
     if (!forSignature) {
-      if (
-        hasWitnesses &&
-        (forceZeroFlag === false || forceZeroFlag === undefined)
-      )
-        bufferWriter.writeUInt8(Transaction.ADVANCED_TRANSACTION_FLAG);
-      else bufferWriter.writeUInt8(Transaction.ADVANCED_TRANSACTION_MARKER);
+      let value = Transaction.ADVANCED_TRANSACTION_MARKER;
+      if (hasWitnesses && !forceZeroFlag) {
+        value = Transaction.ADVANCED_TRANSACTION_FLAG;
+      }
+
+      bufferWriter.writeUInt8(value);
     }
 
     bufferWriter.writeVarInt(this.ins.length);
@@ -784,13 +784,11 @@ export class Transaction {
     this.ins.forEach(txIn => {
       bufferWriter.writeSlice(txIn.hash);
       let prevIndex = txIn.index;
-      if (forceZeroFlag === false || forceZeroFlag === undefined) {
-        if (txIn.issuance) {
-          prevIndex = (prevIndex | OUTPOINT_ISSUANCE_FLAG) >>> 0;
-        }
-        if (txIn.isPegin) {
-          prevIndex = (prevIndex | OUTPOINT_PEGIN_FLAG) >>> 0;
-        }
+      if (txIn.issuance) {
+        prevIndex = (prevIndex | OUTPOINT_ISSUANCE_FLAG) >>> 0;
+      }
+      if (txIn.isPegin) {
+        prevIndex = (prevIndex | OUTPOINT_PEGIN_FLAG) >>> 0;
       }
       bufferWriter.writeUInt32(prevIndex);
       bufferWriter.writeVarSlice(txIn.script);
