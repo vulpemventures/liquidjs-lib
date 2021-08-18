@@ -1,5 +1,15 @@
+import { Network } from './networks';
 export interface IssuanceEntity {
     domain: string;
+}
+export interface AddIssuanceArgs {
+    assetAmount: number;
+    assetAddress: string;
+    tokenAmount: number;
+    tokenAddress?: string;
+    precision: number;
+    contract?: IssuanceContract;
+    net?: Network;
 }
 /**
  * Ricardian asset contract.
@@ -67,3 +77,4 @@ export declare function calculateAsset(entropy: Buffer): Buffer;
  * @param confidential true if confidential.
  */
 export declare function calculateReissuanceToken(entropy: Buffer, confidential?: boolean): Buffer;
+export declare function validateAddIssuanceArgs(args: AddIssuanceArgs): void;

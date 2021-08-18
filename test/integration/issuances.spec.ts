@@ -3,7 +3,7 @@ import { networks as NETWORKS } from '../..';
 import * as liquid from '../..';
 import { createPayment, getInputData } from './utils';
 import { broadcast } from './_regtest';
-import { Transaction } from '../../ts_src';
+import { address, Transaction } from '../../ts_src';
 const { regtest } = NETWORKS;
 
 const nonce = Buffer.from('00', 'hex');
@@ -37,14 +37,14 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         precision: 8,
         net: regtest,
         contract: {
-          name: "testcoin",
-          ticker: "T-COIN",
+          name: 'testcoin',
+          ticker: 'T-COIN',
           entity: {
-            domain: 'vulpemventures.com'
+            domain: 'vulpemventures.com',
           },
           version: 0,
-          precision: 8
-        }
+          precision: 8,
+        },
       })
       .addOutputs([
         {
@@ -74,7 +74,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         tokenKey: issuanceBlindingKeys[1],
       }),
     );
-    psbt.signInput(0, alice1.keys[0]);
+    psbt.signAllInputs(alice1.keys[0]);
     const valid = psbt.validateSignaturesOfInput(0);
     if (!valid) {
       throw new Error('signature is not valid');
@@ -84,7 +84,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     console.log(hex);
     const fromHex = Transaction.fromHex(hex);
     console.log(fromHex.ins[0].issuance);
-    console.log("---- index === ", fromHex.ins[0].index);
+    console.log('---- index === ', fromHex.ins[0].index);
     await broadcast(hex);
   });
 
@@ -110,14 +110,14 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       precision: 8,
       net: regtest,
       contract: {
-        name: "testcoin-bis",
-        ticker: "T-COI",
+        name: 'testcoin-bis',
+        ticker: 'T-COI',
         entity: {
-          domain: 'vulpemventures.com'
+          domain: 'vulpemventures.com',
         },
         version: 0,
-        precision: 8
-      }
+        precision: 8,
+      },
     });
     psbt.addOutputs([
       {
@@ -142,6 +142,67 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         .set(0, addressBlindPubkey)
         .set(1, addressBlindPubkey),
     );
+    psbt.signInput(0, alice1.keys[0]);
+
+    psbt.validateSignaturesOfInput(0);
+    psbt.finalizeAllInputs();
+    const hex = psbt.extractTransaction().toHex();
+    console.log(hex);
+    await broadcast(hex);
+  });
+
+  it('can create a 1-to-1 unconfidential Transaction (and broadcast via 3PBP) with unblinded issuance', async () => {
+    const alice1 = createPayment('p2pkh', undefined, undefined, true);
+    const inputData = await getInputData(alice1.payment, false, 'noredeem');
+    const blindingPrivkeys = alice1.blindingKeys;
+    const blindingPubkeys = ['', ''].map(
+      () => liquid.ECPair.makeRandom({ network: regtest }).publicKey,
+    );
+    const assetPay = createPayment('p2wsh-p2pk', undefined, undefined, true); // unconfidential
+
+    const tokenPay = createPayment('p2wsh-p2pk', undefined, undefined, true); // unconfidential
+
+    const psbt = new liquid.Psbt();
+    psbt.addInput(inputData);
+    psbt.addIssuance({
+      assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
+      assetAmount: 100,
+      tokenAddress: address.fromOutputScript(tokenPay.payment.output, regtest),
+      tokenAmount: 1,
+      precision: 8,
+      net: regtest,
+      contract: {
+        name: 'testcoin-bis',
+        ticker: 'T-COI',
+        entity: {
+          domain: 'vulpemventures.com',
+        },
+        version: 0,
+        precision: 8,
+      },
+    });
+    psbt.addOutputs([
+      {
+        nonce,
+        asset,
+        value: liquid.confidential.satoshiToConfidentialValue(99996500),
+        script: alice1.payment.output,
+      },
+      {
+        nonce,
+        asset,
+        value: liquid.confidential.satoshiToConfidentialValue(3500),
+        script: Buffer.alloc(0),
+      },
+    ]);
+
+    await psbt.blindOutputsByIndex(
+      new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
+      new Map<number, Buffer>()
+        .set(0, blindingPubkeys[0])
+        .set(1, blindingPubkeys[1]),
+    );
+
     psbt.signInput(0, alice1.keys[0]);
 
     psbt.validateSignaturesOfInput(0);

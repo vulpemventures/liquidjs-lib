@@ -218,10 +218,7 @@ class Psbt {
     return this;
   }
   addIssuance(args, inputIndex) {
-    // check the amounts.
-    if (args.assetAmount <= 0)
-      throw new Error('asset amount must be greater than zero.');
-    if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+    issuance_1.validateAddIssuanceArgs(args); // throw an error if args are invalid
     if (inputIndex && !this.data.inputs[inputIndex]) {
       throw new Error(`The input ${inputIndex} does not exist.`);
       // check if the input is available for issuance.
@@ -236,18 +233,6 @@ class Psbt {
     }
     if (this.__CACHE.__TX.ins[inputIndex].issuance)
       throw new Error(`The input ${inputIndex} already has issuance data.`);
-    const assetAddrIsConfidential = address_1.isConfidential(args.assetAddress);
-    const tokenAddrIsConfidential = args.tokenAddress
-      ? address_1.isConfidential(args.tokenAddress)
-      : undefined;
-    if (
-      tokenAddrIsConfidential !== undefined &&
-      assetAddrIsConfidential !== tokenAddrIsConfidential
-    ) {
-      throw new Error(
-        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
-      );
-    }
     const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
     // create an issuance object using the vout and the args
     const issuance = issuance_1.newIssuance(

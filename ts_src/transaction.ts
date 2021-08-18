@@ -697,60 +697,55 @@ export class Transaction {
     _ALLOW_WITNESS: boolean,
     forSignature?: boolean,
   ): number {
-    const hasWitnesses = _ALLOW_WITNESS && this.hasWitnesses();
-    return (
+    const extraByte = forSignature ? 0 : 1;
+
+    let size =
       8 +
-      (forSignature ? 0 : 1) +
+      extraByte +
       varuint.encodingLength(this.ins.length) +
-      varuint.encodingLength(this.outs.length) +
-      this.ins.reduce((sum, input) => {
-        return (
-          sum +
-          40 +
-          varSliceSize(input.script) +
-          (input.issuance
-            ? 64 +
-            input.issuance.assetAmount.length +
-            input.issuance.tokenAmount.length
-            : 0)
-        );
-      }, 0) +
-      this.outs.reduce((sum, output) => {
-        return (
-          sum +
-          output.asset.length +
-          output.value.length +
-          output.nonce.length +
-          varSliceSize(output.script)
-        );
-      }, 0) +
-      (hasWitnesses
-        ? this.ins.reduce((sum, input) => {
-          return (
-            sum +
-            varSliceSize(input.issuanceRangeProof!) +
-            varSliceSize(input.inflationRangeProof!) +
-            varuint.encodingLength(input.witness.length) +
-            input.witness.reduce((scriptSum, scriptWit) => {
-              return scriptSum + varSliceSize(scriptWit);
-            }, 0) +
-            varuint.encodingLength(input.peginWitness!.length) +
-            input.peginWitness!.reduce((peginSum, peginWit) => {
-              return peginSum + varSliceSize(peginWit);
-            }, 0)
-          );
-        }, 0)
-        : 0) +
-      (hasWitnesses
-        ? this.outs.reduce((sum, output) => {
-          return (
-            sum +
-            varSliceSize(output.surjectionProof!) +
-            varSliceSize(output.rangeProof!)
-          );
-        }, 0)
-        : 0)
-    );
+      varuint.encodingLength(this.outs.length);
+
+    for (const txIn of this.ins) {
+      size += 40 + varSliceSize(txIn.script);
+      if (txIn.issuance) {
+        size +=
+          64 +
+          txIn.issuance.assetAmount.length +
+          txIn.issuance.tokenAmount.length;
+      }
+    }
+
+    for (const txOut of this.outs) {
+      size +=
+        txOut.asset.length +
+        txOut.value.length +
+        txOut.nonce.length +
+        varSliceSize(txOut.script);
+    }
+
+    if (_ALLOW_WITNESS && this.hasWitnesses()) {
+      for (const txIn of this.ins) {
+        size += varSliceSize(txIn.issuanceRangeProof!);
+        size += varSliceSize(txIn.inflationRangeProof!);
+
+        size += varuint.encodingLength(txIn.witness.length);
+        for (const wit of txIn.witness) {
+          size += varSliceSize(wit);
+        }
+
+        size += varuint.encodingLength((txIn.peginWitness || []).length);
+        for (const wit of txIn.peginWitness || []) {
+          size += varSliceSize(wit);
+        }
+      }
+
+      for (const txOut of this.outs) {
+        size += varSliceSize(txOut.surjectionProof!);
+        size += varSliceSize(txOut.rangeProof!);
+      }
+    }
+
+    return size;
   }
 
   private __toBuffer(

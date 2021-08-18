@@ -3,7 +3,7 @@ import { describe, it } from 'mocha';
 import * as issuance from '../ts_src/issuance';
 import * as types from '../ts_src/types';
 import { regtest } from './../ts_src/networks';
-import { AddIssuanceArgs, Psbt } from './../ts_src/psbt';
+import { Psbt } from './../ts_src/psbt';
 import { Transaction } from './../ts_src/transaction';
 
 import { ECPair, networks } from '../ts_src';
@@ -120,7 +120,7 @@ describe('Issuance', () => {
   });
 
   // a static set of arguments using with the function addIssuance.
-  const issueArgs: AddIssuanceArgs = {
+  const issueArgs: issuance.AddIssuanceArgs = {
     assetAmount: 100,
     assetAddress: fixtures.unspent.assetAddress,
     tokenAmount: 1,

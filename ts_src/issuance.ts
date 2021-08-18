@@ -1,11 +1,24 @@
+import { isConfidential } from './address';
 import { BufferWriter } from './bufferutils';
 import { satoshiToConfidentialValue } from './confidential';
 import * as bcrypto from './crypto';
+import { Network } from './networks';
 import { sha256Midstate } from './sha256d';
 
 // one of the field of the IssuanceContract interface.
 export interface IssuanceEntity {
   domain: string;
+}
+
+// psbt.addIssuance options
+export interface AddIssuanceArgs {
+  assetAmount: number;
+  assetAddress: string;
+  tokenAmount: number;
+  tokenAddress?: string;
+  precision: number;
+  contract?: IssuanceContract;
+  net?: Network;
 }
 
 /**
@@ -168,4 +181,20 @@ function toConfidentialTokenAmount(
 ): Buffer {
   if (tokenAmount === 0) return Buffer.from('00', 'hex');
   return toConfidentialAssetAmount(tokenAmount, precision);
+}
+
+export function validateAddIssuanceArgs(args: AddIssuanceArgs) {
+  if (args.assetAmount <= 0)
+    throw new Error('asset amount must be greater than zero.');
+  if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+
+  if (args.tokenAddress) {
+    if (
+      isConfidential(args.assetAddress) !== isConfidential(args.tokenAddress)
+    ) {
+      throw new Error(
+        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
+      );
+    }
+  }
 }
