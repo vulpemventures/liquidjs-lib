@@ -487,10 +487,10 @@ export class Transaction {
         (sum, txIn) =>
           !types.Null(txIn.issuance)
             ? sum +
-            txIn.issuance!.assetBlindingNonce.length +
-            txIn.issuance!.assetEntropy.length +
-            txIn.issuance!.assetAmount.length +
-            txIn.issuance!.tokenAmount.length
+              txIn.issuance!.assetBlindingNonce.length +
+              txIn.issuance!.assetEntropy.length +
+              txIn.issuance!.assetAmount.length +
+              txIn.issuance!.tokenAmount.length
             : sum, // we'll use the empty 00 Buffer if issuance is not set
         0,
       );

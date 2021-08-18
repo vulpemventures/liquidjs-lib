@@ -85,6 +85,9 @@ export declare class Psbt {
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;
     clearFinalizedInput(inputIndex: number): this;
+    private unblindInputsToIssuanceBlindingData;
+    private blindInputs;
+    private blindOutputsRaw;
     private rawBlindOutputs;
 }
 interface PsbtOptsOptional {
