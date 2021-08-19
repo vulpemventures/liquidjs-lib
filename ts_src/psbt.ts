@@ -14,7 +14,7 @@ import {
   TransactionInput,
   WitnessUtxo,
 } from 'bip174-liquid/src/lib/interfaces';
-import { isConfidential, toOutputScript } from './address';
+import { toOutputScript } from './address';
 import { reverseBuffer } from './bufferutils';
 import { hash160 } from './crypto';
 import { Network, liquid as btcNetwork } from './networks';
@@ -266,8 +266,7 @@ export class Psbt {
     // add the issuance to the input.
     this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
 
-    const kOne = Buffer.from('01', 'hex');
-    const asset = Buffer.concat([kOne, calculateAsset(entropy)]);
+    const asset = Buffer.concat([Buffer.of(args.confidential ? 0x0a : 0x01), calculateAsset(entropy)]);
     const assetScript = toOutputScript(args.assetAddress, args.net);
 
     // send the asset amount to the asset address.
@@ -283,17 +282,17 @@ export class Psbt {
       if (!args.tokenAddress)
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
 
-      const token = Buffer.concat([
-        kOne,
-        calculateReissuanceToken(entropy, isConfidential(args.tokenAddress)),
-      ]);
+      const token = calculateReissuanceToken(
+        entropy,
+        args.confidential,
+      );
       const tokenScript = toOutputScript(args.tokenAddress, args.net);
 
       // send the token amount to the token address.
       this.addOutput({
         script: tokenScript,
         value: issuance.tokenAmount,
-        asset: token,
+        asset: Buffer.concat([Buffer.of(0x01), token]),
         nonce: Buffer.from('00', 'hex'),
       });
     }
@@ -872,7 +871,9 @@ export class Psbt {
     if (!issuanceBlindingPrivKeys || issuanceBlindingPrivKeys.length === 0)
       return this; // skip if no issuance blind keys
 
-    function getBlindingFactors(asset: Buffer) {
+    function getBlindingFactors(
+      asset: Buffer,
+    ): confidential.UnblindOutputResult {
       for (const blindData of blindingData) {
         if (asset.equals(blindData.asset)) {
           return blindData;
@@ -893,7 +894,11 @@ export class Psbt {
           continue;
         }
 
-        const issuedAsset = calculateAsset(input.issuance.assetEntropy);
+        const entropy = generateEntropy(
+          { txHash: input.hash, vout: input.index },
+          input.issuance.assetEntropy,
+        );
+        const issuedAsset = calculateAsset(entropy);
         const blindingFactorsAsset = getBlindingFactors(issuedAsset);
 
         const assetCommitment = await confidential.assetCommitment(
@@ -938,19 +943,16 @@ export class Psbt {
         ].issuance!.assetAmount = valueCommitment;
 
         if (hasTokenAmount(input.issuance)) {
-          const token = calculateReissuanceToken(
-            input.issuance.assetEntropy,
-            true,
-          );
+          const token = calculateReissuanceToken(entropy, true);
           const blindingFactorsToken = getBlindingFactors(issuedAsset);
 
-          const assetCommitment = await confidential.assetCommitment(
+          const issuedTokenCommitment = await confidential.assetCommitment(
             token,
             blindingFactorsToken.assetBlindingFactor,
           );
           const valueCommitment = await confidential.valueCommitment(
             blindingFactorsToken.value,
-            assetCommitment,
+            issuedTokenCommitment,
             blindingFactorsToken.valueBlindingFactor,
           );
 
@@ -1119,10 +1121,7 @@ export class Psbt {
       issuanceBlindingPrivKeys,
     );
 
-    const totalBlindingData = [
-      ...inputsBlindingData,
-      ...pseudoInputsBlindingData,
-    ];
+    const totalBlindingData = inputsBlindingData.concat(pseudoInputsBlindingData)
 
     await this.blindOutputsRaw(
       totalBlindingData,

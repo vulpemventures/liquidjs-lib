@@ -248,8 +248,16 @@ class Psbt {
     );
     // add the issuance to the input.
     this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
-    const kOne = Buffer.from('01', 'hex');
-    const asset = Buffer.concat([kOne, issuance_1.calculateAsset(entropy)]);
+    // // this.__CACHE.__TX.ins[inputIndex].inflationRangeProof = Buffer.alloc(0);
+    // this.__CACHE.__TX.ins[inputIndex].issuance!.assetAmount =
+    //   issuance.assetAmount;
+    // this.__CACHE.__TX.ins[inputIndex].issuanceRangeProof = Buffer.alloc(0);
+    // this.__CACHE.__TX.ins[inputIndex].issuance!.tokenAmount =
+    //   issuance.tokenAmount;
+    const asset = Buffer.concat([
+      Buffer.of(0x01),
+      issuance_1.calculateAsset(entropy),
+    ]);
     const assetScript = address_1.toOutputScript(args.assetAddress, args.net);
     // send the asset amount to the asset address.
     this.addOutput({
@@ -262,19 +270,16 @@ class Psbt {
     if (args.tokenAmount !== 0) {
       if (!args.tokenAddress)
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
-      const token = Buffer.concat([
-        kOne,
-        issuance_1.calculateReissuanceToken(
-          entropy,
-          address_1.isConfidential(args.tokenAddress),
-        ),
-      ]);
+      const token = issuance_1.calculateReissuanceToken(
+        entropy,
+        args.confidential,
+      );
       const tokenScript = address_1.toOutputScript(args.tokenAddress, args.net);
       // send the token amount to the token address.
       this.addOutput({
         script: tokenScript,
         value: issuance.tokenAmount,
-        asset: token,
+        asset: Buffer.concat([Buffer.of(0x01), token]),
         nonce: Buffer.from('00', 'hex'),
       });
     }
@@ -746,6 +751,7 @@ class Psbt {
             ? randomBytes()
             : transaction_1.ZERO,
         };
+        console.log(assetBlindingData);
         pseudoBlindingDataFromIssuances.push(assetBlindingData);
         if (issuance_1.hasTokenAmount(input.issuance)) {
           const token = issuance_1.calculateReissuanceToken(
@@ -763,6 +769,7 @@ class Psbt {
               ? randomBytes()
               : transaction_1.ZERO,
           };
+          console.log(tokenBlindingData);
           pseudoBlindingDataFromIssuances.push(tokenBlindingData);
         }
       }
@@ -774,14 +781,12 @@ class Psbt {
     return __awaiter(this, void 0, void 0, function*() {
       if (!issuanceBlindingPrivKeys || issuanceBlindingPrivKeys.length === 0)
         return this; // skip if no issuance blind keys
-      console.log(blindingData);
       function getBlindingFactors(asset) {
         for (const blindData of blindingData) {
           if (asset.equals(blindData.asset)) {
             return blindData;
           }
         }
-        console.log(asset, 'asset');
         throw new Error(
           'no blinding factors generated for pseudo issuance inputs',
         );
@@ -795,9 +800,11 @@ class Psbt {
             inputIndex++;
             continue;
           }
-          const issuedAsset = issuance_1.calculateAsset(
+          const entropy = issuance_1.generateEntropy(
+            { txHash: input.hash, vout: input.index },
             input.issuance.assetEntropy,
           );
+          const issuedAsset = issuance_1.calculateAsset(entropy);
           const blindingFactorsAsset = getBlindingFactors(issuedAsset);
           const assetCommitment = yield confidential.assetCommitment(
             blindingFactorsAsset.asset,
@@ -835,18 +842,15 @@ class Psbt {
             inputIndex
           ].issuance.assetAmount = valueCommitment;
           if (issuance_1.hasTokenAmount(input.issuance)) {
-            const token = issuance_1.calculateReissuanceToken(
-              input.issuance.assetEntropy,
-              true,
-            );
+            const token = issuance_1.calculateReissuanceToken(entropy, true);
             const blindingFactorsToken = getBlindingFactors(issuedAsset);
-            const assetCommitment = yield confidential.assetCommitment(
+            const issuedTokenCommitment = yield confidential.assetCommitment(
               token,
               blindingFactorsToken.assetBlindingFactor,
             );
-            const valueCommitment = yield confidential.valueCommitment(
+            const IssuedvalueCommitment = yield confidential.valueCommitment(
               blindingFactorsToken.value,
-              assetCommitment,
+              issuedTokenCommitment,
               blindingFactorsToken.valueBlindingFactor,
             );
             const inflationRangeProof = yield confidential.rangeProofWithoutNonceHash(
@@ -855,7 +859,7 @@ class Psbt {
               token,
               blindingFactorsToken.assetBlindingFactor,
               blindingFactorsToken.valueBlindingFactor,
-              valueCommitment,
+              IssuedvalueCommitment,
               Buffer.alloc(0),
               '1',
               0,
@@ -866,7 +870,7 @@ class Psbt {
             ].inflationRangeProof = inflationRangeProof;
             this.__CACHE.__TX.ins[
               inputIndex
-            ].issuance.tokenAmount = valueCommitment;
+            ].issuance.tokenAmount = IssuedvalueCommitment;
           }
         }
         inputIndex++;
@@ -887,11 +891,13 @@ class Psbt {
           .toString(10);
         return [value, output.asset.slice(1)];
       });
+      console.log('output data', outputsData);
       // compute the outputs blinders
       const outputsBlindingData = yield computeOutputsBlindingData(
         blindingData,
         outputsData,
       );
+      console.log('output blinding data', outputsBlindingData);
       // use blinders to compute proofs & commitments
       let indexInArray = 0;
       for (const outputIndex of outputIndexes) {
@@ -986,16 +992,16 @@ class Psbt {
       const pseudoInputsBlindingData = this.unblindInputsToIssuanceBlindingData(
         issuanceBlindingPrivKeys,
       );
-      const totalBlindingData = [
-        ...inputsBlindingData,
-        ...pseudoInputsBlindingData,
-      ];
+      const totalBlindingData = inputsBlindingData.concat(
+        pseudoInputsBlindingData,
+      );
       yield this.blindOutputsRaw(
         totalBlindingData,
         blindingPubkeys,
         outputIndexes,
         opts,
       );
+      console.log('blind output OK');
       yield this.blindInputs(totalBlindingData, issuanceBlindingPrivKeys);
       this.__CACHE.__FEE = undefined;
       this.__CACHE.__FEE_RATE = undefined;

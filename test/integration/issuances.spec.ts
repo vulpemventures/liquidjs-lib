@@ -1,9 +1,9 @@
 import { IssuanceBlindingKeys } from './../../ts_src/types';
 import { networks as NETWORKS } from '../..';
-import * as liquid from '../..';
 import { createPayment, getInputData } from './utils';
 import { broadcast } from './_regtest';
-import { address, Transaction } from '../../ts_src';
+import { address, confidential, ECPair, Psbt } from '../../ts_src';
+import { strictEqual } from 'assert';
 const { regtest } = NETWORKS;
 
 const nonce = Buffer.from('00', 'hex');
@@ -14,28 +14,37 @@ const asset = Buffer.concat([
 
 describe('liquidjs-lib (issuances transactions with psbt)', () => {
   it('can create a 1-to-1 confidential Transaction (and broadcast via 3PBP) with blinded issuance', async () => {
-    const alice1 = createPayment('p2pkh', undefined, undefined, true);
-    const inputData = await getInputData(alice1.payment, false, 'noredeem');
+    const alice1 = createPayment('p2wpkh', undefined, undefined, true);
+    const inputData = await getInputData(alice1.payment, true, 'noredeem');
     const blindingPrivkeys = alice1.blindingKeys;
 
-    const addressReceive =
-      'AzpunXjDrpSRAKn96sCFc5jacgZdgewRiNCwNLneF1Nt2nyTWXGRBbDrucgh3Xdt4BtPJVwie1Xb8xk2';
-    const addressBlindPubkey = liquid.address.fromConfidential(addressReceive)
-      .blindingKey;
+    const assetPay = createPayment('p2wpkh', undefined, undefined, true);
+    const tokenPay = createPayment('p2wpkh', undefined, undefined, true);
     const issuanceBlindingKeys = ['', ''].map(
-      () => liquid.ECPair.makeRandom({ network: regtest }).privateKey!,
+      () => ECPair.makeRandom({ network: regtest }).privateKey!,
     );
 
-    const psbt = new liquid.Psbt();
+    const blindingPubKeys = ['', ''].map(
+      () => ECPair.makeRandom({ network: regtest }).publicKey,
+    );
+
+    const psbt = new Psbt();
     psbt
       .addInput(inputData)
       .addIssuance({
-        assetAddress: addressReceive,
+        assetAddress: address.fromOutputScript(
+          assetPay.payment.output,
+          regtest,
+        ),
+        tokenAddress: address.fromOutputScript(
+          tokenPay.payment.output,
+          regtest,
+        ),
         assetAmount: 100,
-        tokenAddress: addressReceive,
         tokenAmount: 1,
         precision: 8,
         net: regtest,
+        confidential: true, // must be true, we'll blind the issuance!
         contract: {
           name: 'testcoin',
           ticker: 'T-COIN',
@@ -50,16 +59,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         {
           nonce,
           asset,
-          value: liquid.confidential.satoshiToConfidentialValue(99996500),
-          script: Buffer.from(
-            '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
-            'hex',
-          ),
+          value: confidential.satoshiToConfidentialValue(99999500),
+          script: alice1.payment.output,
         },
         {
           nonce,
           asset,
-          value: liquid.confidential.satoshiToConfidentialValue(3500),
+          value: confidential.satoshiToConfidentialValue(500),
           script: Buffer.alloc(0),
         },
       ]);
@@ -67,13 +73,14 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     await psbt.blindOutputsByIndex(
       new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
       new Map<number, Buffer>()
-        .set(0, addressBlindPubkey)
-        .set(1, addressBlindPubkey),
+        .set(0, blindingPubKeys[0])
+        .set(1, blindingPubKeys[1]),
       new Map<number, IssuanceBlindingKeys>().set(0, {
         assetKey: issuanceBlindingKeys[0],
         tokenKey: issuanceBlindingKeys[1],
       }),
     );
+
     psbt.signAllInputs(alice1.keys[0]);
     const valid = psbt.validateSignaturesOfInput(0);
     if (!valid) {
@@ -81,93 +88,28 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     }
     psbt.finalizeAllInputs();
     const hex = psbt.extractTransaction().toHex();
-    console.log(hex);
-    const fromHex = Transaction.fromHex(hex);
-    console.log(fromHex.ins[0].issuance);
-    console.log('---- index === ', fromHex.ins[0].index);
     await broadcast(hex);
   });
 
   it('can create a 1-to-1 confidential Transaction (and broadcast via 3PBP) with unblinded issuance', async () => {
-    const alice1 = createPayment('p2pkh', undefined, undefined, true);
-    const inputData = await getInputData(alice1.payment, false, 'noredeem');
+    const alice1 = createPayment('p2wpkh', undefined, undefined, true);
+    const inputData = await getInputData(alice1.payment, true, 'noredeem');
     const blindingPrivkeys = alice1.blindingKeys;
 
-    const addressReceive =
-      'AzpunXjDrpSRAKn96sCFc5jacgZdgewRiNCwNLneF1Nt2nyTWXGRBbDrucgh3Xdt4BtPJVwie1Xb8xk2';
-    const addressBlindPubkey = liquid.address.fromConfidential(addressReceive)
-      .blindingKey;
+    const assetPay = createPayment('p2wpkh', undefined, undefined, false);
+    const tokenPay = createPayment('p2wpkh', undefined, undefined, false);
+    const blindingPubKeys = ['', ''].map(
+      () => ECPair.makeRandom({ network: regtest }).publicKey,
+    );
 
-    const psbt = new liquid.Psbt();
+    const psbt = new Psbt();
     psbt.setVersion(2); // These are defaults. This line is not needed.
     psbt.setLocktime(0); // These are defaults. This line is not needed.
     psbt.addInput(inputData);
     psbt.addIssuance({
-      assetAddress: 'XBXiDkFNneyPtpXvqVWQoHA1MhoXa8FZLn',
-      assetAmount: 100,
-      tokenAddress: 'XBXiDkFNneyPtpXvqVWQoHA1MhoXa8FZLn',
-      tokenAmount: 1,
-      precision: 8,
-      net: regtest,
-      contract: {
-        name: 'testcoin-bis',
-        ticker: 'T-COI',
-        entity: {
-          domain: 'vulpemventures.com',
-        },
-        version: 0,
-        precision: 8,
-      },
-    });
-    psbt.addOutputs([
-      {
-        nonce,
-        asset,
-        value: liquid.confidential.satoshiToConfidentialValue(99996500),
-        script: Buffer.from(
-          '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
-          'hex',
-        ),
-      },
-      {
-        nonce,
-        asset,
-        value: liquid.confidential.satoshiToConfidentialValue(3500),
-        script: Buffer.alloc(0),
-      },
-    ]);
-    await psbt.blindOutputsByIndex(
-      new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
-      new Map<number, Buffer>()
-        .set(0, addressBlindPubkey)
-        .set(1, addressBlindPubkey),
-    );
-    psbt.signInput(0, alice1.keys[0]);
-
-    psbt.validateSignaturesOfInput(0);
-    psbt.finalizeAllInputs();
-    const hex = psbt.extractTransaction().toHex();
-    console.log(hex);
-    await broadcast(hex);
-  });
-
-  it('can create a 1-to-1 unconfidential Transaction (and broadcast via 3PBP) with unblinded issuance', async () => {
-    const alice1 = createPayment('p2pkh', undefined, undefined, true);
-    const inputData = await getInputData(alice1.payment, false, 'noredeem');
-    const blindingPrivkeys = alice1.blindingKeys;
-    const blindingPubkeys = ['', ''].map(
-      () => liquid.ECPair.makeRandom({ network: regtest }).publicKey,
-    );
-    const assetPay = createPayment('p2wsh-p2pk', undefined, undefined, true); // unconfidential
-
-    const tokenPay = createPayment('p2wsh-p2pk', undefined, undefined, true); // unconfidential
-
-    const psbt = new liquid.Psbt();
-    psbt.addInput(inputData);
-    psbt.addIssuance({
       assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
-      assetAmount: 100,
       tokenAddress: address.fromOutputScript(tokenPay.payment.output, regtest),
+      assetAmount: 100,
       tokenAmount: 1,
       precision: 8,
       net: regtest,
@@ -185,30 +127,78 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       {
         nonce,
         asset,
-        value: liquid.confidential.satoshiToConfidentialValue(99996500),
+        value: confidential.satoshiToConfidentialValue(99996500),
         script: alice1.payment.output,
       },
       {
         nonce,
         asset,
-        value: liquid.confidential.satoshiToConfidentialValue(3500),
+        value: confidential.satoshiToConfidentialValue(3500),
+        script: Buffer.alloc(0),
+      },
+    ]);
+    await psbt.blindOutputsByIndex(
+      new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
+      new Map<number, Buffer>()
+        .set(0, blindingPubKeys[0])
+        .set(1, blindingPubKeys[1]),
+    );
+    psbt.signInput(0, alice1.keys[0]);
+
+    strictEqual(psbt.validateSignaturesOfInput(0), true);
+    psbt.finalizeAllInputs();
+    const hex = psbt.extractTransaction().toHex();
+    await broadcast(hex);
+  });
+
+  it('can create a 1-to-1 unconfidential Transaction (and broadcast via 3PBP) with unblinded issuance', async () => {
+    const alice1 = createPayment('p2wpkh', undefined, undefined, false);
+    const inputData = await getInputData(alice1.payment, true, 'noredeem');
+
+    const assetPay = createPayment('p2wpkh', undefined, undefined, true); // unconfidential
+    const tokenPay = createPayment('p2wpkh', undefined, undefined, true); // unconfidential
+
+    const psbt = new Psbt();
+    psbt.addInput(inputData);
+    psbt.addIssuance({
+      assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
+      tokenAddress: address.fromOutputScript(tokenPay.payment.output, regtest),
+      assetAmount: 100,
+      tokenAmount: 1,
+      precision: 8,
+      net: regtest,
+      contract: {
+        name: 'testcoin-bis',
+        ticker: 'T-COI',
+        entity: {
+          domain: 'vulpemventures.com',
+        },
+        version: 0,
+        precision: 8,
+      },
+    });
+    psbt.addOutputs([
+      {
+        nonce,
+        asset,
+        value: confidential.satoshiToConfidentialValue(99999500),
+        script: alice1.payment.output,
+      },
+      {
+        nonce,
+        asset,
+        value: confidential.satoshiToConfidentialValue(500),
         script: Buffer.alloc(0),
       },
     ]);
 
-    await psbt.blindOutputsByIndex(
-      new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
-      new Map<number, Buffer>()
-        .set(0, blindingPubkeys[0])
-        .set(1, blindingPubkeys[1]),
-    );
+    psbt.signAllInputs(alice1.keys[0]);
 
-    psbt.signInput(0, alice1.keys[0]);
+    const valid = psbt.validateSignaturesOfAllInputs();
+    strictEqual(valid, true);
 
-    psbt.validateSignaturesOfInput(0);
     psbt.finalizeAllInputs();
     const hex = psbt.extractTransaction().toHex();
-    console.log(hex);
     await broadcast(hex);
   });
 });

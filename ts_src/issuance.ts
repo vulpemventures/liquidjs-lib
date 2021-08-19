@@ -19,6 +19,7 @@ export interface AddIssuanceArgs {
   precision: number;
   contract?: IssuanceContract;
   net?: Network;
+  confidential?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
 }
 
 /**
@@ -152,9 +153,18 @@ export function calculateReissuanceToken(
   confidential: boolean = false,
 ): Buffer {
   if (entropy.length !== 32) throw new Error('Invalid entropy length');
-  const buffer = Buffer.alloc(32);
-  confidential ? (buffer[0] = 2) : (buffer[0] = 1);
-  return sha256Midstate(Buffer.concat([entropy, buffer]));
+  return sha256Midstate(
+    Buffer.concat([
+      entropy,
+      Buffer.of(getTokenFlag(confidential) + 1),
+      Buffer.alloc(31),
+    ]),
+  );
+}
+
+function getTokenFlag(confidential: boolean): 1 | 0 {
+  if (confidential) return 1;
+  return 0;
 }
 
 /**
@@ -183,7 +193,7 @@ function toConfidentialTokenAmount(
   return toConfidentialAssetAmount(tokenAmount, precision);
 }
 
-export function validateAddIssuanceArgs(args: AddIssuanceArgs) {
+export function validateAddIssuanceArgs(args: AddIssuanceArgs): void {
   if (args.assetAmount <= 0)
     throw new Error('asset amount must be greater than zero.');
   if (args.tokenAmount < 0) throw new Error('token amount must be positive.');

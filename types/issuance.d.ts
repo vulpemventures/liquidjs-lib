@@ -10,6 +10,7 @@ export interface AddIssuanceArgs {
     precision: number;
     contract?: IssuanceContract;
     net?: Network;
+    confidential?: boolean;
 }
 /**
  * Ricardian asset contract.

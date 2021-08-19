@@ -106,11 +106,19 @@ exports.calculateAsset = calculateAsset;
  */
 function calculateReissuanceToken(entropy, confidential = false) {
   if (entropy.length !== 32) throw new Error('Invalid entropy length');
-  const buffer = Buffer.alloc(32);
-  confidential ? (buffer[0] = 2) : (buffer[0] = 1);
-  return sha256d_1.sha256Midstate(Buffer.concat([entropy, buffer]));
+  return sha256d_1.sha256Midstate(
+    Buffer.concat([
+      entropy,
+      Buffer.of(getTokenFlag(confidential) + 1),
+      Buffer.alloc(31),
+    ]),
+  );
 }
 exports.calculateReissuanceToken = calculateReissuanceToken;
+function getTokenFlag(confidential) {
+  if (confidential) return 1;
+  return 0;
+}
 /**
  * converts asset amount to confidential value.
  * @param assetAmount the asset amount.
