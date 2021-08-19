@@ -248,14 +248,8 @@ class Psbt {
     );
     // add the issuance to the input.
     this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
-    // // this.__CACHE.__TX.ins[inputIndex].inflationRangeProof = Buffer.alloc(0);
-    // this.__CACHE.__TX.ins[inputIndex].issuance!.assetAmount =
-    //   issuance.assetAmount;
-    // this.__CACHE.__TX.ins[inputIndex].issuanceRangeProof = Buffer.alloc(0);
-    // this.__CACHE.__TX.ins[inputIndex].issuance!.tokenAmount =
-    //   issuance.tokenAmount;
     const asset = Buffer.concat([
-      Buffer.of(0x01),
+      Buffer.of(args.confidential ? 0x0a : 0x01),
       issuance_1.calculateAsset(entropy),
     ]);
     const assetScript = address_1.toOutputScript(args.assetAddress, args.net);
@@ -751,7 +745,6 @@ class Psbt {
             ? randomBytes()
             : transaction_1.ZERO,
         };
-        console.log(assetBlindingData);
         pseudoBlindingDataFromIssuances.push(assetBlindingData);
         if (issuance_1.hasTokenAmount(input.issuance)) {
           const token = issuance_1.calculateReissuanceToken(
@@ -769,7 +762,6 @@ class Psbt {
               ? randomBytes()
               : transaction_1.ZERO,
           };
-          console.log(tokenBlindingData);
           pseudoBlindingDataFromIssuances.push(tokenBlindingData);
         }
       }
@@ -843,12 +835,12 @@ class Psbt {
           ].issuance.assetAmount = valueCommitment;
           if (issuance_1.hasTokenAmount(input.issuance)) {
             const token = issuance_1.calculateReissuanceToken(entropy, true);
-            const blindingFactorsToken = getBlindingFactors(issuedAsset);
+            const blindingFactorsToken = getBlindingFactors(token);
             const issuedTokenCommitment = yield confidential.assetCommitment(
               token,
               blindingFactorsToken.assetBlindingFactor,
             );
-            const IssuedvalueCommitment = yield confidential.valueCommitment(
+            const valueCommitment = yield confidential.valueCommitment(
               blindingFactorsToken.value,
               issuedTokenCommitment,
               blindingFactorsToken.valueBlindingFactor,
@@ -859,7 +851,7 @@ class Psbt {
               token,
               blindingFactorsToken.assetBlindingFactor,
               blindingFactorsToken.valueBlindingFactor,
-              IssuedvalueCommitment,
+              valueCommitment,
               Buffer.alloc(0),
               '1',
               0,
@@ -870,7 +862,7 @@ class Psbt {
             ].inflationRangeProof = inflationRangeProof;
             this.__CACHE.__TX.ins[
               inputIndex
-            ].issuance.tokenAmount = IssuedvalueCommitment;
+            ].issuance.tokenAmount = valueCommitment;
           }
         }
         inputIndex++;
@@ -891,13 +883,11 @@ class Psbt {
           .toString(10);
         return [value, output.asset.slice(1)];
       });
-      console.log('output data', outputsData);
       // compute the outputs blinders
       const outputsBlindingData = yield computeOutputsBlindingData(
         blindingData,
         outputsData,
       );
-      console.log('output blinding data', outputsBlindingData);
       // use blinders to compute proofs & commitments
       let indexInArray = 0;
       for (const outputIndex of outputIndexes) {
@@ -1001,7 +991,6 @@ class Psbt {
         outputIndexes,
         opts,
       );
-      console.log('blind output OK');
       yield this.blindInputs(totalBlindingData, issuanceBlindingPrivKeys);
       this.__CACHE.__FEE = undefined;
       this.__CACHE.__FEE_RATE = undefined;
