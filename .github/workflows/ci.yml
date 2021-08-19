@@ -40,12 +40,6 @@ jobs:
       - name: Unit Test
         run: npm run unit
 
-      - name: Install Nigiri
-        run: |
-          mkdir -p tmp; cd tmp
-          curl https://travis.nigiri.network | bash; cd ..
-          docker-compose -f  tmp/docker-compose.yml up -d
-
       - name: Integration Test
         env:
           APIURL: http://localhost:3001
