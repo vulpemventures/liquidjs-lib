@@ -840,7 +840,7 @@ class Psbt {
               token,
               blindingFactorsToken.assetBlindingFactor,
             );
-            const valueCommitment = yield confidential.valueCommitment(
+            const tokenValueCommitment = yield confidential.valueCommitment(
               blindingFactorsToken.value,
               issuedTokenCommitment,
               blindingFactorsToken.valueBlindingFactor,
@@ -851,7 +851,7 @@ class Psbt {
               token,
               blindingFactorsToken.assetBlindingFactor,
               blindingFactorsToken.valueBlindingFactor,
-              valueCommitment,
+              tokenValueCommitment,
               Buffer.alloc(0),
               '1',
               0,
@@ -862,7 +862,7 @@ class Psbt {
             ].inflationRangeProof = inflationRangeProof;
             this.__CACHE.__TX.ins[
               inputIndex
-            ].issuance.tokenAmount = valueCommitment;
+            ].issuance.tokenAmount = tokenValueCommitment;
           }
         }
         inputIndex++;
