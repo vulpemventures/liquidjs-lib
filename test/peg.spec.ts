@@ -11,7 +11,6 @@ describe('Claim transaction (peg-in)', () => {
       'f4b25e1c71b93c901075f1477477620dcc8c88218a607529c178a4a69360585a'; // computed with go-elements
 
     const claimTx = Transaction.fromHex(claimTxHex);
-
     strictEqual(claimTx.getId(), expectedTxID);
   });
 });

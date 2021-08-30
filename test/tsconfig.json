@@ -13,7 +13,6 @@
       "node",
       "mocha"
     ],
-    "esModuleInterop": true,
     "allowJs": false,
     "resolveJsonModule": true,
     "strict": true,
@@ -24,17 +23,20 @@
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
+    "esModuleInterop": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "baseUrl": ".",
     "paths": {
-      "../src/*": ["../ts_src/*"]
+      "../src/*": [
+        "../ts_src/*"
+      ]
     }
   },
   "include": [
-      "./**/*.ts"
+    "./**/*.ts"
   ],
   "exclude": [
-      "../ts_src/**/*.ts"
+    "../ts_src/**/*.ts"
   ]
 }

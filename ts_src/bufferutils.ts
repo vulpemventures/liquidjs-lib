@@ -100,7 +100,6 @@ export class BufferWriter {
   writeConfidentialInFields(input: any): void {
     this.writeVarSlice(input.issuanceRangeProof);
     this.writeVarSlice(input.inflationRangeProof);
-
     this.writeVector(input.witness);
     this.writeVector(input.peginWitness);
   }
