@@ -196,9 +196,12 @@ describe('Issuance', () => {
     });
 
     it('should create a valid psbt (if the input index is specified)', () => {
-      const psbt = createPsbt().addIssuance(issueArgs, 0);
-      const finalizedPsbt = signAndfinalizeWithAlice(psbt, 0);
+      const inputIndex = 0;
+      const psbt = createPsbt().addIssuance(issueArgs, inputIndex);
+      const finalizedPsbt = signAndfinalizeWithAlice(psbt, inputIndex);
       const tx = finalizedPsbt.extractTransaction();
+
+      assert.ok(tx.ins[inputIndex].issuance);
       assert.deepStrictEqual(tx, Transaction.fromHex(tx.toHex()));
     });
 
@@ -267,13 +270,6 @@ describe('Issuance', () => {
       psbt.addIssuance({ ...issueArgs, tokenAmount: 0 });
       const lenOutsAfterIssuance = psbt.data.outputs.length;
       assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 1);
-    });
-
-    it('should allow the user to choose the input where to add the issuance', () => {
-      const psbt = createPsbt();
-      psbt.addIssuance(issueArgs, 0);
-      const finalizedPsbt = signAndfinalizeWithAlice(psbt, 0);
-      assert.ok(finalizedPsbt.extractTransaction().ins[0].issuance);
     });
 
     it('should throw an error if the chosen input does not exist', () => {
