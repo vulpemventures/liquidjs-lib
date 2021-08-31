@@ -25,7 +25,7 @@ export interface IssuanceContract {
 /**
  * An object describing an output point of the blockchain.
  */
-export interface OutPoint {
+export interface Outpoint {
     txHash: Buffer;
     vout: number;
 }
@@ -66,7 +66,7 @@ export declare function newIssuance(assetAmount: number, tokenAmount: number, pr
  * @param outPoint the prevout point used to compute the entropy.
  * @param contractHash the 32 bytes contract hash.
  */
-export declare function generateEntropy(outPoint: OutPoint, contractHash?: Buffer): Buffer;
+export declare function generateEntropy(outPoint: Outpoint, contractHash?: Buffer): Buffer;
 /**
  * calculate the asset tag from a given entropy.
  * @param entropy the entropy used to compute the asset tag.

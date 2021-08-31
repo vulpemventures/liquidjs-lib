@@ -144,16 +144,16 @@ export function fromOutputScript(output: Buffer, network?: Network): string {
 
   try {
     return payments.p2pkh({ output, network }).address as string;
-  } catch (e) { }
+  } catch (e) {}
   try {
     return payments.p2sh({ output, network }).address as string;
-  } catch (e) { }
+  } catch (e) {}
   try {
     return payments.p2wpkh({ output, network }).address as string;
-  } catch (e) { }
+  } catch (e) {}
   try {
     return payments.p2wsh({ output, network }).address as string;
-  } catch (e) { }
+  } catch (e) {}
 
   throw new Error(bscript.toASM(output) + ' has no matching Address');
 }
@@ -166,7 +166,7 @@ export function toOutputScript(address: string, network?: Network): Buffer {
   let decodeConfidential: ConfidentialResult | undefined;
   try {
     decodeBase58 = fromBase58Check(address);
-  } catch (e) { }
+  } catch (e) {}
 
   if (decodeBase58) {
     if (decodeBase58.version === network.pubKeyHash)
@@ -176,7 +176,7 @@ export function toOutputScript(address: string, network?: Network): Buffer {
   } else {
     try {
       decodeBech32 = fromBech32(address);
-    } catch (e) { }
+    } catch (e) {}
 
     if (decodeBech32) {
       if (decodeBech32.prefix !== network.bech32)
@@ -190,7 +190,7 @@ export function toOutputScript(address: string, network?: Network): Buffer {
     } else {
       try {
         decodeConfidential = fromConfidential(address);
-      } catch (e) { }
+      } catch (e) {}
 
       if (decodeConfidential) {
         return toOutputScript(
@@ -313,7 +313,7 @@ function toConfidentialSegwit(
 }
 
 function isBlech32(address: string, network: Network): boolean {
-  return address.startsWith(network.blech32)
+  return address.startsWith(network.blech32);
 }
 
 function decodeBlech32(address: string): AddressType {
@@ -329,7 +329,7 @@ function decodeBlech32(address: string): AddressType {
 }
 
 function isBech32(address: string, network: Network): boolean {
-  return address.startsWith(network.bech32)
+  return address.startsWith(network.bech32);
 }
 
 function decodeBech32(address: string): AddressType {
@@ -352,7 +352,8 @@ function decodeBase58(address: string, network: Network): AddressType {
   // Prefixes are 1 byte long, thus blinding key always starts at 3rd byte
   if (payload.readUInt8(0) === network.confidentialPrefix) {
     const unconfidential = payload.slice(35); // ignore the blinding key
-    if (unconfidential.length !== 20) { // ripem160 hash size
+    if (unconfidential.length !== 20) {
+      // ripem160 hash size
       throw new Error('decoded address is of unknown size');
     }
 
@@ -365,12 +366,12 @@ function decodeBase58(address: string, network: Network): AddressType {
       default:
         throw new Error('unknown address prefix');
     }
-
   }
 
   // unconf case
   const unconfidential = payload.slice(1);
-  if (unconfidential.length !== 20) { // ripem160 hash size
+  if (unconfidential.length !== 20) {
+    // ripem160 hash size
     throw new Error('decoded address is of unknown size');
   }
 

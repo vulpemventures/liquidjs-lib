@@ -17,6 +17,16 @@ export interface ConfidentialResult {
     blindingKey: Buffer;
     unconfidentialAddress: string;
 }
+declare enum AddressType {
+    ConfidentialP2Pkh = -4,
+    ConfidentialP2Sh = -3,
+    ConfidentialP2Wpkh = -2,
+    ConfidentialP2Wsh = -1,
+    P2Pkh = 0,
+    P2Sh = 1,
+    P2Wpkh = 2,
+    P2Wsh = 3
+}
 export declare function fromBase58Check(address: string): Base58CheckResult;
 export declare function fromBech32(address: string): Bech32Result;
 export declare function fromBlech32(address: string): Blech32Result;
@@ -28,8 +38,10 @@ export declare function toConfidential(address: string, blindingKey: Buffer): st
 export declare function fromOutputScript(output: Buffer, network?: Network): string;
 export declare function toOutputScript(address: string, network?: Network): Buffer;
 export declare function getNetwork(address: string): Network;
+export declare function decodeType(address: string, network?: Network): AddressType;
 /**
  * A quick check used to verify if a string could be a valid confidential address.
  * @param address address to check.
  */
 export declare function isConfidential(address: string): boolean;
+export {};
