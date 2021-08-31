@@ -34,18 +34,18 @@ export interface ConfidentialResult {
 
 // negative value for confidential types
 enum AddressType {
-  ConfidentialP2Pkh = -4,
-  ConfidentialP2Sh = -3,
-  ConfidentialP2Wpkh = -2,
-  ConfidentialP2Wsh = -1,
   P2Pkh = 0,
   P2Sh = 1,
   P2Wpkh = 2,
   P2Wsh = 3,
+  ConfidentialP2Pkh = 4, // confidential types MUST be > 4
+  ConfidentialP2Sh,
+  ConfidentialP2Wpkh,
+  ConfidentialP2Wsh,
 }
 
 function isConfidentialAddressType(addressType: AddressType): boolean {
-  return addressType < 0;
+  return addressType >= 4;
 }
 
 export function fromBase58Check(address: string): Base58CheckResult {

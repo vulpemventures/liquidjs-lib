@@ -18,14 +18,14 @@ export interface ConfidentialResult {
     unconfidentialAddress: string;
 }
 declare enum AddressType {
-    ConfidentialP2Pkh = -4,
-    ConfidentialP2Sh = -3,
-    ConfidentialP2Wpkh = -2,
-    ConfidentialP2Wsh = -1,
     P2Pkh = 0,
     P2Sh = 1,
     P2Wpkh = 2,
-    P2Wsh = 3
+    P2Wsh = 3,
+    ConfidentialP2Pkh = 4,
+    ConfidentialP2Sh = 5,
+    ConfidentialP2Wpkh = 6,
+    ConfidentialP2Wsh = 7
 }
 export declare function fromBase58Check(address: string): Base58CheckResult;
 export declare function fromBech32(address: string): Bech32Result;

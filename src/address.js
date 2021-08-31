@@ -27,17 +27,17 @@ const typeforce = require('typeforce');
 // negative value for confidential types
 var AddressType;
 (function(AddressType) {
-  AddressType[(AddressType['ConfidentialP2Pkh'] = -4)] = 'ConfidentialP2Pkh';
-  AddressType[(AddressType['ConfidentialP2Sh'] = -3)] = 'ConfidentialP2Sh';
-  AddressType[(AddressType['ConfidentialP2Wpkh'] = -2)] = 'ConfidentialP2Wpkh';
-  AddressType[(AddressType['ConfidentialP2Wsh'] = -1)] = 'ConfidentialP2Wsh';
   AddressType[(AddressType['P2Pkh'] = 0)] = 'P2Pkh';
   AddressType[(AddressType['P2Sh'] = 1)] = 'P2Sh';
   AddressType[(AddressType['P2Wpkh'] = 2)] = 'P2Wpkh';
   AddressType[(AddressType['P2Wsh'] = 3)] = 'P2Wsh';
+  AddressType[(AddressType['ConfidentialP2Pkh'] = 4)] = 'ConfidentialP2Pkh';
+  AddressType[(AddressType['ConfidentialP2Sh'] = 5)] = 'ConfidentialP2Sh';
+  AddressType[(AddressType['ConfidentialP2Wpkh'] = 6)] = 'ConfidentialP2Wpkh';
+  AddressType[(AddressType['ConfidentialP2Wsh'] = 7)] = 'ConfidentialP2Wsh';
 })(AddressType || (AddressType = {}));
 function isConfidentialAddressType(addressType) {
-  return addressType < 0;
+  return addressType >= 4;
 }
 function fromBase58Check(address) {
   const payload = bs58check_1.default.decode(address);
