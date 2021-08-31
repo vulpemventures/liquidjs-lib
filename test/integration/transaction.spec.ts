@@ -1558,40 +1558,4 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     // build and broadcast to the Bitcoin RegTest network
     await regtestUtils.broadcast(tx.toHex());
   });
-
-  it('can create (and broadcast via 3PBP) an issuance transaction (unblinded)', async () => {
-    // these are { payment: Payment; keys: ECPair[] }
-    const alice1 = createPayment('p2sh-p2wpkh');
-    const inputData1 = await getInputData(alice1.payment, true, 'p2sh');
-    const psbt = new liquid.Psbt({ network: regtest })
-      .addInput(inputData1) // alice1 unspent
-      .addIssuance({
-        assetAddress: 'XBXiDkFNneyPtpXvqVWQoHA1MhoXa8FZLn',
-        assetAmount: 100,
-        tokenAddress: 'XBXiDkFNneyPtpXvqVWQoHA1MhoXa8FZLn',
-        tokenAmount: 1,
-        precision: 8,
-        net: regtest,
-      })
-      .addOutputs([
-        {
-          asset: inputData1.witnessUtxo.asset,
-          nonce: Buffer.from('00', 'hex'),
-          script: alice1.payment.output,
-          value: liquid.confidential.satoshiToConfidentialValue(99996500),
-        },
-        {
-          // fees in Liquid are explicit
-          asset: inputData1.witnessUtxo.asset,
-          nonce: Buffer.from('00', 'hex'),
-          script: Buffer.alloc(0),
-          value: liquid.confidential.satoshiToConfidentialValue(3500),
-        },
-      ])
-      .signAllInputs(alice1.keys[0])
-      .finalizeAllInputs();
-
-    const hex = psbt.extractTransaction().toHex();
-    await regtestUtils.broadcast(hex);
-  });
 });
