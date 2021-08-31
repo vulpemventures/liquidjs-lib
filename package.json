@@ -69,6 +69,7 @@
   },
   "devDependencies": {
     "@types/bs58": "^4.0.0",
+    "@types/bs58check": "^2.1.0",
     "@types/mocha": "^5.2.7",
     "@types/node": "12.7.5",
     "@types/proxyquire": "^1.3.28",
