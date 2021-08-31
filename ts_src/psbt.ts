@@ -923,7 +923,7 @@ export class Psbt {
           );
         }
 
-        const issuanceRangeProof = await confidential.rangeProofWithoutNonceHash(
+        const issuanceRangeProof = await confidential.rangeProof(
           blindingFactorsAsset.value,
           assetBlindingPrivateKey,
           blindingFactorsAsset.asset,
@@ -957,7 +957,7 @@ export class Psbt {
             blindingFactorsToken.valueBlindingFactor,
           );
 
-          const inflationRangeProof = await confidential.rangeProofWithoutNonceHash(
+          const inflationRangeProof = await confidential.rangeProof(
             blindingFactorsToken.value,
             issuanceBlindingPrivKeys[inputIndex]!.tokenKey,
             token,
@@ -1032,7 +1032,7 @@ export class Psbt {
       );
 
       // proofs
-      const rangeProof = await confidential.rangeProof(
+      const rangeProof = await confidential.rangeProofWithNonceHash(
         outputBlindingData.value,
         blindingPubkeys[indexInArray],
         ephemeralPrivKey,

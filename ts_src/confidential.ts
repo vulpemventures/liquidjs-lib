@@ -104,7 +104,10 @@ export async function rangeProofInfo(
   };
 }
 
-export async function rangeProof(
+/**
+ *  nonceHash from blinding key + ephemeral key and then rangeProof computation
+ */
+export async function rangeProofWithNonceHash(
   value: string,
   blindingPubkey: Buffer,
   ephemeralPrivkey: Buffer,
@@ -118,7 +121,7 @@ export async function rangeProof(
   minBits?: number,
 ): Promise<Buffer> {
   const nonce = await nonceHash(blindingPubkey, ephemeralPrivkey);
-  return rangeProofWithoutNonceHash(
+  return rangeProof(
     value,
     nonce,
     asset,
@@ -132,7 +135,10 @@ export async function rangeProof(
   );
 }
 
-export async function rangeProofWithoutNonceHash(
+/**
+ *  rangeProof computation without nonceHash step.
+ */
+export async function rangeProof(
   value: string,
   nonce: Buffer,
   asset: Buffer,
