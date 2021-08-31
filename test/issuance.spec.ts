@@ -19,7 +19,7 @@ describe('Issuance', () => {
     '2b73af1c9ae64a6903b3055361dd7b75082003a85374049982fc1e8f31b9a8',
     'hex',
   );
-  const prevout: issuance.OutPoint = {
+  const prevout: issuance.Outpoint = {
     txHash: Buffer.from(fixture.prevout.txHash, 'hex').reverse(),
     vout: fixture.prevout.index,
   };

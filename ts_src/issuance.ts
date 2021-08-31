@@ -36,7 +36,7 @@ export interface IssuanceContract {
 /**
  * An object describing an output point of the blockchain.
  */
-export interface OutPoint {
+export interface Outpoint {
   txHash: Buffer;
   vout: number;
 }
@@ -118,7 +118,7 @@ export function newIssuance(
  * @param contractHash the 32 bytes contract hash.
  */
 export function generateEntropy(
-  outPoint: OutPoint,
+  outPoint: Outpoint,
   contractHash: Buffer = Buffer.alloc(32),
 ): Buffer {
   if (outPoint.txHash.length !== 32) {
