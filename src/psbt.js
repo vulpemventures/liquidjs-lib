@@ -815,7 +815,7 @@ class Psbt {
               `missing asset blinding private key for issuance #${inputIndex}`,
             );
           }
-          const issuanceRangeProof = yield confidential.rangeProofWithoutNonceHash(
+          const issuanceRangeProof = yield confidential.rangeProof(
             blindingFactorsAsset.value,
             assetBlindingPrivateKey,
             blindingFactorsAsset.asset,
@@ -845,7 +845,7 @@ class Psbt {
               issuedTokenCommitment,
               blindingFactorsToken.valueBlindingFactor,
             );
-            const inflationRangeProof = yield confidential.rangeProofWithoutNonceHash(
+            const inflationRangeProof = yield confidential.rangeProof(
               blindingFactorsToken.value,
               issuanceBlindingPrivKeys[inputIndex].tokenKey,
               token,
@@ -906,7 +906,7 @@ class Psbt {
           outputBlindingData.valueBlindingFactor,
         );
         // proofs
-        const rangeProof = yield confidential.rangeProof(
+        const rangeProof = yield confidential.rangeProofWithNonceHash(
           outputBlindingData.value,
           blindingPubkeys[indexInArray],
           ephemeralPrivKey,

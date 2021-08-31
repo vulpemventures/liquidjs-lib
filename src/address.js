@@ -130,37 +130,37 @@ function fromOutputScript(output, network) {
 exports.fromOutputScript = fromOutputScript;
 function toOutputScript(address, network) {
   network = network || getNetwork(address);
-  let decodeBase58;
-  let decodeBech32;
-  let decodeConfidential;
+  let decodeBase58result;
+  let decodeBech32result;
+  let decodeConfidentialresult;
   try {
-    decodeBase58 = fromBase58Check(address);
+    decodeBase58result = fromBase58Check(address);
   } catch (e) {}
-  if (decodeBase58) {
-    if (decodeBase58.version === network.pubKeyHash)
-      return payments.p2pkh({ hash: decodeBase58.hash }).output;
-    if (decodeBase58.version === network.scriptHash)
-      return payments.p2sh({ hash: decodeBase58.hash }).output;
+  if (decodeBase58result) {
+    if (decodeBase58result.version === network.pubKeyHash)
+      return payments.p2pkh({ hash: decodeBase58result.hash }).output;
+    if (decodeBase58result.version === network.scriptHash)
+      return payments.p2sh({ hash: decodeBase58result.hash }).output;
   } else {
     try {
-      decodeBech32 = fromBech32(address);
+      decodeBech32result = fromBech32(address);
     } catch (e) {}
-    if (decodeBech32) {
-      if (decodeBech32.prefix !== network.bech32)
+    if (decodeBech32result) {
+      if (decodeBech32result.prefix !== network.bech32)
         throw new Error(address + ' has an invalid prefix');
-      if (decodeBech32.version === 0) {
-        if (decodeBech32.data.length === 20)
-          return payments.p2wpkh({ hash: decodeBech32.data }).output;
-        if (decodeBech32.data.length === 32)
-          return payments.p2wsh({ hash: decodeBech32.data }).output;
+      if (decodeBech32result.version === 0) {
+        if (decodeBech32result.data.length === 20)
+          return payments.p2wpkh({ hash: decodeBech32result.data }).output;
+        if (decodeBech32result.data.length === 32)
+          return payments.p2wsh({ hash: decodeBech32result.data }).output;
       }
     } else {
       try {
-        decodeConfidential = fromConfidential(address);
+        decodeConfidentialresult = fromConfidential(address);
       } catch (e) {}
-      if (decodeConfidential) {
+      if (decodeConfidentialresult) {
         return toOutputScript(
-          decodeConfidential.unconfidentialAddress,
+          decodeConfidentialresult.unconfidentialAddress,
           network,
         );
       }
@@ -286,13 +286,13 @@ function decodeBase58(address, network) {
   // BLIND_PREFIX|ADDRESS_PREFIX|BLINDING_KEY|SCRIPT_HASH
   // Prefixes are 1 byte long, thus blinding key always starts at 3rd byte
   if (payload.readUInt8(0) === network.confidentialPrefix) {
-    const unconfidential = payload.slice(35); // ignore the blinding key
-    if (unconfidential.length !== 20) {
+    const unconfidentialPart = payload.slice(35); // ignore the blinding key
+    if (unconfidentialPart.length !== 20) {
       // ripem160 hash size
       throw new Error('decoded address is of unknown size');
     }
-    const prefix = unconfidential.readUInt8(0);
-    switch (prefix) {
+    const unconfPartPrefix = unconfidentialPart.readUInt8(0);
+    switch (unconfPartPrefix) {
       case network.pubKeyHash:
         return AddressType.ConfidentialP2Pkh;
       case network.scriptHash:

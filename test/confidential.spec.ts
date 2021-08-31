@@ -109,7 +109,7 @@ describe('confidential', () => {
       const exp = 0;
       const minBits = 36;
 
-      const proof = await confidential.rangeProof(
+      const proof = await confidential.rangeProofWithNonceHash(
         f.value,
         Buffer.from(f.blindingPubkey, 'hex'),
         Buffer.from(f.ephemeralPrivkey, 'hex'),

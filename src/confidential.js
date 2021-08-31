@@ -136,7 +136,10 @@ function rangeProofInfo(proof) {
   });
 }
 exports.rangeProofInfo = rangeProofInfo;
-function rangeProof(
+/**
+ *  nonceHash from blinding key + ephemeral key and then rangeProof computation
+ */
+function rangeProofWithNonceHash(
   value,
   blindingPubkey,
   ephemeralPrivkey,
@@ -151,7 +154,7 @@ function rangeProof(
 ) {
   return __awaiter(this, void 0, void 0, function*() {
     const nonce = yield nonceHash(blindingPubkey, ephemeralPrivkey);
-    return rangeProofWithoutNonceHash(
+    return rangeProof(
       value,
       nonce,
       asset,
@@ -165,8 +168,11 @@ function rangeProof(
     );
   });
 }
-exports.rangeProof = rangeProof;
-function rangeProofWithoutNonceHash(
+exports.rangeProofWithNonceHash = rangeProofWithNonceHash;
+/**
+ *  rangeProof computation without nonceHash step.
+ */
+function rangeProof(
   value,
   nonce,
   asset,
@@ -200,7 +206,7 @@ function rangeProofWithoutNonceHash(
     );
   });
 }
-exports.rangeProofWithoutNonceHash = rangeProofWithoutNonceHash;
+exports.rangeProof = rangeProof;
 function surjectionProof(
   outputAsset,
   outputAssetBlindingFactor,
