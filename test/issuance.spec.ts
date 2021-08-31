@@ -2,7 +2,6 @@ import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import * as issuance from '../ts_src/issuance';
 import * as types from '../ts_src/types';
-import { regtest } from './../ts_src/networks';
 import { Psbt } from './../ts_src/psbt';
 import { Transaction } from './../ts_src/transaction';
 
@@ -122,11 +121,12 @@ describe('Issuance', () => {
   // a static set of arguments using with the function addIssuance.
   const issueArgs: issuance.AddIssuanceArgs = {
     assetAmount: 100,
-    assetAddress: fixtures.unspent.assetAddress,
+    assetAddress:
+      'AzpudM1xn9jKRwnDFyDPDPTQ8jaxEUaSwe5JSFtVdULh6CwJftVVZcQWZbNacvYLLG24jTpKKNsNUVii',
     tokenAmount: 1,
-    tokenAddress: fixtures.unspent.tokenAddress,
+    tokenAddress:
+      'AzpudM1xn9jKRwnDFyDPDPTQ8jaxEUaSwe5JSFtVdULh6CwJftVVZcQWZbNacvYLLG24jTpKKNsNUVii',
     precision: 8,
-    net: regtest,
   };
 
   describe('Psbt: add issuance to input', () => {

@@ -43,7 +43,6 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         assetAmount: 100,
         tokenAmount: 1,
         precision: 8,
-        net: regtest,
         confidential: true, // must be true, we'll blind the issuance!
         contract: {
           name: 'testcoin',
@@ -112,7 +111,6 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       assetAmount: 100,
       tokenAmount: 1,
       precision: 8,
-      net: regtest,
       contract: {
         name: 'testcoin-bis',
         ticker: 'T-COI',
@@ -166,7 +164,6 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       assetAmount: 100,
       tokenAmount: 1,
       precision: 8,
-      net: regtest,
       contract: {
         name: 'testcoin-bis',
         ticker: 'T-COI',

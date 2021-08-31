@@ -2,7 +2,6 @@ import { isConfidential } from './address';
 import { BufferWriter } from './bufferutils';
 import { satoshiToConfidentialValue } from './confidential';
 import * as bcrypto from './crypto';
-import { Network } from './networks';
 import { sha256Midstate } from './sha256d';
 
 // one of the field of the IssuanceContract interface.
@@ -18,7 +17,6 @@ export interface AddIssuanceArgs {
   tokenAddress?: string;
   precision: number;
   contract?: IssuanceContract;
-  net?: Network;
   confidential?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
 }
 

@@ -280,41 +280,47 @@ function decodeBech32(address) {
       throw new Error('invalid program length');
   }
 }
+function UnkownPrefixError(prefix, network) {
+  return new Error(
+    `unknown address prefix (${prefix}), need ${network.pubKeyHash} or ${
+      network.scriptHash
+    }`,
+  );
+}
 function decodeBase58(address, network) {
   const payload = bs58check_1.default.decode(address);
   // Blinded decoded haddress has the form:
   // BLIND_PREFIX|ADDRESS_PREFIX|BLINDING_KEY|SCRIPT_HASH
   // Prefixes are 1 byte long, thus blinding key always starts at 3rd byte
+  const prefix = payload.readUInt8(1);
   if (payload.readUInt8(0) === network.confidentialPrefix) {
     const unconfidentialPart = payload.slice(35); // ignore the blinding key
     if (unconfidentialPart.length !== 20) {
       // ripem160 hash size
       throw new Error('decoded address is of unknown size');
     }
-    const unconfPartPrefix = unconfidentialPart.readUInt8(0);
-    switch (unconfPartPrefix) {
+    switch (prefix) {
       case network.pubKeyHash:
         return AddressType.ConfidentialP2Pkh;
       case network.scriptHash:
         return AddressType.ConfidentialP2Sh;
       default:
-        throw new Error('unknown address prefix');
+        throw UnkownPrefixError(prefix, network);
     }
   }
   // unconf case
-  const unconfidential = payload.slice(1);
+  const unconfidential = payload.slice(2);
   if (unconfidential.length !== 20) {
     // ripem160 hash size
     throw new Error('decoded address is of unknown size');
   }
-  const prefix = unconfidential.readUInt8(0);
   switch (prefix) {
     case network.pubKeyHash:
       return AddressType.P2Pkh;
     case network.scriptHash:
       return AddressType.P2Sh;
     default:
-      throw new Error('unknown address prefix');
+      throw UnkownPrefixError(prefix, network);
   }
 }
 function decodeType(address, network) {

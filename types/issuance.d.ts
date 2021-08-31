@@ -1,4 +1,3 @@
-import { Network } from './networks';
 export interface IssuanceEntity {
     domain: string;
 }
@@ -9,7 +8,6 @@ export interface AddIssuanceArgs {
     tokenAddress?: string;
     precision: number;
     contract?: IssuanceContract;
-    net?: Network;
     confidential?: boolean;
 }
 /**

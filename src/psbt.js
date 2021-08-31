@@ -252,7 +252,7 @@ class Psbt {
       Buffer.of(args.confidential ? 0x0a : 0x01),
       issuance_1.calculateAsset(entropy),
     ]);
-    const assetScript = address_1.toOutputScript(args.assetAddress, args.net);
+    const assetScript = address_1.toOutputScript(args.assetAddress);
     // send the asset amount to the asset address.
     this.addOutput({
       value: issuance.assetAmount,
@@ -268,7 +268,7 @@ class Psbt {
         entropy,
         args.confidential,
       );
-      const tokenScript = address_1.toOutputScript(args.tokenAddress, args.net);
+      const tokenScript = address_1.toOutputScript(args.tokenAddress);
       // send the token amount to the token address.
       this.addOutput({
         script: tokenScript,

@@ -270,7 +270,7 @@ export class Psbt {
       Buffer.of(args.confidential ? 0x0a : 0x01),
       calculateAsset(entropy),
     ]);
-    const assetScript = toOutputScript(args.assetAddress, args.net);
+    const assetScript = toOutputScript(args.assetAddress);
 
     // send the asset amount to the asset address.
     this.addOutput({
@@ -286,7 +286,7 @@ export class Psbt {
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
 
       const token = calculateReissuanceToken(entropy, args.confidential);
-      const tokenScript = toOutputScript(args.tokenAddress, args.net);
+      const tokenScript = toOutputScript(args.tokenAddress);
 
       // send the token amount to the token address.
       this.addOutput({
