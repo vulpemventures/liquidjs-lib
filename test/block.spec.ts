@@ -6,19 +6,19 @@ import { Block } from '../ts_src/block';
 describe('block deserialization ', () => {
   fixtures.test.forEach(f => {
     it(f.name, () => {
-      let block = Block.fromBuffer(Buffer.from(f.hex, 'hex'));
+      const block = Block.fromBuffer(Buffer.from(f.hex, 'hex'));
 
       if (f.name.includes('compact current')) {
         assert.strictEqual(block.getHash().toString('hex'), f.hash);
-        assert.strictEqual(block.version, parseInt(f.version || "", 16));
+        assert.strictEqual(block.version, parseInt(f.version || '', 16));
         assert.strictEqual(block.currentSignBlockWitnessLimit, f.signBlockWitnessLimit);
-      } 
+      }
 
       if (f.name.includes('full current')) {
         assert.strictEqual(block.getHash().toString('hex'), f.hash);
-      } 
+      }
 
-      assert.strictEqual(block.transactions?.length, f.numOfTx);
+      assert.strictEqual(block.transactions!.length, f.numOfTx);
     });
   });
 });
