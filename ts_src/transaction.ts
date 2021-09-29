@@ -491,7 +491,7 @@ export class Transaction {
               txIn.issuance!.assetEntropy.length +
               txIn.issuance!.assetAmount.length +
               txIn.issuance!.tokenAmount.length
-            : sum, // we'll use the empty 00 Buffer if issuance is not set
+            : sum + 1, // we'll use the empty 00 Buffer if issuance is not set
         0,
       );
     }
