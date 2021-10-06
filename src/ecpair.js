@@ -93,7 +93,7 @@ function fromWIF(wifString, network) {
       })
       .pop();
     if (!network) throw new Error('Unknown network version');
-    // otherwise, assume a network object (or default to bitcoin)
+    // otherwise, assume a network object (or default to liquid)
   } else {
     network = network || NETWORKS.liquid;
     if (version !== network.wif) throw new Error('Invalid network version');
