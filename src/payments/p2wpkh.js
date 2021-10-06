@@ -115,6 +115,7 @@ function p2wpkh(a, opts) {
   lazy.prop(o, 'confidentialAddress', () => {
     if (!o.address) return;
     if (!o.blindkey) return;
+    if (!o.network) return;
     const res = baddress.fromBech32(o.address);
     const data = Buffer.concat([
       Buffer.from([res.version, res.data.length]),

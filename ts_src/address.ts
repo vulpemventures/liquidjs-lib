@@ -207,33 +207,34 @@ export function toOutputScript(address: string, network?: Network): Buffer {
   throw new Error(address + ' has no matching Script');
 }
 
+function isNetwork(network: Network, address: string): boolean {
+  if (address.startsWith(network.blech32) || address.startsWith(network.bech32))
+    return true;
+
+  try {
+    const payload = bs58check.decode(address);
+    const prefix = payload.readUInt8(0);
+
+    if (
+      prefix === network.confidentialPrefix ||
+      prefix === network.pubKeyHash ||
+      prefix === network.scriptHash
+    )
+      return true;
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+// determines the network of a given address
 export function getNetwork(address: string): Network {
-  if (
-    address.startsWith(networks.liquid.blech32) ||
-    address.startsWith(networks.liquid.bech32)
-  )
-    return networks.liquid;
-  if (
-    address.startsWith(networks.regtest.blech32) ||
-    address.startsWith(networks.regtest.bech32)
-  )
-    return networks.regtest;
+  const allNetworks = [networks.liquid, networks.regtest, networks.testnet];
 
-  const payload = bs58check.decode(address);
-  const prefix = payload.readUInt8(0);
-
-  if (
-    prefix === networks.liquid.confidentialPrefix ||
-    prefix === networks.liquid.pubKeyHash ||
-    prefix === networks.liquid.scriptHash
-  )
-    return networks.liquid;
-  if (
-    prefix === networks.regtest.confidentialPrefix ||
-    prefix === networks.regtest.pubKeyHash ||
-    prefix === networks.regtest.scriptHash
-  )
-    return networks.regtest;
+  for (const network of allNetworks) {
+    if (isNetwork(network, address)) return network;
+  }
 
   throw new Error(address + ' has an invalid prefix');
 }

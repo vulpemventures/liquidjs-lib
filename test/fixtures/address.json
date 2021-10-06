@@ -53,6 +53,15 @@
       "bech32": "ert1qyny4kp4adanuu670vfrnz7t384s8gvdtnwr0jcvvrwqwar4t9qcs2m7c20",
       "script": "OP_0 24c95b06bd6f67ce6bcf62473179713d607431ab9b86f9618c1b80ee8eab2831",
       "confidentialAddress": "el1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqqfxftvrt6mm8ee4u7cj8x9uhz0tqwsc6hxuxl9sccxuqa682k2p34j69q77djwvn"
+    },
+    {
+      "network": "testnet",
+      "version": 0,
+      "blindkey": "0339b93f60bf024de61e56a0d0be0df864b952f4c82d2ed725fdb5d5991d5c4352",
+      "data": "e45427947dd5a21ee6678f10f22b10eaa26e5a5d",
+      "bech32": "tex1qu32z09ra6k3paen83ug0y2csa23xukja3fyeyx",
+      "script": "OP_0 e45427947dd5a21ee6678f10f22b10eaa26e5a5d",
+      "confidentialAddress": "tlq1qqvumj0mqhupymes726sdp0sdlpjtj5h5eqkja4e9lk6atxgat3p49ez5y728m4dzrmnx0rcs7g43p64zded96r7etwq8lmd2e"
     }
   ],
   "bech32": [
