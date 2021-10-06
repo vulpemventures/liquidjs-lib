@@ -60,7 +60,7 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
       unconfidentialAddress: baddress.toBech32(
         result.data.slice(2),
         result.version,
-        network!.bech32,
+        network.bech32,
       ),
     };
   });
@@ -112,12 +112,13 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
   lazy.prop(o, 'confidentialAddress', () => {
     if (!o.address) return;
     if (!o.blindkey) return;
+    if (!o.network) return;
     const res = baddress.fromBech32(o.address);
     const data = Buffer.concat([
       Buffer.from([res.version, res.data.length]),
       res.data,
     ]);
-    return baddress.toBlech32(data, o.blindkey!, o.network!.blech32);
+    return baddress.toBlech32(data, o.blindkey!, o.network.blech32);
   });
 
   // extended validation

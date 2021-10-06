@@ -208,19 +208,22 @@ export function toOutputScript(address: string, network?: Network): Buffer {
 }
 
 function isNetwork(network: Network, address: string): boolean {
-  if (
-    address.startsWith(network.blech32) ||
-    address.startsWith(network.bech32)
-  ) return true;
+  if (address.startsWith(network.blech32) || address.startsWith(network.bech32))
+    return true;
 
-  const payload = bs58check.decode(address);
-  const prefix = payload.readUInt8(0);
+  try {
+    const payload = bs58check.decode(address);
+    const prefix = payload.readUInt8(0);
 
-  if (
-    prefix === network.confidentialPrefix ||
-    prefix === network.pubKeyHash ||
-    prefix === network.scriptHash
-  ) return true;
+    if (
+      prefix === network.confidentialPrefix ||
+      prefix === network.pubKeyHash ||
+      prefix === network.scriptHash
+    )
+      return true;
+  } catch {
+    return false;
+  }
 
   return false;
 }

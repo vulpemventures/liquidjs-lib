@@ -172,14 +172,18 @@ exports.toOutputScript = toOutputScript;
 function isNetwork(network, address) {
   if (address.startsWith(network.blech32) || address.startsWith(network.bech32))
     return true;
-  const payload = bs58check_1.default.decode(address);
-  const prefix = payload.readUInt8(0);
-  if (
-    prefix === network.confidentialPrefix ||
-    prefix === network.pubKeyHash ||
-    prefix === network.scriptHash
-  )
-    return true;
+  try {
+    const payload = bs58check_1.default.decode(address);
+    const prefix = payload.readUInt8(0);
+    if (
+      prefix === network.confidentialPrefix ||
+      prefix === network.pubKeyHash ||
+      prefix === network.scriptHash
+    )
+      return true;
+  } catch (_a) {
+    return false;
+  }
   return false;
 }
 // determines the network of a given address
