@@ -15,4 +15,5 @@ interface Bip32 {
 }
 export declare const liquid: Network;
 export declare const regtest: Network;
+export declare const testnet: Network;
 export {};
