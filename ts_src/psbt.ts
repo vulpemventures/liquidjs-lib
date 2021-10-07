@@ -27,13 +27,17 @@ import {
 } from './ecpair';
 import {
   AddIssuanceArgs,
+  AddReissuanceArgs,
   calculateAsset,
   calculateReissuanceToken,
   generateEntropy,
   hasTokenAmount,
   Issuance,
   newIssuance,
+  toConfidentialAssetAmount,
+  toConfidentialTokenAmount,
   validateAddIssuanceArgs,
+  validateAddReissuanceArgs,
 } from './issuance';
 import * as payments from './payments';
 import * as bscript from './script';
@@ -43,6 +47,8 @@ import { Psbt as PsbtBase } from 'bip174-liquid';
 import { checkForInput } from 'bip174-liquid/src/lib/utils';
 
 const _randomBytes = require('randombytes');
+
+const issuancePrefix = Buffer.of(0x01);
 
 /**
  * These are the default arguments for a Psbt instance.
@@ -230,22 +236,7 @@ export class Psbt {
 
   addIssuance(args: AddIssuanceArgs, inputIndex?: number): this {
     validateAddIssuanceArgs(args); // throw an error if args are invalid
-
-    if (inputIndex && !this.data.inputs[inputIndex]) {
-      throw new Error(`The input ${inputIndex} does not exist.`);
-      // check if the input is available for issuance.
-    } else {
-      // verify if there is at least one input available.
-      if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
-        throw new Error(
-          'transaction needs at least one input without issuance data.',
-        );
-      // search and extract the input index.
-      inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
-    }
-
-    if (this.__CACHE.__TX.ins[inputIndex].issuance)
-      throw new Error(`The input ${inputIndex} already has issuance data.`);
+    inputIndex = this.searchInputIndexForIssuance(inputIndex);
 
     const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
 
@@ -257,8 +248,7 @@ export class Psbt {
       args.contract,
     );
 
-    // generate the entropy
-    const entropy: Buffer = generateEntropy(
+    const entropy = generateEntropy(
       { txHash: hash, vout: index },
       issuance.assetEntropy,
     );
@@ -266,10 +256,7 @@ export class Psbt {
     // add the issuance to the input.
     this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
 
-    const asset = Buffer.concat([
-      Buffer.of(args.confidential ? 0x0a : 0x01),
-      calculateAsset(entropy),
-    ]);
+    const asset = Buffer.concat([issuancePrefix, calculateAsset(entropy)]);
     const assetScript = toOutputScript(args.assetAddress);
 
     // send the asset amount to the asset address.
@@ -292,10 +279,71 @@ export class Psbt {
       this.addOutput({
         script: tokenScript,
         value: issuance.tokenAmount,
-        asset: Buffer.concat([Buffer.of(0x01), token]),
+        asset: Buffer.concat([issuancePrefix, token]),
         nonce: Buffer.from('00', 'hex'),
       });
     }
+
+    return this;
+  }
+
+  addReissuance(args: AddReissuanceArgs, inputIndex?: number): this {
+    validateAddReissuanceArgs(args);
+    inputIndex = this.searchInputIndexForIssuance(inputIndex);
+
+    const inputData: PsbtInputExtended = {
+      hash: args.tokenPrevout.txHash,
+      index: args.tokenPrevout.vout,
+    };
+
+    if (args.witnessUtxo) {
+      inputData.witnessUtxo = args.witnessUtxo;
+    }
+
+    if (args.nonWitnessUtxo) {
+      inputData.nonWitnessUtxo = args.nonWitnessUtxo;
+    }
+
+    this.addInput(inputData);
+
+    const satsToReissue = toConfidentialAssetAmount(
+      args.assetAmount,
+      args.precision,
+    );
+
+    // add the issuance object to input
+    this.__CACHE.__TX.ins[inputIndex].issuance = {
+      assetBlindingNonce: args.prevoutBlinder,
+      tokenAmount: Buffer.of(0x00),
+      assetAmount: satsToReissue,
+      assetEntropy: args.entropy,
+    };
+
+    const asset = Buffer.concat([issuancePrefix, calculateAsset(args.entropy)]);
+    const assetScript = toOutputScript(args.assetAddress);
+
+    // send the asset amount to the asset address.
+    this.addOutput({
+      value: satsToReissue,
+      script: assetScript,
+      asset,
+      nonce: Buffer.from('00', 'hex'),
+    });
+
+    const token = Buffer.concat([
+      issuancePrefix,
+      calculateReissuanceToken(args.entropy, true),
+    ]);
+
+    const tokenScript = toOutputScript(args.tokenAddress);
+
+    // send the token amount to the token address.
+    this.addOutput({
+      value: toConfidentialTokenAmount(args.tokenAmount, args.precision),
+      script: tokenScript,
+      asset: token,
+      nonce: Buffer.from('00', 'hex'),
+    });
 
     return this;
   }
@@ -806,6 +854,25 @@ export class Psbt {
   clearFinalizedInput(inputIndex: number): this {
     this.data.clearFinalizedInput(inputIndex);
     return this;
+  }
+
+  private searchInputIndexForIssuance(inputIndex: number | undefined): number {
+    if (inputIndex && !this.data.inputs[inputIndex]) {
+      throw new Error(`The input ${inputIndex} does not exist.`);
+      // check if the input is available for issuance.
+    } else {
+      // verify if there is at least one input available.
+      if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
+        throw new Error(
+          'transaction needs at least one input without issuance data.',
+        );
+      // search and extract the input index.
+      inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
+    }
+
+    if (this.__CACHE.__TX.ins[inputIndex].issuance)
+      throw new Error(`The input ${inputIndex} already has issuance data.`);
+    return inputIndex;
   }
 
   private unblindInputsToIssuanceBlindingData(

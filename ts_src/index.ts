@@ -6,6 +6,7 @@ import * as ECPair from './ecpair';
 import * as networks from './networks';
 import * as payments from './payments';
 import * as script from './script';
+import * as issuance from './issuance';
 
 export {
   ECPair,
@@ -16,6 +17,7 @@ export {
   payments,
   script,
   confidential,
+  issuance,
 };
 
 export { Block } from './block';

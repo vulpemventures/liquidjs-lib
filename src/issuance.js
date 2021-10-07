@@ -16,6 +16,7 @@ const bufferutils_1 = require('./bufferutils');
 const confidential_1 = require('./confidential');
 const bcrypto = __importStar(require('./crypto'));
 const sha256d_1 = require('./sha256d');
+const transaction_1 = require('./transaction');
 /**
  * returns true if the issuance's token amount is not 0x00 or null buffer.
  * @param issuance issuance to test
@@ -128,6 +129,7 @@ function toConfidentialAssetAmount(assetAmount, precision = 8) {
   const amount = Math.pow(10, precision) * assetAmount;
   return confidential_1.satoshiToConfidentialValue(amount);
 }
+exports.toConfidentialAssetAmount = toConfidentialAssetAmount;
 /**
  * converts token amount to confidential value.
  * @param assetAmount the token amount.
@@ -137,10 +139,13 @@ function toConfidentialTokenAmount(tokenAmount, precision = 8) {
   if (tokenAmount === 0) return Buffer.from('00', 'hex');
   return toConfidentialAssetAmount(tokenAmount, precision);
 }
+exports.toConfidentialTokenAmount = toConfidentialTokenAmount;
 function validateAddIssuanceArgs(args) {
   if (args.assetAmount <= 0)
     throw new Error('asset amount must be greater than zero.');
-  if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+  if (args.tokenAmount < 0) {
+    throw new Error('token amount must be positive.');
+  }
   if (args.tokenAddress) {
     if (
       address_1.isConfidential(args.assetAddress) !==
@@ -153,3 +158,58 @@ function validateAddIssuanceArgs(args) {
   }
 }
 exports.validateAddIssuanceArgs = validateAddIssuanceArgs;
+function validateAddReissuanceArgs(args) {
+  if (!args.nonWitnessUtxo && !args.witnessUtxo) {
+    throw new Error('need witnessUtxo or nonWitnessUtxo');
+  }
+  if (args.assetAmount <= 0) {
+    throw new Error('asset amount must be greater than zero.');
+  }
+  if (args.tokenAmount < 0) {
+    throw new Error('token amount must be positive.');
+  }
+  if (args.tokenPrevout.txHash.length !== 32) {
+    throw new Error('invalid token output hash');
+  }
+  if (args.prevoutBlinder.length !== 32) {
+    throw new Error('invalid blinder');
+  }
+  // it's mandatory for the token prevout to be confidential. This because the
+  // prevout value blinder will be used as the reissuance's blinding nonce to
+  // prove that the spender actually owns and can unblind the token output.
+  if (!isPrevoutConfidential(args)) {
+    throw new Error('token prevout must be confidential');
+  }
+  if (args.entropy.length !== 32) {
+    throw new Error('invalid entropy');
+  }
+  if (!address_1.isConfidential(args.tokenAddress)) {
+    throw new Error('token address must be confidential');
+  }
+  if (!address_1.isConfidential(args.assetAddress)) {
+    throw new Error('asset address must be confidential');
+  }
+}
+exports.validateAddReissuanceArgs = validateAddReissuanceArgs;
+function isPrevoutConfidential(args) {
+  if (args.witnessUtxo && isConfidentialWitnessUtxo(args.witnessUtxo)) {
+    return true;
+  }
+  if (
+    args.nonWitnessUtxo &&
+    isConfidentialWitnessUtxo(
+      transaction_1.Transaction.fromBuffer(args.nonWitnessUtxo).outs[
+        args.tokenPrevout.vout
+      ],
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+function isConfidentialWitnessUtxo(witnessUtxo) {
+  return (
+    witnessUtxo.rangeProof !== undefined &&
+    witnessUtxo.surjectionProof !== undefined
+  );
+}

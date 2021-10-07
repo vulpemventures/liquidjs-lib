@@ -3,7 +3,7 @@ import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, Psb
 import { Network } from './networks';
 import { Transaction } from './transaction';
 import { Signer, SignerAsync } from './ecpair';
-import { AddIssuanceArgs } from './issuance';
+import { AddIssuanceArgs, AddReissuanceArgs } from './issuance';
 import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
 /**
@@ -56,6 +56,7 @@ export declare class Psbt {
     addInputs(inputDatas: PsbtInputExtended[]): this;
     addInput(inputData: PsbtInputExtended): this;
     addIssuance(args: AddIssuanceArgs, inputIndex?: number): this;
+    addReissuance(args: AddReissuanceArgs, inputIndex?: number): this;
     addOutputs(outputDatas: PsbtOutputExtended[]): this;
     addOutput(outputData: PsbtOutputExtended): this;
     extractTransaction(disableFeeCheck?: boolean): Transaction;
@@ -85,6 +86,7 @@ export declare class Psbt {
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;
     clearFinalizedInput(inputIndex: number): this;
+    private searchInputIndexForIssuance;
     private unblindInputsToIssuanceBlindingData;
     private blindInputs;
     private blindOutputsRaw;

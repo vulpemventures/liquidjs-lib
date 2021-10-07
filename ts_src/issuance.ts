@@ -1,8 +1,10 @@
+import { NonWitnessUtxo, WitnessUtxo } from 'bip174-liquid/src/lib/interfaces';
 import { isConfidential } from './address';
 import { BufferWriter } from './bufferutils';
 import { satoshiToConfidentialValue } from './confidential';
 import * as bcrypto from './crypto';
 import { sha256Midstate } from './sha256d';
+import { Transaction } from './transaction';
 
 // one of the field of the IssuanceContract interface.
 export interface IssuanceEntity {
@@ -18,6 +20,19 @@ export interface AddIssuanceArgs {
   precision: number;
   contract?: IssuanceContract;
   confidential?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
+}
+
+export interface AddReissuanceArgs {
+  tokenPrevout: Outpoint;
+  witnessUtxo?: WitnessUtxo;
+  nonWitnessUtxo?: NonWitnessUtxo;
+  prevoutBlinder: Buffer;
+  entropy: Buffer;
+  assetAmount: number;
+  assetAddress: string;
+  tokenAmount: number;
+  tokenAddress: string;
+  precision: number;
 }
 
 /**
@@ -170,7 +185,7 @@ function getTokenFlag(confidential: boolean): 1 | 0 {
  * @param assetAmount the asset amount.
  * @param precision the precision, 8 by default.
  */
-function toConfidentialAssetAmount(
+export function toConfidentialAssetAmount(
   assetAmount: number,
   precision: number = 8,
 ): Buffer {
@@ -183,7 +198,7 @@ function toConfidentialAssetAmount(
  * @param assetAmount the token amount.
  * @param precision the precision, 8 by default.
  */
-function toConfidentialTokenAmount(
+export function toConfidentialTokenAmount(
   tokenAmount: number,
   precision: number = 8,
 ): Buffer {
@@ -194,7 +209,9 @@ function toConfidentialTokenAmount(
 export function validateAddIssuanceArgs(args: AddIssuanceArgs): void {
   if (args.assetAmount <= 0)
     throw new Error('asset amount must be greater than zero.');
-  if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
+  if (args.tokenAmount < 0) {
+    throw new Error('token amount must be positive.');
+  }
 
   if (args.tokenAddress) {
     if (
@@ -205,4 +222,69 @@ export function validateAddIssuanceArgs(args: AddIssuanceArgs): void {
       );
     }
   }
+}
+
+export function validateAddReissuanceArgs(args: AddReissuanceArgs): void {
+  if (!args.nonWitnessUtxo && !args.witnessUtxo) {
+    throw new Error('need witnessUtxo or nonWitnessUtxo');
+  }
+
+  if (args.assetAmount <= 0) {
+    throw new Error('asset amount must be greater than zero.');
+  }
+
+  if (args.tokenAmount < 0) {
+    throw new Error('token amount must be positive.');
+  }
+
+  if (args.tokenPrevout.txHash.length !== 32) {
+    throw new Error('invalid token output hash');
+  }
+
+  if (args.prevoutBlinder.length !== 32) {
+    throw new Error('invalid blinder');
+  }
+
+  // it's mandatory for the token prevout to be confidential. This because the
+  // prevout value blinder will be used as the reissuance's blinding nonce to
+  // prove that the spender actually owns and can unblind the token output.
+  if (!isPrevoutConfidential(args)) {
+    throw new Error('token prevout must be confidential');
+  }
+
+  if (args.entropy.length !== 32) {
+    throw new Error('invalid entropy');
+  }
+
+  if (!isConfidential(args.tokenAddress)) {
+    throw new Error('token address must be confidential');
+  }
+
+  if (!isConfidential(args.assetAddress)) {
+    throw new Error('asset address must be confidential');
+  }
+}
+
+function isPrevoutConfidential(args: AddReissuanceArgs): boolean {
+  if (args.witnessUtxo && isConfidentialWitnessUtxo(args.witnessUtxo)) {
+    return true;
+  }
+
+  if (
+    args.nonWitnessUtxo &&
+    isConfidentialWitnessUtxo(
+      Transaction.fromBuffer(args.nonWitnessUtxo).outs[args.tokenPrevout.vout],
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function isConfidentialWitnessUtxo(witnessUtxo: WitnessUtxo): boolean {
+  return (
+    witnessUtxo.rangeProof !== undefined &&
+    witnessUtxo.surjectionProof !== undefined
+  );
 }

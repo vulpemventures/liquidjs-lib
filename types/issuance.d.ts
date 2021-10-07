@@ -1,3 +1,4 @@
+import { NonWitnessUtxo, WitnessUtxo } from 'bip174-liquid/src/lib/interfaces';
 export interface IssuanceEntity {
     domain: string;
 }
@@ -9,6 +10,18 @@ export interface AddIssuanceArgs {
     precision: number;
     contract?: IssuanceContract;
     confidential?: boolean;
+}
+export interface AddReissuanceArgs {
+    tokenPrevout: Outpoint;
+    witnessUtxo?: WitnessUtxo;
+    nonWitnessUtxo?: NonWitnessUtxo;
+    prevoutBlinder: Buffer;
+    entropy: Buffer;
+    assetAmount: number;
+    assetAddress: string;
+    tokenAmount: number;
+    tokenAddress: string;
+    precision: number;
 }
 /**
  * Ricardian asset contract.
@@ -76,4 +89,17 @@ export declare function calculateAsset(entropy: Buffer): Buffer;
  * @param confidential true if confidential.
  */
 export declare function calculateReissuanceToken(entropy: Buffer, confidential?: boolean): Buffer;
+/**
+ * converts asset amount to confidential value.
+ * @param assetAmount the asset amount.
+ * @param precision the precision, 8 by default.
+ */
+export declare function toConfidentialAssetAmount(assetAmount: number, precision?: number): Buffer;
+/**
+ * converts token amount to confidential value.
+ * @param assetAmount the token amount.
+ * @param precision the precision, 8 by default.
+ */
+export declare function toConfidentialTokenAmount(tokenAmount: number, precision?: number): Buffer;
 export declare function validateAddIssuanceArgs(args: AddIssuanceArgs): void;
+export declare function validateAddReissuanceArgs(args: AddReissuanceArgs): void;
