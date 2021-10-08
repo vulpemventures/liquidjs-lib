@@ -32,7 +32,9 @@ import {
   calculateReissuanceToken,
   generateEntropy,
   hasTokenAmount,
+  isReissuance,
   Issuance,
+  issuanceEntropyFromInput,
   newIssuance,
   toConfidentialAssetAmount,
   toConfidentialTokenAmount,
@@ -287,9 +289,9 @@ export class Psbt {
     return this;
   }
 
-  addReissuance(args: AddReissuanceArgs, inputIndex?: number): this {
+  addReissuance(args: AddReissuanceArgs): this {
     validateAddReissuanceArgs(args);
-    inputIndex = this.searchInputIndexForIssuance(inputIndex);
+    const inputIndex = this.data.inputs.length;
 
     const inputData: PsbtInputExtended = {
       hash: args.tokenPrevout.txHash,
@@ -887,10 +889,8 @@ export class Psbt {
           issuanceBlindingPrivKeys && issuanceBlindingPrivKeys[inputIndex]
             ? true
             : false;
-        const entropy = generateEntropy(
-          { txHash: input.hash, vout: input.index },
-          input.issuance.assetEntropy,
-        );
+
+        const entropy = issuanceEntropyFromInput(input);
         const asset = calculateAsset(entropy);
         const value = confidential
           .confidentialValueToSatoshi(input.issuance.assetAmount)
@@ -905,7 +905,7 @@ export class Psbt {
 
         pseudoBlindingDataFromIssuances.push(assetBlindingData);
 
-        if (hasTokenAmount(input.issuance)) {
+        if (!isReissuance(input.issuance) && hasTokenAmount(input.issuance)) {
           const token = calculateReissuanceToken(
             entropy,
             isConfidentialIssuance,
@@ -961,11 +961,7 @@ export class Psbt {
           continue;
         }
 
-        const entropy = generateEntropy(
-          { txHash: input.hash, vout: input.index },
-          input.issuance.assetEntropy,
-        );
-
+        const entropy = issuanceEntropyFromInput(input);
         const issuedAsset = calculateAsset(entropy);
         const blindingFactorsAsset = getBlindingFactors(issuedAsset);
 
@@ -1010,7 +1006,7 @@ export class Psbt {
           inputIndex
         ].issuance!.assetAmount = valueCommitment;
 
-        if (hasTokenAmount(input.issuance)) {
+        if (!isReissuance(input.issuance) && hasTokenAmount(input.issuance)) {
           const token = calculateReissuanceToken(entropy, true);
           const blindingFactorsToken = getBlindingFactors(token);
 
@@ -1024,9 +1020,15 @@ export class Psbt {
             blindingFactorsToken.valueBlindingFactor,
           );
 
+          if (!issuanceBlindingPrivKeys[inputIndex]!.tokenKey) {
+            throw new Error(
+              'you must specify tokenKey in order to blind the token issuance',
+            );
+          }
+
           const inflationRangeProof = await confidential.rangeProof(
             blindingFactorsToken.value,
-            issuanceBlindingPrivKeys[inputIndex]!.tokenKey,
+            issuanceBlindingPrivKeys[inputIndex]!.tokenKey!,
             token,
             blindingFactorsToken.assetBlindingFactor,
             blindingFactorsToken.valueBlindingFactor,
@@ -1648,10 +1650,10 @@ function getHashAndSighashType(
   hash: Buffer;
   sighashType: number;
 } {
-  const input = checkForInput(inputs, inputIndex);
+  // const input = checkForInput(inputs, inputIndex);
   const { hash, sighashType, script } = getHashForSig(
     inputIndex,
-    input,
+    inputs[inputIndex],
     cache,
     sighashTypes,
   );
@@ -1779,6 +1781,7 @@ function getHashForSig(
   } else {
     throw new Error('Need a Utxo input item for signing');
   }
+
   return {
     script,
     sighashType,

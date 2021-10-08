@@ -44,7 +44,7 @@ export const Network = typeforce.compile({
 
 export interface IssuanceBlindingKeys {
   assetKey: Buffer;
-  tokenKey: Buffer;
+  tokenKey?: Buffer;
 }
 
 export const Buffer256bit = typeforce.BufferN(32);

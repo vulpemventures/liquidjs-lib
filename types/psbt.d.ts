@@ -56,7 +56,7 @@ export declare class Psbt {
     addInputs(inputDatas: PsbtInputExtended[]): this;
     addInput(inputData: PsbtInputExtended): this;
     addIssuance(args: AddIssuanceArgs, inputIndex?: number): this;
-    addReissuance(args: AddReissuanceArgs, inputIndex?: number): this;
+    addReissuance(args: AddReissuanceArgs): this;
     addOutputs(outputDatas: PsbtOutputExtended[]): this;
     addOutput(outputData: PsbtOutputExtended): this;
     extractTransaction(disableFeeCheck?: boolean): Transaction;

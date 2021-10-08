@@ -10,7 +10,8 @@ import {
   networks as NETWORKS,
 } from '../../ts_src';
 import { strictEqual } from 'assert';
-import { generateEntropy } from '../../ts_src/issuance';
+import { issuanceEntropyFromInput } from '../../ts_src/issuance';
+import { fromConfidential } from '../../ts_src/address';
 
 const { regtest } = NETWORKS;
 
@@ -207,14 +208,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     await broadcast(hex);
   });
 
-  it.only('can create a confidential reissuance transaction from confidential issuance transaction', async () => {
+  it('can create a confidential reissuance transaction from confidential issuance transaction', async () => {
     // Issuance
     const alice = createPayment('p2wpkh', undefined, undefined, true);
     const inputData = await getInputData(alice.payment, true, 'noredeem');
-    const blindingPrivkeys = alice.blindingKeys;
+    const aliceBlindingPrivkeys = alice.blindingKeys;
 
     const assetPay = createPayment('p2wpkh', undefined, undefined, true);
-    const tokenPay = createPayment('p2wpkh', undefined, undefined, true);
     const issuanceBlindingKeys = ['', '', ''].map(
       () => ECPair.makeRandom({ network: regtest }).privateKey!,
     );
@@ -224,7 +224,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
 
     const assetAddress = assetPay.payment.confidentialAddress;
-    const tokenAddress = tokenPay.payment.confidentialAddress;
+    const tokenAddress = alice.payment.confidentialAddress;
 
     const issuancePset = new Psbt({ network: NETWORKS.regtest });
     issuancePset
@@ -262,11 +262,11 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       ]);
 
     await issuancePset.blindOutputsByIndex(
-      new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
+      new Map<number, Buffer>().set(0, aliceBlindingPrivkeys[0]),
       new Map<number, Buffer>()
         .set(0, blindingKeysPair[0].publicKey)
-        .set(1, blindingKeysPair[1].publicKey)
-        .set(2, blindingKeysPair[2].publicKey),
+        .set(1, fromConfidential(tokenAddress).blindingKey)
+        .set(2, fromConfidential(tokenAddress).blindingKey),
       new Map<number, IssuanceBlindingKeys>().set(0, {
         assetKey: issuanceBlindingKeys[0],
         tokenKey: issuanceBlindingKeys[1],
@@ -274,7 +274,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
 
     issuancePset.signAllInputs(alice.keys[0]);
-    const valid = issuancePset.validateSignaturesOfInput(0);
+    const valid = issuancePset.validateSignaturesOfAllInputs();
     if (!valid) {
       throw new Error('signature is not valid');
     }
@@ -290,75 +290,65 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       throw new Error('no issuance in issuance input');
     }
 
-    const entropy = generateEntropy(
-      {
-        txHash: issuanceInput.hash,
-        vout: issuanceInput.index,
-      },
-      issuanceInput.issuance.assetEntropy,
-    );
+    const entropy = issuanceEntropyFromInput(issuanceInput);
 
     const tokenOutput = issuanceTx.outs[1];
-
-    if (!blindingKeysPair[1].privateKey) {
-      throw new Error('need private key in order to unblind token output');
-    }
+    const changeOutput = issuanceTx.outs[2];
 
     const unblindedTokenOutput = await confidential.unblindOutputWithKey(
       tokenOutput,
-      blindingKeysPair[1].privateKey,
+      aliceBlindingPrivkeys[0],
     );
+
     const tokenBlinder = unblindedTokenOutput.assetBlindingFactor;
 
     const reissuancePset = new Psbt({ network: NETWORKS.regtest });
-    const reissuanceInputData = await getInputData(
-      alice.payment,
-      true,
-      'noredeem',
-    );
 
     reissuancePset
-      .addInput(reissuanceInputData)
+      .addInput({
+        hash: issuanceTx.getId(),
+        index: 2,
+        witnessUtxo: changeOutput,
+      })
+      .addOutput({
+        nonce,
+        asset,
+        value: confidential.satoshiToConfidentialValue(99999000),
+        script: alice.payment.output,
+      })
       .addReissuance({
-        tokenPrevout: { txHash: issuanceTx.getHash(), vout: 1 },
+        tokenPrevout: { txHash: issuanceTx.getHash(false), vout: 1 },
         prevoutBlinder: tokenBlinder,
         entropy,
         assetAmount: 2000,
         tokenAmount: 1,
         assetAddress,
         tokenAddress,
-        witnessUtxo: issuanceTx.outs[1],
+        witnessUtxo: tokenOutput,
         precision: 8,
       })
-      .addOutputs([
-        {
-          nonce,
-          asset,
-          value: confidential.satoshiToConfidentialValue(99999500),
-          script: alice.payment.output,
-        },
-        {
-          nonce,
-          asset,
-          value: confidential.satoshiToConfidentialValue(500),
-          script: Buffer.alloc(0),
-        },
-      ]);
+      .addOutput({
+        nonce,
+        asset,
+        value: confidential.satoshiToConfidentialValue(500),
+        script: Buffer.alloc(0),
+      });
 
     await reissuancePset.blindOutputsByIndex(
-      new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
       new Map<number, Buffer>()
-        .set(0, blindingKeysPair[0].publicKey)
+        .set(0, aliceBlindingPrivkeys[0])
+        .set(1, aliceBlindingPrivkeys[0]),
+      new Map<number, Buffer>()
+        .set(0, fromConfidential(alice.payment.confidentialAddress).blindingKey)
         .set(1, blindingKeysPair[1].publicKey)
         .set(2, blindingKeysPair[2].publicKey),
-      new Map<number, IssuanceBlindingKeys>().set(0, {
+      new Map<number, IssuanceBlindingKeys>().set(1, {
         assetKey: issuanceBlindingKeys[0],
-        tokenKey: issuanceBlindingKeys[1],
       }),
     );
 
     reissuancePset.signAllInputs(alice.keys[0]);
-    const validReissuance = reissuancePset.validateSignaturesOfInput(0);
+    const validReissuance = reissuancePset.validateSignaturesOfAllInputs();
     if (!validReissuance) {
       throw new Error('signature is not valid');
     }

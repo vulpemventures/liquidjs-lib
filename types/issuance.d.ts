@@ -1,4 +1,5 @@
 import { NonWitnessUtxo, WitnessUtxo } from 'bip174-liquid/src/lib/interfaces';
+import { Input } from './transaction';
 export interface IssuanceEntity {
     domain: string;
 }
@@ -72,12 +73,18 @@ export declare function hashContract(contract: IssuanceContract): Buffer;
  * @param contract the asset ricarding contract of the issuance.
  */
 export declare function newIssuance(assetAmount: number, tokenAmount: number, precision?: number, contract?: IssuanceContract): Issuance;
+export declare function isReissuance(issuance: Issuance): boolean;
 /**
  * Generate the entropy.
  * @param outPoint the prevout point used to compute the entropy.
  * @param contractHash the 32 bytes contract hash.
  */
 export declare function generateEntropy(outPoint: Outpoint, contractHash?: Buffer): Buffer;
+/**
+ * compute entropy from an input with issuance.
+ * @param input reissuance or issuance input.
+ */
+export declare function issuanceEntropyFromInput(input: Input): Buffer;
 /**
  * calculate the asset tag from a given entropy.
  * @param entropy the entropy used to compute the asset tag.

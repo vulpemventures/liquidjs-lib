@@ -266,9 +266,9 @@ class Psbt {
     }
     return this;
   }
-  addReissuance(args, inputIndex) {
+  addReissuance(args) {
     issuance_1.validateAddReissuanceArgs(args);
-    inputIndex = this.searchInputIndexForIssuance(inputIndex);
+    const inputIndex = this.data.inputs.length;
     const inputData = {
       hash: args.tokenPrevout.txHash,
       index: args.tokenPrevout.vout,
@@ -787,10 +787,7 @@ class Psbt {
           issuanceBlindingPrivKeys && issuanceBlindingPrivKeys[inputIndex]
             ? true
             : false;
-        const entropy = issuance_1.generateEntropy(
-          { txHash: input.hash, vout: input.index },
-          input.issuance.assetEntropy,
-        );
+        const entropy = issuance_1.issuanceEntropyFromInput(input);
         const asset = issuance_1.calculateAsset(entropy);
         const value = confidential
           .confidentialValueToSatoshi(input.issuance.assetAmount)
@@ -804,7 +801,10 @@ class Psbt {
             : transaction_1.ZERO,
         };
         pseudoBlindingDataFromIssuances.push(assetBlindingData);
-        if (issuance_1.hasTokenAmount(input.issuance)) {
+        if (
+          !issuance_1.isReissuance(input.issuance) &&
+          issuance_1.hasTokenAmount(input.issuance)
+        ) {
           const token = issuance_1.calculateReissuanceToken(
             entropy,
             isConfidentialIssuance,
@@ -850,10 +850,7 @@ class Psbt {
             inputIndex++;
             continue;
           }
-          const entropy = issuance_1.generateEntropy(
-            { txHash: input.hash, vout: input.index },
-            input.issuance.assetEntropy,
-          );
+          const entropy = issuance_1.issuanceEntropyFromInput(input);
           const issuedAsset = issuance_1.calculateAsset(entropy);
           const blindingFactorsAsset = getBlindingFactors(issuedAsset);
           const assetCommitment = yield confidential.assetCommitment(
@@ -891,7 +888,10 @@ class Psbt {
           this.__CACHE.__TX.ins[
             inputIndex
           ].issuance.assetAmount = valueCommitment;
-          if (issuance_1.hasTokenAmount(input.issuance)) {
+          if (
+            !issuance_1.isReissuance(input.issuance) &&
+            issuance_1.hasTokenAmount(input.issuance)
+          ) {
             const token = issuance_1.calculateReissuanceToken(entropy, true);
             const blindingFactorsToken = getBlindingFactors(token);
             const issuedTokenCommitment = yield confidential.assetCommitment(
@@ -903,6 +903,11 @@ class Psbt {
               issuedTokenCommitment,
               blindingFactorsToken.valueBlindingFactor,
             );
+            if (!issuanceBlindingPrivKeys[inputIndex].tokenKey) {
+              throw new Error(
+                'you must specify tokenKey in order to blind the token issuance',
+              );
+            }
             const inflationRangeProof = yield confidential.rangeProof(
               blindingFactorsToken.value,
               issuanceBlindingPrivKeys[inputIndex].tokenKey,
@@ -1359,10 +1364,10 @@ function getHashAndSighashType(
   cache,
   sighashTypes,
 ) {
-  const input = utils_1.checkForInput(inputs, inputIndex);
+  // const input = checkForInput(inputs, inputIndex);
   const { hash, sighashType, script } = getHashForSig(
     inputIndex,
-    input,
+    inputs[inputIndex],
     cache,
     sighashTypes,
   );

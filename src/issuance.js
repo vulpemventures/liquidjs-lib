@@ -72,6 +72,10 @@ function newIssuance(assetAmount, tokenAmount, precision = 8, contract) {
   return iss;
 }
 exports.newIssuance = newIssuance;
+function isReissuance(issuance) {
+  return !issuance.assetBlindingNonce.equals(Buffer.alloc(32));
+}
+exports.isReissuance = isReissuance;
 /**
  * Generate the entropy.
  * @param outPoint the prevout point used to compute the entropy.
@@ -90,6 +94,20 @@ function generateEntropy(outPoint, contractHash = Buffer.alloc(32)) {
   return sha256d_1.sha256Midstate(concatened);
 }
 exports.generateEntropy = generateEntropy;
+/**
+ * compute entropy from an input with issuance.
+ * @param input reissuance or issuance input.
+ */
+function issuanceEntropyFromInput(input) {
+  if (!input.issuance) throw new Error('input does not contain issuance data');
+  return isReissuance(input.issuance)
+    ? input.issuance.assetEntropy
+    : generateEntropy(
+        { txHash: input.hash, vout: input.index },
+        input.issuance.assetEntropy,
+      );
+}
+exports.issuanceEntropyFromInput = issuanceEntropyFromInput;
 /**
  * calculate the asset tag from a given entropy.
  * @param entropy the entropy used to compute the asset tag.
