@@ -55,7 +55,7 @@ export interface AddIssuanceArgs {
   tokenAddress?: string;
   precision: number;
   contract?: IssuanceContract;
-  confidentialFlag?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
+  blindedIssuance?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance's input
 }
 
 export interface AddReissuanceArgs {
@@ -69,7 +69,7 @@ export interface AddReissuanceArgs {
   tokenAmount: number;
   tokenAddress: string;
   precision: number;
-  confidentialFlag?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
+  blindedIssuance?: boolean; // used to compute the token, set to "true" if the asset's issuance was confidential
 }
 
 const _randomBytes = require('randombytes');
@@ -298,7 +298,7 @@ export class Psbt {
       if (!args.tokenAddress)
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
 
-      const token = calculateReissuanceToken(entropy, args.confidentialFlag);
+      const token = calculateReissuanceToken(entropy, args.blindedIssuance);
       const tokenScript = toOutputScript(args.tokenAddress);
 
       // send the token amount to the token address.
@@ -357,7 +357,7 @@ export class Psbt {
 
     const token = Buffer.concat([
       issuancePrefix,
-      calculateReissuanceToken(args.entropy, args.confidentialFlag),
+      calculateReissuanceToken(args.entropy, args.blindedIssuance),
     ]);
 
     // send the token amount to the token address.

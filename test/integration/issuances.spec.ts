@@ -55,7 +55,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         assetAmount: 100,
         tokenAmount: 1,
         precision: 8,
-        confidentialFlag: true, // must be true, we'll blind the issuance!
+        blindedIssuance: true, // must be true, we'll blind the issuance!
         contract: {
           name: 'testcoin',
           ticker: 'T-COIN',
@@ -238,7 +238,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         assetAmount: 100,
         tokenAmount: 1,
         precision: 8,
-        confidentialFlag: true, // must be true, we'll blind the issuance!
+        blindedIssuance: true, // must be true, we'll blind the issuance!
         contract: {
           name: 'testcoin',
           ticker: 'T-COIN',
@@ -329,7 +329,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         tokenAddress,
         witnessUtxo: tokenOutput,
         precision: 8,
-        confidentialFlag: true, // must be true, we'll blind the issuance!
+        blindedIssuance: true, // must be true, we'll blind the issuance!
       })
       .addOutput({
         nonce,
@@ -499,7 +499,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         tokenAddress: aliceConfidential.payment.confidentialAddress,
         witnessUtxo: tokenOutput,
         precision: 8,
-        confidentialFlag: false,
+        blindedIssuance: false,
       })
       .addOutput({
         nonce,
