@@ -219,7 +219,7 @@ class Psbt {
     return this;
   }
   addIssuance(args, inputIndex) {
-    issuance_1.validateAddIssuanceArgs(args); // throw an error if args are invalid
+    validateAddIssuanceArgs(args); // throw an error if args are invalid
     inputIndex = this.searchInputIndexForIssuance(inputIndex);
     const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
     // create an issuance object using the vout and the args
@@ -267,7 +267,7 @@ class Psbt {
     return this;
   }
   addReissuance(args) {
-    issuance_1.validateAddReissuanceArgs(args);
+    validateAddReissuanceArgs(args);
     const inputIndex = this.data.inputs.length;
     const inputData = {
       hash: args.tokenPrevout.txHash,
@@ -306,7 +306,6 @@ class Psbt {
       issuancePrefix,
       issuance_1.calculateReissuanceToken(args.entropy, args.confidentialFlag),
     ]);
-    console.log('addReissuance token: ', token);
     // send the token amount to the token address.
     this.addOutput({
       value: issuance_1.toConfidentialTokenAmount(
@@ -1827,4 +1826,78 @@ function getUnconfidentialWitnessUtxoBlindingData(prevout) {
     assetBlindingFactor: transaction_1.ZERO,
   };
   return unblindedInputBlindingData;
+}
+function validateAddIssuanceArgs(args) {
+  if (args.assetAmount <= 0)
+    throw new Error('asset amount must be greater than zero.');
+  if (args.tokenAmount < 0) {
+    throw new Error('token amount must be positive.');
+  }
+  if (args.tokenAddress) {
+    if (
+      address_1.isConfidential(args.assetAddress) !==
+      address_1.isConfidential(args.tokenAddress)
+    ) {
+      throw new Error(
+        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
+      );
+    }
+  }
+}
+exports.validateAddIssuanceArgs = validateAddIssuanceArgs;
+function validateAddReissuanceArgs(args) {
+  if (!args.nonWitnessUtxo && !args.witnessUtxo) {
+    throw new Error('need witnessUtxo or nonWitnessUtxo');
+  }
+  if (args.assetAmount <= 0) {
+    throw new Error('asset amount must be greater than zero.');
+  }
+  if (args.tokenAmount < 0) {
+    throw new Error('token amount must be positive.');
+  }
+  if (args.tokenPrevout.txHash.length !== 32) {
+    throw new Error('invalid token output hash');
+  }
+  if (args.prevoutBlinder.length !== 32) {
+    throw new Error('invalid blinder');
+  }
+  // it's mandatory for the token prevout to be confidential. This because the
+  // prevout value blinder will be used as the reissuance's blinding nonce to
+  // prove that the spender actually owns and can unblind the token output.
+  if (!isPrevoutConfidential(args)) {
+    throw new Error('token prevout must be confidential');
+  }
+  if (args.entropy.length !== 32) {
+    throw new Error('invalid entropy');
+  }
+  if (!address_1.isConfidential(args.tokenAddress)) {
+    throw new Error('token address must be confidential');
+  }
+  if (!address_1.isConfidential(args.assetAddress)) {
+    throw new Error('asset address must be confidential');
+  }
+}
+exports.validateAddReissuanceArgs = validateAddReissuanceArgs;
+function isPrevoutConfidential(args) {
+  if (args.witnessUtxo && isConfidentialWitnessUtxo(args.witnessUtxo)) {
+    return true;
+  }
+  if (
+    args.nonWitnessUtxo &&
+    isConfidentialWitnessUtxo(
+      transaction_1.Transaction.fromBuffer(args.nonWitnessUtxo).outs[
+        args.tokenPrevout.vout
+      ],
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+function isConfidentialWitnessUtxo(witnessUtxo) {
+  return (
+    witnessUtxo.rangeProof !== undefined &&
+    witnessUtxo.surjectionProof !== undefined &&
+    !witnessUtxo.nonce.equals(Buffer.of(0x00))
+  );
 }

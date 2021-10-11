@@ -2315,6 +2315,7 @@ function isPrevoutConfidential(args: AddReissuanceArgs): boolean {
 function isConfidentialWitnessUtxo(witnessUtxo: WitnessUtxo): boolean {
   return (
     witnessUtxo.rangeProof !== undefined &&
-    witnessUtxo.surjectionProof !== undefined
+    witnessUtxo.surjectionProof !== undefined &&
+    !witnessUtxo.nonce.equals(Buffer.of(0x00))
   );
 }
