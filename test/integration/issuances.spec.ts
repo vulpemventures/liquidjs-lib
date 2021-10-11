@@ -451,12 +451,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     makeConfPsbt.finalizeAllInputs();
     const confHex = makeConfPsbt.extractTransaction().toHex();
     await broadcast(confHex);
-    await faucet(
-      'Azps6Zm22NyVzbPCLqTdmE88LN7bM91Sevsnb7xvHE7j5s7WqGbdUnwgXj7KP4SuKDP4KLLDW3ZetVYG',
-    );
-    await faucet(
-      'Azps6Zm22NyVzbPCLqTdmE88LN7bM91Sevsnb7xvHE7j5s7WqGbdUnwgXj7KP4SuKDP4KLLDW3ZetVYG',
-    );
+    // faucet will generate a block (avoid mempool conflicts)
     await faucet(
       'Azps6Zm22NyVzbPCLqTdmE88LN7bM91Sevsnb7xvHE7j5s7WqGbdUnwgXj7KP4SuKDP4KLLDW3ZetVYG',
     );
