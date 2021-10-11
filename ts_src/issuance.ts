@@ -19,7 +19,7 @@ export interface AddIssuanceArgs {
   tokenAddress?: string;
   precision: number;
   contract?: IssuanceContract;
-  confidential?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
+  confidentialFlag?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
 }
 
 export interface AddReissuanceArgs {
@@ -33,6 +33,7 @@ export interface AddReissuanceArgs {
   tokenAmount: number;
   tokenAddress: string;
   precision: number;
+  confidentialFlag?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
 }
 
 /**

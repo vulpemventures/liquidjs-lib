@@ -1,4 +1,4 @@
-import * as liquid from '../..';
+import * as liquid from '../../ts_src';
 import * as regtestUtils from './_regtest';
 
 export function createPayment(

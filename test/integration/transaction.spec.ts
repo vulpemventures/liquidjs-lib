@@ -500,7 +500,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         'noredeem',
       );
 
-      const inputBlindingData = unblindOutputWithKey(
+      const inputBlindingData = await unblindOutputWithKey(
         inputDataConfidential.witnessUtxo,
         aliceBlindingPrivateKey,
       );

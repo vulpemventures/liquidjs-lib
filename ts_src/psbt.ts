@@ -274,7 +274,7 @@ export class Psbt {
       if (!args.tokenAddress)
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
 
-      const token = calculateReissuanceToken(entropy, args.confidential);
+      const token = calculateReissuanceToken(entropy, args.confidentialFlag);
       const tokenScript = toOutputScript(args.tokenAddress);
 
       // send the token amount to the token address.
@@ -322,27 +322,24 @@ export class Psbt {
     };
 
     const asset = Buffer.concat([issuancePrefix, calculateAsset(args.entropy)]);
-    const assetScript = toOutputScript(args.assetAddress);
 
     // send the asset amount to the asset address.
     this.addOutput({
       value: satsToReissue,
-      script: assetScript,
+      script: toOutputScript(args.assetAddress),
       asset,
       nonce: Buffer.from('00', 'hex'),
     });
 
     const token = Buffer.concat([
       issuancePrefix,
-      calculateReissuanceToken(args.entropy, true),
+      calculateReissuanceToken(args.entropy, args.confidentialFlag),
     ]);
-
-    const tokenScript = toOutputScript(args.tokenAddress);
 
     // send the token amount to the token address.
     this.addOutput({
       value: toConfidentialTokenAmount(args.tokenAmount, args.precision),
-      script: tokenScript,
+      script: toOutputScript(args.tokenAddress),
       asset: token,
       nonce: Buffer.from('00', 'hex'),
     });

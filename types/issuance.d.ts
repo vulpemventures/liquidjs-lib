@@ -10,7 +10,7 @@ export interface AddIssuanceArgs {
     tokenAddress?: string;
     precision: number;
     contract?: IssuanceContract;
-    confidential?: boolean;
+    confidentialFlag?: boolean;
 }
 export interface AddReissuanceArgs {
     tokenPrevout: Outpoint;
@@ -23,6 +23,7 @@ export interface AddReissuanceArgs {
     tokenAmount: number;
     tokenAddress: string;
     precision: number;
+    confidentialFlag?: boolean;
 }
 /**
  * Ricardian asset contract.
