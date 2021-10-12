@@ -253,7 +253,7 @@ class Psbt {
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
       const token = issuance_1.calculateReissuanceToken(
         entropy,
-        args.confidentialFlag,
+        args.blindedIssuance,
       );
       const tokenScript = address_1.toOutputScript(args.tokenAddress);
       // send the token amount to the token address.
@@ -304,7 +304,7 @@ class Psbt {
     });
     const token = Buffer.concat([
       issuancePrefix,
-      issuance_1.calculateReissuanceToken(args.entropy, args.confidentialFlag),
+      issuance_1.calculateReissuanceToken(args.entropy, args.blindedIssuance),
     ]);
     // send the token amount to the token address.
     this.addOutput({

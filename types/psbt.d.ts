@@ -13,7 +13,7 @@ export interface AddIssuanceArgs {
     tokenAddress?: string;
     precision: number;
     contract?: IssuanceContract;
-    confidentialFlag?: boolean;
+    blindedIssuance?: boolean;
 }
 export interface AddReissuanceArgs {
     tokenPrevout: Outpoint;
@@ -26,7 +26,7 @@ export interface AddReissuanceArgs {
     tokenAmount: number;
     tokenAddress: string;
     precision: number;
-    confidentialFlag?: boolean;
+    blindedIssuance?: boolean;
 }
 /**
  * Psbt class can parse and generate a PSBT binary based off of the BIP174.
