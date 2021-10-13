@@ -482,33 +482,38 @@ export class Transaction {
       return bcrypto.hash256(tBuffer);
     }
 
-    function issuanceSize(ins: Input[]): number {
+    function issuanceSize(txIn: Input): number {
+      if (txIn.issuance) {
+        return (
+          txIn.issuance.assetBlindingNonce.length +
+          txIn.issuance.assetEntropy.length +
+          txIn.issuance.assetAmount.length +
+          txIn.issuance.tokenAmount.length
+        );
+      }
+      return 0;
+    }
+
+    function issuancesSize(ins: Input[]): number {
       return ins.reduce(
-        (sum, txIn) =>
-          !types.Null(txIn.issuance)
-            ? sum +
-              txIn.issuance!.assetBlindingNonce.length +
-              txIn.issuance!.assetEntropy.length +
-              txIn.issuance!.assetAmount.length +
-              txIn.issuance!.tokenAmount.length
-            : sum, // we'll use the empty 00 Buffer if issuance is not set
+        (sum, txIn) => (txIn.issuance ? sum + issuanceSize(txIn) : sum + 1),
         0,
       );
     }
 
-    function writeIssuances(ins: Input[], sizeIssuances: number): Buffer {
+    function calcIssuancesHash(ins: Input[], sizeIssuances: number): Buffer {
       const size: number = sizeIssuances === 0 ? ins.length : sizeIssuances;
       const tBuffer: Buffer = Buffer.allocUnsafe(size);
       const tBufferWriter: BufferWriter = new BufferWriter(tBuffer, 0);
 
       ins.forEach((txIn: Input) => {
-        if (!types.Null(txIn.issuance)) {
+        if (txIn.issuance) {
           tBufferWriter.writeSlice(txIn.issuance!.assetBlindingNonce);
           tBufferWriter.writeSlice(txIn.issuance!.assetEntropy);
           tBufferWriter.writeSlice(txIn.issuance!.assetAmount);
           tBufferWriter.writeSlice(txIn.issuance!.tokenAmount);
         } else {
-          tBufferWriter.writeSlice(Buffer.from('00', 'hex'));
+          tBufferWriter.writeSlice(Buffer.of(0x00));
         }
       });
       return bcrypto.hash256(tBuffer);
@@ -541,7 +546,6 @@ export class Transaction {
     let hashPrevouts = ZERO;
     let hashSequences = ZERO;
     let hashIssuances = ZERO;
-    let sizeOfIssuances = 0;
 
     // Inputs
     if (!(hashType & Transaction.SIGHASH_ANYONECANPAY)) {
@@ -559,8 +563,8 @@ export class Transaction {
 
     // Issuances
     if (!(hashType & Transaction.SIGHASH_ANYONECANPAY)) {
-      sizeOfIssuances = issuanceSize(this.ins);
-      hashIssuances = writeIssuances(this.ins, sizeOfIssuances);
+      const sizeOfIssuances = issuancesSize(this.ins);
+      hashIssuances = calcIssuancesHash(this.ins, sizeOfIssuances);
     }
 
     // Outputs
@@ -577,7 +581,7 @@ export class Transaction {
     }
 
     const input = this.ins[inIndex];
-    const hasIssuance = !types.Null(input.issuance);
+    const hasIssuance = input.issuance !== undefined;
 
     const bufferSize =
       4 + // version
@@ -590,7 +594,7 @@ export class Transaction {
       value.length +
       4 + // input.sequence
       hashOutputs.length +
-      sizeOfIssuances +
+      issuanceSize(input) +
       4 + // locktime
       4; // hashType
 

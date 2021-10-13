@@ -255,13 +255,15 @@ function isBlech32(address, network) {
 }
 function decodeBlech32(address) {
   const blech32addr = fromBlech32(address);
-  switch (blech32addr.data.length) {
+  switch (blech32addr.data.length - 2) {
     case 20:
       return AddressType.ConfidentialP2Wpkh;
     case 32:
       return AddressType.ConfidentialP2Wsh;
     default:
-      throw new Error('invalid program length');
+      throw new Error(
+        `invalid blech32 program length: ${blech32addr.data.length - 2}`,
+      );
   }
 }
 function isBech32(address, network) {

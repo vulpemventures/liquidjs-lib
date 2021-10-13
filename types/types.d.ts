@@ -9,7 +9,7 @@ export declare const ECPoint: any;
 export declare const Network: any;
 export interface IssuanceBlindingKeys {
     assetKey: Buffer;
-    tokenKey: Buffer;
+    tokenKey?: Buffer;
 }
 export declare const Buffer256bit: any;
 export declare const Hash160bit: any;

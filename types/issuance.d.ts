@@ -1,14 +1,6 @@
+import { Input } from './transaction';
 export interface IssuanceEntity {
     domain: string;
-}
-export interface AddIssuanceArgs {
-    assetAmount: number;
-    assetAddress: string;
-    tokenAmount: number;
-    tokenAddress?: string;
-    precision: number;
-    contract?: IssuanceContract;
-    confidential?: boolean;
 }
 /**
  * Ricardian asset contract.
@@ -59,12 +51,18 @@ export declare function hashContract(contract: IssuanceContract): Buffer;
  * @param contract the asset ricarding contract of the issuance.
  */
 export declare function newIssuance(assetAmount: number, tokenAmount: number, precision?: number, contract?: IssuanceContract): Issuance;
+export declare function isReissuance(issuance: Issuance): boolean;
 /**
  * Generate the entropy.
  * @param outPoint the prevout point used to compute the entropy.
  * @param contractHash the 32 bytes contract hash.
  */
 export declare function generateEntropy(outPoint: Outpoint, contractHash?: Buffer): Buffer;
+/**
+ * compute entropy from an input with issuance.
+ * @param input reissuance or issuance input.
+ */
+export declare function issuanceEntropyFromInput(input: Input): Buffer;
 /**
  * calculate the asset tag from a given entropy.
  * @param entropy the entropy used to compute the asset tag.
@@ -76,4 +74,15 @@ export declare function calculateAsset(entropy: Buffer): Buffer;
  * @param confidential true if confidential.
  */
 export declare function calculateReissuanceToken(entropy: Buffer, confidential?: boolean): Buffer;
-export declare function validateAddIssuanceArgs(args: AddIssuanceArgs): void;
+/**
+ * converts asset amount to confidential value.
+ * @param assetAmount the asset amount.
+ * @param precision the precision, 8 by default.
+ */
+export declare function toConfidentialAssetAmount(assetAmount: number, precision?: number): Buffer;
+/**
+ * converts token amount to confidential value.
+ * @param assetAmount the token amount.
+ * @param precision the precision, 8 by default.
+ */
+export declare function toConfidentialTokenAmount(tokenAmount: number, precision?: number): Buffer;

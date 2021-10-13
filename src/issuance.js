@@ -11,7 +11,6 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-const address_1 = require('./address');
 const bufferutils_1 = require('./bufferutils');
 const confidential_1 = require('./confidential');
 const bcrypto = __importStar(require('./crypto'));
@@ -71,6 +70,10 @@ function newIssuance(assetAmount, tokenAmount, precision = 8, contract) {
   return iss;
 }
 exports.newIssuance = newIssuance;
+function isReissuance(issuance) {
+  return !issuance.assetBlindingNonce.equals(Buffer.alloc(32));
+}
+exports.isReissuance = isReissuance;
 /**
  * Generate the entropy.
  * @param outPoint the prevout point used to compute the entropy.
@@ -89,6 +92,20 @@ function generateEntropy(outPoint, contractHash = Buffer.alloc(32)) {
   return sha256d_1.sha256Midstate(concatened);
 }
 exports.generateEntropy = generateEntropy;
+/**
+ * compute entropy from an input with issuance.
+ * @param input reissuance or issuance input.
+ */
+function issuanceEntropyFromInput(input) {
+  if (!input.issuance) throw new Error('input does not contain issuance data');
+  return isReissuance(input.issuance)
+    ? input.issuance.assetEntropy
+    : generateEntropy(
+        { txHash: input.hash, vout: input.index },
+        input.issuance.assetEntropy,
+      );
+}
+exports.issuanceEntropyFromInput = issuanceEntropyFromInput;
 /**
  * calculate the asset tag from a given entropy.
  * @param entropy the entropy used to compute the asset tag.
@@ -128,6 +145,7 @@ function toConfidentialAssetAmount(assetAmount, precision = 8) {
   const amount = Math.pow(10, precision) * assetAmount;
   return confidential_1.satoshiToConfidentialValue(amount);
 }
+exports.toConfidentialAssetAmount = toConfidentialAssetAmount;
 /**
  * converts token amount to confidential value.
  * @param assetAmount the token amount.
@@ -137,19 +155,4 @@ function toConfidentialTokenAmount(tokenAmount, precision = 8) {
   if (tokenAmount === 0) return Buffer.from('00', 'hex');
   return toConfidentialAssetAmount(tokenAmount, precision);
 }
-function validateAddIssuanceArgs(args) {
-  if (args.assetAmount <= 0)
-    throw new Error('asset amount must be greater than zero.');
-  if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
-  if (args.tokenAddress) {
-    if (
-      address_1.isConfidential(args.assetAddress) !==
-      address_1.isConfidential(args.tokenAddress)
-    ) {
-      throw new Error(
-        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
-      );
-    }
-  }
-}
-exports.validateAddIssuanceArgs = validateAddIssuanceArgs;
+exports.toConfidentialTokenAmount = toConfidentialTokenAmount;

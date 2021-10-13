@@ -53,6 +53,7 @@ const bscript = __importStar(require('./script'));
 const bip174_liquid_1 = require('bip174-liquid');
 const utils_1 = require('bip174-liquid/src/lib/utils');
 const _randomBytes = require('randombytes');
+const issuancePrefix = Buffer.of(0x01);
 /**
  * These are the default arguments for a Psbt instance.
  */
@@ -218,21 +219,8 @@ class Psbt {
     return this;
   }
   addIssuance(args, inputIndex) {
-    issuance_1.validateAddIssuanceArgs(args); // throw an error if args are invalid
-    if (inputIndex && !this.data.inputs[inputIndex]) {
-      throw new Error(`The input ${inputIndex} does not exist.`);
-      // check if the input is available for issuance.
-    } else {
-      // verify if there is at least one input available.
-      if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
-        throw new Error(
-          'transaction needs at least one input without issuance data.',
-        );
-      // search and extract the input index.
-      inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
-    }
-    if (this.__CACHE.__TX.ins[inputIndex].issuance)
-      throw new Error(`The input ${inputIndex} already has issuance data.`);
+    validateAddIssuanceArgs(args); // throw an error if args are invalid
+    inputIndex = this.searchInputIndexForIssuance(inputIndex);
     const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
     // create an issuance object using the vout and the args
     const issuance = issuance_1.newIssuance(
@@ -241,7 +229,6 @@ class Psbt {
       args.precision,
       args.contract,
     );
-    // generate the entropy
     const entropy = issuance_1.generateEntropy(
       { txHash: hash, vout: index },
       issuance.assetEntropy,
@@ -249,7 +236,7 @@ class Psbt {
     // add the issuance to the input.
     this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
     const asset = Buffer.concat([
-      Buffer.of(args.confidential ? 0x0a : 0x01),
+      issuancePrefix,
       issuance_1.calculateAsset(entropy),
     ]);
     const assetScript = address_1.toOutputScript(args.assetAddress);
@@ -266,17 +253,69 @@ class Psbt {
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
       const token = issuance_1.calculateReissuanceToken(
         entropy,
-        args.confidential,
+        args.blindedIssuance,
       );
       const tokenScript = address_1.toOutputScript(args.tokenAddress);
       // send the token amount to the token address.
       this.addOutput({
         script: tokenScript,
         value: issuance.tokenAmount,
-        asset: Buffer.concat([Buffer.of(0x01), token]),
+        asset: Buffer.concat([issuancePrefix, token]),
         nonce: Buffer.from('00', 'hex'),
       });
     }
+    return this;
+  }
+  addReissuance(args) {
+    validateAddReissuanceArgs(args);
+    const inputIndex = this.data.inputs.length;
+    const inputData = {
+      hash: args.tokenPrevout.txHash,
+      index: args.tokenPrevout.vout,
+    };
+    if (args.witnessUtxo) {
+      inputData.witnessUtxo = args.witnessUtxo;
+    }
+    if (args.nonWitnessUtxo) {
+      inputData.nonWitnessUtxo = args.nonWitnessUtxo;
+    }
+    this.addInput(inputData);
+    const satsToReissue = issuance_1.toConfidentialAssetAmount(
+      args.assetAmount,
+      args.precision,
+    );
+    // add the issuance object to input
+    this.__CACHE.__TX.ins[inputIndex].issuance = {
+      assetBlindingNonce: args.prevoutBlinder,
+      tokenAmount: Buffer.of(0x00),
+      assetAmount: satsToReissue,
+      assetEntropy: args.entropy,
+    };
+    const asset = Buffer.concat([
+      issuancePrefix,
+      issuance_1.calculateAsset(args.entropy),
+    ]);
+    // send the asset amount to the asset address.
+    this.addOutput({
+      value: satsToReissue,
+      script: address_1.toOutputScript(args.assetAddress),
+      asset,
+      nonce: Buffer.from('00', 'hex'),
+    });
+    const token = Buffer.concat([
+      issuancePrefix,
+      issuance_1.calculateReissuanceToken(args.entropy, args.blindedIssuance),
+    ]);
+    // send the token amount to the token address.
+    this.addOutput({
+      value: issuance_1.toConfidentialTokenAmount(
+        args.tokenAmount,
+        args.precision,
+      ),
+      script: address_1.toOutputScript(args.tokenAddress),
+      asset: token,
+      nonce: Buffer.from('00', 'hex'),
+    });
     return this;
   }
   addOutputs(outputDatas) {
@@ -720,6 +759,23 @@ class Psbt {
     this.data.clearFinalizedInput(inputIndex);
     return this;
   }
+  searchInputIndexForIssuance(inputIndex) {
+    if (inputIndex && !this.data.inputs[inputIndex]) {
+      throw new Error(`The input ${inputIndex} does not exist.`);
+      // check if the input is available for issuance.
+    } else {
+      // verify if there is at least one input available.
+      if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
+        throw new Error(
+          'transaction needs at least one input without issuance data.',
+        );
+      // search and extract the input index.
+      inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
+    }
+    if (this.__CACHE.__TX.ins[inputIndex].issuance)
+      throw new Error(`The input ${inputIndex} already has issuance data.`);
+    return inputIndex;
+  }
   unblindInputsToIssuanceBlindingData(issuanceBlindingPrivKeys = []) {
     const pseudoBlindingDataFromIssuances = [];
     let inputIndex = 0;
@@ -729,10 +785,7 @@ class Psbt {
           issuanceBlindingPrivKeys && issuanceBlindingPrivKeys[inputIndex]
             ? true
             : false;
-        const entropy = issuance_1.generateEntropy(
-          { txHash: input.hash, vout: input.index },
-          input.issuance.assetEntropy,
-        );
+        const entropy = issuance_1.issuanceEntropyFromInput(input);
         const asset = issuance_1.calculateAsset(entropy);
         const value = confidential
           .confidentialValueToSatoshi(input.issuance.assetAmount)
@@ -746,7 +799,10 @@ class Psbt {
             : transaction_1.ZERO,
         };
         pseudoBlindingDataFromIssuances.push(assetBlindingData);
-        if (issuance_1.hasTokenAmount(input.issuance)) {
+        if (
+          !issuance_1.isReissuance(input.issuance) &&
+          issuance_1.hasTokenAmount(input.issuance)
+        ) {
           const token = issuance_1.calculateReissuanceToken(
             entropy,
             isConfidentialIssuance,
@@ -792,10 +848,7 @@ class Psbt {
             inputIndex++;
             continue;
           }
-          const entropy = issuance_1.generateEntropy(
-            { txHash: input.hash, vout: input.index },
-            input.issuance.assetEntropy,
-          );
+          const entropy = issuance_1.issuanceEntropyFromInput(input);
           const issuedAsset = issuance_1.calculateAsset(entropy);
           const blindingFactorsAsset = getBlindingFactors(issuedAsset);
           const assetCommitment = yield confidential.assetCommitment(
@@ -833,7 +886,10 @@ class Psbt {
           this.__CACHE.__TX.ins[
             inputIndex
           ].issuance.assetAmount = valueCommitment;
-          if (issuance_1.hasTokenAmount(input.issuance)) {
+          if (
+            !issuance_1.isReissuance(input.issuance) &&
+            issuance_1.hasTokenAmount(input.issuance)
+          ) {
             const token = issuance_1.calculateReissuanceToken(entropy, true);
             const blindingFactorsToken = getBlindingFactors(token);
             const issuedTokenCommitment = yield confidential.assetCommitment(
@@ -845,6 +901,11 @@ class Psbt {
               issuedTokenCommitment,
               blindingFactorsToken.valueBlindingFactor,
             );
+            if (!issuanceBlindingPrivKeys[inputIndex].tokenKey) {
+              throw new Error(
+                'you must specify tokenKey in order to blind the token issuance',
+              );
+            }
             const inflationRangeProof = yield confidential.rangeProof(
               blindingFactorsToken.value,
               issuanceBlindingPrivKeys[inputIndex].tokenKey,
@@ -1301,10 +1362,10 @@ function getHashAndSighashType(
   cache,
   sighashTypes,
 ) {
-  const input = utils_1.checkForInput(inputs, inputIndex);
+  // const input = checkForInput(inputs, inputIndex);
   const { hash, sighashType, script } = getHashForSig(
     inputIndex,
-    input,
+    inputs[inputIndex],
     cache,
     sighashTypes,
   );
@@ -1765,4 +1826,78 @@ function getUnconfidentialWitnessUtxoBlindingData(prevout) {
     assetBlindingFactor: transaction_1.ZERO,
   };
   return unblindedInputBlindingData;
+}
+function validateAddIssuanceArgs(args) {
+  if (args.assetAmount <= 0)
+    throw new Error('asset amount must be greater than zero.');
+  if (args.tokenAmount < 0) {
+    throw new Error('token amount must be positive.');
+  }
+  if (args.tokenAddress) {
+    if (
+      address_1.isConfidential(args.assetAddress) !==
+      address_1.isConfidential(args.tokenAddress)
+    ) {
+      throw new Error(
+        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
+      );
+    }
+  }
+}
+exports.validateAddIssuanceArgs = validateAddIssuanceArgs;
+function validateAddReissuanceArgs(args) {
+  if (!args.nonWitnessUtxo && !args.witnessUtxo) {
+    throw new Error('need witnessUtxo or nonWitnessUtxo');
+  }
+  if (args.assetAmount <= 0) {
+    throw new Error('asset amount must be greater than zero.');
+  }
+  if (args.tokenAmount < 0) {
+    throw new Error('token amount must be positive.');
+  }
+  if (args.tokenPrevout.txHash.length !== 32) {
+    throw new Error('invalid token output hash');
+  }
+  if (args.prevoutBlinder.length !== 32) {
+    throw new Error('invalid blinder');
+  }
+  // it's mandatory for the token prevout to be confidential. This because the
+  // prevout value blinder will be used as the reissuance's blinding nonce to
+  // prove that the spender actually owns and can unblind the token output.
+  if (!isPrevoutConfidential(args)) {
+    throw new Error('token prevout must be confidential');
+  }
+  if (args.entropy.length !== 32) {
+    throw new Error('invalid entropy');
+  }
+  if (!address_1.isConfidential(args.tokenAddress)) {
+    throw new Error('token address must be confidential');
+  }
+  if (!address_1.isConfidential(args.assetAddress)) {
+    throw new Error('asset address must be confidential');
+  }
+}
+exports.validateAddReissuanceArgs = validateAddReissuanceArgs;
+function isPrevoutConfidential(args) {
+  if (args.witnessUtxo && isConfidentialWitnessUtxo(args.witnessUtxo)) {
+    return true;
+  }
+  if (
+    args.nonWitnessUtxo &&
+    isConfidentialWitnessUtxo(
+      transaction_1.Transaction.fromBuffer(args.nonWitnessUtxo).outs[
+        args.tokenPrevout.vout
+      ],
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+function isConfidentialWitnessUtxo(witnessUtxo) {
+  return (
+    witnessUtxo.rangeProof !== undefined &&
+    witnessUtxo.surjectionProof !== undefined &&
+    !witnessUtxo.nonce.equals(Buffer.of(0x00))
+  );
 }

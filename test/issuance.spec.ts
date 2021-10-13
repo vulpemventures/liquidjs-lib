@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import * as issuance from '../ts_src/issuance';
 import * as types from '../ts_src/types';
-import { Psbt } from './../ts_src/psbt';
+import { AddIssuanceArgs, Psbt } from './../ts_src/psbt';
 import { Transaction } from './../ts_src/transaction';
 
 import { ECPair, networks } from '../ts_src';
@@ -119,7 +119,7 @@ describe('Issuance', () => {
   });
 
   // a static set of arguments using with the function addIssuance.
-  const issueArgs: issuance.AddIssuanceArgs = {
+  const issueArgs: AddIssuanceArgs = {
     assetAmount: 100,
     assetAddress:
       'AzpudM1xn9jKRwnDFyDPDPTQ8jaxEUaSwe5JSFtVdULh6CwJftVVZcQWZbNacvYLLG24jTpKKNsNUVii',

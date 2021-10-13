@@ -1,11 +1,33 @@
 import * as confidential from './confidential';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo } from 'bip174-liquid/src/lib/interfaces';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate, TransactionInput, WitnessUtxo, NonWitnessUtxo } from 'bip174-liquid/src/lib/interfaces';
 import { Network } from './networks';
 import { Transaction } from './transaction';
 import { Signer, SignerAsync } from './ecpair';
-import { AddIssuanceArgs } from './issuance';
+import { IssuanceContract, Outpoint } from './issuance';
 import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
+export interface AddIssuanceArgs {
+    assetAmount: number;
+    assetAddress: string;
+    tokenAmount: number;
+    tokenAddress?: string;
+    precision: number;
+    contract?: IssuanceContract;
+    blindedIssuance?: boolean;
+}
+export interface AddReissuanceArgs {
+    tokenPrevout: Outpoint;
+    witnessUtxo?: WitnessUtxo;
+    nonWitnessUtxo?: NonWitnessUtxo;
+    prevoutBlinder: Buffer;
+    entropy: Buffer;
+    assetAmount: number;
+    assetAddress: string;
+    tokenAmount: number;
+    tokenAddress: string;
+    precision: number;
+    blindedIssuance?: boolean;
+}
 /**
  * Psbt class can parse and generate a PSBT binary based off of the BIP174.
  * There are 6 roles that this class fulfills. (Explained in BIP174)
@@ -56,6 +78,7 @@ export declare class Psbt {
     addInputs(inputDatas: PsbtInputExtended[]): this;
     addInput(inputData: PsbtInputExtended): this;
     addIssuance(args: AddIssuanceArgs, inputIndex?: number): this;
+    addReissuance(args: AddReissuanceArgs): this;
     addOutputs(outputDatas: PsbtOutputExtended[]): this;
     addOutput(outputData: PsbtOutputExtended): this;
     extractTransaction(disableFeeCheck?: boolean): Transaction;
@@ -85,6 +108,7 @@ export declare class Psbt {
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;
     clearFinalizedInput(inputIndex: number): this;
+    private searchInputIndexForIssuance;
     private unblindInputsToIssuanceBlindingData;
     private blindInputs;
     private blindOutputsRaw;
@@ -155,4 +179,6 @@ export declare function computeOutputsBlindingData(inputsBlindingData: confident
  * @param witnessUtxo the prevout of the input I
  */
 export declare function toBlindingData(blindDataLike: BlindingDataLike, witnessUtxo?: WitnessUtxo): Promise<confidential.UnblindOutputResult>;
+export declare function validateAddIssuanceArgs(args: AddIssuanceArgs): void;
+export declare function validateAddReissuanceArgs(args: AddReissuanceArgs): void;
 export {};
