@@ -57,6 +57,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         precision: 8,
         blindedIssuance: true, // must be true, we'll blind the issuance!
         contract: {
+          issuer_pubkey: '0000',
           name: 'testcoin',
           ticker: 'T-COIN',
           entity: {
@@ -124,6 +125,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       tokenAmount: 1,
       precision: 8,
       contract: {
+        issuer_pubkey: '0000',
         name: 'testcoin-bis',
         ticker: 'T-COI',
         entity: {
@@ -177,6 +179,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       tokenAmount: 1,
       precision: 8,
       contract: {
+        issuer_pubkey: '0000',
         name: 'testcoin-bis',
         ticker: 'T-COI',
         entity: {
@@ -240,6 +243,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         precision: 8,
         blindedIssuance: true, // must be true, we'll blind the issuance!
         contract: {
+          issuer_pubkey: '0000',
           name: 'testcoin',
           ticker: 'T-COIN',
           entity: {

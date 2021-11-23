@@ -6,11 +6,12 @@ export interface IssuanceEntity {
  * Ricardian asset contract.
  */
 export interface IssuanceContract {
+    entity: IssuanceEntity;
+    issuer_pubkey: string;
     name: string;
+    precision: number;
     ticker: string;
     version: number;
-    precision: number;
-    entity: IssuanceEntity;
 }
 /**
  * An object describing an output point of the blockchain.
