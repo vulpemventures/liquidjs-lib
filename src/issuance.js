@@ -40,7 +40,17 @@ exports.validateIssuanceContract = validateIssuanceContract;
 function hashContract(contract) {
   if (!validateIssuanceContract(contract))
     throw new Error('Invalid asset contract');
-  return bcrypto.sha256(Buffer.from(JSON.stringify(contract)));
+  const constractJSON = `{"entity":{"domain":"${
+    contract.entity.domain
+  }"},"issuer_pubkey":"${contract.issuer_pubkey}","name":"${
+    contract.name
+  }","precision":${contract.precision},"ticker":"${
+    contract.ticker
+  }","version":${contract.version}}`;
+  return bcrypto
+    .sha256(Buffer.from(constractJSON))
+    .slice()
+    .reverse();
 }
 exports.hashContract = hashContract;
 /**

@@ -1,0 +1,41 @@
+[
+  {
+    "contractJSON": {
+      "entity": {
+        "domain": "acecoin.cash"
+      },
+      "issuer_pubkey": "03373f83e102bd7fbf4e1e53447f879a6d2b32070900f1a60d72a487afe5364c2a",
+      "name": "ACE Coin",
+      "precision": 0,
+      "ticker": "ACE",
+      "version": 0
+    },
+    "contractHash": "2d9d310ab7885463357382856ec91c7f586b4d2dabfac23849c66aef3d378310"
+  },
+  {
+    "contractJSON": {
+      "entity": {
+        "domain": "liquid.beer"
+      },
+      "issuer_pubkey": "02436437ab5ecb6966b7dea1333fad14a658ae185d8ced00aa598af5997b55cd24",
+      "name": "Double malt pint",
+      "precision": 2,
+      "ticker": "DMp",
+      "version": 0
+      }, 
+      "contractHash": "459f2f4eb63d5cf6a4d1f8e54d3d5edb2245df63bd97e774864505c17ee188d8"
+  },
+  {
+    "contractJSON": {
+      "entity": {
+        "domain": "exordium.co"
+      },
+      "issuer_pubkey": "028ff1586cb9e862f8704f51c8c02eb1c708d1c0316b8fb563f72aa652db85e9bf",
+      "name": "EXO Token",
+      "precision": 0,
+      "ticker": "EXO",
+      "version": 0
+    },
+    "contractHash": "86ddc3aeda751fb86e2c074c05e4a7ef9253f030ee2c55de0ee35e1b2afec49c"
+  }
+]

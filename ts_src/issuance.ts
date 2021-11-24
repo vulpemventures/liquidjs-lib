@@ -13,11 +13,12 @@ export interface IssuanceEntity {
  * Ricardian asset contract.
  */
 export interface IssuanceContract {
+  entity: IssuanceEntity;
+  issuer_pubkey: string;
   name: string;
+  precision: number;
   ticker: string;
   version: number;
-  precision: number;
-  entity: IssuanceEntity;
 }
 
 /**
@@ -64,7 +65,17 @@ export function hashContract(contract: IssuanceContract): Buffer {
   if (!validateIssuanceContract(contract))
     throw new Error('Invalid asset contract');
 
-  return bcrypto.sha256(Buffer.from(JSON.stringify(contract)));
+  const constractJSON = `{"entity":{"domain":"${
+    contract.entity.domain
+  }"},"issuer_pubkey":"${contract.issuer_pubkey}","name":"${
+    contract.name
+  }","precision":${contract.precision},"ticker":"${
+    contract.ticker
+  }","version":${contract.version}}`;
+  return bcrypto
+    .sha256(Buffer.from(constractJSON))
+    .slice()
+    .reverse();
 }
 
 /**

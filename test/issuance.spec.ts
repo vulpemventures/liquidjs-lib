@@ -8,6 +8,7 @@ import { Transaction } from './../ts_src/transaction';
 import { ECPair, networks } from '../ts_src';
 import { satoshiToConfidentialValue } from './../ts_src/confidential';
 import * as fixtures from './fixtures/issuance.json';
+import contractFixtures from './fixtures/contract_hash.json';
 
 const typeforce = require('typeforce');
 
@@ -296,6 +297,20 @@ describe('Issuance', () => {
           expectedEntropy,
         );
       });
+    });
+
+    describe('contract hash calculation', () => {
+      for (const contractFixture of contractFixtures) {
+        it(`should calculate the correct contract hash for ${
+          contractFixture.contractJSON.name
+        }`, () => {
+          const computed = issuance.hashContract(contractFixture.contractJSON);
+          assert.strictEqual(
+            computed.toString('hex'),
+            contractFixture.contractHash,
+          );
+        });
+      }
     });
   });
 });
