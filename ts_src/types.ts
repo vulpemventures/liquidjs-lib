@@ -1,4 +1,4 @@
-const typeforce = require('typeforce');
+export const typeforce = require('typeforce');
 
 const UINT31_MAX: number = Math.pow(2, 31) - 1;
 export function UInt31(value: number): boolean {

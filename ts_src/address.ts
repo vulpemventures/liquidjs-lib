@@ -6,10 +6,9 @@ import * as types from './types';
 
 import { Blech32Address } from 'blech32';
 
-import bech32 from 'bech32';
-import bs58check from 'bs58check';
-
-const typeforce = require('typeforce');
+import { bech32, bech32m } from 'bech32';
+import * as bs58check from 'bs58check';
+const { typeforce } = types;
 
 export interface Base58CheckResult {
   hash: Buffer;
@@ -21,6 +20,7 @@ export interface Bech32Result {
   prefix: string;
   data: Buffer;
 }
+
 export interface Blech32Result {
   version: number;
   pubkey: Buffer;
@@ -30,6 +30,42 @@ export interface Blech32Result {
 export interface ConfidentialResult {
   blindingKey: Buffer;
   unconfidentialAddress: string;
+}
+
+const FUTURE_SEGWIT_MAX_SIZE: number = 40;
+const FUTURE_SEGWIT_MIN_SIZE: number = 2;
+const FUTURE_SEGWIT_MAX_VERSION: number = 16;
+const FUTURE_SEGWIT_MIN_VERSION: number = 1;
+const FUTURE_SEGWIT_VERSION_DIFF: number = 0x50;
+const FUTURE_SEGWIT_VERSION_WARNING: string =
+  'WARNING: Sending to a future segwit version address can lead to loss of funds. ' +
+  'End users MUST be warned carefully in the GUI and asked if they wish to proceed ' +
+  'with caution. Wallets should verify the segwit version from the output of fromBech32, ' +
+  'then decide when it is safe to use which version of segwit.';
+
+function _toFutureSegwitAddress(output: Buffer, network: Network): string {
+  const data = output.slice(2);
+
+  if (
+    data.length < FUTURE_SEGWIT_MIN_SIZE ||
+    data.length > FUTURE_SEGWIT_MAX_SIZE
+  )
+    throw new TypeError('Invalid program length for segwit address');
+
+  const version = output[0] - FUTURE_SEGWIT_VERSION_DIFF;
+
+  if (
+    version < FUTURE_SEGWIT_MIN_VERSION ||
+    version > FUTURE_SEGWIT_MAX_VERSION
+  )
+    throw new TypeError('Invalid version for segwit address');
+
+  if (output[1] !== data.length)
+    throw new TypeError('Invalid script for segwit address');
+
+  console.warn(FUTURE_SEGWIT_VERSION_WARNING);
+
+  return toBech32(data, version, network.bech32);
 }
 
 // negative value for confidential types
@@ -62,11 +98,25 @@ export function fromBase58Check(address: string): Base58CheckResult {
 }
 
 export function fromBech32(address: string): Bech32Result {
-  const result = bech32.decode(address);
+  let result;
+  let version;
+  try {
+    result = bech32.decode(address);
+  } catch (e) {}
+
+  if (result) {
+    version = result.words[0];
+    if (version !== 0) throw new TypeError(address + ' uses wrong encoding');
+  } else {
+    result = bech32m.decode(address);
+    version = result.words[0];
+    if (version === 0) throw new TypeError(address + ' uses wrong encoding');
+  }
+
   const data = bech32.fromWords(result.words.slice(1));
 
   return {
-    version: result.words[0],
+    version,
     prefix: result.prefix,
     data: Buffer.from(data),
   };
@@ -114,7 +164,9 @@ export function toBech32(
   const words = bech32.toWords(data);
   words.unshift(version);
 
-  return bech32.encode(prefix, words);
+  return version === 0
+    ? bech32.encode(prefix, words)
+    : bech32m.encode(prefix, words);
 }
 
 export function toBlech32(
@@ -154,6 +206,9 @@ export function fromOutputScript(output: Buffer, network?: Network): string {
   try {
     return payments.p2wsh({ output, network }).address as string;
   } catch (e) {}
+  try {
+    return _toFutureSegwitAddress(output, network);
+  } catch (e) {}
 
   throw new Error(bscript.toASM(output) + ' has no matching Address');
 }
@@ -161,43 +216,53 @@ export function fromOutputScript(output: Buffer, network?: Network): string {
 export function toOutputScript(address: string, network?: Network): Buffer {
   network = network || getNetwork(address);
 
-  let decodeBase58result: Base58CheckResult | undefined;
-  let decodeBech32result: Bech32Result | undefined;
-  let decodeConfidentialresult: ConfidentialResult | undefined;
+  let decodedBase58: Base58CheckResult | undefined;
+  let decodedBech32: Bech32Result | undefined;
+  let decodedConfidential: ConfidentialResult | undefined;
 
   try {
-    decodeBase58result = fromBase58Check(address);
+    decodedBase58 = fromBase58Check(address);
   } catch (e) {}
 
-  if (decodeBase58result) {
-    if (decodeBase58result.version === network.pubKeyHash)
-      return payments.p2pkh({ hash: decodeBase58result.hash }).output as Buffer;
-    if (decodeBase58result.version === network.scriptHash)
-      return payments.p2sh({ hash: decodeBase58result.hash }).output as Buffer;
+  if (decodedBase58) {
+    if (decodedBase58.version === network.pubKeyHash)
+      return payments.p2pkh({ hash: decodedBase58.hash }).output as Buffer;
+    if (decodedBase58.version === network.scriptHash)
+      return payments.p2sh({ hash: decodedBase58.hash }).output as Buffer;
   } else {
     try {
-      decodeBech32result = fromBech32(address);
+      decodedBech32 = fromBech32(address);
     } catch (e) {}
 
-    if (decodeBech32result) {
-      if (decodeBech32result.prefix !== network.bech32)
+    if (decodedBech32) {
+      if (decodedBech32.prefix !== network.bech32)
         throw new Error(address + ' has an invalid prefix');
-      if (decodeBech32result.version === 0) {
-        if (decodeBech32result.data.length === 20)
-          return payments.p2wpkh({ hash: decodeBech32result.data })
-            .output as Buffer;
-        if (decodeBech32result.data.length === 32)
-          return payments.p2wsh({ hash: decodeBech32result.data })
-            .output as Buffer;
+      if (decodedBech32.version === 0) {
+        if (decodedBech32.data.length === 20)
+          return payments.p2wpkh({ hash: decodedBech32.data }).output as Buffer;
+        if (decodedBech32.data.length === 32)
+          return payments.p2wsh({ hash: decodedBech32.data }).output as Buffer;
+      } else if (
+        decodedBech32.version >= FUTURE_SEGWIT_MIN_VERSION &&
+        decodedBech32.version <= FUTURE_SEGWIT_MAX_VERSION &&
+        decodedBech32.data.length >= FUTURE_SEGWIT_MIN_SIZE &&
+        decodedBech32.data.length <= FUTURE_SEGWIT_MAX_SIZE
+      ) {
+        console.warn(FUTURE_SEGWIT_VERSION_WARNING);
+
+        return bscript.compile([
+          decodedBech32.version + FUTURE_SEGWIT_VERSION_DIFF,
+          decodedBech32.data,
+        ]);
       }
     } else {
       try {
-        decodeConfidentialresult = fromConfidential(address);
+        decodedConfidential = fromConfidential(address);
       } catch (e) {}
 
-      if (decodeConfidentialresult) {
+      if (decodedConfidential) {
         return toOutputScript(
-          decodeConfidentialresult.unconfidentialAddress,
+          decodedConfidential.unconfidentialAddress,
           network,
         );
       }

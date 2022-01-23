@@ -19,7 +19,7 @@ const lazy = __importStar(require('./lazy'));
 const typef = require('typeforce');
 const OPS = bscript.OPS;
 const ecc = require('tiny-secp256k1');
-const bech32 = require('bech32');
+const bech32_1 = require('bech32');
 const EMPTY_BUFFER = Buffer.alloc(0);
 // witness: {signature} {pubKey}
 // input: <>
@@ -50,9 +50,9 @@ function p2wpkh(a, opts) {
   );
   const network = a.network || networks_1.liquid;
   const _address = lazy.value(() => {
-    const result = bech32.decode(a.address);
+    const result = bech32_1.bech32.decode(a.address);
     const version = result.words.shift();
-    const data = bech32.fromWords(result.words);
+    const data = bech32_1.bech32.fromWords(result.words);
     return {
       version,
       prefix: result.prefix,
@@ -73,9 +73,9 @@ function p2wpkh(a, opts) {
   const o = { name: 'p2wpkh', network };
   lazy.prop(o, 'address', () => {
     if (!o.hash) return;
-    const words = bech32.toWords(o.hash);
+    const words = bech32_1.bech32.toWords(o.hash);
     words.unshift(0x00);
-    return bech32.encode(network.bech32, words);
+    return bech32_1.bech32.encode(network.bech32, words);
   });
   lazy.prop(o, 'hash', () => {
     if (a.output) return a.output.slice(2, 22);
