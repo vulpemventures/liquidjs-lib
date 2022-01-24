@@ -10,7 +10,6 @@ const ecc = require('tiny-secp256k1');
 
 import { bech32 } from 'bech32';
 
-
 const EMPTY_BUFFER = Buffer.alloc(0);
 
 // witness: {signature} {pubKey}
