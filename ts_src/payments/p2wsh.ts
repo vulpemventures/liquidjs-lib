@@ -2,13 +2,11 @@ import * as baddress from '../address';
 import * as bcrypto from '../crypto';
 import { liquid as LIQUID_NETWORK } from '../networks';
 import * as bscript from '../script';
-import { Payment, PaymentOpts, StackFunction } from './index';
+import { isPoint, typeforce as typef } from '../types';
+import { Payment, PaymentOpts, StackElement, StackFunction } from './index';
 import * as lazy from './lazy';
-const typef = require('typeforce');
-const OPS = bscript.OPS;
-const ecc = require('tiny-secp256k1');
-
 import { bech32 } from 'bech32';
+const OPS = bscript.OPS;
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -18,6 +16,19 @@ function stacksEqual(a: Buffer[], b: Buffer[]): boolean {
   return a.every((x, i) => {
     return x.equals(b[i]);
   });
+}
+
+function chunkHasUncompressedPubkey(chunk: StackElement): boolean {
+  if (
+    Buffer.isBuffer(chunk) &&
+    chunk.length === 65 &&
+    chunk[0] === 0x04 &&
+    isPoint(chunk)
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // input: <>
@@ -51,7 +62,7 @@ export function p2wsh(a: Payment, opts?: PaymentOpts): Payment {
       }),
       input: typef.maybe(typef.BufferN(0)),
       witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-      blindkey: typef.maybe(ecc.isPoint),
+      blindkey: typef.maybe(isPoint),
       confidentialAddress: typef.maybe(typef.String),
     },
     a,
@@ -144,7 +155,8 @@ export function p2wsh(a: Payment, opts?: PaymentOpts): Payment {
   });
   lazy.prop(o, 'name', () => {
     const nameParts = ['p2wsh'];
-    if (o.redeem !== undefined) nameParts.push(o.redeem.name!);
+    if (o.redeem !== undefined && o.redeem.name !== undefined)
+      nameParts.push(o.redeem.name!);
     return nameParts.join('-');
   });
   lazy.prop(o, 'blindkey', () => {
@@ -228,15 +240,28 @@ export function p2wsh(a: Payment, opts?: PaymentOpts): Payment {
         !stacksEqual(a.witness, a.redeem.witness)
       )
         throw new TypeError('Witness and redeem.witness mismatch');
+      if (
+        (a.redeem.input && _rchunks().some(chunkHasUncompressedPubkey)) ||
+        (a.redeem.output &&
+          (bscript.decompile(a.redeem.output) || []).some(
+            chunkHasUncompressedPubkey,
+          ))
+      ) {
+        throw new TypeError(
+          'redeem.input or redeem.output contains uncompressed pubkey',
+        );
+      }
     }
 
-    if (a.witness) {
-      if (
-        a.redeem &&
-        a.redeem.output &&
-        !a.redeem.output.equals(a.witness[a.witness.length - 1])
-      )
+    if (a.witness && a.witness.length > 0) {
+      const wScript = a.witness[a.witness.length - 1];
+      if (a.redeem && a.redeem.output && !a.redeem.output.equals(wScript))
         throw new TypeError('Witness and redeem.output mismatch');
+      if (
+        a.witness.some(chunkHasUncompressedPubkey) ||
+        (bscript.decompile(wScript) || []).some(chunkHasUncompressedPubkey)
+      )
+        throw new TypeError('Witness contains uncompressed pubkey');
     }
 
     if (a.confidentialAddress) {
@@ -254,7 +279,7 @@ export function p2wsh(a: Payment, opts?: PaymentOpts): Payment {
     }
 
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;

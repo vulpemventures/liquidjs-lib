@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,19 +31,20 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.p2pkh = void 0;
 const bcrypto = __importStar(require('../crypto'));
 const networks_1 = require('../networks');
 const bscript = __importStar(require('../script'));
+const types_1 = require('../types');
 const lazy = __importStar(require('./lazy'));
-const typef = require('typeforce');
+const bs58check = __importStar(require('bs58check'));
 const OPS = bscript.OPS;
-const ecc = require('tiny-secp256k1');
-const bs58check = require('bs58check');
 // input: {signature} {pubkey}
 // output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG
 function p2pkh(a, opts) {
@@ -32,17 +58,17 @@ function p2pkh(a, opts) {
   )
     throw new TypeError('Not enough data');
   opts = Object.assign({ validate: true }, opts || {});
-  typef(
+  (0, types_1.typeforce)(
     {
-      network: typef.maybe(typef.Object),
-      address: typef.maybe(typef.String),
-      hash: typef.maybe(typef.BufferN(20)),
-      output: typef.maybe(typef.BufferN(25)),
-      pubkey: typef.maybe(ecc.isPoint),
-      signature: typef.maybe(bscript.isCanonicalScriptSignature),
-      input: typef.maybe(typef.Buffer),
-      blindkey: typef.maybe(ecc.isPoint),
-      confidentialAddress: typef.maybe(typef.String),
+      network: types_1.typeforce.maybe(types_1.typeforce.Object),
+      address: types_1.typeforce.maybe(types_1.typeforce.String),
+      hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(20)),
+      output: types_1.typeforce.maybe(types_1.typeforce.BufferN(25)),
+      pubkey: types_1.typeforce.maybe(types_1.isPoint),
+      signature: types_1.typeforce.maybe(bscript.isCanonicalScriptSignature),
+      input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+      blindkey: types_1.typeforce.maybe(types_1.isPoint),
+      confidentialAddress: types_1.typeforce.maybe(types_1.typeforce.String),
     },
     a,
   );
@@ -166,7 +192,7 @@ function p2pkh(a, opts) {
       if (chunks.length !== 2) throw new TypeError('Input is invalid');
       if (!bscript.isCanonicalScriptSignature(chunks[0]))
         throw new TypeError('Input has invalid signature');
-      if (!ecc.isPoint(chunks[1]))
+      if (!(0, types_1.isPoint)(chunks[1]))
         throw new TypeError('Input has invalid pubkey');
       if (a.signature && !a.signature.equals(chunks[0]))
         throw new TypeError('Signature mismatch');
@@ -190,7 +216,8 @@ function p2pkh(a, opts) {
       else blindkey = _confidentialAddress().blindkey;
     }
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!(0, types_1.isPoint)(a.blindkey))
+        throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;

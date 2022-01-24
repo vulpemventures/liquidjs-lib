@@ -690,7 +690,7 @@ export class Psbt {
     const partialSig = [
       {
         pubkey: keyPair.publicKey,
-        signature: bscript.signature.encode(keyPair.sign(hash), sighashType),
+        signature: Buffer.from(bscript.signature.encode(keyPair.sign(hash), sighashType)) as Buffer,
       },
     ];
 

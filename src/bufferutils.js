@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,14 +31,17 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.BufferReader = exports.BufferWriter = exports.cloneBuffer = exports.reverseBuffer = exports.writeUInt64LE = exports.readUInt64LE = exports.varuint = void 0;
 const types = __importStar(require('./types'));
-const typeforce = require('typeforce');
-const varuint = require('varuint-bitcoin');
+const { typeforce } = types;
+const varuint = __importStar(require('varuint-bitcoin'));
+exports.varuint = varuint;
 const CONFIDENTIAL_COMMITMENT = 33; // default size of confidential commitments (i.e. asset, value, nonce)
 const CONFIDENTIAL_VALUE = 9; // explicit size of confidential values
 // https://github.com/feross/buffer/blob/master/index.js#L1127
@@ -54,6 +82,12 @@ function reverseBuffer(buffer) {
   return buffer;
 }
 exports.reverseBuffer = reverseBuffer;
+function cloneBuffer(buffer) {
+  const clone = Buffer.allocUnsafe(buffer.length);
+  buffer.copy(clone);
+  return clone;
+}
+exports.cloneBuffer = cloneBuffer;
 /**
  * Helper class for serialization of bitcoin data types into a pre-allocated buffer.
  */
@@ -62,6 +96,9 @@ class BufferWriter {
     this.buffer = buffer;
     this.offset = offset;
     typeforce(types.tuple(types.Buffer, types.UInt32), [buffer, offset]);
+  }
+  static withCapacity(size) {
+    return new BufferWriter(Buffer.alloc(size));
   }
   writeUInt8(i) {
     this.offset = this.buffer.writeUInt8(i, this.offset);
@@ -102,6 +139,12 @@ class BufferWriter {
   writeConfidentialOutFields(output) {
     this.writeVarSlice(output.surjectionProof);
     this.writeVarSlice(output.rangeProof);
+  }
+  end() {
+    if (this.buffer.length === this.offset) {
+      return this.buffer;
+    }
+    throw new Error(`buffer size ${this.buffer.length}, offset ${this.offset}`);
   }
 }
 exports.BufferWriter = BufferWriter;

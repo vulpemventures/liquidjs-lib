@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,11 +31,13 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.Transaction = exports.ZERO = void 0;
 const bufferutils_1 = require('./bufferutils');
 const bcrypto = __importStar(require('./crypto'));
 const bscript = __importStar(require('./script'));
@@ -516,7 +543,9 @@ class Transaction {
   }
   getId() {
     // transaction hash's are displayed in reverse order
-    return bufferutils_1.reverseBuffer(this.getHash(false)).toString('hex');
+    return (0, bufferutils_1.reverseBuffer)(this.getHash(false)).toString(
+      'hex',
+    );
   }
   toBuffer(buffer, initialOffset) {
     return this.__toBuffer(buffer, initialOffset, true, false);
@@ -674,6 +703,7 @@ class Transaction {
     return buffer;
   }
 }
+exports.Transaction = Transaction;
 Transaction.DEFAULT_SEQUENCE = 0xffffffff;
 Transaction.SIGHASH_ALL = 0x01;
 Transaction.SIGHASH_NONE = 0x02;
@@ -681,4 +711,3 @@ Transaction.SIGHASH_SINGLE = 0x03;
 Transaction.SIGHASH_ANYONECANPAY = 0x80;
 Transaction.ADVANCED_TRANSACTION_MARKER = 0x00;
 Transaction.ADVANCED_TRANSACTION_FLAG = 0x01;
-exports.Transaction = Transaction;

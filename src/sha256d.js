@@ -1,5 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.sha256Midstate = exports.hash = exports.Hash = exports.blockSize = exports.digestLength = void 0;
 // SHA-256 (+ HMAC and PBKDF2) for JavaScript.
 //
 // Written in 2014-2016 by Dmitry Chestnykh.
