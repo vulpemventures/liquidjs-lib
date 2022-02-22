@@ -8,7 +8,7 @@ const typef = require('typeforce');
 const OPS = bscript.OPS;
 const ecc = require('tiny-secp256k1');
 
-const bech32 = require('bech32');
+import { bech32 } from 'bech32';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -44,7 +44,7 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
   const network = a.network || LIQUID_NETWORK;
 
   const _address = lazy.value(() => {
-    const result = bech32.decode(a.address);
+    const result = bech32.decode(a.address!);
     const version = result.words.shift();
     const data = bech32.fromWords(result.words);
     return {

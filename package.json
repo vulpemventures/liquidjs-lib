@@ -50,7 +50,7 @@
   "dependencies": {
     "@vulpemventures/secp256k1-zkp": "^2.0.0",
     "axios": "^0.21.1",
-    "bech32": "^1.1.2",
+    "bech32": "^2.0.0",
     "bip174-liquid": "^1.0.3",
     "bip32": "^2.0.4",
     "bip66": "^1.1.0",
