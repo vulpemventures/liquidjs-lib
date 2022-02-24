@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,17 +31,24 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
+var __importDefault =
+  (this && this.__importDefault) ||
+  function(mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.fromWIF = exports.fromPublicKey = exports.fromPrivateKey = exports.makeRandom = void 0;
 const NETWORKS = __importStar(require('./networks'));
 const types = __importStar(require('./types'));
-const ecc = require('tiny-secp256k1');
-const randomBytes = require('randombytes');
+const tiny_secp256k1_1 = __importDefault(require('tiny-secp256k1'));
+const randombytes_1 = __importDefault(require('randombytes'));
+const wif_1 = __importDefault(require('wif'));
 const typeforce = require('typeforce');
-const wif = require('wif');
 const isOptions = typeforce.maybe(
   typeforce.compile({
     compressed: types.maybe(types.Boolean),
@@ -32,26 +64,38 @@ class ECPair {
     this.compressed =
       options.compressed === undefined ? true : options.compressed;
     this.network = options.network || NETWORKS.liquid;
-    if (__Q !== undefined) this.__Q = ecc.pointCompress(__Q, this.compressed);
+    if (__Q !== undefined)
+      this.__Q = tiny_secp256k1_1.default.pointCompress(__Q, this.compressed);
   }
   get privateKey() {
-    return this.__D;
+    if (!this.__D) return undefined;
+    return Buffer.from(this.__D);
   }
   get publicKey() {
-    if (!this.__Q) this.__Q = ecc.pointFromScalar(this.__D, this.compressed);
-    return this.__Q;
+    if (!this.__Q) {
+      if (!this.__D) throw new Error('Missing private key');
+      this.__Q = tiny_secp256k1_1.default.pointFromScalar(
+        this.__D,
+        this.compressed,
+      );
+    }
+    return Buffer.from(this.__Q);
   }
   toWIF() {
     if (!this.__D) throw new Error('Missing private key');
-    return wif.encode(this.network.wif, this.__D, this.compressed);
+    return wif_1.default.encode(
+      this.network.wif,
+      Buffer.from(this.__D),
+      this.compressed,
+    );
   }
   sign(hash, lowR) {
     if (!this.__D) throw new Error('Missing private key');
     if (lowR === undefined) lowR = this.lowR;
     if (lowR === false) {
-      return ecc.sign(hash, this.__D);
+      return Buffer.from(tiny_secp256k1_1.default.sign(hash, this.__D));
     } else {
-      let sig = ecc.sign(hash, this.__D);
+      let sig = tiny_secp256k1_1.default.sign(hash, this.__D);
       const extraData = Buffer.alloc(32, 0);
       let counter = 0;
       // if first try is lowR, skip the loop
@@ -59,31 +103,31 @@ class ECPair {
       while (sig[0] > 0x7f) {
         counter++;
         extraData.writeUIntLE(counter, 0, 6);
-        sig = ecc.signWithEntropy(hash, this.__D, extraData);
+        sig = tiny_secp256k1_1.default.sign(hash, this.__D, extraData);
       }
-      return sig;
+      return Buffer.from(sig);
     }
   }
   verify(hash, signature) {
-    return ecc.verify(hash, this.publicKey, signature);
+    return tiny_secp256k1_1.default.verify(hash, this.publicKey, signature);
   }
 }
 function fromPrivateKey(buffer, options) {
   typeforce(types.Buffer256bit, buffer);
-  if (!ecc.isPrivate(buffer))
+  if (!tiny_secp256k1_1.default.isPrivate(buffer))
     throw new TypeError('Private key not in range [1, n)');
   typeforce(isOptions, options);
   return new ECPair(buffer, undefined, options);
 }
 exports.fromPrivateKey = fromPrivateKey;
 function fromPublicKey(buffer, options) {
-  typeforce(ecc.isPoint, buffer);
+  typeforce(tiny_secp256k1_1.default.isPoint, buffer);
   typeforce(isOptions, options);
   return new ECPair(undefined, buffer, options);
 }
 exports.fromPublicKey = fromPublicKey;
 function fromWIF(wifString, network) {
-  const decoded = wif.decode(wifString);
+  const decoded = wif_1.default.decode(wifString);
   const version = decoded.version;
   // list of networks?
   if (types.Array(network)) {
@@ -107,12 +151,12 @@ exports.fromWIF = fromWIF;
 function makeRandom(options) {
   typeforce(isOptions, options);
   if (options === undefined) options = {};
-  const rng = options.rng || randomBytes;
+  const rng = options.rng || randombytes_1.default;
   let d;
   do {
     d = rng(32);
     typeforce(types.Buffer256bit, d);
-  } while (!ecc.isPrivate(d));
+  } while (!tiny_secp256k1_1.default.isPrivate(d));
   return fromPrivateKey(d, options);
 }
 exports.makeRandom = makeRandom;

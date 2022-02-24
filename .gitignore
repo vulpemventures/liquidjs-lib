@@ -8,3 +8,6 @@ test/integration/*.js
 .DS_Store
 # for dev
 ts_src/**/*.js
+
+# yarn
+yarn-error.log

@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import axios from 'axios';
+import { ECPair } from 'ecpair';
 import { describe, it } from 'mocha';
 import * as liquid from '../..';
 const REGTEST = liquid.networks.regtest;
@@ -9,7 +10,7 @@ describe('liquidjs-lib (addresses)', () => {
     'can generate a random address [and support the retrieval of ' +
       'transactions for that address (via 3PBP)]',
     async () => {
-      const keyPair = liquid.ECPair.makeRandom();
+      const keyPair = ECPair.makeRandom();
       const { address } = liquid.payments.p2pkh({ pubkey: keyPair.publicKey });
       // liquid P2PKH addresses start with a '2'
       assert.strictEqual(
@@ -27,7 +28,7 @@ describe('liquidjs-lib (addresses)', () => {
   );
 
   it('can import an address via WIF and blind with a blinding key', () => {
-    const keyPair = liquid.ECPair.fromWIF(
+    const keyPair = ECPair.fromWIF(
       'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn',
     );
     const { address } = liquid.payments.p2pkh({ pubkey: keyPair.publicKey });
@@ -71,7 +72,7 @@ describe('liquidjs-lib (addresses)', () => {
   });
 
   it('can generate a SegWit address and blind with blinding key', () => {
-    const keyPair = liquid.ECPair.fromWIF(
+    const keyPair = ECPair.fromWIF(
       'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn',
     );
     const { address } = liquid.payments.p2wpkh({ pubkey: keyPair.publicKey });
@@ -91,7 +92,7 @@ describe('liquidjs-lib (addresses)', () => {
   });
 
   it('can generate a SegWit address (via P2SH) and blind with blinding key', () => {
-    const keyPair = liquid.ECPair.fromWIF(
+    const keyPair = ECPair.fromWIF(
       'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn',
     );
     const { address } = liquid.payments.p2sh({
@@ -168,7 +169,7 @@ describe('liquidjs-lib (addresses)', () => {
 
   // examples using other network information
   it('can generate a Regtest address and blind with blinding key', () => {
-    const keyPair = liquid.ECPair.makeRandom({ network: REGTEST });
+    const keyPair = ECPair.makeRandom({ network: REGTEST });
     const { address } = liquid.payments.p2pkh({
       pubkey: keyPair.publicKey,
       network: REGTEST,

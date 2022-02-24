@@ -1,7 +1,7 @@
 import * as types from './types';
-
-const typeforce = require('typeforce');
-const varuint = require('varuint-bitcoin');
+const { typeforce } = types;
+import * as varuint from 'varuint-bitcoin';
+export { varuint };
 
 const CONFIDENTIAL_COMMITMENT = 33; // default size of confidential commitments (i.e. asset, value, nonce)
 const CONFIDENTIAL_VALUE = 9; // explicit size of confidential values
@@ -51,10 +51,20 @@ export function reverseBuffer(buffer: Buffer): Buffer {
   return buffer;
 }
 
+export function cloneBuffer(buffer: Buffer): Buffer {
+  const clone = Buffer.allocUnsafe(buffer.length);
+  buffer.copy(clone);
+  return clone;
+}
+
 /**
  * Helper class for serialization of bitcoin data types into a pre-allocated buffer.
  */
 export class BufferWriter {
+  static withCapacity(size: number): BufferWriter {
+    return new BufferWriter(Buffer.alloc(size));
+  }
+
   constructor(public buffer: Buffer, public offset: number = 0) {
     typeforce(types.tuple(types.Buffer, types.UInt32), [buffer, offset]);
   }
@@ -107,6 +117,13 @@ export class BufferWriter {
   writeConfidentialOutFields(output: any): void {
     this.writeVarSlice(output.surjectionProof);
     this.writeVarSlice(output.rangeProof);
+  }
+
+  end(): Buffer {
+    if (this.buffer.length === this.offset) {
+      return this.buffer;
+    }
+    throw new Error(`buffer size ${this.buffer.length}, offset ${this.offset}`);
   }
 }
 

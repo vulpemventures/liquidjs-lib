@@ -1,10 +1,11 @@
 import { Network } from './networks';
 import * as NETWORKS from './networks';
 import * as types from './types';
-const ecc = require('tiny-secp256k1');
-const randomBytes = require('randombytes');
+import ecc from 'tiny-secp256k1';
+import randomBytes from 'randombytes';
+import wif from 'wif';
+
 const typeforce = require('typeforce');
-const wif = require('wif');
 
 const isOptions = typeforce.maybe(
   typeforce.compile({
@@ -48,8 +49,8 @@ class ECPair implements ECPairInterface {
   lowR: boolean;
 
   constructor(
-    private __D?: Buffer,
-    private __Q?: Buffer,
+    private __D?: Uint8Array,
+    private __Q?: Uint8Array,
     options?: ECPairOptions,
   ) {
     this.lowR = false;
@@ -62,25 +63,28 @@ class ECPair implements ECPairInterface {
   }
 
   get privateKey(): Buffer | undefined {
-    return this.__D;
+    if (!this.__D) return undefined;
+    return Buffer.from(this.__D);
   }
 
   get publicKey(): Buffer {
-    if (!this.__Q)
-      this.__Q = ecc.pointFromScalar(this.__D, this.compressed) as Buffer;
-    return this.__Q;
+    if (!this.__Q) {
+        if (!this.__D) throw new Error('Missing private key');
+        this.__Q = ecc.pointFromScalar(this.__D, this.compressed) as Buffer;
+    }
+    return Buffer.from(this.__Q);
   }
 
   toWIF(): string {
     if (!this.__D) throw new Error('Missing private key');
-    return wif.encode(this.network.wif, this.__D, this.compressed);
+    return wif.encode(this.network.wif, Buffer.from(this.__D), this.compressed);
   }
 
   sign(hash: Buffer, lowR?: boolean): Buffer {
     if (!this.__D) throw new Error('Missing private key');
     if (lowR === undefined) lowR = this.lowR;
     if (lowR === false) {
-      return ecc.sign(hash, this.__D);
+      return Buffer.from(ecc.sign(hash, this.__D));
     } else {
       let sig = ecc.sign(hash, this.__D);
       const extraData = Buffer.alloc(32, 0);
@@ -90,9 +94,9 @@ class ECPair implements ECPairInterface {
       while (sig[0] > 0x7f) {
         counter++;
         extraData.writeUIntLE(counter, 0, 6);
-        sig = ecc.signWithEntropy(hash, this.__D, extraData);
+        sig = ecc.sign(hash, this.__D, extraData);
       }
-      return sig;
+      return Buffer.from(sig);
     }
   }
 

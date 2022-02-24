@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,11 +31,13 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.toConfidentialTokenAmount = exports.toConfidentialAssetAmount = exports.calculateReissuanceToken = exports.calculateAsset = exports.issuanceEntropyFromInput = exports.generateEntropy = exports.isReissuance = exports.newIssuance = exports.hashContract = exports.validateIssuanceContract = exports.hasTokenAmount = void 0;
 const bufferutils_1 = require('./bufferutils');
 const confidential_1 = require('./confidential');
 const bcrypto = __importStar(require('./crypto'));
@@ -99,7 +126,7 @@ function generateEntropy(outPoint, contractHash = Buffer.alloc(32)) {
   s.writeInt32(outPoint.vout);
   const prevoutHash = bcrypto.hash256(s.buffer);
   const concatened = Buffer.concat([prevoutHash, contractHash]);
-  return sha256d_1.sha256Midstate(concatened);
+  return (0, sha256d_1.sha256Midstate)(concatened);
 }
 exports.generateEntropy = generateEntropy;
 /**
@@ -123,7 +150,7 @@ exports.issuanceEntropyFromInput = issuanceEntropyFromInput;
 function calculateAsset(entropy) {
   if (entropy.length !== 32) throw new Error('Invalid entropy length');
   const kZero = Buffer.alloc(32);
-  return sha256d_1.sha256Midstate(Buffer.concat([entropy, kZero]));
+  return (0, sha256d_1.sha256Midstate)(Buffer.concat([entropy, kZero]));
 }
 exports.calculateAsset = calculateAsset;
 /**
@@ -133,7 +160,7 @@ exports.calculateAsset = calculateAsset;
  */
 function calculateReissuanceToken(entropy, confidential = false) {
   if (entropy.length !== 32) throw new Error('Invalid entropy length');
-  return sha256d_1.sha256Midstate(
+  return (0, sha256d_1.sha256Midstate)(
     Buffer.concat([
       entropy,
       Buffer.of(getTokenFlag(confidential) + 1),
@@ -153,7 +180,7 @@ function getTokenFlag(confidential) {
  */
 function toConfidentialAssetAmount(assetAmount, precision = 8) {
   const amount = Math.pow(10, precision) * assetAmount;
-  return confidential_1.satoshiToConfidentialValue(amount);
+  return (0, confidential_1.satoshiToConfidentialValue)(amount);
 }
 exports.toConfidentialAssetAmount = toConfidentialAssetAmount;
 /**

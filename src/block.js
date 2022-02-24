@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,18 +31,19 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.Block = void 0;
 const bufferutils_1 = require('./bufferutils');
 const bcrypto = __importStar(require('./crypto'));
+const merkle_1 = require('./merkle');
 const transaction_1 = require('./transaction');
 const types = __importStar(require('./types'));
-const fastMerkleRoot = require('merkle-lib/fastRoot');
-const typeforce = require('typeforce');
-const varuint = require('varuint-bitcoin');
+const { typeforce } = types;
 const errorMerkleNoTxes = new TypeError(
   'Cannot compute merkle root for zero transactions',
 );
@@ -37,43 +63,24 @@ class Block {
   }
   static fromBuffer(buffer) {
     if (buffer.length < 80) throw new Error('Buffer too small (< 80 bytes)');
-    let offset = 0;
-    const readSlice = n => {
-      offset += n;
-      return buffer.slice(offset - n, offset);
-    };
-    const readUInt32 = () => {
-      const i = buffer.readUInt32LE(offset);
-      offset += 4;
-      return i;
-    };
-    const readInt32 = () => {
-      const i = buffer.readInt32LE(offset);
-      offset += 4;
-      return i;
-    };
+    const bufferReader = new bufferutils_1.BufferReader(buffer);
     const block = new Block();
-    block.version = readInt32();
-    block.prevHash = readSlice(32);
-    block.merkleRoot = readSlice(32);
-    block.timestamp = readUInt32();
-    block.bits = readUInt32();
-    block.nonce = readUInt32();
+    block.version = bufferReader.readInt32();
+    block.prevHash = bufferReader.readSlice(32);
+    block.merkleRoot = bufferReader.readSlice(32);
+    block.timestamp = bufferReader.readUInt32();
+    block.bits = bufferReader.readUInt32();
+    block.nonce = bufferReader.readUInt32();
     if (buffer.length === 80) return block;
-    const readVarInt = () => {
-      const vi = varuint.decode(buffer, offset);
-      offset += varuint.decode.bytes;
-      return vi;
-    };
     const readTransaction = () => {
       const tx = transaction_1.Transaction.fromBuffer(
-        buffer.slice(offset),
+        bufferReader.buffer.slice(bufferReader.offset),
         true,
       );
-      offset += tx.byteLength();
+      bufferReader.offset += tx.byteLength();
       return tx;
     };
-    const nTransactions = readVarInt();
+    const nTransactions = bufferReader.readVarInt();
     block.transactions = [];
     for (let i = 0; i < nTransactions; ++i) {
       const tx = readTransaction();
@@ -102,7 +109,7 @@ class Block {
     const hashes = transactions.map(transaction =>
       transaction.getHash(forWitness),
     );
-    const rootHash = fastMerkleRoot(hashes, bcrypto.hash256);
+    const rootHash = (0, merkle_1.fastMerkleRoot)(hashes, bcrypto.hash256);
     return forWitness
       ? bcrypto.hash256(
           Buffer.concat([rootHash, transactions[0].ins[0].witness[0]]),
@@ -147,7 +154,7 @@ class Block {
     if (headersOnly || !this.transactions) return 80;
     return (
       80 +
-      varuint.encodingLength(this.transactions.length) +
+      bufferutils_1.varuint.encodingLength(this.transactions.length) +
       this.transactions.reduce((a, x) => a + x.byteLength(allowWitness), 0)
     );
   }
@@ -155,7 +162,7 @@ class Block {
     return bcrypto.hash256(this.toBuffer(true));
   }
   getId() {
-    return bufferutils_1.reverseBuffer(this.getHash()).toString('hex');
+    return (0, bufferutils_1.reverseBuffer)(this.getHash()).toString('hex');
   }
   getUTCDate() {
     const date = new Date(0); // epoch
@@ -165,32 +172,24 @@ class Block {
   // TODO: buffer, offset compatibility
   toBuffer(headersOnly) {
     const buffer = Buffer.allocUnsafe(this.byteLength(headersOnly));
-    let offset = 0;
-    const writeSlice = slice => {
-      slice.copy(buffer, offset);
-      offset += slice.length;
-    };
-    const writeInt32 = i => {
-      buffer.writeInt32LE(i, offset);
-      offset += 4;
-    };
-    const writeUInt32 = i => {
-      buffer.writeUInt32LE(i, offset);
-      offset += 4;
-    };
-    writeInt32(this.version);
-    writeSlice(this.prevHash);
-    writeSlice(this.merkleRoot);
-    writeUInt32(this.timestamp);
-    writeUInt32(this.bits);
-    writeUInt32(this.nonce);
+    const bufferWriter = new bufferutils_1.BufferWriter(buffer);
+    bufferWriter.writeInt32(this.version);
+    bufferWriter.writeSlice(this.prevHash);
+    bufferWriter.writeSlice(this.merkleRoot);
+    bufferWriter.writeUInt32(this.timestamp);
+    bufferWriter.writeUInt32(this.bits);
+    bufferWriter.writeUInt32(this.nonce);
     if (headersOnly || !this.transactions) return buffer;
-    varuint.encode(this.transactions.length, buffer, offset);
-    offset += varuint.encode.bytes;
+    bufferutils_1.varuint.encode(
+      this.transactions.length,
+      buffer,
+      bufferWriter.offset,
+    );
+    bufferWriter.offset += bufferutils_1.varuint.encode.bytes;
     this.transactions.forEach(tx => {
       const txSize = tx.byteLength(); // TODO: extract from toBuffer?
-      tx.toBuffer(buffer, offset);
-      offset += txSize;
+      tx.toBuffer(buffer, bufferWriter.offset);
+      bufferWriter.offset += txSize;
     });
     return buffer;
   }
@@ -208,7 +207,7 @@ class Block {
     );
   }
   checkProofOfWork() {
-    const hash = bufferutils_1.reverseBuffer(this.getHash());
+    const hash = (0, bufferutils_1.reverseBuffer)(this.getHash());
     const target = Block.calculateTarget(this.bits);
     return hash.compare(target) <= 0;
   }

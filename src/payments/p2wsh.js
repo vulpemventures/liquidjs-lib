@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,26 +31,40 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.p2wsh = void 0;
 const baddress = __importStar(require('../address'));
 const bcrypto = __importStar(require('../crypto'));
 const networks_1 = require('../networks');
 const bscript = __importStar(require('../script'));
+const types_1 = require('../types');
 const lazy = __importStar(require('./lazy'));
-const typef = require('typeforce');
+const bech32_1 = require('bech32');
 const OPS = bscript.OPS;
 const ecc = require('tiny-secp256k1');
-const bech32_1 = require('bech32');
 const EMPTY_BUFFER = Buffer.alloc(0);
 function stacksEqual(a, b) {
   if (a.length !== b.length) return false;
   return a.every((x, i) => {
     return x.equals(b[i]);
   });
+}
+function chunkHasUncompressedPubkey(chunk) {
+  if (
+    Buffer.isBuffer(chunk) &&
+    chunk.length === 65 &&
+    chunk[0] === 0x04 &&
+    (0, types_1.isPoint)(chunk)
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 // input: <>
 // witness: [redeemScriptSig ...] {redeemScript}
@@ -41,22 +80,26 @@ function p2wsh(a, opts) {
   )
     throw new TypeError('Not enough data');
   opts = Object.assign({ validate: true }, opts || {});
-  typef(
+  (0, types_1.typeforce)(
     {
-      network: typef.maybe(typef.Object),
-      address: typef.maybe(typef.String),
-      hash: typef.maybe(typef.BufferN(32)),
-      output: typef.maybe(typef.BufferN(34)),
-      redeem: typef.maybe({
-        input: typef.maybe(typef.Buffer),
-        network: typef.maybe(typef.Object),
-        output: typef.maybe(typef.Buffer),
-        witness: typef.maybe(typef.arrayOf(typef.Buffer)),
+      network: types_1.typeforce.maybe(types_1.typeforce.Object),
+      address: types_1.typeforce.maybe(types_1.typeforce.String),
+      hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(32)),
+      output: types_1.typeforce.maybe(types_1.typeforce.BufferN(34)),
+      redeem: types_1.typeforce.maybe({
+        input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+        network: types_1.typeforce.maybe(types_1.typeforce.Object),
+        output: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+        witness: types_1.typeforce.maybe(
+          types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
+        ),
       }),
-      input: typef.maybe(typef.BufferN(0)),
-      witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-      blindkey: typef.maybe(ecc.isPoint),
-      confidentialAddress: typef.maybe(typef.String),
+      input: types_1.typeforce.maybe(types_1.typeforce.BufferN(0)),
+      witness: types_1.typeforce.maybe(
+        types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
+      ),
+      blindkey: types_1.typeforce.maybe(ecc.isPoint),
+      confidentialAddress: types_1.typeforce.maybe(types_1.typeforce.String),
     },
     a,
   );
@@ -142,7 +185,8 @@ function p2wsh(a, opts) {
   });
   lazy.prop(o, 'name', () => {
     const nameParts = ['p2wsh'];
-    if (o.redeem !== undefined) nameParts.push(o.redeem.name);
+    if (o.redeem !== undefined && o.redeem.name !== undefined)
+      nameParts.push(o.redeem.name);
     return nameParts.join('-');
   });
   lazy.prop(o, 'blindkey', () => {
@@ -218,14 +262,27 @@ function p2wsh(a, opts) {
         !stacksEqual(a.witness, a.redeem.witness)
       )
         throw new TypeError('Witness and redeem.witness mismatch');
-    }
-    if (a.witness) {
       if (
-        a.redeem &&
-        a.redeem.output &&
-        !a.redeem.output.equals(a.witness[a.witness.length - 1])
-      )
+        (a.redeem.input && _rchunks().some(chunkHasUncompressedPubkey)) ||
+        (a.redeem.output &&
+          (bscript.decompile(a.redeem.output) || []).some(
+            chunkHasUncompressedPubkey,
+          ))
+      ) {
+        throw new TypeError(
+          'redeem.input or redeem.output contains uncompressed pubkey',
+        );
+      }
+    }
+    if (a.witness && a.witness.length > 0) {
+      const wScript = a.witness[a.witness.length - 1];
+      if (a.redeem && a.redeem.output && !a.redeem.output.equals(wScript))
         throw new TypeError('Witness and redeem.output mismatch');
+      if (
+        a.witness.some(chunkHasUncompressedPubkey) ||
+        (bscript.decompile(wScript) || []).some(chunkHasUncompressedPubkey)
+      )
+        throw new TypeError('Witness contains uncompressed pubkey');
     }
     if (a.confidentialAddress) {
       if (

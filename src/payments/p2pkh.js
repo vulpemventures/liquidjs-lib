@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,19 +31,26 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
+var __importDefault =
+  (this && this.__importDefault) ||
+  function(mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.p2pkh = void 0;
 const bcrypto = __importStar(require('../crypto'));
 const networks_1 = require('../networks');
 const bscript = __importStar(require('../script'));
+const types_1 = require('../types');
 const lazy = __importStar(require('./lazy'));
-const typef = require('typeforce');
+const bs58check_1 = __importDefault(require('bs58check'));
+const tiny_secp256k1_1 = __importDefault(require('tiny-secp256k1'));
 const OPS = bscript.OPS;
-const ecc = require('tiny-secp256k1');
-const bs58check = require('bs58check');
 // input: {signature} {pubkey}
 // output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG
 function p2pkh(a, opts) {
@@ -32,22 +64,22 @@ function p2pkh(a, opts) {
   )
     throw new TypeError('Not enough data');
   opts = Object.assign({ validate: true }, opts || {});
-  typef(
+  (0, types_1.typeforce)(
     {
-      network: typef.maybe(typef.Object),
-      address: typef.maybe(typef.String),
-      hash: typef.maybe(typef.BufferN(20)),
-      output: typef.maybe(typef.BufferN(25)),
-      pubkey: typef.maybe(ecc.isPoint),
-      signature: typef.maybe(bscript.isCanonicalScriptSignature),
-      input: typef.maybe(typef.Buffer),
-      blindkey: typef.maybe(ecc.isPoint),
-      confidentialAddress: typef.maybe(typef.String),
+      network: types_1.typeforce.maybe(types_1.typeforce.Object),
+      address: types_1.typeforce.maybe(types_1.typeforce.String),
+      hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(20)),
+      output: types_1.typeforce.maybe(types_1.typeforce.BufferN(25)),
+      pubkey: types_1.typeforce.maybe(types_1.isPoint),
+      signature: types_1.typeforce.maybe(bscript.isCanonicalScriptSignature),
+      input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+      blindkey: types_1.typeforce.maybe(tiny_secp256k1_1.default.isPoint),
+      confidentialAddress: types_1.typeforce.maybe(types_1.typeforce.String),
     },
     a,
   );
   const _address = lazy.value(() => {
-    const payload = bs58check.decode(a.address);
+    const payload = bs58check_1.default.decode(a.address);
     const version = payload.readUInt8(0);
     const hash = payload.slice(1);
     return { version, hash };
@@ -56,13 +88,15 @@ function p2pkh(a, opts) {
     return bscript.decompile(a.input);
   });
   const _confidentialAddress = lazy.value(() => {
-    const payload = bs58check.decode(a.confidentialAddress);
+    const payload = bs58check_1.default.decode(a.confidentialAddress);
     const blindkey = payload.slice(2, 35);
     const unconfidentialAddressBuffer = Buffer.concat([
       Buffer.from([payload.readUInt8(1)]),
       payload.slice(35),
     ]);
-    const unconfidentialAddress = bs58check.encode(unconfidentialAddressBuffer);
+    const unconfidentialAddress = bs58check_1.default.encode(
+      unconfidentialAddressBuffer,
+    );
     return { blindkey, unconfidentialAddress };
   });
   const network = a.network || networks_1.liquid;
@@ -72,7 +106,7 @@ function p2pkh(a, opts) {
     const payload = Buffer.allocUnsafe(21);
     payload.writeUInt8(network.pubKeyHash, 0);
     o.hash.copy(payload, 1);
-    return bs58check.encode(payload);
+    return bs58check_1.default.encode(payload);
   });
   lazy.prop(o, 'hash', () => {
     if (a.output) return a.output.slice(3, 23);
@@ -80,7 +114,7 @@ function p2pkh(a, opts) {
     if (a.pubkey || o.pubkey) return bcrypto.hash160(a.pubkey || o.pubkey);
     if (a.confidentialAddress) {
       const address = _confidentialAddress().unconfidentialAddress;
-      return bs58check.decode(address).slice(1);
+      return bs58check_1.default.decode(address).slice(1);
     }
   });
   lazy.prop(o, 'output', () => {
@@ -117,13 +151,13 @@ function p2pkh(a, opts) {
   lazy.prop(o, 'confidentialAddress', () => {
     if (!o.address) return;
     if (!o.blindkey) return;
-    const payload = bs58check.decode(o.address);
+    const payload = bs58check_1.default.decode(o.address);
     const confidentialAddress = Buffer.concat([
       Buffer.from([network.confidentialPrefix, payload.readUInt8(0)]),
       o.blindkey,
       Buffer.from(payload.slice(1)),
     ]);
-    return bs58check.encode(confidentialAddress);
+    return bs58check_1.default.encode(confidentialAddress);
   });
   // extended validation
   if (opts.validate) {
@@ -166,7 +200,7 @@ function p2pkh(a, opts) {
       if (chunks.length !== 2) throw new TypeError('Input is invalid');
       if (!bscript.isCanonicalScriptSignature(chunks[0]))
         throw new TypeError('Input has invalid signature');
-      if (!ecc.isPoint(chunks[1]))
+      if (!(0, types_1.isPoint)(chunks[1]))
         throw new TypeError('Input has invalid pubkey');
       if (a.signature && !a.signature.equals(chunks[0]))
         throw new TypeError('Signature mismatch');
@@ -190,7 +224,8 @@ function p2pkh(a, opts) {
       else blindkey = _confidentialAddress().blindkey;
     }
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!tiny_secp256k1_1.default.isPoint(a.blindkey))
+        throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;

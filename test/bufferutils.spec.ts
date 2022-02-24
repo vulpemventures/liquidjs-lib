@@ -42,7 +42,7 @@ describe('bufferutils', () => {
       });
     });
 
-    fixtures.invalid.readUInt64LE.forEach(f => {
+    fixtures.invalid.writeUInt64LE.forEach(f => {
       it('throws on ' + f.description, () => {
         const buffer = Buffer.alloc(8, 0);
 
@@ -65,6 +65,13 @@ describe('bufferutils', () => {
         expectedBuffer.slice(0, expectedOffset),
       );
     }
+
+    it('withCapacity', () => {
+      const expectedBuffer = Buffer.from('04030201', 'hex');
+      const withCapacity = BufferWriter.withCapacity(4);
+      withCapacity.writeInt32(0x01020304);
+      testBuffer(withCapacity, expectedBuffer);
+    });
 
     it('writeUint8', () => {
       const values = [0, 1, 254, 255];
@@ -276,6 +283,16 @@ describe('bufferutils', () => {
         testBuffer(bufferWriter, expectedBuffer, expectedOffset);
       });
       testBuffer(bufferWriter, expectedBuffer);
+    });
+
+    it('end', () => {
+      const expected = Buffer.from('0403020108070605', 'hex');
+      const bufferWriter = BufferWriter.withCapacity(8);
+      bufferWriter.writeUInt32(0x01020304);
+      bufferWriter.writeUInt32(0x05060708);
+      const result = bufferWriter.end();
+      testBuffer(bufferWriter, result);
+      testBuffer(bufferWriter, expected);
     });
   });
 

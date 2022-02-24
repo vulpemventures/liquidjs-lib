@@ -4,7 +4,6 @@ import { broadcast, faucet } from './_regtest';
 import {
   address,
   confidential,
-  ECPair,
   Psbt,
   Transaction,
   networks as NETWORKS,
@@ -15,6 +14,7 @@ import {
   toConfidentialTokenAmount,
 } from '../../ts_src/issuance';
 import { fromConfidential } from '../../ts_src/address';
+import { ECPair } from 'ecpair';
 
 const { regtest } = NETWORKS;
 

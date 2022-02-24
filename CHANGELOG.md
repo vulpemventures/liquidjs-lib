@@ -1,3 +1,50 @@
+# 6.0.0
+__removed__
+- bip32: Removed the re-export. Please add as dependency to your app instead.
+- ECPair: Please use bip32 moving forward. ecpair package was created for those who need it.
+- TransactionBuilder: Any internal files used only in TB (classify, templates, etc.) were also removed.
+
+__added__
+- taproot segwit v1 address support (bech32m) via address module (#1676)
+- hashForWitnessV1 method on Transaction class (#1745)
+
+__fixed__
+- Transaction version read/write differed. (#1717)
+
+# 5.2.0
+__changed__
+- Updated PSBT to allow for witnessUtxo and nonWitnessUtxo simultaneously (Re: segwit psbt bug) (#1563)
+
+__added__
+- PSBT methods `getInputType`, `inputHasPubkey`, `inputHasHDKey`, `outputHasPubkey`, `outputHasHDKey` (#1563)
+
+# 5.1.10
+__fixed__
+- Fixed psbt.signInputAsync (and consequentially all Async signing methods) not handling rejection of keypair.sign properly (#1582)
+
+# 5.1.9
+__fixed__
+- Fixed errors for psbt.txOutputs getter (#1578)
+
+# 5.1.8
+__fixed__
+- Throw errors when p2wsh or p2wpkh contain uncompressed pubkeys (#1573)
+
+__added__
+- Add txInputs and txOutputs for Psbt (#1561)
+
+__changed__
+- (Not exposed) Added BufferWriter to help ease maintenance of certain forks of this library (#1533)
+
+# 5.1.7
+__fixed__
+- Fixed Transaction class Output interface typing for TypeScript (#1506)
+- Add `weight()` to Block class, add optional includeWitness arg to Transaction byteLength method (#1515)
+- Match the old TransactionBuilder behavior of allowing for multiple instances of the same pubkey to be in a p2ms script for PSBT (#1519)
+
+__added__
+- Allow the API consumer to pass in the finalizer functions to allow for any type of transaction to be finalized. It places the most crucial part of transaction construction on the consumer, and should be used with caution. (#1491)
+
 # 5.1.6
 __fixed__
 - `PsbtOutputExtended` did not support using the address attribute properly. It is now fixed.

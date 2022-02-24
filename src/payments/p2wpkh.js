@@ -1,4 +1,29 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, {
+          enumerable: true,
+          get: function() {
+            return m[k];
+          },
+        });
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,20 +31,22 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.p2wpkh = void 0;
 const baddress = __importStar(require('../address'));
 const bcrypto = __importStar(require('../crypto'));
 const networks_1 = require('../networks');
 const bscript = __importStar(require('../script'));
+const types_1 = require('../types');
 const lazy = __importStar(require('./lazy'));
-const typef = require('typeforce');
+const bech32_1 = require('bech32');
 const OPS = bscript.OPS;
 const ecc = require('tiny-secp256k1');
-const bech32_1 = require('bech32');
 const EMPTY_BUFFER = Buffer.alloc(0);
 // witness: {signature} {pubKey}
 // input: <>
@@ -35,16 +62,18 @@ function p2wpkh(a, opts) {
   )
     throw new TypeError('Not enough data');
   opts = Object.assign({ validate: true }, opts || {});
-  typef(
+  (0, types_1.typeforce)(
     {
-      address: typef.maybe(typef.String),
-      hash: typef.maybe(typef.BufferN(20)),
-      input: typef.maybe(typef.BufferN(0)),
-      network: typef.maybe(typef.Object),
-      output: typef.maybe(typef.BufferN(22)),
-      pubkey: typef.maybe(ecc.isPoint),
-      signature: typef.maybe(bscript.isCanonicalScriptSignature),
-      witness: typef.maybe(typef.arrayOf(typef.Buffer)),
+      address: types_1.typeforce.maybe(types_1.typeforce.String),
+      hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(20)),
+      input: types_1.typeforce.maybe(types_1.typeforce.BufferN(0)),
+      network: types_1.typeforce.maybe(types_1.typeforce.Object),
+      output: types_1.typeforce.maybe(types_1.typeforce.BufferN(22)),
+      pubkey: types_1.typeforce.maybe(types_1.isPoint),
+      signature: types_1.typeforce.maybe(bscript.isCanonicalScriptSignature),
+      witness: types_1.typeforce.maybe(
+        types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
+      ),
     },
     a,
   );
@@ -157,12 +186,14 @@ function p2wpkh(a, opts) {
       if (hash.length > 0 && !hash.equals(pkh))
         throw new TypeError('Hash mismatch');
       else hash = pkh;
+      if (!(0, types_1.isPoint)(a.pubkey) || a.pubkey.length !== 33)
+        throw new TypeError('Invalid pubkey for p2wpkh');
     }
     if (a.witness) {
       if (a.witness.length !== 2) throw new TypeError('Witness is invalid');
       if (!bscript.isCanonicalScriptSignature(a.witness[0]))
         throw new TypeError('Witness has invalid signature');
-      if (!ecc.isPoint(a.witness[1]))
+      if (!(0, types_1.isPoint)(a.witness[1]) || a.witness[1].length !== 33)
         throw new TypeError('Witness has invalid pubkey');
       if (a.signature && !a.signature.equals(a.witness[0]))
         throw new TypeError('Signature mismatch');
