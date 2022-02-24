@@ -8,7 +8,6 @@ import * as lazy from './lazy';
 import { bech32 } from 'bech32';
 
 const OPS = bscript.OPS;
-import ecc from 'tiny-secp256k1';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -194,7 +193,7 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
     }
 
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;

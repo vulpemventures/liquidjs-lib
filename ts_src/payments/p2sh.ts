@@ -1,7 +1,7 @@
 import * as bcrypto from '../crypto';
 import { liquid as LIQUID_NETWORK } from '../networks';
 import * as bscript from '../script';
-import { typeforce as typef } from '../types';
+import { isPoint, typeforce as typef } from '../types';
 import {
   Payment,
   PaymentFunction,
@@ -12,7 +12,6 @@ import {
 import * as lazy from './lazy';
 import * as bs58check from 'bs58check';
 const OPS = bscript.OPS;
-import ecc from 'tiny-secp256k1';
 
 function stacksEqual(a: Buffer[], b: Buffer[]): boolean {
   if (a.length !== b.length) return false;
@@ -53,7 +52,7 @@ export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
       }),
       input: typef.maybe(typef.Buffer),
       witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-      blindkey: typef.maybe(ecc.isPoint),
+      blindkey: typef.maybe(isPoint),
       confidentialAddress: typef.maybe(typef.String),
     },
     a,
@@ -268,7 +267,7 @@ export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
     }
 
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;

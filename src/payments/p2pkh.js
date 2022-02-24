@@ -49,7 +49,6 @@ const bscript = __importStar(require('../script'));
 const types_1 = require('../types');
 const lazy = __importStar(require('./lazy'));
 const bs58check_1 = __importDefault(require('bs58check'));
-const tiny_secp256k1_1 = __importDefault(require('tiny-secp256k1'));
 const OPS = bscript.OPS;
 // input: {signature} {pubkey}
 // output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG
@@ -73,7 +72,7 @@ function p2pkh(a, opts) {
       pubkey: types_1.typeforce.maybe(types_1.isPoint),
       signature: types_1.typeforce.maybe(bscript.isCanonicalScriptSignature),
       input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
-      blindkey: types_1.typeforce.maybe(tiny_secp256k1_1.default.isPoint),
+      blindkey: types_1.typeforce.maybe(types_1.isPoint),
       confidentialAddress: types_1.typeforce.maybe(types_1.typeforce.String),
     },
     a,
@@ -224,7 +223,7 @@ function p2pkh(a, opts) {
       else blindkey = _confidentialAddress().blindkey;
     }
     if (a.blindkey) {
-      if (!tiny_secp256k1_1.default.isPoint(a.blindkey))
+      if (!(0, types_1.isPoint)(a.blindkey))
         throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');

@@ -5,7 +5,6 @@ import { isPoint, typeforce as typef } from '../types';
 import { Payment, PaymentOpts, StackFunction } from './index';
 import * as lazy from './lazy';
 import bs58check from 'bs58check';
-import ecc from 'tiny-secp256k1';
 
 const OPS = bscript.OPS;
 
@@ -33,7 +32,7 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
       pubkey: typef.maybe(isPoint),
       signature: typef.maybe(bscript.isCanonicalScriptSignature),
       input: typef.maybe(typef.Buffer),
-      blindkey: typef.maybe(ecc.isPoint),
+      blindkey: typef.maybe(isPoint),
       confidentialAddress: typef.maybe(typef.String),
     },
     a,
@@ -195,7 +194,7 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
     }
 
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;
