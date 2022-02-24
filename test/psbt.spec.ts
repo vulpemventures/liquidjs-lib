@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import bip32 from 'bip32';
 import * as crypto from 'crypto';
 import { describe, it } from 'mocha';
-import { networks as NETWORKS, payments, Psbt, confidential, ecpair as ECPair, script as bscript } from '../ts_src';
+import { networks as NETWORKS, payments, Psbt, confidential, ECPair, script as bscript } from '../ts_src';
 import { toOutputScript } from '../ts_src/address';
 
 const satoshiToConfidentialValue = confidential.satoshiToConfidentialValue;

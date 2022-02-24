@@ -5,9 +5,9 @@ import * as networks from './networks';
 import * as payments from './payments';
 import * as script from './script';
 import * as issuance from './issuance';
-import * as ecpair from './ecpair';
+export * from './ecpair';
 
-export { address, crypto, networks, payments, script, confidential, issuance, ecpair };
+export { address, crypto, networks, payments, script, confidential, issuance };
 export { Block } from './block';
 export { TaggedHashPrefix } from './crypto';
 export {

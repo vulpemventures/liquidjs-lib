@@ -36,6 +36,11 @@ var __importStar =
     __setModuleDefault(result, mod);
     return result;
   };
+var __importDefault =
+  (this && this.__importDefault) ||
+  function(mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.p2wsh = void 0;
 const baddress = __importStar(require('../address'));
@@ -46,7 +51,7 @@ const types_1 = require('../types');
 const lazy = __importStar(require('./lazy'));
 const bech32_1 = require('bech32');
 const OPS = bscript.OPS;
-const ecc = require('tiny-secp256k1');
+const tiny_secp256k1_1 = __importDefault(require('tiny-secp256k1'));
 const EMPTY_BUFFER = Buffer.alloc(0);
 function stacksEqual(a, b) {
   if (a.length !== b.length) return false;
@@ -98,7 +103,7 @@ function p2wsh(a, opts) {
       witness: types_1.typeforce.maybe(
         types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
       ),
-      blindkey: types_1.typeforce.maybe(ecc.isPoint),
+      blindkey: types_1.typeforce.maybe(tiny_secp256k1_1.default.isPoint),
       confidentialAddress: types_1.typeforce.maybe(types_1.typeforce.String),
     },
     a,
@@ -298,7 +303,8 @@ function p2wsh(a, opts) {
       else blindkey = _confidentialAddress().blindingKey;
     }
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!tiny_secp256k1_1.default.isPoint(a.blindkey))
+        throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;

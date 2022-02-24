@@ -12,7 +12,7 @@ import {
 import * as lazy from './lazy';
 import * as bs58check from 'bs58check';
 const OPS = bscript.OPS;
-const ecc = require('tiny-secp256k1');
+import ecc from 'tiny-secp256k1';
 
 function stacksEqual(a: Buffer[], b: Buffer[]): boolean {
   if (a.length !== b.length) return false;

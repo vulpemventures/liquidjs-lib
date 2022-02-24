@@ -20,8 +20,7 @@ import { hash160 } from './crypto';
 import { Network, liquid as btcNetwork } from './networks';
 import { Output, Transaction, ZERO } from './transaction';
 import {
-  fromPrivateKey as ecPairFromPrivateKey,
-  fromPublicKey as ecPairFromPublicKey,
+  ECPair
 } from './ecpair';
 import {
   calculateAsset,
@@ -1222,7 +1221,7 @@ export class Psbt {
     for (const outputIndex of outputIndexes) {
       const randomSeed = randomBytes(opts);
       const ephemeralPrivKey = randomBytes(opts);
-      const outputNonce = ecPairFromPrivateKey(ephemeralPrivKey).publicKey;
+      const outputNonce = ECPair.fromPrivateKey(ephemeralPrivKey).publicKey;
       const outputBlindingData = outputsBlindingData[indexInArray];
 
       // commitments
@@ -1535,7 +1534,7 @@ function hasSigs(
   if (pubkeys) {
     sigs = pubkeys
       .map(pkey => {
-        const pubkey = ecPairFromPublicKey(pkey, { compressed: true })
+        const pubkey = ECPair.fromPublicKey(pkey, { compressed: true })
           .publicKey;
         return partialSig.find(pSig => pSig.pubkey.equals(pubkey));
       })

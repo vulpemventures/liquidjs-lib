@@ -36,8 +36,15 @@ var __importStar =
     __setModuleDefault(result, mod);
     return result;
   };
+var __exportStar =
+  (this && this.__exportStar) ||
+  function(m, exports) {
+    for (var p in m)
+      if (p !== 'default' && !Object.prototype.hasOwnProperty.call(exports, p))
+        __createBinding(exports, m, p);
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Transaction = exports.opcodes = exports.Psbt = exports.Block = exports.ecpair = exports.issuance = exports.confidential = exports.script = exports.payments = exports.networks = exports.crypto = exports.address = void 0;
+exports.Transaction = exports.opcodes = exports.Psbt = exports.Block = exports.issuance = exports.confidential = exports.script = exports.payments = exports.networks = exports.crypto = exports.address = void 0;
 const address = __importStar(require('./address'));
 exports.address = address;
 const confidential = __importStar(require('./confidential'));
@@ -52,8 +59,7 @@ const script = __importStar(require('./script'));
 exports.script = script;
 const issuance = __importStar(require('./issuance'));
 exports.issuance = issuance;
-const ecpair = __importStar(require('./ecpair'));
-exports.ecpair = ecpair;
+__exportStar(require('./ecpair'), exports);
 var block_1 = require('./block');
 Object.defineProperty(exports, 'Block', {
   enumerable: true,

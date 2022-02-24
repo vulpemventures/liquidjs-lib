@@ -8,7 +8,7 @@ import * as lazy from './lazy';
 import { bech32 } from 'bech32';
 
 const OPS = bscript.OPS;
-const ecc = require('tiny-secp256k1');
+import ecc from 'tiny-secp256k1';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 

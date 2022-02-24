@@ -1040,7 +1040,7 @@ class Psbt {
     for (const outputIndex of outputIndexes) {
       const randomSeed = randomBytes(opts);
       const ephemeralPrivKey = randomBytes(opts);
-      const outputNonce = (0, ecpair_1.fromPrivateKey)(ephemeralPrivKey)
+      const outputNonce = ecpair_1.ECPair.fromPrivateKey(ephemeralPrivKey)
         .publicKey;
       const outputBlindingData = outputsBlindingData[indexInArray];
       // commitments
@@ -1236,7 +1236,7 @@ function hasSigs(neededSigs, partialSig, pubkeys) {
   if (pubkeys) {
     sigs = pubkeys
       .map(pkey => {
-        const pubkey = (0, ecpair_1.fromPublicKey)(pkey, { compressed: true })
+        const pubkey = ecpair_1.ECPair.fromPublicKey(pkey, { compressed: true })
           .publicKey;
         return partialSig.find(pSig => pSig.pubkey.equals(pubkey));
       })

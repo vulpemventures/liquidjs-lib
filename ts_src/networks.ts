@@ -1,20 +1,11 @@
+import { Network as BitcoinJSNetwork } from 'ecpair/src/networks';
+
 // https://en.bitcoin.it/wiki/List_of_address_prefixes
 // Dogecoin BIP32 is a proposed standard: https://bitcointalk.org/index.php?topic=409731
-export interface Network {
-  messagePrefix: string;
-  bech32: string;
+export interface Network extends BitcoinJSNetwork {
   blech32: string;
-  bip32: Bip32;
-  pubKeyHash: number;
-  scriptHash: number;
-  wif: number;
   assetHash: string;
   confidentialPrefix: number;
-}
-
-interface Bip32 {
-  public: number;
-  private: number;
 }
 
 export const liquid: Network = {
