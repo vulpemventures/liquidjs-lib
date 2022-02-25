@@ -131,14 +131,14 @@ class BufferWriter {
     vector.forEach(buf => this.writeVarSlice(buf));
   }
   writeConfidentialInFields(input) {
-    this.writeVarSlice(input.issuanceRangeProof);
-    this.writeVarSlice(input.inflationRangeProof);
+    this.writeVarSlice(input.issuanceRangeProof || Buffer.alloc(1));
+    this.writeVarSlice(input.inflationRangeProof || Buffer.alloc(1));
     this.writeVector(input.witness);
-    this.writeVector(input.peginWitness);
+    this.writeVector(input.peginWitness || []);
   }
   writeConfidentialOutFields(output) {
-    this.writeVarSlice(output.surjectionProof);
-    this.writeVarSlice(output.rangeProof);
+    this.writeVarSlice(output.surjectionProof || Buffer.alloc(1));
+    this.writeVarSlice(output.rangeProof || Buffer.alloc(1));
   }
   end() {
     if (this.buffer.length === this.offset) {
@@ -249,6 +249,7 @@ class BufferReader {
   }
   readConfidentialInFields() {
     const issuanceRangeProof = this.readVarSlice();
+    console.log('issuanceRangeProof', issuanceRangeProof);
     const inflationRangeProof = this.readVarSlice();
     const witness = this.readVector();
     const peginWitness = this.readVector();

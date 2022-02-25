@@ -587,7 +587,7 @@ export class Psbt {
 
   validateSignaturesOfInput(
     inputIndex: number,
-    validator: ValidateSigFunction,
+    validator: ValidateSigFunction = (pubkey, msghash, signature) => ECPair.fromPublicKey(pubkey).verify(msghash, signature),
     pubkey?: Buffer,
   ): boolean {
     const input = this.data.inputs[inputIndex];

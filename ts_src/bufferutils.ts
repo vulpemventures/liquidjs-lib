@@ -1,6 +1,7 @@
 import * as types from './types';
 const { typeforce } = types;
 import * as varuint from 'varuint-bitcoin';
+import { Input, Output } from './transaction';
 export { varuint };
 
 const CONFIDENTIAL_COMMITMENT = 33; // default size of confidential commitments (i.e. asset, value, nonce)
@@ -107,16 +108,18 @@ export class BufferWriter {
     vector.forEach((buf: Buffer) => this.writeVarSlice(buf));
   }
 
-  writeConfidentialInFields(input: any): void {
-    this.writeVarSlice(input.issuanceRangeProof);
-    this.writeVarSlice(input.inflationRangeProof);
+  writeConfidentialInFields(input: Input): void {
+    this.writeVarSlice(input.issuanceRangeProof || Buffer.alloc(0));
+    this.writeVarSlice(input.inflationRangeProof || Buffer.alloc(0));
     this.writeVector(input.witness);
-    this.writeVector(input.peginWitness);
+    if (input.peginWitness && input.peginWitness.length > 0) {
+      this.writeVector(input.peginWitness);
+    }
   }
 
-  writeConfidentialOutFields(output: any): void {
-    this.writeVarSlice(output.surjectionProof);
-    this.writeVarSlice(output.rangeProof);
+  writeConfidentialOutFields(output: Output): void {
+    this.writeVarSlice(output.surjectionProof || Buffer.alloc(0));
+    this.writeVarSlice(output.rangeProof || Buffer.alloc(0));
   }
 
   end(): Buffer {

@@ -83,10 +83,8 @@ class Transaction {
     const tx = new Transaction();
     tx.version = bufferReader.readInt32();
     tx.flag = bufferReader.readUInt8();
-    let hasWitnesses = false;
-    if (tx.flag & Transaction.ADVANCED_TRANSACTION_FLAG) {
-      hasWitnesses = true;
-    }
+    const hasWitnesses = tx.flag & Transaction.ADVANCED_TRANSACTION_FLAG;
+    console.log(hasWitnesses, 'hasWitnesses');
     const vinLen = bufferReader.readVarInt();
     for (let i = 0; i < vinLen; ++i) {
       const inHash = bufferReader.readSlice(32);
@@ -132,7 +130,6 @@ class Transaction {
         surjectionProof: EMPTY_BUFFER,
       });
     }
-    //tx.locktime = bufferReader.readUInt32();
     if (hasWitnesses) {
       for (let i = 0; i < vinLen; ++i) {
         const {
@@ -245,24 +242,13 @@ class Transaction {
       }) - 1
     );
   }
-  addOutput(
-    scriptPubKey,
-    value,
-    asset,
-    nonce = EMPTY_BUFFER,
-    rangeProof,
-    surjectionProof,
-  ) {
+  addOutput(scriptPubKey, value, asset, nonce, rangeProof, surjectionProof) {
     typeforce(
       types.tuple(
         types.Buffer,
-        types.oneOf(
-          types.ConfidentialValue,
-          types.ConfidentialCommitment,
-          types.BufferOne,
-        ),
+        types.oneOf(types.ConfidentialValue, types.ConfidentialCommitment),
         types.AssetBufferWithFlag,
-        types.oneOf(types.ConfidentialCommitment, EMPTY_BUFFER),
+        types.maybe(types.ConfidentialCommitment),
         types.maybe(types.Buffer),
         types.maybe(types.Buffer),
       ),
@@ -274,7 +260,7 @@ class Transaction {
         script: scriptPubKey,
         value,
         asset,
-        nonce,
+        nonce: nonce || EMPTY_BUFFER,
         rangeProof: rangeProof || EMPTY_BUFFER,
         surjectionProof: surjectionProof || EMPTY_BUFFER,
       }) - 1
@@ -514,7 +500,7 @@ class Transaction {
     // elements implementation:
     // https://github.com/ElementsProject/elements/pull/1002/files#diff-a0337ffd7259e8c7c9a7786d6dbd420c80abfa1afdb34ebae3261109d9ae3c19L1915
     const sigMsgSize =
-      174 -
+      78 -
       (isAnyoneCanPay ? 49 : 0) -
       (isNone ? 32 : 0) +
       (annex ? 32 : 0) +
@@ -882,7 +868,6 @@ class Transaction {
       if (forSignature && hasWitnesses) bufferWriter.writeUInt64(0);
       bufferWriter.writeVarSlice(txOut.script);
     });
-    bufferWriter.writeUInt32(this.locktime);
     if (!forSignature && hasWitnesses) {
       this.ins.forEach(input => {
         bufferWriter.writeConfidentialInFields(input);
@@ -891,6 +876,7 @@ class Transaction {
         bufferWriter.writeConfidentialOutFields(output);
       });
     }
+    bufferWriter.writeUInt32(this.locktime);
     // avoid slicing unless necessary
     if (initialOffset !== undefined)
       return buffer.slice(initialOffset, bufferWriter.offset);
@@ -955,7 +941,7 @@ function getInputFlag(input) {
   );
 }
 function getOutpointFlagsSHA256(ins) {
-  const bufferWriter = bufferutils_1.BufferWriter.withCapacity(ins.length * 8);
+  const bufferWriter = bufferutils_1.BufferWriter.withCapacity(ins.length);
   for (const input of ins) {
     bufferWriter.writeUInt8(getInputFlag(input));
   }

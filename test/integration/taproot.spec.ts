@@ -1,46 +1,40 @@
-import BIP32Factory from 'bip32';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'mocha';
-import * as bitcoin from '../..';
-import { regtestUtils } from './_regtest';
-const rng = require('randombytes');
-const regtest = regtestUtils.network;
-const bip32 = BIP32Factory(ecc);
+import { ECPair, networks, AssetHash, address as addr, crypto, Transaction } from '../../ts_src';
+import { broadcast } from './_regtest';
+import { satoshiToConfidentialValue } from '../../ts_src/confidential';
+const net = networks.testnet;
 
 describe('bitcoinjs-lib (transaction with taproot)', () => {
   it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
-    const myKey = bip32.fromSeed(rng(64), regtest);
-
+    const myKey = ECPair.fromWIF("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn");
     const output = createKeySpendOutput(myKey.publicKey);
-    const address = bitcoin.address.fromOutputScript(output, regtest);
+    const address = addr.fromOutputScript(output, net);
+    // console.log(address)
+
     // amount from faucet
-    const amount = 42e4;
+    const amount = 1_0000_0000;
     // amount to send
-    const sendAmount = amount - 1e4;
+    const sendAmount = amount - 1000;
     // get faucet
-    const unspent = await regtestUtils.faucetComplex(output, amount);
+    // const unspent = await faucet(address);
 
     const tx = createSigned(
       myKey,
-      unspent.txId,
-      unspent.vout,
+      "01ca82d3e6a9dce06a3f464ef74e90c9d3a2ff260aa76e9f309227d317a06878",
+      0,
       sendAmount,
       [output],
-      [amount],
+      [{ asset: AssetHash.fromHex(net.assetHash, false).bytes, value: satoshiToConfidentialValue(amount) }],
     );
 
     const hex = tx.toHex();
-    // console.log('Valid tx sent from:');
-    // console.log(address);
-    // console.log('tx hex:');
-    // console.log(hex);
-    await regtestUtils.broadcast(hex);
-    await regtestUtils.verify({
-      txId: tx.getId(),
-      address,
-      vout: 0,
-      value: sendAmount,
-    });
+    console.log('Valid tx sent from:');
+    console.log(address);
+    console.log('tx hex:');
+    console.log(hex);
+    throw new Error('failed');
+    await broadcast(hex, true);
   });
 });
 
@@ -60,7 +54,7 @@ const ONE = Buffer.from(
 function createKeySpendOutput(publicKey: Buffer): Buffer {
   // x-only pubkey (remove 1 byte y parity)
   const myXOnlyPubkey = publicKey.slice(1, 33);
-  const commitHash = bitcoin.crypto.taggedHash('TapTweak', myXOnlyPubkey);
+  const commitHash = crypto.taggedHash('TapTweak', myXOnlyPubkey);
   const tweakResult = ecc.xOnlyPointAddTweak(myXOnlyPubkey, commitHash);
   if (tweakResult === null) throw new Error('Invalid Tweak');
   const { xOnlyPubkey: tweaked } = tweakResult;
@@ -84,7 +78,7 @@ function signTweaked(messageHash: Buffer, key: KeyPair): Uint8Array {
     key.publicKey[0] === 2
       ? key.privateKey
       : ecc.privateAdd(ecc.privateSub(N_LESS_1, key.privateKey!)!, ONE)!;
-  const tweakHash = bitcoin.crypto.taggedHash(
+  const tweakHash = crypto.taggedHash(
     'TapTweak',
     key.publicKey.slice(1, 33),
   );
@@ -100,23 +94,30 @@ function createSigned(
   vout: number,
   amountToSend: number,
   scriptPubkeys: Buffer[],
-  values: number[],
-): bitcoin.Transaction {
-  const tx = new bitcoin.Transaction();
+  values: { asset: Buffer, value: Buffer }[],
+): Transaction {
+  const tx = new Transaction();
   tx.version = 2;
   // Add input
   tx.addInput(Buffer.from(txid, 'hex').reverse(), vout);
   // Add output
-  tx.addOutput(scriptPubkeys[0], amountToSend);
-  const sighash = tx.hashForWitnessV1(
-    0, // which input
-    scriptPubkeys, // All previous outputs of all inputs
-    values, // All previous values of all inputs
-    bitcoin.Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
-  );
-  const signature = Buffer.from(signTweaked(sighash, key));
-  // witness stack for keypath spend is just the signature.
-  // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
-  tx.ins[0].witness = [signature];
-  return tx;
+  const assetHash = AssetHash.fromHex(net.assetHash, false)
+  console.log(assetHash.bytes, assetHash.bytes.length)
+  try {
+    tx.addOutput(scriptPubkeys[0], satoshiToConfidentialValue(amountToSend), assetHash.bytes);
+    const sighash = tx.hashForWitnessV1(
+      0, // which input
+      scriptPubkeys, // All previous outputs of all inputs
+      values, // All previous values of all inputs
+      Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
+    );
+    const signature = Buffer.from(signTweaked(sighash, key));
+    // witness stack for keypath spend is just the signature.
+    // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
+    tx.ins[0].witness = [signature];
+    return tx;
+  } catch (e) {
+    console.error(e)
+    throw e
+  }
 }

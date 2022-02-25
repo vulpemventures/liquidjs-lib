@@ -132,8 +132,7 @@ export class Transaction {
         surjectionProof: EMPTY_BUFFER,
       });
     }
-    //tx.locktime = bufferReader.readUInt32();
-
+    
     if (hasWitnesses) {
       for (let i = 0; i < vinLen; ++i) {
         const {
@@ -280,7 +279,7 @@ export class Transaction {
     scriptPubKey: Buffer,
     value: Buffer,
     asset: Buffer,
-    nonce: Buffer = EMPTY_BUFFER,
+    nonce?: Buffer,
     rangeProof?: Buffer,
     surjectionProof?: Buffer,
   ): number {
@@ -290,10 +289,9 @@ export class Transaction {
         types.oneOf(
           types.ConfidentialValue,
           types.ConfidentialCommitment,
-          types.BufferOne,
         ),
         types.AssetBufferWithFlag,
-        types.oneOf(types.ConfidentialCommitment, EMPTY_BUFFER),
+        types.oneOf(types.ConfidentialCommitment, types.BufferOne),
         types.maybe(types.Buffer),
         types.maybe(types.Buffer),
       ),
@@ -306,7 +304,7 @@ export class Transaction {
         script: scriptPubKey,
         value,
         asset,
-        nonce,
+        nonce: nonce || EMPTY_BUFFER,
         rangeProof: rangeProof || EMPTY_BUFFER,
         surjectionProof: surjectionProof || EMPTY_BUFFER,
       }) - 1
@@ -590,7 +588,7 @@ export class Transaction {
     // elements implementation:
     // https://github.com/ElementsProject/elements/pull/1002/files#diff-a0337ffd7259e8c7c9a7786d6dbd420c80abfa1afdb34ebae3261109d9ae3c19L1915
     const sigMsgSize =
-      174 -
+      78 -
       (isAnyoneCanPay ? 49 : 0) -
       (isNone ? 32 : 0) +
       (annex ? 32 : 0) +
@@ -1003,7 +1001,7 @@ export class Transaction {
       // if we are serializing a confidential output for producing a signature,
       // we must exclude the confidential value from the serialization and
       // use the satoshi 0 value instead, as done for typical bitcoin witness signatures.
-      const val = forSignature && hasWitnesses ? Buffer.alloc(0) : txOut.value;
+      const val = forSignature && hasWitnesses ? Buffer.alloc(1) : txOut.value;
       bufferWriter.writeSlice(txOut.asset);
       bufferWriter.writeSlice(val);
       bufferWriter.writeSlice(txOut.nonce);
@@ -1011,7 +1009,6 @@ export class Transaction {
       bufferWriter.writeVarSlice(txOut.script);
     });
 
-    bufferWriter.writeUInt32(this.locktime);
 
     if (!forSignature && hasWitnesses) {
       this.ins.forEach((input: Input) => {
@@ -1021,6 +1018,8 @@ export class Transaction {
         bufferWriter.writeConfidentialOutFields(output);
       });
     }
+
+    bufferWriter.writeUInt32(this.locktime);
 
     // avoid slicing unless necessary
     if (initialOffset !== undefined)
@@ -1086,7 +1085,7 @@ function getInputFlag(input: Input): number {
 }
 
 function getOutpointFlagsSHA256(ins: Input[]): Buffer {
-  const bufferWriter = BufferWriter.withCapacity(ins.length * 8);
+  const bufferWriter = BufferWriter.withCapacity(ins.length);
 
   for (const input of ins) {
     bufferWriter.writeUInt8(getInputFlag(input));

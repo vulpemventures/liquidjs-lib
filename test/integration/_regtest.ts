@@ -3,6 +3,8 @@ import axios from 'axios';
 const APIURL = process.env.APIURL || 'http://localhost:3001';
 
 export async function faucet(address: string): Promise<any> {
+  try {
+
   const resp = await axios.post(`${APIURL}/faucet`, { address });
   if (resp.status !== 200) {
     throw new Error('Invalid address');
@@ -18,6 +20,10 @@ export async function faucet(address: string): Promise<any> {
   }
 
   return filter()[0];
+  } catch (e) {
+    console.error(e)
+    throw e;
+  }
 }
 
 export async function fetchTx(txId: string): Promise<string> {

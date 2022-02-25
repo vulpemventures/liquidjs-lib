@@ -60,6 +60,7 @@ exports.script = script;
 const issuance = __importStar(require('./issuance'));
 exports.issuance = issuance;
 __exportStar(require('./ecpair'), exports);
+__exportStar(require('./asset'), exports);
 var block_1 = require('./block');
 Object.defineProperty(exports, 'Block', {
   enumerable: true,

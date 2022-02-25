@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import * as varuint from 'varuint-bitcoin';
+import { Input, Output } from './transaction';
 export { varuint };
 export declare function readUInt64LE(buffer: Buffer, offset: number): number;
 export declare function writeUInt64LE(buffer: Buffer, value: number, offset: number): number;
@@ -21,8 +22,8 @@ export declare class BufferWriter {
     writeSlice(slice: Buffer): void;
     writeVarSlice(slice: Buffer): void;
     writeVector(vector: Buffer[]): void;
-    writeConfidentialInFields(input: any): void;
-    writeConfidentialOutFields(output: any): void;
+    writeConfidentialInFields(input: Input): void;
+    writeConfidentialOutFields(output: Output): void;
     end(): Buffer;
 }
 /**
