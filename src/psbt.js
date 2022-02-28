@@ -492,7 +492,12 @@ class Psbt {
     );
     return results.reduce((final, res) => res === true && final, true);
   }
-  validateSignaturesOfInput(inputIndex, validator, pubkey) {
+  validateSignaturesOfInput(
+    inputIndex,
+    validator = (pubkey, msghash, signature) =>
+      ecpair_1.ECPair.fromPublicKey(pubkey).verify(msghash, signature),
+    pubkey,
+  ) {
     const input = this.data.inputs[inputIndex];
     const partialSig = (input || {}).partialSig;
     if (!input || !partialSig || partialSig.length < 1)

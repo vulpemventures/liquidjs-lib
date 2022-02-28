@@ -37,7 +37,7 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Transaction = exports.ZERO = void 0;
+exports.Transaction = exports.LiquidGenesisBlockHash = exports.TestnetGenesisBlockHash = exports.RegtestGenesisBlockHash = exports.ZERO = void 0;
 const bufferutils_1 = require('./bufferutils');
 const bcrypto = __importStar(require('./crypto'));
 const bscript = __importStar(require('./script'));
@@ -70,6 +70,16 @@ const BLANK_OUTPUT = {
   nonce: exports.ZERO,
   valueBuffer: VALUE_UINT64_MAX,
 };
+const strToGenesisHash = str => Buffer.from(str, 'hex').reverse();
+exports.RegtestGenesisBlockHash = strToGenesisHash(
+  '00902a6b70c2ca83b5d9c815d96a0e2f4202179316970d14ea1847dae5b1ca21',
+);
+exports.TestnetGenesisBlockHash = strToGenesisHash(
+  'a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1',
+);
+exports.LiquidGenesisBlockHash = strToGenesisHash(
+  '1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003',
+);
 class Transaction {
   constructor() {
     this.version = 1;
@@ -83,7 +93,10 @@ class Transaction {
     const tx = new Transaction();
     tx.version = bufferReader.readInt32();
     tx.flag = bufferReader.readUInt8();
-    const hasWitnesses = tx.flag & Transaction.ADVANCED_TRANSACTION_FLAG;
+    let hasWitnesses = false;
+    if (tx.flag & Transaction.ADVANCED_TRANSACTION_FLAG) {
+      hasWitnesses = true;
+    }
     const vinLen = bufferReader.readVarInt();
     for (let i = 0; i < vinLen; ++i) {
       const inHash = bufferReader.readSlice(32);
@@ -129,6 +142,7 @@ class Transaction {
         surjectionProof: EMPTY_BUFFER,
       });
     }
+    tx.locktime = bufferReader.readUInt32();
     if (hasWitnesses) {
       for (let i = 0; i < vinLen; ++i) {
         const {
@@ -151,7 +165,6 @@ class Transaction {
         tx.outs[i].surjectionProof = surjectionProof;
       }
     }
-    tx.locktime = bufferReader.readUInt32();
     if (_NO_STRICT) return tx;
     if (bufferReader.offset !== buffer.length)
       throw new Error('Transaction has unexpected data');
@@ -247,7 +260,7 @@ class Transaction {
         types.Buffer,
         types.oneOf(types.ConfidentialValue, types.ConfidentialCommitment),
         types.AssetBufferWithFlag,
-        types.maybe(types.ConfidentialCommitment),
+        types.oneOf(types.ConfidentialCommitment, types.BufferOne),
         types.maybe(types.Buffer),
         types.maybe(types.Buffer),
       ),
@@ -384,27 +397,25 @@ class Transaction {
     txTmp.__toBuffer(buffer, 0, false, true, true);
     return bcrypto.hash256(buffer);
   }
+  // differs from bitcoin core
+  // https://github.com/ElementsProject/elements/blob/84b3f7b0045b50a585d60e56e77e8914b6cf6040/doc/taproot-sighash.mediawiki
   hashForWitnessV1(
     inIndex,
-    prevOutScripts,
     prevoutAssetsValues,
     hashType,
+    genesisBlockHash,
     leafHash,
     annex,
   ) {
-    // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#common-signature-message
     typeforce(
       types.tuple(
         types.UInt32,
-        typeforce.arrayOf(types.Buffer),
         typeforce.arrayOf(types.Object),
         types.UInt32,
+        types.Buffer256bit,
       ),
       arguments,
     );
-    if (prevOutScripts.length !== this.ins.length) {
-      throw new Error('Must supply prevout script and value for all inputs');
-    }
     const outputType =
       hashType === Transaction.SIGHASH_DEFAULT
         ? Transaction.SIGHASH_ALL
@@ -427,12 +438,23 @@ class Transaction {
     );
     if (!isAnyoneCanPay) {
       // Inputs
+      // outpoints sha256 (hashPrevouts)
       let bufferWriter = bufferutils_1.BufferWriter.withCapacity(
-        prevOutScripts.map(varSliceSize).reduce((a, b) => a + b),
+        this.ins.length * (32 + 4),
       );
-      prevOutScripts.forEach(prevOutScript =>
-        bufferWriter.writeVarSlice(prevOutScript),
+      for (const i of this.ins) {
+        bufferWriter.writeSlice(i.hash);
+        bufferWriter.writeUInt32(i.index);
+      }
+      hashPrevouts = bcrypto.sha256(bufferWriter.end());
+      // scripts sha256 (hashScriptPubKeys)
+      bufferWriter = bufferutils_1.BufferWriter.withCapacity(
+        this.ins
+          .map(({ script }) => script)
+          .map(varSliceSize)
+          .reduce((a, b) => a + b),
       );
+      this.ins.forEach(({ script }) => bufferWriter.writeVarSlice(script));
       hashScriptPubKeys = bcrypto.sha256(bufferWriter.end());
       // Sequences
       bufferWriter = bufferutils_1.BufferWriter.withCapacity(
@@ -493,23 +515,35 @@ class Transaction {
     }
     const spendType = (leafHash ? 2 : 0) + (annex ? 1 : 0);
     // Length calculation from:
-    // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#cite_note-14
-    // With extension from:
-    // https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki#signature-validation
-    // elements implementation:
-    // https://github.com/ElementsProject/elements/pull/1002/files#diff-a0337ffd7259e8c7c9a7786d6dbd420c80abfa1afdb34ebae3261109d9ae3c19L1915
+    // https://github.com/ElementsProject/elements/blob/84b3f7b0045b50a585d60e56e77e8914b6cf6040/doc/taproot-sighash.mediawiki
+    const inputPartSize = isAnyoneCanPay
+      ? 1 +
+        32 +
+        4 +
+        32 +
+        32 +
+        varSliceSize(this.ins[inIndex].script) +
+        4 +
+        (this.ins[inIndex].issuance ? 32 * 4 + 32 : 1)
+      : 4;
+    const fullMsgSize = 32 * 2 + 1 + 4 + 4 + 1 + inputPartSize;
     const sigMsgSize =
-      78 -
-      (isAnyoneCanPay ? 49 : 0) -
-      (isNone ? 32 : 0) +
+      fullMsgSize +
+      (!isAnyoneCanPay ? 7 * 32 : 0) +
+      (!(isNone || isSingle) ? 32 + 32 : 0) +
       (annex ? 32 : 0) +
+      (isSingle ? 32 : 0) +
       (leafHash ? 37 : 0);
     const sigMsgWriter = bufferutils_1.BufferWriter.withCapacity(sigMsgSize);
+    // this is "blockchain rationale", only used in elements
+    // it prevents signatures to be reused accront different Elements instance
+    sigMsgWriter.writeSlice(genesisBlockHash);
+    sigMsgWriter.writeSlice(genesisBlockHash);
     sigMsgWriter.writeUInt8(hashType);
     // Transaction
     sigMsgWriter.writeInt32(this.version);
     sigMsgWriter.writeUInt32(this.locktime);
-    if (isAnyoneCanPay) {
+    if (!isAnyoneCanPay) {
       sigMsgWriter.writeSlice(hashOutpointsFlags);
       sigMsgWriter.writeSlice(hashPrevouts);
       sigMsgWriter.writeSlice(hashSpentAssetsAmounts);
@@ -531,7 +565,7 @@ class Transaction {
       sigMsgWriter.writeUInt32(input.index);
       sigMsgWriter.writeSlice(prevoutAssetsValues[inIndex].asset);
       sigMsgWriter.writeSlice(prevoutAssetsValues[inIndex].value);
-      sigMsgWriter.writeVarSlice(prevOutScripts[inIndex]);
+      sigMsgWriter.writeVarSlice(this.ins[inIndex].script);
       sigMsgWriter.writeUInt32(input.sequence);
       if (input.issuance) {
         sigMsgWriter.writeSlice(input.issuance.assetBlindingNonce);
@@ -542,12 +576,8 @@ class Transaction {
           varSliceSize(input.issuanceRangeProof) +
             varSliceSize(input.inflationRangeProof),
         );
-        if (input.issuanceRangeProof) {
-          bufferWriter.writeVarSlice(input.issuanceRangeProof);
-        }
-        if (input.inflationRangeProof) {
-          bufferWriter.writeVarSlice(input.inflationRangeProof);
-        }
+        bufferWriter.writeVarSlice(input.issuanceRangeProof);
+        bufferWriter.writeVarSlice(input.inflationRangeProof);
         const hashIssuance = bcrypto.sha256(bufferWriter.end());
         sigMsgWriter.writeSlice(hashIssuance);
       } else {
@@ -573,11 +603,12 @@ class Transaction {
       sigMsgWriter.writeUInt8(0);
       sigMsgWriter.writeUInt32(0xffffffff);
     }
+    console.log('length', sigMsgWriter.buffer.length);
     // Extra zero byte because:
     // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#cite_note-19
     return bcrypto.taggedHash(
       'TapSighash/elements',
-      Buffer.concat([Buffer.of(0x00), sigMsgWriter.end()]),
+      bcrypto.sha256(sigMsgWriter.end()),
     );
   }
   hashForWitnessV0(inIndex, prevOutScript, value, hashType) {
@@ -860,13 +891,14 @@ class Transaction {
       // if we are serializing a confidential output for producing a signature,
       // we must exclude the confidential value from the serialization and
       // use the satoshi 0 value instead, as done for typical bitcoin witness signatures.
-      const val = forSignature && hasWitnesses ? Buffer.alloc(0) : txOut.value;
+      const val = forSignature && hasWitnesses ? Buffer.alloc(1) : txOut.value;
       bufferWriter.writeSlice(txOut.asset);
       bufferWriter.writeSlice(val);
       bufferWriter.writeSlice(txOut.nonce);
       if (forSignature && hasWitnesses) bufferWriter.writeUInt64(0);
       bufferWriter.writeVarSlice(txOut.script);
     });
+    bufferWriter.writeUInt32(this.locktime);
     if (!forSignature && hasWitnesses) {
       this.ins.forEach(input => {
         bufferWriter.writeConfidentialInFields(input);
@@ -875,7 +907,6 @@ class Transaction {
         bufferWriter.writeConfidentialOutFields(output);
       });
     }
-    bufferWriter.writeUInt32(this.locktime);
     // avoid slicing unless necessary
     if (initialOffset !== undefined)
       return buffer.slice(initialOffset, bufferWriter.offset);
@@ -908,15 +939,13 @@ function getOutputWitnessesSHA256(outs) {
 }
 function getIssuanceRangeProofsSHA256(ins) {
   const inProofsSize = i =>
-    varSliceSize(i.issuanceRangeProof || Buffer.alloc(0)) +
-    varSliceSize(i.inflationRangeProof || Buffer.alloc(0));
+    varSliceSize(i.issuanceRangeProof || Buffer.alloc(1)) +
+    varSliceSize(i.inflationRangeProof || Buffer.alloc(1));
   const size = ins.reduce((sum, i) => sum + inProofsSize(i), 0);
   const bufferWriter = bufferutils_1.BufferWriter.withCapacity(size);
   for (const input of ins) {
-    if (input.inflationRangeProof && input.issuanceRangeProof) {
-      bufferWriter.writeVarSlice(input.issuanceRangeProof);
-      bufferWriter.writeVarSlice(input.inflationRangeProof);
-    }
+    bufferWriter.writeVarSlice(input.issuanceRangeProof);
+    bufferWriter.writeVarSlice(input.inflationRangeProof);
   }
   return bcrypto.sha256(bufferWriter.end());
 }

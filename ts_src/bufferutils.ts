@@ -98,7 +98,7 @@ export class BufferWriter {
     this.offset += slice.copy(this.buffer, this.offset);
   }
 
-  writeVarSlice(slice: Buffer): void {
+  writeVarSlice(slice: Buffer = Buffer.alloc(1)): void {
     this.writeVarInt(slice.length);
     this.writeSlice(slice);
   }

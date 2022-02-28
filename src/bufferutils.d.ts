@@ -20,7 +20,7 @@ export declare class BufferWriter {
     writeUInt64(i: number): void;
     writeVarInt(i: number): void;
     writeSlice(slice: Buffer): void;
-    writeVarSlice(slice: Buffer): void;
+    writeVarSlice(slice?: Buffer): void;
     writeVector(vector: Buffer[]): void;
     writeConfidentialInFields(input: Input): void;
     writeConfidentialOutFields(output: Output): void;

@@ -44,7 +44,7 @@ var __exportStar =
         __createBinding(exports, m, p);
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Transaction = exports.opcodes = exports.Psbt = exports.Block = exports.issuance = exports.confidential = exports.script = exports.payments = exports.networks = exports.crypto = exports.address = void 0;
+exports.Transaction = exports.opcodes = exports.Psbt = exports.issuance = exports.confidential = exports.script = exports.payments = exports.networks = exports.crypto = exports.address = void 0;
 const address = __importStar(require('./address'));
 exports.address = address;
 const confidential = __importStar(require('./confidential'));
@@ -61,13 +61,6 @@ const issuance = __importStar(require('./issuance'));
 exports.issuance = issuance;
 __exportStar(require('./ecpair'), exports);
 __exportStar(require('./asset'), exports);
-var block_1 = require('./block');
-Object.defineProperty(exports, 'Block', {
-  enumerable: true,
-  get: function() {
-    return block_1.Block;
-  },
-});
 var psbt_1 = require('./psbt');
 Object.defineProperty(exports, 'Psbt', {
   enumerable: true,

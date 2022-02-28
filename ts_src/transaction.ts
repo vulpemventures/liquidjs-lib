@@ -61,6 +61,12 @@ export interface Input {
   inflationRangeProof?: Buffer;
 }
 
+export type GenesisBlockHash = Buffer;
+const strToGenesisHash = (str: string): GenesisBlockHash => Buffer.from(str, 'hex').reverse();
+export const RegtestGenesisBlockHash = strToGenesisHash('00902a6b70c2ca83b5d9c815d96a0e2f4202179316970d14ea1847dae5b1ca21');
+export const TestnetGenesisBlockHash = strToGenesisHash('a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1');
+export const LiquidGenesisBlockHash = strToGenesisHash('1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003');
+
 export class Transaction {
   static readonly DEFAULT_SEQUENCE = 0xffffffff;
   static readonly SIGHASH_DEFAULT = 0x00;
@@ -460,15 +466,17 @@ export class Transaction {
     return bcrypto.hash256(buffer);
   }
 
+  // differs from bitcoin core
+  // https://github.com/ElementsProject/elements/blob/84b3f7b0045b50a585d60e56e77e8914b6cf6040/doc/taproot-sighash.mediawiki
   hashForWitnessV1(
     inIndex: number,
     prevOutScripts: Buffer[],
     prevoutAssetsValues: { asset: Buffer; value: Buffer }[],
     hashType: number,
+    genesisBlockHash: GenesisBlockHash,
     leafHash?: Buffer,
     annex?: Buffer,
   ): Buffer {
-    // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#common-signature-message
     typeforce(
       types.tuple(
         types.UInt32,
@@ -515,7 +523,7 @@ export class Transaction {
         bufferWriter.writeSlice(i.hash);
         bufferWriter.writeUInt32(i.index);
       }
-      hashPrevouts = bcrypto.hash256(bufferWriter.end());
+      hashPrevouts = bcrypto.sha256(bufferWriter.end());
 
       // scripts sha256 (hashScriptPubKeys)
       bufferWriter = BufferWriter.withCapacity(
@@ -591,13 +599,9 @@ export class Transaction {
     const spendType = (leafHash ? 2 : 0) + (annex ? 1 : 0);
 
     // Length calculation from:
-    // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#cite_note-14
-    // With extension from:
-    // https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki#signature-validation
-    // elements implementation:
-    // https://github.com/ElementsProject/elements/pull/1002/files#diff-a0337ffd7259e8c7c9a7786d6dbd420c80abfa1afdb34ebae3261109d9ae3c19L1915
+    // https://github.com/ElementsProject/elements/blob/84b3f7b0045b50a585d60e56e77e8914b6cf6040/doc/taproot-sighash.mediawiki
     const inputPartSize = isAnyoneCanPay ? 1 + 32 + 4 + 32 + 32 + varSliceSize(prevOutScripts[inIndex]) + 4 + (this.ins[inIndex].issuance ? 32 * 4 + 32 : 1) : 4;
-    const fullMsgSize = 1 + 4 + 4 + 1 + inputPartSize
+    const fullMsgSize = 32 * 2 + 1 + 4 + 4 + 1 + inputPartSize
     const sigMsgSize =
       fullMsgSize +
       (!isAnyoneCanPay ? 7*32 : 0) +
@@ -607,6 +611,11 @@ export class Transaction {
       (leafHash ? 37 : 0);
 
     const sigMsgWriter = BufferWriter.withCapacity(sigMsgSize);
+
+    // this is "blockchain rationale", only used in elements
+    // it prevents signatures to be reused accront different Elements instance
+    sigMsgWriter.writeSlice(genesisBlockHash);
+    sigMsgWriter.writeSlice(genesisBlockHash);
 
     sigMsgWriter.writeUInt8(hashType);
     // Transaction
@@ -647,8 +656,8 @@ export class Transaction {
           varSliceSize(input.issuanceRangeProof!) +
           varSliceSize(input.inflationRangeProof!),
         );
-        bufferWriter.writeVarSlice(input.issuanceRangeProof || Buffer.alloc(1));
-        bufferWriter.writeVarSlice(input.inflationRangeProof || Buffer.alloc(1));
+        bufferWriter.writeVarSlice(input.issuanceRangeProof);
+        bufferWriter.writeVarSlice(input.inflationRangeProof);
 
         const hashIssuance = bcrypto.sha256(bufferWriter.end());
         sigMsgWriter.writeSlice(hashIssuance);
@@ -674,11 +683,13 @@ export class Transaction {
       sigMsgWriter.writeUInt32(0xffffffff);
     }
 
+    console.log('length', sigMsgWriter.buffer.length);
+
     // Extra zero byte because:
     // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#cite_note-19
     return bcrypto.taggedHash(
       'TapSighash/elements',
-      Buffer.concat([Buffer.of(0x00), sigMsgWriter.end()]),
+       sigMsgWriter.end(),
     );
   }
 
@@ -1043,26 +1054,22 @@ function getOutputWitnessesSHA256(outs: Output[]): Buffer {
   const size = outs.reduce((sum, o) => sum + outProofsSize(o), 0);
   const bufferWriter = BufferWriter.withCapacity(size);
   for (const out of outs) {
-    if (out.surjectionProof && out.rangeProof) {
-      bufferWriter.writeVarSlice(out.rangeProof);
-      bufferWriter.writeVarSlice(out.surjectionProof);
-    }
+    bufferWriter.writeVarSlice(out.rangeProof);
+    bufferWriter.writeVarSlice(out.surjectionProof);
   }
   return bcrypto.sha256(bufferWriter.end());
 }
 
 function getIssuanceRangeProofsSHA256(ins: Input[]): Buffer {
   const inProofsSize = (i: Input) =>
-    varSliceSize(i.issuanceRangeProof || Buffer.alloc(0)) +
-    varSliceSize(i.inflationRangeProof || Buffer.alloc(0));
+    varSliceSize(i.issuanceRangeProof || Buffer.alloc(1)) +
+    varSliceSize(i.inflationRangeProof || Buffer.alloc(1));
   const size = ins.reduce((sum, i) => sum + inProofsSize(i), 0);
   const bufferWriter = BufferWriter.withCapacity(size);
 
   for (const input of ins) {
-    if (input.inflationRangeProof && input.issuanceRangeProof) {
-      bufferWriter.writeVarSlice(input.issuanceRangeProof);
-      bufferWriter.writeVarSlice(input.inflationRangeProof);
-    }
+    bufferWriter.writeVarSlice(input.issuanceRangeProof);
+    bufferWriter.writeVarSlice(input.inflationRangeProof);
   }
 
   return bcrypto.sha256(bufferWriter.end());

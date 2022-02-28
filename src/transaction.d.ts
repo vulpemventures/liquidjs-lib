@@ -21,6 +21,10 @@ export interface Input {
     issuanceRangeProof?: Buffer;
     inflationRangeProof?: Buffer;
 }
+export declare type GenesisBlockHash = Buffer;
+export declare const RegtestGenesisBlockHash: Buffer;
+export declare const TestnetGenesisBlockHash: Buffer;
+export declare const LiquidGenesisBlockHash: Buffer;
 export declare class Transaction {
     static readonly DEFAULT_SEQUENCE = 4294967295;
     static readonly SIGHASH_DEFAULT = 0;
@@ -42,7 +46,7 @@ export declare class Transaction {
     isCoinbase(): boolean;
     validateIssuance(assetBlindingNonce: Buffer, assetEntropy: Buffer, assetAmount: Buffer, tokenAmount: Buffer): boolean;
     addInput(hash: Buffer, index: number, sequence?: number, scriptSig?: Buffer, issuance?: Issuance): number;
-    addOutput(scriptPubKey: Buffer, value: Buffer, asset: Buffer, nonce?: Buffer, rangeProof?: Buffer, surjectionProof?: Buffer): number;
+    addOutput(scriptPubKey: Buffer, value: Buffer, asset: Buffer, nonce: Buffer, rangeProof?: Buffer, surjectionProof?: Buffer): number;
     hasWitnesses(): boolean;
     weight(): number;
     virtualSize(): number;
@@ -57,10 +61,10 @@ export declare class Transaction {
      * This hash can then be used to sign the provided transaction input.
      */
     hashForSignature(inIndex: number, prevOutScript: Buffer, hashType: number): Buffer;
-    hashForWitnessV1(inIndex: number, prevOutScripts: Buffer[], prevoutAssetsValues: {
+    hashForWitnessV1(inIndex: number, prevoutAssetsValues: {
         asset: Buffer;
         value: Buffer;
-    }[], hashType: number, leafHash?: Buffer, annex?: Buffer): Buffer;
+    }[], hashType: number, genesisBlockHash: GenesisBlockHash, leafHash?: Buffer, annex?: Buffer): Buffer;
     hashForWitnessV0(inIndex: number, prevOutScript: Buffer, value: Buffer, hashType: number): Buffer;
     getHash(forWitness?: boolean): Buffer;
     getId(): string;

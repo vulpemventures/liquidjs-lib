@@ -1,21 +1,23 @@
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'mocha';
-import { ECPair, networks, AssetHash, address as addr, crypto, Transaction } from '../../ts_src';
+import { ECPair, networks, AssetHash, address as addr, crypto, Transaction, payments, address } from '../../ts_src';
 import { broadcast, TESTNET_APIURL } from './_regtest';
 import { confidentialValueToSatoshi, satoshiToConfidentialValue } from '../../ts_src/confidential';
+import { TestnetGenesisBlockHash } from '../../ts_src/transaction';
 const net = networks.testnet;
 
 describe('bitcoinjs-lib (transaction with taproot)', () => {
   it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
     const myKey = ECPair.fromWIF("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn");
+    const changeAddress = payments.p2pkh({ pubkey: myKey.publicKey, network: net }).address;
     const output = createKeySpendOutput(myKey.publicKey);
     const address = addr.fromOutputScript(output, net);
-    // console.log(address)
+    console.log(address)
 
     // amount from faucet
-    const amount = 1_0000_0;
+    const amount = 1_00000;
     // amount to send
-    const sendAmount = amount - 1000;
+    const sendAmount = amount - 10000;
     // get faucet
     // const unspent = await faucet(address);
 
@@ -26,6 +28,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
       sendAmount,
       [output],
       [{ asset: AssetHash.fromHex(net.assetHash, false).bytes, value: satoshiToConfidentialValue(amount) }],
+      changeAddress!
     );
 
     const hex = tx.toHex();
@@ -54,7 +57,7 @@ const ONE = Buffer.from(
 function createKeySpendOutput(publicKey: Buffer): Buffer {
   // x-only pubkey (remove 1 byte y parity)
   const myXOnlyPubkey = publicKey.slice(1, 33);
-  const commitHash = crypto.taggedHash('TapTweak', myXOnlyPubkey);
+  const commitHash = crypto.taggedHash('TapTweak/elements', myXOnlyPubkey);
   const tweakResult = ecc.xOnlyPointAddTweak(myXOnlyPubkey, commitHash);
   if (tweakResult === null) throw new Error('Invalid Tweak');
   const { xOnlyPubkey: tweaked } = tweakResult;
@@ -73,13 +76,14 @@ interface KeyPair {
   publicKey: Buffer;
   privateKey?: Buffer;
 }
+
 function signTweaked(messageHash: Buffer, key: KeyPair): Uint8Array {
   const privateKey =
     key.publicKey[0] === 2
       ? key.privateKey
       : ecc.privateAdd(ecc.privateSub(N_LESS_1, key.privateKey!)!, ONE)!;
   const tweakHash = crypto.taggedHash(
-    'TapTweak',
+    'TapTweak/elements',
     key.publicKey.slice(1, 33),
   );
   const newPrivateKey = ecc.privateAdd(privateKey!, tweakHash);
@@ -95,6 +99,7 @@ function createSigned(
   amountToSend: number,
   scriptPubkeys: Buffer[],
   values: { asset: Buffer, value: Buffer }[],
+  changeAddress: string,
 ): Transaction {
   
   const FEES = 500
@@ -109,16 +114,18 @@ function createSigned(
   console.log(assetHash.bytes, assetHash.bytes.length)
   try {
     tx.addOutput(scriptPubkeys[0], satoshiToConfidentialValue(amountToSend), assetHash.bytes, Buffer.alloc(1));
-    tx.addOutput(scriptPubkeys[0], satoshiToConfidentialValue(changeAmount), assetHash.bytes, Buffer.alloc(1));
-    tx.addOutput(Buffer.alloc(0), satoshiToConfidentialValue(500), assetHash.bytes, Buffer.alloc(1));
+    tx.addOutput(address.toOutputScript(changeAddress), satoshiToConfidentialValue(changeAmount), assetHash.bytes, Buffer.alloc(1)); // change
+    tx.addOutput(Buffer.alloc(0), satoshiToConfidentialValue(500), assetHash.bytes, Buffer.alloc(1)); // fees
 
     const sighash = tx.hashForWitnessV1(
       0, // which input
-      scriptPubkeys, // All previous outputs of all inputs
+      scriptPubkeys, // scriptPubkey
       values, // All previous values of all inputs
-      Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
+      Transaction.SIGHASH_ALL, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
+      TestnetGenesisBlockHash, // block hash
     );
     const signature = Buffer.from(signTweaked(sighash, key));
+    console.log(signature)
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
     tx.ins[0].witness = [signature];

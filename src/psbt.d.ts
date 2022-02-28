@@ -112,7 +112,7 @@ export declare class Psbt {
     outputHasPubkey(outputIndex: number, pubkey: Buffer): boolean;
     outputHasHDKey(outputIndex: number, root: HDSigner): boolean;
     validateSignaturesOfAllInputs(validator: ValidateSigFunction): boolean;
-    validateSignaturesOfInput(inputIndex: number, validator: ValidateSigFunction, pubkey?: Buffer): boolean;
+    validateSignaturesOfInput(inputIndex: number, validator?: ValidateSigFunction, pubkey?: Buffer): boolean;
     signAllInputsHD(hdKeyPair: HDSigner, sighashTypes?: number[]): this;
     signAllInputsHDAsync(hdKeyPair: HDSigner | HDSignerAsync, sighashTypes?: number[]): Promise<void>;
     signInputHD(inputIndex: number, hdKeyPair: HDSigner, sighashTypes?: number[]): this;

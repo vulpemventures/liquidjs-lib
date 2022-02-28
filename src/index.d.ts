@@ -8,7 +8,6 @@ import * as issuance from './issuance';
 export * from './ecpair';
 export * from './asset';
 export { address, crypto, networks, payments, script, confidential, issuance };
-export { Block } from './block';
 export { TaggedHashPrefix } from './crypto';
 export { Psbt, PsbtTxInput, PsbtTxOutput, Signer, SignerAsync, HDSigner, HDSignerAsync, } from './psbt';
 export { OPS as opcodes } from './ops';
