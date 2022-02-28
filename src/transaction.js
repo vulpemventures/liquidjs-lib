@@ -84,7 +84,6 @@ class Transaction {
     tx.version = bufferReader.readInt32();
     tx.flag = bufferReader.readUInt8();
     const hasWitnesses = tx.flag & Transaction.ADVANCED_TRANSACTION_FLAG;
-    console.log(hasWitnesses, 'hasWitnesses');
     const vinLen = bufferReader.readVarInt();
     for (let i = 0; i < vinLen; ++i) {
       const inHash = bufferReader.readSlice(32);

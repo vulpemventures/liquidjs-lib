@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const APIURL = process.env.APIURL || 'http://localhost:3001';
+export const TESTNET_APIURL = 'https://blockstream.info/liquidtestnet/api';
 
 export async function faucet(address: string): Promise<any> {
   try {
@@ -39,10 +40,11 @@ export async function fetchUtxo(txId: string): Promise<any> {
 
 export async function broadcast(
   txHex: string,
-  verbose = false,
+  verbose = true,
+  api: string = APIURL,
 ): Promise<string> {
   try {
-    const resp = await axios.get(`${APIURL}/broadcast?tx=${txHex}`);
+    const resp = await axios.get(`${api}/broadcast?tx=${txHex}`);
     return resp.data;
   } catch (e) {
     if (verbose) console.error(e);

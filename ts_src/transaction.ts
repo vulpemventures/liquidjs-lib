@@ -132,7 +132,8 @@ export class Transaction {
         surjectionProof: EMPTY_BUFFER,
       });
     }
-    
+
+    tx.locktime = bufferReader.readUInt32();
     if (hasWitnesses) {
       for (let i = 0; i < vinLen; ++i) {
         const {
@@ -157,7 +158,6 @@ export class Transaction {
       }
     }
 
-    tx.locktime = bufferReader.readUInt32();
 
     if (_NO_STRICT) return tx;
     if (bufferReader.offset !== buffer.length)
@@ -279,7 +279,7 @@ export class Transaction {
     scriptPubKey: Buffer,
     value: Buffer,
     asset: Buffer,
-    nonce?: Buffer,
+    nonce: Buffer,
     rangeProof?: Buffer,
     surjectionProof?: Buffer,
   ): number {
@@ -304,7 +304,7 @@ export class Transaction {
         script: scriptPubKey,
         value,
         asset,
-        nonce: nonce || EMPTY_BUFFER,
+        nonce: nonce || EMPTY_BUFFER,
         rangeProof: rangeProof || EMPTY_BUFFER,
         surjectionProof: surjectionProof || EMPTY_BUFFER,
       }) - 1
@@ -509,7 +509,16 @@ export class Transaction {
 
     if (!isAnyoneCanPay) {
       // Inputs
-      let bufferWriter = BufferWriter.withCapacity(
+      // outpoints sha256 (hashPrevouts)
+      let bufferWriter = BufferWriter.withCapacity(this.ins.length * (32 + 4))
+      for (const i of this.ins) {
+        bufferWriter.writeSlice(i.hash);
+        bufferWriter.writeUInt32(i.index);
+      }
+      hashPrevouts = bcrypto.hash256(bufferWriter.end());
+
+      // scripts sha256 (hashScriptPubKeys)
+      bufferWriter = BufferWriter.withCapacity(
         prevOutScripts.map(varSliceSize).reduce((a, b) => a + b),
       );
       prevOutScripts.forEach(prevOutScript =>
@@ -568,9 +577,9 @@ export class Transaction {
 
       const bufferWriter = BufferWriter.withCapacity(
         output.asset.length +
-          output.value.length +
-          output.nonce.length +
-          varSliceSize(output.script),
+        output.value.length +
+        output.nonce.length +
+        varSliceSize(output.script),
       );
       bufferWriter.writeSlice(output.asset);
       bufferWriter.writeSlice(output.value);
@@ -587,19 +596,23 @@ export class Transaction {
     // https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki#signature-validation
     // elements implementation:
     // https://github.com/ElementsProject/elements/pull/1002/files#diff-a0337ffd7259e8c7c9a7786d6dbd420c80abfa1afdb34ebae3261109d9ae3c19L1915
+    const inputPartSize = isAnyoneCanPay ? 1 + 32 + 4 + 32 + 32 + varSliceSize(prevOutScripts[inIndex]) + 4 + (this.ins[inIndex].issuance ? 32 * 4 + 32 : 1) : 4;
+    const fullMsgSize = 1 + 4 + 4 + 1 + inputPartSize
     const sigMsgSize =
-      78 -
-      (isAnyoneCanPay ? 49 : 0) -
-      (isNone ? 32 : 0) +
+      fullMsgSize +
+      (!isAnyoneCanPay ? 7*32 : 0) +
+      (!(isNone || isSingle) ? 32 + 32 : 0) +
       (annex ? 32 : 0) +
+      (isSingle ? 32 : 0) +
       (leafHash ? 37 : 0);
+
     const sigMsgWriter = BufferWriter.withCapacity(sigMsgSize);
 
     sigMsgWriter.writeUInt8(hashType);
     // Transaction
     sigMsgWriter.writeInt32(this.version);
     sigMsgWriter.writeUInt32(this.locktime);
-    if (isAnyoneCanPay) {
+    if (!isAnyoneCanPay) {
       sigMsgWriter.writeSlice(hashOutpointsFlags);
       sigMsgWriter.writeSlice(hashPrevouts);
       sigMsgWriter.writeSlice(hashSpentAssetsAmounts);
@@ -632,14 +645,10 @@ export class Transaction {
 
         const bufferWriter = BufferWriter.withCapacity(
           varSliceSize(input.issuanceRangeProof!) +
-            varSliceSize(input.inflationRangeProof!),
+          varSliceSize(input.inflationRangeProof!),
         );
-        if (input.issuanceRangeProof) {
-          bufferWriter.writeVarSlice(input.issuanceRangeProof);
-        }
-        if (input.inflationRangeProof) {
-          bufferWriter.writeVarSlice(input.inflationRangeProof);
-        }
+        bufferWriter.writeVarSlice(input.issuanceRangeProof || Buffer.alloc(1));
+        bufferWriter.writeVarSlice(input.inflationRangeProof || Buffer.alloc(1));
 
         const hashIssuance = bcrypto.sha256(bufferWriter.end());
         sigMsgWriter.writeSlice(hashIssuance);
@@ -1009,6 +1018,7 @@ export class Transaction {
       bufferWriter.writeVarSlice(txOut.script);
     });
 
+    bufferWriter.writeUInt32(this.locktime);
 
     if (!forSignature && hasWitnesses) {
       this.ins.forEach((input: Input) => {
@@ -1018,8 +1028,6 @@ export class Transaction {
         bufferWriter.writeConfidentialOutFields(output);
       });
     }
-
-    bufferWriter.writeUInt32(this.locktime);
 
     // avoid slicing unless necessary
     if (initialOffset !== undefined)

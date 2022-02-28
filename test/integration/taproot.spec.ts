@@ -1,8 +1,8 @@
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'mocha';
 import { ECPair, networks, AssetHash, address as addr, crypto, Transaction } from '../../ts_src';
-import { broadcast } from './_regtest';
-import { satoshiToConfidentialValue } from '../../ts_src/confidential';
+import { broadcast, TESTNET_APIURL } from './_regtest';
+import { confidentialValueToSatoshi, satoshiToConfidentialValue } from '../../ts_src/confidential';
 const net = networks.testnet;
 
 describe('bitcoinjs-lib (transaction with taproot)', () => {
@@ -13,7 +13,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     // console.log(address)
 
     // amount from faucet
-    const amount = 1_0000_0000;
+    const amount = 1_0000_0;
     // amount to send
     const sendAmount = amount - 1000;
     // get faucet
@@ -33,8 +33,8 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     console.log(address);
     console.log('tx hex:');
     console.log(hex);
-    throw new Error('failed');
-    await broadcast(hex, true);
+    console.log(Transaction.fromHex(hex))
+    await broadcast(hex, true, TESTNET_APIURL);
   });
 });
 
@@ -96,6 +96,10 @@ function createSigned(
   scriptPubkeys: Buffer[],
   values: { asset: Buffer, value: Buffer }[],
 ): Transaction {
+  
+  const FEES = 500
+  const changeAmount = values.reduce((acc, { value }) => acc + confidentialValueToSatoshi(value), 0) - amountToSend - FEES;
+
   const tx = new Transaction();
   tx.version = 2;
   // Add input
@@ -104,7 +108,10 @@ function createSigned(
   const assetHash = AssetHash.fromHex(net.assetHash, false)
   console.log(assetHash.bytes, assetHash.bytes.length)
   try {
-    tx.addOutput(scriptPubkeys[0], satoshiToConfidentialValue(amountToSend), assetHash.bytes);
+    tx.addOutput(scriptPubkeys[0], satoshiToConfidentialValue(amountToSend), assetHash.bytes, Buffer.alloc(1));
+    tx.addOutput(scriptPubkeys[0], satoshiToConfidentialValue(changeAmount), assetHash.bytes, Buffer.alloc(1));
+    tx.addOutput(Buffer.alloc(0), satoshiToConfidentialValue(500), assetHash.bytes, Buffer.alloc(1));
+
     const sighash = tx.hashForWitnessV1(
       0, // which input
       scriptPubkeys, // All previous outputs of all inputs

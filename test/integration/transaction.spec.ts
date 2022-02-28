@@ -628,11 +628,11 @@ describe('liquidjs-lib (transactions with psbt)', () => {
 
     assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
     assert.strictEqual(
-      psbt.validateSignaturesOfInput(0, multisig.keys[0].publicKey),
+      psbt.validateSignaturesOfInput(0, undefined, multisig.keys[0].publicKey),
       true,
     );
     assert.throws(() => {
-      psbt.validateSignaturesOfInput(0, multisig.keys[3].publicKey);
+      psbt.validateSignaturesOfInput(0, undefined, multisig.keys[3].publicKey);
     }, new RegExp('No signatures for this pubkey'));
     psbt.finalizeAllInputs();
 
@@ -1169,11 +1169,11 @@ describe('liquidjs-lib (transactions with psbt)', () => {
 
       assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
       assert.strictEqual(
-        psbt.validateSignaturesOfInput(0, p2sh.keys[3].publicKey),
+        psbt.validateSignaturesOfInput(0, undefined, p2sh.keys[3].publicKey),
         true,
       );
       assert.throws(() => {
-        psbt.validateSignaturesOfInput(0, p2sh.keys[1].publicKey);
+        psbt.validateSignaturesOfInput(0, undefined, p2sh.keys[1].publicKey);
       }, new RegExp('No signatures for this pubkey'));
       psbt.finalizeAllInputs();
 
@@ -1240,11 +1240,11 @@ describe('liquidjs-lib (transactions with psbt)', () => {
 
       assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
       assert.strictEqual(
-        psbt.validateSignaturesOfInput(0, p2sh.keys[3].publicKey),
+        psbt.validateSignaturesOfInput(0, undefined, p2sh.keys[3].publicKey),
         true,
       );
       assert.throws(() => {
-        psbt.validateSignaturesOfInput(0, p2sh.keys[1].publicKey);
+        psbt.validateSignaturesOfInput(0, undefined, p2sh.keys[1].publicKey);
       }, new RegExp('No signatures for this pubkey'));
       psbt.finalizeAllInputs();
 
