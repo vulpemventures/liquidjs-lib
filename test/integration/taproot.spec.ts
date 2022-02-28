@@ -8,7 +8,7 @@ const net = networks.testnet;
 
 describe('bitcoinjs-lib (transaction with taproot)', () => {
   it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
-    const myKey = ECPair.fromWIF("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn");
+    const myKey = ECPair.fromWIF("L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6");
     const changeAddress = payments.p2pkh({ pubkey: myKey.publicKey, network: net }).address;
     const output = createKeySpendOutput(myKey.publicKey);
     const address = addr.fromOutputScript(output, net);
@@ -23,8 +23,8 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
 
     const tx = createSigned(
       myKey,
-      "01ca82d3e6a9dce06a3f464ef74e90c9d3a2ff260aa76e9f309227d317a06878",
-      0,
+      "7db2eb6d3798a1064801357ea3482e44c2ed793a93c9b3af8871241ea9b9999d",
+      1,
       sendAmount,
       [output],
       [{ asset: AssetHash.fromHex(net.assetHash, false).bytes, value: satoshiToConfidentialValue(amount) }],
@@ -32,12 +32,13 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     );
 
     const hex = tx.toHex();
-    console.log('Valid tx sent from:');
-    console.log(address);
-    console.log('tx hex:');
-    console.log(hex);
-    console.log(Transaction.fromHex(hex))
-    await broadcast(hex, true, TESTNET_APIURL);
+    // console.log('Valid tx sent from:');
+    // console.log(address);
+    // console.log('tx hex:');
+    // console.log(hex);
+    // console.log(Transaction.fromHex(hex))
+    const str = await broadcast(hex, true, TESTNET_APIURL);
+    console.log("txid: ", str)
   });
 });
 
@@ -86,9 +87,15 @@ function signTweaked(messageHash: Buffer, key: KeyPair): Uint8Array {
     'TapTweak/elements',
     key.publicKey.slice(1, 33),
   );
+  console.log('private key', privateKey)
   const newPrivateKey = ecc.privateAdd(privateKey!, tweakHash);
   if (newPrivateKey === null) throw new Error('Invalid Tweak');
-  return ecc.signSchnorr(messageHash, newPrivateKey, Buffer.alloc(32));
+  const signed = ecc.signSchnorr(messageHash, newPrivateKey, Buffer.alloc(32));
+
+  const ok = ecc.verifySchnorr(messageHash, ECPair.fromPrivateKey(Buffer.from(newPrivateKey)).publicKey.slice(1), signed);
+  if (!ok) throw new Error('Invalid Signature');
+
+  return signed
 }
 
 // Function for creating signed tx

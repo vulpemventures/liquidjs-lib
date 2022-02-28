@@ -685,8 +685,6 @@ export class Transaction {
 
     console.log('length', sigMsgWriter.buffer.length);
 
-    // Extra zero byte because:
-    // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#cite_note-19
     return bcrypto.taggedHash(
       'TapSighash/elements',
        sigMsgWriter.end(),
