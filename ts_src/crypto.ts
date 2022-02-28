@@ -50,7 +50,7 @@ export type TaggedHashPrefix = typeof TAGS[number];
 /** An object mapping tags to their tagged hash prefix of [SHA256(tag) | SHA256(tag)] */
 const TAGGED_HASH_PREFIXES = Object.fromEntries(
   TAGS.map(tag => {
-    const tagHash = sha256(Buffer.from(tag));
+    const tagHash = sha256(Buffer.from(tag, 'utf-8'));
     return [tag, Buffer.concat([tagHash, tagHash])];
   }),
 ) as { [k in TaggedHashPrefix]: Buffer };

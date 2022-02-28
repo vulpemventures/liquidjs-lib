@@ -121,7 +121,7 @@ function createSigned(
       0, // which input
       scriptPubkeys, // scriptPubkey
       values, // All previous values of all inputs
-      Transaction.SIGHASH_ALL, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
+      Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
       TestnetGenesisBlockHash, // block hash
     );
     const signature = Buffer.from(signTweaked(sighash, key));
