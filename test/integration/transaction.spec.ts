@@ -4,9 +4,8 @@ import * as regtestUtils from './_regtest';
 
 import { describe, it } from 'mocha';
 
-import { networks as NETWORKS } from '../..';
 import { createPayment, getInputData, nonWitnessUtxoBuffer } from './utils';
-import { confidential, ECPair, payments, Psbt } from '../../ts_src';
+import { confidential, ECPair, payments, Psbt, networks as NETWORKS } from '../../ts_src';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
