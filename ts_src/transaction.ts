@@ -718,7 +718,9 @@ export class Transaction {
 
     // Inputs
     if (!(hashType & Transaction.SIGHASH_ANYONECANPAY)) {
-      const prevoutsHashWriter = BufferWriter.withCapacity((32 + 4) * this.ins.length);
+      const prevoutsHashWriter = BufferWriter.withCapacity(
+        (32 + 4) * this.ins.length,
+      );
       this.ins.forEach(txIn => {
         prevoutsHashWriter.writeSlice(txIn.hash);
         prevoutsHashWriter.writeUInt32(txIn.index);
