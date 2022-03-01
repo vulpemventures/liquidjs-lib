@@ -718,13 +718,13 @@ export class Transaction {
 
     // Inputs
     if (!(hashType & Transaction.SIGHASH_ANYONECANPAY)) {
-      const writer = BufferWriter.withCapacity((32 + 4) * this.ins.length);
+      const prevoutsHashWriter = BufferWriter.withCapacity((32 + 4) * this.ins.length);
       this.ins.forEach(txIn => {
-        writer.writeSlice(txIn.hash);
-        writer.writeUInt32(txIn.index);
+        prevoutsHashWriter.writeSlice(txIn.hash);
+        prevoutsHashWriter.writeUInt32(txIn.index);
       });
 
-      hashPrevouts = bcrypto.hash256(writer.end());
+      hashPrevouts = bcrypto.hash256(prevoutsHashWriter.end());
     }
 
     // Sequences
@@ -733,12 +733,12 @@ export class Transaction {
       (hashType & 0x1f) !== Transaction.SIGHASH_SINGLE &&
       (hashType & 0x1f) !== Transaction.SIGHASH_NONE
     ) {
-      const writer = BufferWriter.withCapacity(4 * this.ins.length);
+      const sequenceHashWriter = BufferWriter.withCapacity(4 * this.ins.length);
       this.ins.forEach(txIn => {
-        writer.writeUInt32(txIn.sequence);
+        sequenceHashWriter.writeUInt32(txIn.sequence);
       });
 
-      hashSequence = bcrypto.hash256(writer.end());
+      hashSequence = bcrypto.hash256(sequenceHashWriter.end());
     }
 
     // Issuances
@@ -748,19 +748,19 @@ export class Transaction {
         0,
       );
       const size = sizeOfIssuances === 0 ? this.ins.length : sizeOfIssuances;
-      const writer = BufferWriter.withCapacity(size);
+      const issuancesHashWriter = BufferWriter.withCapacity(size);
       this.ins.forEach((txIn: Input) => {
         if (txIn.issuance) {
-          writer.writeSlice(txIn.issuance!.assetBlindingNonce);
-          writer.writeSlice(txIn.issuance!.assetEntropy);
-          writer.writeSlice(txIn.issuance!.assetAmount);
-          writer.writeSlice(txIn.issuance!.tokenAmount);
+          issuancesHashWriter.writeSlice(txIn.issuance!.assetBlindingNonce);
+          issuancesHashWriter.writeSlice(txIn.issuance!.assetEntropy);
+          issuancesHashWriter.writeSlice(txIn.issuance!.assetAmount);
+          issuancesHashWriter.writeSlice(txIn.issuance!.tokenAmount);
         } else {
-          writer.writeSlice(Buffer.of(0x00));
+          issuancesHashWriter.writeSlice(Buffer.of(0x00));
         }
       });
 
-      hashIssuances = bcrypto.hash256(writer.end());
+      hashIssuances = bcrypto.hash256(issuancesHashWriter.end());
     }
 
     // Outputs
@@ -777,14 +777,14 @@ export class Transaction {
           varSliceSize(output.script),
         0,
       );
-      const writer = BufferWriter.withCapacity(txOutsSize);
+      const outputsHashWriter = BufferWriter.withCapacity(txOutsSize);
       this.outs.forEach(out => {
-        writer.writeSlice(out.asset);
-        writer.writeSlice(out.value);
-        writer.writeSlice(out.nonce);
-        writer.writeVarSlice(out.script);
+        outputsHashWriter.writeSlice(out.asset);
+        outputsHashWriter.writeSlice(out.value);
+        outputsHashWriter.writeSlice(out.nonce);
+        outputsHashWriter.writeVarSlice(out.script);
       });
-      hashOutputs = bcrypto.hash256(writer.end());
+      hashOutputs = bcrypto.hash256(outputsHashWriter.end());
     } else if (
       (hashType & 0x1f) === Transaction.SIGHASH_SINGLE &&
       inIndex < this.outs.length
@@ -795,12 +795,12 @@ export class Transaction {
         output.value.length +
         output.nonce.length +
         varSliceSize(output.script);
-      const writer = BufferWriter.withCapacity(size);
-      writer.writeSlice(output.asset);
-      writer.writeSlice(output.value);
-      writer.writeSlice(output.nonce);
-      writer.writeVarSlice(output.script);
-      hashOutputs = bcrypto.hash256(writer.end());
+      const outputsHashWriter = BufferWriter.withCapacity(size);
+      outputsHashWriter.writeSlice(output.asset);
+      outputsHashWriter.writeSlice(output.value);
+      outputsHashWriter.writeSlice(output.nonce);
+      outputsHashWriter.writeVarSlice(output.script);
+      hashOutputs = bcrypto.hash256(outputsHashWriter.end());
     }
 
     const input = this.ins[inIndex];
@@ -821,28 +821,27 @@ export class Transaction {
       4 + // locktime
       4; // hashType
 
-    const buffer: Buffer = Buffer.allocUnsafe(bufferSize);
-    const writer: BufferWriter = new BufferWriter(buffer, 0);
+    const sigWriter = BufferWriter.withCapacity(bufferSize);
 
-    writer.writeUInt32(this.version);
-    writer.writeSlice(hashPrevouts);
-    writer.writeSlice(hashSequence);
-    writer.writeSlice(hashIssuances);
-    writer.writeSlice(input.hash);
-    writer.writeUInt32(input.index);
-    writer.writeVarSlice(prevOutScript);
-    writer.writeSlice(value);
-    writer.writeUInt32(input.sequence);
+    sigWriter.writeUInt32(this.version);
+    sigWriter.writeSlice(hashPrevouts);
+    sigWriter.writeSlice(hashSequence);
+    sigWriter.writeSlice(hashIssuances);
+    sigWriter.writeSlice(input.hash);
+    sigWriter.writeUInt32(input.index);
+    sigWriter.writeVarSlice(prevOutScript);
+    sigWriter.writeSlice(value);
+    sigWriter.writeUInt32(input.sequence);
     if (hasIssuance) {
-      writer.writeSlice(input.issuance!.assetBlindingNonce);
-      writer.writeSlice(input.issuance!.assetEntropy);
-      writer.writeSlice(input.issuance!.assetAmount);
-      writer.writeSlice(input.issuance!.tokenAmount);
+      sigWriter.writeSlice(input.issuance!.assetBlindingNonce);
+      sigWriter.writeSlice(input.issuance!.assetEntropy);
+      sigWriter.writeSlice(input.issuance!.assetAmount);
+      sigWriter.writeSlice(input.issuance!.tokenAmount);
     }
-    writer.writeSlice(hashOutputs);
-    writer.writeUInt32(this.locktime);
-    writer.writeUInt32(hashType);
-    return bcrypto.hash256(buffer);
+    sigWriter.writeSlice(hashOutputs);
+    sigWriter.writeUInt32(this.locktime);
+    sigWriter.writeUInt32(hashType);
+    return bcrypto.hash256(sigWriter.end());
   }
 
   getHash(forWitness?: boolean): Buffer {
