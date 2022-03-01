@@ -5,7 +5,7 @@ import {
   ECPair,
   networks as NETWORKS,
   Psbt,
-  script as bscript
+  script as bscript,
 } from '../ts_src';
 import { satoshiToConfidentialValue } from '../ts_src/confidential';
 import * as preFixtures from './fixtures/psbt.json';
@@ -606,7 +606,11 @@ describe('Psbt', () => {
         true,
       );
       assert.throws(() => {
-        psbt.validateSignaturesOfInput(f.index, undefined, f.incorrectPubkey as any);
+        psbt.validateSignaturesOfInput(
+          f.index,
+          undefined,
+          f.incorrectPubkey as any,
+        );
       }, new RegExp('No signatures for this pubkey'));
     });
   });

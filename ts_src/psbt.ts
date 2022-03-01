@@ -575,18 +575,23 @@ export class Psbt {
     );
   }
 
-  static eccValidator(pubkey: Buffer, msghash: Buffer, signature: Buffer): boolean {
-    return ECPair.fromPublicKey(pubkey).verify(msghash, signature)
+  static eccValidator(
+    pubkey: Buffer,
+    msghash: Buffer,
+    signature: Buffer,
+  ): boolean {
+    return ECPair.fromPublicKey(pubkey).verify(msghash, signature);
   }
 
-  validateSignaturesOfAllInputs(validator: ValidateSigFunction = Psbt.eccValidator): boolean {
+  validateSignaturesOfAllInputs(
+    validator: ValidateSigFunction = Psbt.eccValidator,
+  ): boolean {
     checkForInput(this.data.inputs, 0); // making sure we have at least one
     const results = range(this.data.inputs.length).map(idx =>
       this.validateSignaturesOfInput(idx, validator),
     );
     return results.reduce((final, res) => res === true && final, true);
   }
-
 
   validateSignaturesOfInput(
     inputIndex: number,

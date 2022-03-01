@@ -7,7 +7,7 @@ import {
   Psbt,
   Transaction,
   networks as NETWORKS,
-  ECPair
+  ECPair,
 } from '../../ts_src';
 import { strictEqual } from 'assert';
 import {
