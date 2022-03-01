@@ -4,7 +4,6 @@ import {
   ECPair,
   networks,
   AssetHash,
-  address as addr,
   crypto,
   Transaction,
   payments,
@@ -28,8 +27,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
       network: net,
     }).address;
     const output = createKeySpendOutput(myKey.publicKey);
-    const address = addr.fromOutputScript(output, net);
-    console.log(address);
+    // const address = addr.fromOutputScript(output, net);
 
     // amount from faucet
     const amount = 1_00000;
