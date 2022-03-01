@@ -1,8 +1,8 @@
 import * as assert from 'assert';
 import axios from 'axios';
-import { ECPair } from 'ecpair';
 import { describe, it } from 'mocha';
-import * as liquid from '../..';
+import * as liquid from '../../ts_src';
+const ECPair = liquid.ECPair;
 const REGTEST = liquid.networks.regtest;
 
 describe('liquidjs-lib (addresses)', () => {
