@@ -138,7 +138,10 @@ describe('Issuance', () => {
     );
 
     const input = {
-      hash: Buffer.from('9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580', 'hex'),
+      hash: Buffer.from(
+        '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
+        'hex',
+      ).reverse(),
       index: 0,
       nonWitnessUtxo: Buffer.from(
         '0200000000010caf381d44f094661f2da71a11946251a27d656d6c141577e27c483a6' +

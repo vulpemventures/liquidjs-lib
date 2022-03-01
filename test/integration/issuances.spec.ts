@@ -7,6 +7,7 @@ import {
   Psbt,
   Transaction,
   networks as NETWORKS,
+  ECPair
 } from '../../ts_src';
 import { strictEqual } from 'assert';
 import {
@@ -14,7 +15,6 @@ import {
   toConfidentialTokenAmount,
 } from '../../ts_src/issuance';
 import { fromConfidential } from '../../ts_src/address';
-import { ECPair } from 'ecpair';
 
 const { regtest } = NETWORKS;
 

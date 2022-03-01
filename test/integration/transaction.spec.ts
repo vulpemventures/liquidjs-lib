@@ -10,10 +10,7 @@ import { confidential, ECPair, payments, Psbt } from '../../ts_src';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
-const {
-  satoshiToConfidentialValue,
-  unblindOutputWithKey,
-} = confidential;
+const { satoshiToConfidentialValue, unblindOutputWithKey } = confidential;
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 

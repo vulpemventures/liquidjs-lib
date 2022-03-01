@@ -2,7 +2,14 @@ import * as assert from 'assert';
 import bip32 from 'bip32';
 import * as crypto from 'crypto';
 import { describe, it } from 'mocha';
-import { networks as NETWORKS, payments, Psbt, confidential, ECPair, script as bscript } from '../ts_src';
+import {
+  networks as NETWORKS,
+  payments,
+  Psbt,
+  confidential,
+  ECPair,
+  script as bscript,
+} from '../ts_src';
 import { toOutputScript } from '../ts_src/address';
 
 const satoshiToConfidentialValue = confidential.satoshiToConfidentialValue;
@@ -460,107 +467,6 @@ describe('Psbt', () => {
     });
   });
 
-  describe('getInputType', () => {
-    const key = ECPair.makeRandom();
-    const { publicKey } = key;
-    const p2wpkhPub = (pubkey: Buffer): Buffer =>
-      payments.p2wpkh({
-        pubkey,
-      }).output!;
-    const p2pkhPub = (pubkey: Buffer): Buffer =>
-      payments.p2pkh({
-        pubkey,
-      }).output!;
-    const p2shOut = (output: Buffer): Buffer =>
-      payments.p2sh({
-        redeem: { output },
-      }).output!;
-    const p2wshOut = (output: Buffer): Buffer =>
-      payments.p2wsh({
-        redeem: { output },
-      }).output!;
-    const p2shp2wshOut = (output: Buffer): Buffer => p2shOut(p2wshOut(output));
-    const noOuter = (output: Buffer): Buffer => output;
-
-    function getInputTypeTest({
-      redeemGetter,
-      witnessGetter,
-      expectedType,
-      finalize,
-    }: any): void {
-      const psbt = new Psbt();
-      psbt
-        .addInput({
-          hash:
-            '0000000000000000000000000000000000000000000000000000000000000000',
-          index: 0,
-          ...(redeemGetter ? { redeemScript: redeemGetter(publicKey) } : {}),
-          ...(witnessGetter ? { witnessScript: witnessGetter(publicKey) } : {}),
-        })
-        .addOutput({
-          script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d'),
-          value: confidential.satoshiToConfidentialValue(1800),
-          asset: Buffer.concat([
-            Buffer.from('01', 'hex'),
-            Buffer.from(
-              '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
-              'hex',
-            ).reverse(),
-          ]),
-          nonce: Buffer.from('00', 'hex'),
-        });
-      if (finalize) psbt.signInput(0, key).finalizeInput(0);
-      const type = psbt.getInputType(0);
-      assert.strictEqual(type, expectedType, 'incorrect input type');
-    }
-    [
-      {
-        innerScript: p2pkhPub,
-        outerScript: noOuter,
-        redeemGetter: null,
-        witnessGetter: null,
-        expectedType: 'pubkeyhash',
-      },
-      {
-        innerScript: p2wpkhPub,
-        outerScript: noOuter,
-        redeemGetter: null,
-        witnessGetter: null,
-        expectedType: 'witnesspubkeyhash',
-      },
-      {
-        innerScript: p2pkhPub,
-        outerScript: p2shOut,
-        redeemGetter: p2pkhPub,
-        witnessGetter: null,
-        expectedType: 'p2sh-pubkeyhash',
-      },
-      {
-        innerScript: p2wpkhPub,
-        outerScript: p2shOut,
-        redeemGetter: p2wpkhPub,
-        witnessGetter: null,
-        expectedType: 'p2sh-witnesspubkeyhash',
-        finalize: true,
-      },
-      {
-        innerScript: p2pkhPub,
-        outerScript: p2wshOut,
-        redeemGetter: null,
-        witnessGetter: p2pkhPub,
-        expectedType: 'p2wsh-pubkeyhash',
-        finalize: true,
-      },
-      {
-        innerScript: p2pkhPub,
-        outerScript: p2shp2wshOut,
-        redeemGetter: (pk: Buffer): Buffer => p2wshOut(p2pkhPub(pk)),
-        witnessGetter: p2pkhPub,
-        expectedType: 'p2sh-p2wsh-pubkeyhash',
-      },
-    ].forEach(getInputTypeTest);
-  });
-
   describe('inputHasHDKey', () => {
     it('should return true if HD key is present', () => {
       const root = bip32.fromSeed(crypto.randomBytes(32));
@@ -595,7 +501,10 @@ describe('Psbt', () => {
           script: payments.p2sh({
             redeem: { output: Buffer.from([0x51]) },
           }).output!,
-          asset: Buffer.from('5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225', 'hex').reverse(),
+          asset: Buffer.from(
+            '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
+            'hex',
+          ).reverse(),
           nonce: Buffer.from('00', 'hex'),
         },
       });
@@ -612,7 +521,10 @@ describe('Psbt', () => {
           script: payments.p2wsh({
             redeem: { output: Buffer.from([0x51]) },
           }).output!,
-          asset: Buffer.from('5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225', 'hex').reverse(),
+          asset: Buffer.from(
+            '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
+            'hex',
+          ).reverse(),
           nonce: Buffer.from('00', 'hex'),
         },
       });
@@ -631,7 +543,10 @@ describe('Psbt', () => {
               redeem: { output: Buffer.from([0x51]) },
             }),
           }).output!,
-          asset: Buffer.from('5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225', 'hex').reverse(),
+          asset: Buffer.from(
+            '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
+            'hex',
+          ).reverse(),
           nonce: Buffer.from('00', 'hex'),
         },
         redeemScript: payments.p2wsh({
@@ -670,7 +585,10 @@ describe('Psbt', () => {
             'hex',
           ),
           value: satoshiToConfidentialValue(2000),
-          asset: Buffer.from('5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225', 'hex').reverse(),
+          asset: Buffer.from(
+            '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
+            'hex',
+          ).reverse(),
           nonce: Buffer.from('00', 'hex'),
         });
       assert.strictEqual(psbt.outputHasHDKey(0, root), true);
@@ -692,7 +610,10 @@ describe('Psbt', () => {
             redeem: { output: Buffer.from([0x51]) },
           }).output!,
           value: satoshiToConfidentialValue(1337),
-          asset: Buffer.from('5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225', 'hex').reverse(),
+          asset: Buffer.from(
+            '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
+            'hex',
+          ).reverse(),
           nonce: Buffer.from('00', 'hex'),
         });
 
@@ -984,9 +905,10 @@ describe('Psbt', () => {
       const psbt = new Psbt();
       const address = '1LukeQU5jwebXbMLDVydeH4vFSobRV9rkj';
       const value = satoshiToConfidentialValue(100000);
-      psbt.addOutput({ value, 
-        script: toOutputScript(address), 
-        nonce: Buffer.alloc(0), 
+      psbt.addOutput({
+        value,
+        script: toOutputScript(address),
+        nonce: Buffer.alloc(0),
         asset: Buffer.from(
           '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
           'hex',

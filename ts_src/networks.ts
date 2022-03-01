@@ -1,4 +1,4 @@
-import { Network as BitcoinJSNetwork } from 'ecpair/src/networks';
+import { Network as BitcoinJSNetwork } from 'ecpair/src/networks';
 
 // https://en.bitcoin.it/wiki/List_of_address_prefixes
 // Dogecoin BIP32 is a proposed standard: https://bitcointalk.org/index.php?topic=409731

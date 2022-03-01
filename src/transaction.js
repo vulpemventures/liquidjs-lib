@@ -401,6 +401,7 @@ class Transaction {
   // https://github.com/ElementsProject/elements/blob/84b3f7b0045b50a585d60e56e77e8914b6cf6040/doc/taproot-sighash.mediawiki
   hashForWitnessV1(
     inIndex,
+    prevOutScripts,
     prevoutAssetsValues,
     hashType,
     genesisBlockHash,
@@ -410,12 +411,15 @@ class Transaction {
     typeforce(
       types.tuple(
         types.UInt32,
+        typeforce.arrayOf(types.Buffer),
         typeforce.arrayOf(types.Object),
         types.UInt32,
-        types.Buffer256bit,
       ),
       arguments,
     );
+    if (prevOutScripts.length !== this.ins.length) {
+      throw new Error('Must supply prevout script and value for all inputs');
+    }
     const outputType =
       hashType === Transaction.SIGHASH_DEFAULT
         ? Transaction.SIGHASH_ALL
@@ -449,12 +453,11 @@ class Transaction {
       hashPrevouts = bcrypto.sha256(bufferWriter.end());
       // scripts sha256 (hashScriptPubKeys)
       bufferWriter = bufferutils_1.BufferWriter.withCapacity(
-        this.ins
-          .map(({ script }) => script)
-          .map(varSliceSize)
-          .reduce((a, b) => a + b),
+        prevOutScripts.map(varSliceSize).reduce((a, b) => a + b),
       );
-      this.ins.forEach(({ script }) => bufferWriter.writeVarSlice(script));
+      prevOutScripts.forEach(prevOutScript =>
+        bufferWriter.writeVarSlice(prevOutScript),
+      );
       hashScriptPubKeys = bcrypto.sha256(bufferWriter.end());
       // Sequences
       bufferWriter = bufferutils_1.BufferWriter.withCapacity(
@@ -522,7 +525,7 @@ class Transaction {
         4 +
         32 +
         32 +
-        varSliceSize(this.ins[inIndex].script) +
+        varSliceSize(prevOutScripts[inIndex]) +
         4 +
         (this.ins[inIndex].issuance ? 32 * 4 + 32 : 1)
       : 4;
@@ -565,7 +568,7 @@ class Transaction {
       sigMsgWriter.writeUInt32(input.index);
       sigMsgWriter.writeSlice(prevoutAssetsValues[inIndex].asset);
       sigMsgWriter.writeSlice(prevoutAssetsValues[inIndex].value);
-      sigMsgWriter.writeVarSlice(this.ins[inIndex].script);
+      sigMsgWriter.writeVarSlice(prevOutScripts[inIndex]);
       sigMsgWriter.writeUInt32(input.sequence);
       if (input.issuance) {
         sigMsgWriter.writeSlice(input.issuance.assetBlindingNonce);
@@ -604,12 +607,7 @@ class Transaction {
       sigMsgWriter.writeUInt32(0xffffffff);
     }
     console.log('length', sigMsgWriter.buffer.length);
-    // Extra zero byte because:
-    // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#cite_note-19
-    return bcrypto.taggedHash(
-      'TapSighash/elements',
-      bcrypto.sha256(sigMsgWriter.end()),
-    );
+    return bcrypto.taggedHash('TapSighash/elements', sigMsgWriter.end());
   }
   hashForWitnessV0(inIndex, prevOutScript, value, hashType) {
     typeforce(
@@ -930,10 +928,8 @@ function getOutputWitnessesSHA256(outs) {
   const size = outs.reduce((sum, o) => sum + outProofsSize(o), 0);
   const bufferWriter = bufferutils_1.BufferWriter.withCapacity(size);
   for (const out of outs) {
-    if (out.surjectionProof && out.rangeProof) {
-      bufferWriter.writeVarSlice(out.rangeProof);
-      bufferWriter.writeVarSlice(out.surjectionProof);
-    }
+    bufferWriter.writeVarSlice(out.rangeProof);
+    bufferWriter.writeVarSlice(out.surjectionProof);
   }
   return bcrypto.sha256(bufferWriter.end());
 }

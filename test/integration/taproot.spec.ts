@@ -1,18 +1,35 @@
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'mocha';
-import { ECPair, networks, AssetHash, address as addr, crypto, Transaction, payments, address } from '../../ts_src';
+import {
+  ECPair,
+  networks,
+  AssetHash,
+  address as addr,
+  crypto,
+  Transaction,
+  payments,
+  address,
+} from '../../ts_src';
 import { broadcast, TESTNET_APIURL } from './_regtest';
-import { confidentialValueToSatoshi, satoshiToConfidentialValue } from '../../ts_src/confidential';
+import {
+  confidentialValueToSatoshi,
+  satoshiToConfidentialValue,
+} from '../../ts_src/confidential';
 import { TestnetGenesisBlockHash } from '../../ts_src/transaction';
 const net = networks.testnet;
 
 describe('bitcoinjs-lib (transaction with taproot)', () => {
   it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
-    const myKey = ECPair.fromWIF("L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6");
-    const changeAddress = payments.p2pkh({ pubkey: myKey.publicKey, network: net }).address;
+    const myKey = ECPair.fromWIF(
+      'L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6',
+    );
+    const changeAddress = payments.p2pkh({
+      pubkey: myKey.publicKey,
+      network: net,
+    }).address;
     const output = createKeySpendOutput(myKey.publicKey);
     const address = addr.fromOutputScript(output, net);
-    console.log(address)
+    console.log(address);
 
     // amount from faucet
     const amount = 1_00000;
@@ -23,12 +40,17 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
 
     const tx = createSigned(
       myKey,
-      "7db2eb6d3798a1064801357ea3482e44c2ed793a93c9b3af8871241ea9b9999d",
+      '7db2eb6d3798a1064801357ea3482e44c2ed793a93c9b3af8871241ea9b9999d',
       1,
       sendAmount,
       [output],
-      [{ asset: AssetHash.fromHex(net.assetHash, false).bytes, value: satoshiToConfidentialValue(amount) }],
-      changeAddress!
+      [
+        {
+          asset: AssetHash.fromHex(net.assetHash, false).bytes,
+          value: satoshiToConfidentialValue(amount),
+        },
+      ],
+      changeAddress!,
     );
 
     const hex = tx.toHex();
@@ -38,7 +60,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     // console.log(hex);
     // console.log(Transaction.fromHex(hex))
     const str = await broadcast(hex, true, TESTNET_APIURL);
-    console.log("txid: ", str)
+    console.log('txid: ', str);
   });
 });
 
@@ -87,15 +109,19 @@ function signTweaked(messageHash: Buffer, key: KeyPair): Uint8Array {
     'TapTweak/elements',
     key.publicKey.slice(1, 33),
   );
-  console.log('private key', privateKey)
+  console.log('private key', privateKey);
   const newPrivateKey = ecc.privateAdd(privateKey!, tweakHash);
   if (newPrivateKey === null) throw new Error('Invalid Tweak');
   const signed = ecc.signSchnorr(messageHash, newPrivateKey, Buffer.alloc(32));
 
-  const ok = ecc.verifySchnorr(messageHash, ECPair.fromPrivateKey(Buffer.from(newPrivateKey)).publicKey.slice(1), signed);
+  const ok = ecc.verifySchnorr(
+    messageHash,
+    ECPair.fromPrivateKey(Buffer.from(newPrivateKey)).publicKey.slice(1),
+    signed,
+  );
   if (!ok) throw new Error('Invalid Signature');
 
-  return signed
+  return signed;
 }
 
 // Function for creating signed tx
@@ -105,24 +131,44 @@ function createSigned(
   vout: number,
   amountToSend: number,
   scriptPubkeys: Buffer[],
-  values: { asset: Buffer, value: Buffer }[],
+  values: { asset: Buffer; value: Buffer }[],
   changeAddress: string,
 ): Transaction {
-  
-  const FEES = 500
-  const changeAmount = values.reduce((acc, { value }) => acc + confidentialValueToSatoshi(value), 0) - amountToSend - FEES;
+  const FEES = 500;
+  const changeAmount =
+    values.reduce(
+      (acc, { value }) => acc + confidentialValueToSatoshi(value),
+      0,
+    ) -
+    amountToSend -
+    FEES;
 
   const tx = new Transaction();
   tx.version = 2;
   // Add input
   tx.addInput(Buffer.from(txid, 'hex').reverse(), vout);
   // Add output
-  const assetHash = AssetHash.fromHex(net.assetHash, false)
-  console.log(assetHash.bytes, assetHash.bytes.length)
+  const assetHash = AssetHash.fromHex(net.assetHash, false);
+  console.log(assetHash.bytes, assetHash.bytes.length);
   try {
-    tx.addOutput(scriptPubkeys[0], satoshiToConfidentialValue(amountToSend), assetHash.bytes, Buffer.alloc(1));
-    tx.addOutput(address.toOutputScript(changeAddress), satoshiToConfidentialValue(changeAmount), assetHash.bytes, Buffer.alloc(1)); // change
-    tx.addOutput(Buffer.alloc(0), satoshiToConfidentialValue(500), assetHash.bytes, Buffer.alloc(1)); // fees
+    tx.addOutput(
+      scriptPubkeys[0],
+      satoshiToConfidentialValue(amountToSend),
+      assetHash.bytes,
+      Buffer.alloc(1),
+    );
+    tx.addOutput(
+      address.toOutputScript(changeAddress),
+      satoshiToConfidentialValue(changeAmount),
+      assetHash.bytes,
+      Buffer.alloc(1),
+    ); // change
+    tx.addOutput(
+      Buffer.alloc(0),
+      satoshiToConfidentialValue(500),
+      assetHash.bytes,
+      Buffer.alloc(1),
+    ); // fees
 
     const sighash = tx.hashForWitnessV1(
       0, // which input
@@ -132,13 +178,13 @@ function createSigned(
       TestnetGenesisBlockHash, // block hash
     );
     const signature = Buffer.from(signTweaked(sighash, key));
-    console.log(signature)
+    console.log(signature);
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
     tx.ins[0].witness = [signature];
     return tx;
   } catch (e) {
-    console.error(e)
-    throw e
+    console.error(e);
+    throw e;
   }
 }

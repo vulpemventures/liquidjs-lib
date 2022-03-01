@@ -19,9 +19,7 @@ import { reverseBuffer } from './bufferutils';
 import { hash160 } from './crypto';
 import { Network, liquid as btcNetwork } from './networks';
 import { Output, Transaction, ZERO } from './transaction';
-import {
-  ECPair
-} from './ecpair';
+import { ECPair } from './ecpair';
 import {
   calculateAsset,
   calculateReissuanceToken,
@@ -577,7 +575,11 @@ export class Psbt {
     );
   }
 
-  validateSignaturesOfAllInputs(validator: ValidateSigFunction): boolean {
+  static eccValidator(pubkey: Buffer, msghash: Buffer, signature: Buffer): boolean {
+    return ECPair.fromPublicKey(pubkey).verify(msghash, signature)
+  }
+
+  validateSignaturesOfAllInputs(validator: ValidateSigFunction = Psbt.eccValidator): boolean {
     checkForInput(this.data.inputs, 0); // making sure we have at least one
     const results = range(this.data.inputs.length).map(idx =>
       this.validateSignaturesOfInput(idx, validator),
@@ -585,9 +587,10 @@ export class Psbt {
     return results.reduce((final, res) => res === true && final, true);
   }
 
+
   validateSignaturesOfInput(
     inputIndex: number,
-    validator: ValidateSigFunction = (pubkey, msghash, signature) => ECPair.fromPublicKey(pubkey).verify(msghash, signature),
+    validator: ValidateSigFunction = Psbt.eccValidator,
     pubkey?: Buffer,
   ): boolean {
     const input = this.data.inputs[inputIndex];

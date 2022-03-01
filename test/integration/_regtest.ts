@@ -5,24 +5,23 @@ export const TESTNET_APIURL = 'https://blockstream.info/liquidtestnet/api';
 
 export async function faucet(address: string): Promise<any> {
   try {
+    const resp = await axios.post(`${APIURL}/faucet`, { address });
+    if (resp.status !== 200) {
+      throw new Error('Invalid address');
+    }
+    const { txId } = resp.data;
 
-  const resp = await axios.post(`${APIURL}/faucet`, { address });
-  if (resp.status !== 200) {
-    throw new Error('Invalid address');
-  }
-  const { txId } = resp.data;
-
-  sleep(1000);
-  let rr = { data: [] };
-  const filter = (): any => rr.data.filter((x: any) => x.txid === txId);
-  while (!rr.data.length || !filter().length) {
     sleep(1000);
-    rr = await axios.get(`${APIURL}/address/${address}/utxo`);
-  }
+    let rr = { data: [] };
+    const filter = (): any => rr.data.filter((x: any) => x.txid === txId);
+    while (!rr.data.length || !filter().length) {
+      sleep(1000);
+      rr = await axios.get(`${APIURL}/address/${address}/utxo`);
+    }
 
-  return filter()[0];
+    return filter()[0];
   } catch (e) {
-    console.error(e)
+    console.error(e);
     throw e;
   }
 }

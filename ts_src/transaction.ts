@@ -62,10 +62,17 @@ export interface Input {
 }
 
 export type GenesisBlockHash = Buffer;
-const strToGenesisHash = (str: string): GenesisBlockHash => Buffer.from(str, 'hex').reverse();
-export const RegtestGenesisBlockHash = strToGenesisHash('00902a6b70c2ca83b5d9c815d96a0e2f4202179316970d14ea1847dae5b1ca21');
-export const TestnetGenesisBlockHash = strToGenesisHash('a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1');
-export const LiquidGenesisBlockHash = strToGenesisHash('1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003');
+const strToGenesisHash = (str: string): GenesisBlockHash =>
+  Buffer.from(str, 'hex').reverse();
+export const RegtestGenesisBlockHash = strToGenesisHash(
+  '00902a6b70c2ca83b5d9c815d96a0e2f4202179316970d14ea1847dae5b1ca21',
+);
+export const TestnetGenesisBlockHash = strToGenesisHash(
+  'a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1',
+);
+export const LiquidGenesisBlockHash = strToGenesisHash(
+  '1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003',
+);
 
 export class Transaction {
   static readonly DEFAULT_SEQUENCE = 0xffffffff;
@@ -163,7 +170,6 @@ export class Transaction {
         tx.outs[i].surjectionProof = surjectionProof;
       }
     }
-
 
     if (_NO_STRICT) return tx;
     if (bufferReader.offset !== buffer.length)
@@ -292,10 +298,7 @@ export class Transaction {
     typeforce(
       types.tuple(
         types.Buffer,
-        types.oneOf(
-          types.ConfidentialValue,
-          types.ConfidentialCommitment,
-        ),
+        types.oneOf(types.ConfidentialValue, types.ConfidentialCommitment),
         types.AssetBufferWithFlag,
         types.oneOf(types.ConfidentialCommitment, types.BufferOne),
         types.maybe(types.Buffer),
@@ -518,7 +521,7 @@ export class Transaction {
     if (!isAnyoneCanPay) {
       // Inputs
       // outpoints sha256 (hashPrevouts)
-      let bufferWriter = BufferWriter.withCapacity(this.ins.length * (32 + 4))
+      let bufferWriter = BufferWriter.withCapacity(this.ins.length * (32 + 4));
       for (const i of this.ins) {
         bufferWriter.writeSlice(i.hash);
         bufferWriter.writeUInt32(i.index);
@@ -585,9 +588,9 @@ export class Transaction {
 
       const bufferWriter = BufferWriter.withCapacity(
         output.asset.length +
-        output.value.length +
-        output.nonce.length +
-        varSliceSize(output.script),
+          output.value.length +
+          output.nonce.length +
+          varSliceSize(output.script),
       );
       bufferWriter.writeSlice(output.asset);
       bufferWriter.writeSlice(output.value);
@@ -600,11 +603,20 @@ export class Transaction {
 
     // Length calculation from:
     // https://github.com/ElementsProject/elements/blob/84b3f7b0045b50a585d60e56e77e8914b6cf6040/doc/taproot-sighash.mediawiki
-    const inputPartSize = isAnyoneCanPay ? 1 + 32 + 4 + 32 + 32 + varSliceSize(prevOutScripts[inIndex]) + 4 + (this.ins[inIndex].issuance ? 32 * 4 + 32 : 1) : 4;
-    const fullMsgSize = 32 * 2 + 1 + 4 + 4 + 1 + inputPartSize
+    const inputPartSize = isAnyoneCanPay
+      ? 1 +
+        32 +
+        4 +
+        32 +
+        32 +
+        varSliceSize(prevOutScripts[inIndex]) +
+        4 +
+        (this.ins[inIndex].issuance ? 32 * 4 + 32 : 1)
+      : 4;
+    const fullMsgSize = 32 * 2 + 1 + 4 + 4 + 1 + inputPartSize;
     const sigMsgSize =
       fullMsgSize +
-      (!isAnyoneCanPay ? 7*32 : 0) +
+      (!isAnyoneCanPay ? 7 * 32 : 0) +
       (!(isNone || isSingle) ? 32 + 32 : 0) +
       (annex ? 32 : 0) +
       (isSingle ? 32 : 0) +
@@ -654,7 +666,7 @@ export class Transaction {
 
         const bufferWriter = BufferWriter.withCapacity(
           varSliceSize(input.issuanceRangeProof!) +
-          varSliceSize(input.inflationRangeProof!),
+            varSliceSize(input.inflationRangeProof!),
         );
         bufferWriter.writeVarSlice(input.issuanceRangeProof);
         bufferWriter.writeVarSlice(input.inflationRangeProof);
@@ -685,10 +697,7 @@ export class Transaction {
 
     console.log('length', sigMsgWriter.buffer.length);
 
-    return bcrypto.taggedHash(
-      'TapSighash/elements',
-       sigMsgWriter.end(),
-    );
+    return bcrypto.taggedHash('TapSighash/elements', sigMsgWriter.end());
   }
 
   hashForWitnessV0(
