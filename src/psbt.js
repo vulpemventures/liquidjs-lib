@@ -485,19 +485,17 @@ class Psbt {
       !!output.bip32Derivation && output.bip32Derivation.some(derivationIsMine)
     );
   }
-  validateSignaturesOfAllInputs(validator) {
+  static eccValidator(pubkey, msghash, signature) {
+    return ecpair_1.ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+  }
+  validateSignaturesOfAllInputs(validator = Psbt.eccValidator) {
     (0, utils_1.checkForInput)(this.data.inputs, 0); // making sure we have at least one
     const results = range(this.data.inputs.length).map(idx =>
       this.validateSignaturesOfInput(idx, validator),
     );
     return results.reduce((final, res) => res === true && final, true);
   }
-  validateSignaturesOfInput(
-    inputIndex,
-    validator = (pubkey, msghash, signature) =>
-      ecpair_1.ECPair.fromPublicKey(pubkey).verify(msghash, signature),
-    pubkey,
-  ) {
+  validateSignaturesOfInput(inputIndex, validator = Psbt.eccValidator, pubkey) {
     const input = this.data.inputs[inputIndex];
     const partialSig = (input || {}).partialSig;
     if (!input || !partialSig || partialSig.length < 1)

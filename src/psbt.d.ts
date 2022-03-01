@@ -111,7 +111,8 @@ export declare class Psbt {
     inputHasHDKey(inputIndex: number, root: HDSigner): boolean;
     outputHasPubkey(outputIndex: number, pubkey: Buffer): boolean;
     outputHasHDKey(outputIndex: number, root: HDSigner): boolean;
-    validateSignaturesOfAllInputs(validator: ValidateSigFunction): boolean;
+    static eccValidator(pubkey: Buffer, msghash: Buffer, signature: Buffer): boolean;
+    validateSignaturesOfAllInputs(validator?: ValidateSigFunction): boolean;
     validateSignaturesOfInput(inputIndex: number, validator?: ValidateSigFunction, pubkey?: Buffer): boolean;
     signAllInputsHD(hdKeyPair: HDSigner, sighashTypes?: number[]): this;
     signAllInputsHDAsync(hdKeyPair: HDSigner | HDSignerAsync, sighashTypes?: number[]): Promise<void>;
