@@ -668,8 +668,10 @@ export class Transaction {
           varSliceSize(input.issuanceRangeProof!) +
             varSliceSize(input.inflationRangeProof!),
         );
-        bufferWriter.writeVarSlice(input.issuanceRangeProof);
-        bufferWriter.writeVarSlice(input.inflationRangeProof);
+        bufferWriter.writeVarSlice(input.issuanceRangeProof || Buffer.of(0x00));
+        bufferWriter.writeVarSlice(
+          input.inflationRangeProof || Buffer.of(0x00),
+        );
 
         const hashIssuance = bcrypto.sha256(bufferWriter.end());
         sigMsgWriter.writeSlice(hashIssuance);
@@ -1062,8 +1064,8 @@ function getOutputWitnessesSHA256(outs: Output[]): Buffer {
   const size = outs.reduce((sum, o) => sum + outProofsSize(o), 0);
   const bufferWriter = BufferWriter.withCapacity(size);
   for (const out of outs) {
-    bufferWriter.writeVarSlice(out.rangeProof);
-    bufferWriter.writeVarSlice(out.surjectionProof);
+    bufferWriter.writeVarSlice(out.rangeProof || Buffer.of(0x00));
+    bufferWriter.writeVarSlice(out.surjectionProof || Buffer.of(0x00));
   }
   return bcrypto.sha256(bufferWriter.end());
 }
@@ -1076,8 +1078,8 @@ function getIssuanceRangeProofsSHA256(ins: Input[]): Buffer {
   const bufferWriter = BufferWriter.withCapacity(size);
 
   for (const input of ins) {
-    bufferWriter.writeVarSlice(input.issuanceRangeProof);
-    bufferWriter.writeVarSlice(input.inflationRangeProof);
+    bufferWriter.writeVarSlice(input.issuanceRangeProof || Buffer.of(0x00));
+    bufferWriter.writeVarSlice(input.inflationRangeProof || Buffer.of(0x00));
   }
 
   return bcrypto.sha256(bufferWriter.end());

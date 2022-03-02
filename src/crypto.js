@@ -45,7 +45,7 @@ const TAGS = [
   'BIP0340/nonce',
   'TapLeaf',
   'TapLeaf/elements',
-  'TapBranch',
+  'TapBranch/elements',
   'TapSighash',
   'TapSighash/elements',
   'TapTweak',
