@@ -3,7 +3,7 @@ import * as networks from './networks';
 import * as payments from './payments';
 import * as bscript from './script';
 import * as types from './types';
-import { Blech32Address } from 'blech32';
+import { BLECH32, Blech32Address, BLECH32M } from 'blech32';
 import { bech32, bech32m } from 'bech32';
 import * as bs58check from 'bs58check';
 const { typeforce } = types;
@@ -121,7 +121,13 @@ export function fromBech32(address: string): Bech32Result {
 }
 
 export function fromBlech32(address: string): Blech32Result {
-  const result = Blech32Address.fromString(address);
+  let result: Blech32Address;
+  try {
+    result = Blech32Address.fromString(address, BLECH32);
+  } catch {
+    result = Blech32Address.fromString(address, BLECH32M);
+  }
+
   const pubkey = Buffer.from(result.blindingPublicKey, 'hex');
   const prg = Buffer.from(result.witness, 'hex');
   const data = Buffer.concat([
@@ -171,11 +177,13 @@ export function toBlech32(
   data: Buffer,
   pubkey: Buffer,
   prefix: string,
+  witnessVersion?: number,
 ): string {
   return Blech32Address.from(
     data.slice(2).toString('hex'),
     pubkey.toString('hex'),
     prefix,
+    witnessVersion ?? 0,
   ).address;
 }
 
@@ -376,7 +384,7 @@ function toConfidentialSegwit(
   network: Network,
 ): string {
   const data = toOutputScript(address, network);
-  return toBlech32(data, blindingKey, network.blech32);
+  return toBlech32(data, blindingKey, network.blech32, 0);
 }
 
 function isBlech32(address: string, network: Network): boolean {

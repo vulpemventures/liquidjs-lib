@@ -129,7 +129,12 @@ function fromBech32(address) {
 }
 exports.fromBech32 = fromBech32;
 function fromBlech32(address) {
-  const result = blech32_1.Blech32Address.fromString(address);
+  let result;
+  try {
+    result = blech32_1.Blech32Address.fromString(address, blech32_1.BLECH32);
+  } catch {
+    result = blech32_1.Blech32Address.fromString(address, blech32_1.BLECH32M);
+  }
   const pubkey = Buffer.from(result.blindingPublicKey, 'hex');
   const prg = Buffer.from(result.witness, 'hex');
   const data = Buffer.concat([
@@ -166,11 +171,12 @@ function toBech32(data, version, prefix) {
     : bech32_1.bech32m.encode(prefix, words);
 }
 exports.toBech32 = toBech32;
-function toBlech32(data, pubkey, prefix) {
+function toBlech32(data, pubkey, prefix, witnessVersion) {
   return blech32_1.Blech32Address.from(
     data.slice(2).toString('hex'),
     pubkey.toString('hex'),
     prefix,
+    witnessVersion ?? 0,
   ).address;
 }
 exports.toBlech32 = toBlech32;
@@ -331,7 +337,7 @@ function toConfidentialLegacy(address, blindingKey, network) {
 }
 function toConfidentialSegwit(address, blindingKey, network) {
   const data = toOutputScript(address, network);
-  return toBlech32(data, blindingKey, network.blech32);
+  return toBlech32(data, blindingKey, network.blech32, 0);
 }
 function isBlech32(address, network) {
   return address.startsWith(network.blech32);

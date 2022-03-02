@@ -34,7 +34,7 @@ export declare function fromBlech32(address: string): Blech32Result;
 export declare function fromConfidential(address: string): ConfidentialResult;
 export declare function toBase58Check(hash: Buffer, version: number): string;
 export declare function toBech32(data: Buffer, version: number, prefix: string): string;
-export declare function toBlech32(data: Buffer, pubkey: Buffer, prefix: string): string;
+export declare function toBlech32(data: Buffer, pubkey: Buffer, prefix: string, witnessVersion?: number): string;
 export declare function toConfidential(address: string, blindingKey: Buffer): string;
 export declare function fromOutputScript(output: Buffer, network?: Network): string;
 export declare function toOutputScript(address: string, network?: Network): Buffer;
