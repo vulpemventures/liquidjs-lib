@@ -17,7 +17,7 @@ import {
 import { TestnetGenesisBlockHash } from '../../ts_src/transaction';
 const net = networks.testnet;
 
-describe('bitcoinjs-lib (transaction with taproot)', () => {
+describe('liquidjs-lib (transaction with taproot)', () => {
   it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
     const myKey = ECPair.fromWIF(
       'L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6',
