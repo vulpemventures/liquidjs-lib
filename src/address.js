@@ -176,7 +176,7 @@ function toBlech32(data, pubkey, prefix, witnessVersion) {
     data.slice(2).toString('hex'),
     pubkey.toString('hex'),
     prefix,
-    witnessVersion ?? 0,
+    witnessVersion,
   ).address;
 }
 exports.toBlech32 = toBlech32;

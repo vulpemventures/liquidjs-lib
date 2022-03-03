@@ -117,7 +117,8 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
       Buffer.from([res.version, res.data.length]),
       res.data,
     ]);
-    return baddress.toBlech32(data, o.blindkey!, o.network.blech32);
+    if (res.version !== 0) return;
+    return baddress.toBlech32(data, o.blindkey!, o.network.blech32, 0);
   });
 
   // extended validation

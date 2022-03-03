@@ -207,7 +207,7 @@ function p2wsh(a, opts) {
       Buffer.from([res.version, res.data.length]),
       res.data,
     ]);
-    return baddress.toBlech32(data, o.blindkey, o.network.blech32);
+    return baddress.toBlech32(data, o.blindkey, o.network.blech32, 0);
   });
   // extended validation
   if (opts.validate) {

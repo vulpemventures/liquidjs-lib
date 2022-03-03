@@ -177,13 +177,13 @@ export function toBlech32(
   data: Buffer,
   pubkey: Buffer,
   prefix: string,
-  witnessVersion?: number,
+  witnessVersion: number,
 ): string {
   return Blech32Address.from(
     data.slice(2).toString('hex'),
     pubkey.toString('hex'),
     prefix,
-    witnessVersion ?? 0,
+    witnessVersion,
   ).address;
 }
 

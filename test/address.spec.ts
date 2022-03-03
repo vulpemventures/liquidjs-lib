@@ -165,7 +165,7 @@ describe('address', () => {
 
       it('encode ' + f.address, () => {
         assert.deepStrictEqual(
-          baddress.toBlech32(data, blindkey, f.prefix),
+          baddress.toBlech32(data, blindkey, f.prefix, f.version),
           f.address,
         );
       });
