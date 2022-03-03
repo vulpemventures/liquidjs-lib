@@ -14,7 +14,6 @@ import {
   confidentialValueToSatoshi,
   satoshiToConfidentialValue,
 } from '../../ts_src/confidential';
-import { RegtestGenesisBlockHash } from '../../ts_src/transaction';
 
 const net = networks.regtest;
 
@@ -171,7 +170,7 @@ function createSigned(
       scriptPubkeys, // scriptPubkey
       values, // All previous values of all inputs
       Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
-      RegtestGenesisBlockHash, // block hash
+      net.genesisBlockHash, // block hash
     );
     const signature = Buffer.from(signTweaked(sighash, key));
     // witness stack for keypath spend is just the signature.

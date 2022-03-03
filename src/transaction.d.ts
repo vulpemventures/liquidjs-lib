@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { Issuance } from './issuance';
+import { GenesisBlockHash } from './networks';
 export declare const ZERO: Buffer;
 export interface Output {
     script: Buffer;
@@ -21,10 +22,6 @@ export interface Input {
     issuanceRangeProof?: Buffer;
     inflationRangeProof?: Buffer;
 }
-export declare type GenesisBlockHash = Buffer;
-export declare const RegtestGenesisBlockHash: Buffer;
-export declare const TestnetGenesisBlockHash: Buffer;
-export declare const LiquidGenesisBlockHash: Buffer;
 export declare class Transaction {
     static readonly DEFAULT_SEQUENCE = 4294967295;
     static readonly SIGHASH_DEFAULT = 0;

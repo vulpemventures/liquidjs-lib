@@ -6,6 +6,7 @@ import {
 } from './bufferutils';
 import * as bcrypto from './crypto';
 import { Issuance } from './issuance';
+import { GenesisBlockHash } from './networks';
 import * as bscript from './script';
 import { OPS as opcodes } from './script';
 import * as types from './types';
@@ -60,19 +61,6 @@ export interface Input {
   issuanceRangeProof?: Buffer;
   inflationRangeProof?: Buffer;
 }
-
-export type GenesisBlockHash = Buffer;
-const strToGenesisHash = (str: string): GenesisBlockHash =>
-  Buffer.from(str, 'hex').reverse();
-export const RegtestGenesisBlockHash = strToGenesisHash(
-  '00902a6b70c2ca83b5d9c815d96a0e2f4202179316970d14ea1847dae5b1ca21',
-);
-export const TestnetGenesisBlockHash = strToGenesisHash(
-  'a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1',
-);
-export const LiquidGenesisBlockHash = strToGenesisHash(
-  '1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003',
-);
 
 export class Transaction {
   static readonly DEFAULT_SEQUENCE = 0xffffffff;

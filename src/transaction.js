@@ -44,7 +44,7 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Transaction = exports.LiquidGenesisBlockHash = exports.TestnetGenesisBlockHash = exports.RegtestGenesisBlockHash = exports.ZERO = void 0;
+exports.Transaction = exports.ZERO = void 0;
 const bufferutils_1 = require('./bufferutils');
 const bcrypto = __importStar(require('./crypto'));
 const bscript = __importStar(require('./script'));
@@ -77,16 +77,6 @@ const BLANK_OUTPUT = {
   nonce: exports.ZERO,
   valueBuffer: VALUE_UINT64_MAX,
 };
-const strToGenesisHash = str => Buffer.from(str, 'hex').reverse();
-exports.RegtestGenesisBlockHash = strToGenesisHash(
-  '00902a6b70c2ca83b5d9c815d96a0e2f4202179316970d14ea1847dae5b1ca21',
-);
-exports.TestnetGenesisBlockHash = strToGenesisHash(
-  'a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1',
-);
-exports.LiquidGenesisBlockHash = strToGenesisHash(
-  '1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003',
-);
 class Transaction {
   constructor() {
     this.version = 1;
