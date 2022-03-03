@@ -18,6 +18,11 @@ function verifuint(value: number, max: number): void {
     throw new Error('value has a fractional component');
 }
 
+export function varSliceSize(someScript: Buffer): number {
+  const length = someScript.length;
+  return varuint.encodingLength(length) + length;
+}
+
 export function readUInt64LE(buffer: Buffer, offset: number): number {
   const a = buffer.readUInt32LE(offset);
   let b = buffer.readUInt32LE(offset + 4);
