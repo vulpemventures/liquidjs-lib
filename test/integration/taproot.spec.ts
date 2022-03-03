@@ -9,13 +9,14 @@ import {
   payments,
   address,
 } from '../../ts_src';
-import { broadcast, TESTNET_APIURL } from './_regtest';
+import { broadcast, faucet } from './_regtest';
 import {
   confidentialValueToSatoshi,
   satoshiToConfidentialValue,
 } from '../../ts_src/confidential';
-import { TestnetGenesisBlockHash } from '../../ts_src/transaction';
-const net = networks.testnet;
+import { RegtestGenesisBlockHash } from '../../ts_src/transaction';
+
+const net = networks.regtest;
 
 describe('liquidjs-lib (transaction with taproot)', () => {
   it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
@@ -27,25 +28,23 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       network: net,
     }).address;
     const output = createKeySpendOutput(myKey.publicKey);
-    // const address = addr.fromOutputScript(output, net);
+    const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
 
-    // amount from faucet
-    const amount = 1_00000;
+    const utxo = await faucet(faucetAddress);
+
     // amount to send
-    const sendAmount = amount - 10000;
-    // get faucet
-    // const unspent = await faucet(address);
+    const sendAmount = utxo.value - 10000;
 
     const tx = createSigned(
       myKey,
-      '7db2eb6d3798a1064801357ea3482e44c2ed793a93c9b3af8871241ea9b9999d',
-      1,
+      utxo.txid,
+      utxo.vout,
       sendAmount,
       [output],
       [
         {
-          asset: AssetHash.fromHex(net.assetHash, false).bytes,
-          value: satoshiToConfidentialValue(amount),
+          asset: AssetHash.fromHex(utxo.asset, false).bytes,
+          value: satoshiToConfidentialValue(utxo.value),
         },
       ],
       changeAddress!,
@@ -57,8 +56,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     // console.log('tx hex:');
     // console.log(hex);
     // console.log(Transaction.fromHex(hex))
-    const str = await broadcast(hex, true, TESTNET_APIURL);
-    console.log('txid: ', str);
+    await broadcast(hex, true);
   });
 });
 
@@ -173,10 +171,9 @@ function createSigned(
       scriptPubkeys, // scriptPubkey
       values, // All previous values of all inputs
       Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
-      TestnetGenesisBlockHash, // block hash
+      RegtestGenesisBlockHash, // block hash
     );
     const signature = Buffer.from(signTweaked(sighash, key));
-    console.log(signature);
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
     tx.ins[0].witness = [signature];

@@ -697,8 +697,6 @@ export class Transaction {
       sigMsgWriter.writeUInt32(0xffffffff);
     }
 
-    console.log('length', sigMsgWriter.buffer.length);
-
     return bcrypto.taggedHash('TapSighash/elements', sigMsgWriter.end());
   }
 
