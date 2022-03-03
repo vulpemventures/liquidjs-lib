@@ -1,10 +1,9 @@
-import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'mocha';
 import {
   ECPair,
   networks,
   AssetHash,
-  crypto,
+  bip341,
   Transaction,
   payments,
   address,
@@ -14,6 +13,7 @@ import {
   confidentialValueToSatoshi,
   satoshiToConfidentialValue,
 } from '../../ts_src/confidential';
+import { ECPairInterface } from 'ecpair';
 
 const net = networks.regtest;
 
@@ -26,9 +26,8 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       pubkey: myKey.publicKey,
       network: net,
     }).address;
-    const output = createKeySpendOutput(myKey.publicKey);
+    const output = bip341.taprootOutputScript(myKey.publicKey);
     const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
-
     const utxo = await faucet(faucetAddress);
 
     // amount to send
@@ -59,69 +58,9 @@ describe('liquidjs-lib (transaction with taproot)', () => {
   });
 });
 
-// Order of the curve (N) - 1
-const N_LESS_1 = Buffer.from(
-  'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140',
-  'hex',
-);
-// 1 represented as 32 bytes BE
-const ONE = Buffer.from(
-  '0000000000000000000000000000000000000000000000000000000000000001',
-  'hex',
-);
-
-// Function for creating a tweaked p2tr key-spend only address
-// (This is recommended by BIP341)
-function createKeySpendOutput(publicKey: Buffer): Buffer {
-  // x-only pubkey (remove 1 byte y parity)
-  const myXOnlyPubkey = publicKey.slice(1, 33);
-  const commitHash = crypto.taggedHash('TapTweak/elements', myXOnlyPubkey);
-  const tweakResult = ecc.xOnlyPointAddTweak(myXOnlyPubkey, commitHash);
-  if (tweakResult === null) throw new Error('Invalid Tweak');
-  const { xOnlyPubkey: tweaked } = tweakResult;
-  // scriptPubkey
-  return Buffer.concat([
-    // witness v1, PUSH_DATA 32 bytes
-    Buffer.from([0x51, 0x20]),
-    // x-only tweaked pubkey
-    tweaked,
-  ]);
-}
-
-// Function for signing for a tweaked p2tr key-spend only address
-// (Required for the above address)
-interface KeyPair {
-  publicKey: Buffer;
-  privateKey?: Buffer;
-}
-
-function signTweaked(messageHash: Buffer, key: KeyPair): Uint8Array {
-  const privateKey =
-    key.publicKey[0] === 2
-      ? key.privateKey
-      : ecc.privateAdd(ecc.privateSub(N_LESS_1, key.privateKey!)!, ONE)!;
-  const tweakHash = crypto.taggedHash(
-    'TapTweak/elements',
-    key.publicKey.slice(1, 33),
-  );
-  console.log('private key', privateKey);
-  const newPrivateKey = ecc.privateAdd(privateKey!, tweakHash);
-  if (newPrivateKey === null) throw new Error('Invalid Tweak');
-  const signed = ecc.signSchnorr(messageHash, newPrivateKey, Buffer.alloc(32));
-
-  const ok = ecc.verifySchnorr(
-    messageHash,
-    ECPair.fromPrivateKey(Buffer.from(newPrivateKey)).publicKey.slice(1),
-    signed,
-  );
-  if (!ok) throw new Error('Invalid Signature');
-
-  return signed;
-}
-
 // Function for creating signed tx
 function createSigned(
-  key: KeyPair,
+  key: ECPairInterface,
   txid: string,
   vout: number,
   amountToSend: number,
@@ -172,7 +111,7 @@ function createSigned(
       Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
       net.genesisBlockHash, // block hash
     );
-    const signature = Buffer.from(signTweaked(sighash, key));
+    const signature = Buffer.from(bip341.taprootSignKey(sighash, key));
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
     tx.ins[0].witness = [signature];
