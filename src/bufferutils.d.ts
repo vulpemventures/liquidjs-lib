@@ -2,6 +2,7 @@
 import * as varuint from 'varuint-bitcoin';
 import { Input, Output } from './transaction';
 export { varuint };
+export declare function varSliceSize(someScript: Buffer): number;
 export declare function readUInt64LE(buffer: Buffer, offset: number): number;
 export declare function writeUInt64LE(buffer: Buffer, value: number, offset: number): number;
 export declare function reverseBuffer(buffer: Buffer): Buffer;
