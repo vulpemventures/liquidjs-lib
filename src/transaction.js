@@ -615,7 +615,6 @@ class Transaction {
       sigMsgWriter.writeUInt8(0);
       sigMsgWriter.writeUInt32(0xffffffff);
     }
-    console.log('length', sigMsgWriter.buffer.length);
     return bcrypto.taggedHash('TapSighash/elements', sigMsgWriter.end());
   }
   hashForWitnessV0(inIndex, prevOutScript, value, hashType) {
