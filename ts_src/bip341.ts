@@ -5,6 +5,7 @@ import {
   signSchnorr,
   verifySchnorr,
   xOnlyPointAddTweak,
+  XOnlyPointAddTweakResult,
 } from 'tiny-secp256k1';
 import { BufferWriter, varSliceSize } from './bufferutils';
 import { ECPairInterface } from 'ecpair';
@@ -14,7 +15,7 @@ const LEAF_VERSION_TAPSCRIPT = 0xc4;
 
 // Leaf is the base object representing a leaf in taproot tree
 // if name is unspecified, `taprootTreeHelper` will only return the hash (useful for create output script)
-// if leafVersion is unspecified, will use LEAF_VERSION_TAPSCRIPT 
+// if leafVersion is unspecified, will use LEAF_VERSION_TAPSCRIPT
 export interface Leaf {
   name?: string;
   scriptHex: string;
@@ -100,17 +101,17 @@ export function taprootTreeHelper(scripts: ScriptTree): TaprootTree {
       const finalLeftLeaves: TaprootLeaf[] = [];
       const finalRightLeaves: TaprootLeaf[] = [];
 
-      for (const leaf of left.leaves) {
+      for (const l of left.leaves) {
         finalLeftLeaves.push({
-          ...leaf,
-          controlBlock: Buffer.concat([leaf.controlBlock, right.hash]),
+          ...l,
+          controlBlock: Buffer.concat([l.controlBlock, right.hash]),
         });
       }
 
-      for (const leaf of right.leaves) {
+      for (const l of right.leaves) {
         finalRightLeaves.push({
-          ...leaf,
-          controlBlock: Buffer.concat([leaf.controlBlock, left.hash]),
+          ...l,
+          controlBlock: Buffer.concat([l.controlBlock, left.hash]),
         });
       }
 
@@ -127,7 +128,10 @@ export function taprootTreeHelper(scripts: ScriptTree): TaprootTree {
   }
 }
 
-function tweakPublicKey(publicKey: Buffer, hash: Buffer) {
+function tweakPublicKey(
+  publicKey: Buffer,
+  hash: Buffer,
+): XOnlyPointAddTweakResult {
   const XOnlyPubKey = publicKey.slice(1, 33);
   const toTweak = Buffer.concat([XOnlyPubKey, hash]);
   const tweakHash = taggedHash('TapTweak/elements', toTweak);
