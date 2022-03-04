@@ -117,16 +117,8 @@ describe('liquidjs-lib (transaction with taproot)', () => {
 
     tx.ins[0].witness = [...inputsStack, ...taprootStack];
 
-    console.log(tx.ins[0].witness);
-
     const hex = tx.toHex();
-    // console.log('Valid tx sent from:');
-    // console.log(address);
-    // console.log('tx hex:');
-    // console.log(hex);
-    // console.log(Transaction.fromHex(hex))
-    const txid = await broadcast(hex, true);
-    console.log(txid);
+    await broadcast(hex, true);
   });
 });
 
