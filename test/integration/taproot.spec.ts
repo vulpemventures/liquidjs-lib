@@ -17,7 +17,8 @@ import {
   ScriptTree,
   taprootOutputScript,
   taprootSignKey,
-  taprootSignScript,
+  taprootSignScriptStack,
+  taprootTreeHelper,
 } from '../../ts_src/bip341';
 import { compile, OPS } from '../../ts_src/script';
 import { signSchnorr, verifySchnorr } from 'tiny-secp256k1';
@@ -64,15 +65,15 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     await broadcast(hex, true);
   });
 
-  it.only('can create (and broadcast via 3PBP) a taproot scriptspend Transaction', async () => {
-    const bobPayment = compile([bob.publicKey.slice(1), OPS.OP_CHECKSIG]);
+  it('can create (and broadcast via 3PBP) a taproot scriptspend Transaction', async () => {
+    const bobScript = compile([bob.publicKey.slice(1), OPS.OP_CHECKSIG]);
 
     // in this exemple, alice is the internal key (can spend via keypath spend)
     // however, the script tree allows bob to spend the coin with a simple p2pkh
     const tree: ScriptTree = [
       {
-        name: 'bobAndAlice',
-        scriptHex: bobPayment.toString('hex'),
+        name: 'bob',
+        scriptHex: bobScript.toString('hex'),
       },
       {
         name: 'unspendable',
@@ -95,18 +96,26 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       utxo,
       faucetAddress,
     );
-    const inputsStack = makeStackCheckSig(bob, tx, 0, output, [
-      {
-        asset: AssetHash.fromHex(utxo.asset, false).bytes,
-        value: satoshiToConfidentialValue(utxo.value),
-      },
-    ]);
-    tx.ins[0].witness = taprootSignScript(
-      alice.publicKey,
-      tree,
-      'bobAndAlice',
-      inputsStack,
+
+    const taprootStack = taprootSignScriptStack(alice.publicKey, tree, 'bob');
+
+    const leafHash = taprootTreeHelper(tree[0]).hash;
+
+    const inputsStack = makeStackCheckSig(
+      bob,
+      tx,
+      0,
+      output,
+      [
+        {
+          asset: AssetHash.fromHex(utxo.asset, false).bytes,
+          value: satoshiToConfidentialValue(utxo.value),
+        },
+      ],
+      leafHash,
     );
+
+    tx.ins[0].witness = [...inputsStack, ...taprootStack];
 
     console.log(tx.ins[0].witness);
 
@@ -129,6 +138,7 @@ function makeStackCheckSig(
   inputIndex: number,
   prevoutScript: Buffer,
   values: { asset: Buffer; value: Buffer }[],
+  leafHash: Buffer,
 ): Buffer[] {
   const hash = transaction.hashForWitnessV1(
     inputIndex,
@@ -136,6 +146,7 @@ function makeStackCheckSig(
     values,
     Transaction.SIGHASH_DEFAULT,
     net.genesisBlockHash,
+    leafHash,
   );
   const sig = signSchnorr(hash, keyPair.privateKey!, Buffer.alloc(32));
 

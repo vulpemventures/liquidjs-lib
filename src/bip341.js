@@ -1,6 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.taprootSignKey = exports.taprootSignScript = exports.taprootOutputScript = void 0;
+exports.taprootSignKey = exports.taprootSignScriptStack = exports.taprootOutputScript = exports.taprootTreeHelper = void 0;
 const crypto_1 = require('./crypto');
 const tiny_secp256k1_1 = require('tiny-secp256k1');
 const bufferutils_1 = require('./bufferutils');
@@ -85,6 +85,7 @@ function taprootTreeHelper(scripts) {
       };
   }
 }
+exports.taprootTreeHelper = taprootTreeHelper;
 function tweakPublicKey(publicKey, hash) {
   const XOnlyPubKey = publicKey.slice(1, 33);
   const toTweak = Buffer.concat([XOnlyPubKey, hash]);
@@ -106,12 +107,7 @@ function taprootOutputScript(internalPublicKey, scriptTree) {
   return Buffer.concat([Buffer.from([0x51, 0x20]), xOnlyPubkey]);
 }
 exports.taprootOutputScript = taprootOutputScript;
-function taprootSignScript(
-  internalPublicKey,
-  scriptTree,
-  scriptName,
-  scriptInputs,
-) {
+function taprootSignScriptStack(internalPublicKey, scriptTree, scriptName) {
   const taprootTree = taprootTreeHelper(scriptTree);
   const scriptLeaf = taprootTree.leaves.find(l => l.name === scriptName);
   if (!scriptLeaf) {
@@ -125,10 +121,9 @@ function taprootSignScript(
     scriptLeaf.controlBlock,
   ]);
   console.log(control.toString('hex'));
-  console.log(scriptInputs.map(i => i.toString('hex')));
-  return [...scriptInputs, Buffer.from(scriptLeaf.scriptHex, 'hex'), control];
+  return [Buffer.from(scriptLeaf.scriptHex, 'hex'), control];
 }
-exports.taprootSignScript = taprootSignScript;
+exports.taprootSignScriptStack = taprootSignScriptStack;
 // Order of the curve (N) - 1
 const N_LESS_1 = Buffer.from(
   'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140',

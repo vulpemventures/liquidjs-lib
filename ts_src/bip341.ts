@@ -44,7 +44,7 @@ function isLeaf(node: ScriptTree): node is Leaf {
   return typeof node === 'object' && !Array.isArray(node);
 }
 
-function taprootTreeHelper(scripts: ScriptTree): TaprootTree {
+export function taprootTreeHelper(scripts: ScriptTree): TaprootTree {
   if (isLeaf(scripts)) {
     // if the tree is a leaf, we redirect to length 1 case
     return taprootTreeHelper([scripts]);
@@ -141,11 +141,10 @@ export function taprootOutputScript(
   return Buffer.concat([Buffer.from([0x51, 0x20]), xOnlyPubkey]);
 }
 
-export function taprootSignScript(
+export function taprootSignScriptStack(
   internalPublicKey: Buffer,
   scriptTree: ScriptTree,
   scriptName: string,
-  scriptInputs: Buffer[],
 ): Buffer[] {
   const taprootTree = taprootTreeHelper(scriptTree);
   const scriptLeaf = taprootTree.leaves.find(l => l.name === scriptName);
@@ -162,9 +161,7 @@ export function taprootSignScript(
   ]);
   console.log(control.toString('hex'));
 
-  console.log(scriptInputs.map(i => i.toString('hex')));
-
-  return [...scriptInputs, Buffer.from(scriptLeaf.scriptHex, 'hex'), control];
+  return [Buffer.from(scriptLeaf.scriptHex, 'hex'), control];
 }
 
 // Order of the curve (N) - 1

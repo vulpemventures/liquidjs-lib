@@ -14,6 +14,7 @@ export interface TaprootTree {
     leaves: TaprootLeaf[];
     hash: Buffer;
 }
+export declare function taprootTreeHelper(scripts: ScriptTree): TaprootTree;
 export declare function taprootOutputScript(internalPublicKey: Buffer, scriptTree?: ScriptTree): Buffer;
-export declare function taprootSignScript(internalPublicKey: Buffer, scriptTree: ScriptTree, scriptName: string, scriptInputs: Buffer[]): Buffer[];
+export declare function taprootSignScriptStack(internalPublicKey: Buffer, scriptTree: ScriptTree, scriptName: string): Buffer[];
 export declare function taprootSignKey(messageHash: Buffer, key: ECPairInterface): Uint8Array;
