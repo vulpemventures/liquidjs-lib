@@ -12,17 +12,22 @@ import { ECPair } from './ecpair';
 
 const LEAF_VERSION_TAPSCRIPT = 0xc4;
 
-interface Leaf {
+export interface Leaf {
   name?: string;
   scriptHex: string;
   leafVersion?: number;
 }
 
-type ScriptTree = Leaf | ScriptTree[];
+export type ScriptTree = Leaf | ScriptTree[];
 
-interface TaprootLeaf extends Leaf {
+export interface TaprootLeaf extends Leaf {
   leafVersion: number;
   controlBlock: Buffer;
+}
+
+export interface TaprootTree {
+  leaves: TaprootLeaf[];
+  hash: Buffer;
 }
 
 function tapLeafHash(leaf: Leaf): Buffer {
@@ -39,9 +44,7 @@ function isLeaf(node: ScriptTree): node is Leaf {
   return typeof node === 'object' && !Array.isArray(node);
 }
 
-function taprootTreeHelper(
-  scripts: ScriptTree,
-): { leaves: TaprootLeaf[]; hash: Buffer } {
+function taprootTreeHelper(scripts: ScriptTree): TaprootTree {
   if (isLeaf(scripts)) {
     // if the tree is a leaf, we redirect to length 1 case
     return taprootTreeHelper([scripts]);
@@ -131,6 +134,7 @@ export function taprootOutputScript(
   let treeHash: Buffer = Buffer.alloc(0);
   if (scriptTree) {
     treeHash = taprootTreeHelper(scriptTree).hash;
+    console.log('merkle hash', treeHash.toString('hex'));
   }
 
   const { xOnlyPubkey } = tweakPublicKey(internalPublicKey, treeHash);
@@ -140,19 +144,27 @@ export function taprootOutputScript(
 export function taprootSignScript(
   internalPublicKey: Buffer,
   scriptTree: ScriptTree,
-  scriptNum: number,
+  scriptName: string,
   scriptInputs: Buffer[],
 ): Buffer[] {
   const taprootTree = taprootTreeHelper(scriptTree);
-  const scriptLeaf = taprootTree.leaves[scriptNum];
+  const scriptLeaf = taprootTree.leaves.find(l => l.name === scriptName);
+  if (!scriptLeaf) {
+    throw new Error('Script not found');
+  }
+
   const { parity } = tweakPublicKey(internalPublicKey, taprootTree.hash);
-  const prefix = Buffer.of(scriptLeaf.leafVersion + parity);
-  const pubkeyData = Buffer.concat([prefix, internalPublicKey]);
-  return [
-    ...scriptInputs,
-    Buffer.from(scriptLeaf.scriptHex, 'hex'),
-    Buffer.concat([pubkeyData, scriptLeaf.controlBlock]),
-  ];
+  const parityBit = Buffer.of(scriptLeaf.leafVersion + parity);
+  const control = Buffer.concat([
+    parityBit,
+    internalPublicKey.slice(1),
+    scriptLeaf.controlBlock,
+  ]);
+  console.log(control.toString('hex'));
+
+  console.log(scriptInputs.map(i => i.toString('hex')));
+
+  return [...scriptInputs, Buffer.from(scriptLeaf.scriptHex, 'hex'), control];
 }
 
 // Order of the curve (N) - 1
