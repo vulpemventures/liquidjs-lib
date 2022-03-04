@@ -12,19 +12,26 @@ import { ECPair } from './ecpair';
 
 const LEAF_VERSION_TAPSCRIPT = 0xc4;
 
+// Leaf is the base object representing a leaf in taproot tree
+// if name is unspecified, `taprootTreeHelper` will only return the hash (useful for create output script)
+// if leafVersion is unspecified, will use LEAF_VERSION_TAPSCRIPT 
 export interface Leaf {
   name?: string;
   scriptHex: string;
   leafVersion?: number;
 }
 
+// using as argument, "translated" into TaprootTree via taprootTreeHelper function
+// order of elements in arrays is important! (taproot tree are binary trees)
 export type ScriptTree = Leaf | ScriptTree[];
 
+// leaf + force leafVersion to be defined + controlBlock
 export interface TaprootLeaf extends Leaf {
   leafVersion: number;
   controlBlock: Buffer;
 }
 
+// a ScriptTree + all the control blocks for leaves + the root hash
 export interface TaprootTree {
   leaves: TaprootLeaf[];
   hash: Buffer;
@@ -44,6 +51,8 @@ function isLeaf(node: ScriptTree): node is Leaf {
   return typeof node === 'object' && !Array.isArray(node);
 }
 
+// recursively build the Taproot tree from a ScriptTree structure
+// for each leaf, will compute the corresponding control block
 export function taprootTreeHelper(scripts: ScriptTree): TaprootTree {
   if (isLeaf(scripts)) {
     // if the tree is a leaf, we redirect to length 1 case
@@ -127,20 +136,28 @@ function tweakPublicKey(publicKey: Buffer, hash: Buffer) {
   return tweaked;
 }
 
+// compute a segwit V1 output script
 export function taprootOutputScript(
   internalPublicKey: Buffer,
   scriptTree?: ScriptTree,
 ): Buffer {
-  let treeHash: Buffer = Buffer.alloc(0);
+  let treeHash = Buffer.alloc(0);
   if (scriptTree) {
     treeHash = taprootTreeHelper(scriptTree).hash;
-    console.log('merkle hash', treeHash.toString('hex'));
   }
 
   const { xOnlyPubkey } = tweakPublicKey(internalPublicKey, treeHash);
   return Buffer.concat([Buffer.from([0x51, 0x20]), xOnlyPubkey]);
 }
 
+/**
+ * Compute the taproot part of the witness stack needed to spend a P2TR output via script path
+ * TAPROOT_WITNESS = [SCRIPT, CONTROL_BLOCK]
+ * WITNESS_STACK = [...INPUTS, TAPROOT_WITNESS] <- u need to add the script's inputs to the stack
+ * @param internalPublicKey the taproot internal public key
+ * @param scriptTree the taproot script tree using to recompute path to the leaf. Names have to be specified!
+ * @param scriptName the leaf to use
+ */
 export function taprootSignScriptStack(
   internalPublicKey: Buffer,
   scriptTree: ScriptTree,
@@ -159,7 +176,6 @@ export function taprootSignScriptStack(
     internalPublicKey.slice(1),
     scriptLeaf.controlBlock,
   ]);
-  console.log(control.toString('hex'));
 
   return [Buffer.from(scriptLeaf.scriptHex, 'hex'), control];
 }
@@ -175,10 +191,11 @@ const ONE = Buffer.from(
   'hex',
 );
 
+// Compute the witness signature for a P2TR output (key path)
 export function taprootSignKey(
   messageHash: Buffer,
   key: ECPairInterface,
-): Uint8Array {
+): Buffer {
   if (!key.privateKey) {
     throw new Error('Private key is required');
   }
@@ -199,5 +216,5 @@ export function taprootSignKey(
   );
   if (!ok) throw new Error('Invalid Signature');
 
-  return signed;
+  return Buffer.from(signed);
 }
