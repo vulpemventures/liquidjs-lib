@@ -1,4 +1,36 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        var desc = Object.getOwnPropertyDescriptor(m, k);
+        if (
+          !desc ||
+          ('get' in desc ? !m.__esModule : desc.writable || desc.configurable)
+        ) {
+          desc = {
+            enumerable: true,
+            get: function() {
+              return m[k];
+            },
+          };
+        }
+        Object.defineProperty(o, k2, desc);
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
   function(mod) {
@@ -6,11 +38,13 @@ var __importStar =
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.isConfidential = exports.decodeType = exports.getNetwork = exports.toOutputScript = exports.fromOutputScript = exports.toConfidential = exports.toBlech32 = exports.toBech32 = exports.toBase58Check = exports.fromConfidential = exports.fromBlech32 = exports.fromBech32 = exports.fromBase58Check = void 0;
 const networks = __importStar(require('./networks'));
 const payments = __importStar(require('./payments'));
 const bscript = __importStar(require('./script'));
@@ -95,7 +129,12 @@ function fromBech32(address) {
 }
 exports.fromBech32 = fromBech32;
 function fromBlech32(address) {
-  const result = blech32_1.Blech32Address.fromString(address);
+  let result;
+  try {
+    result = blech32_1.Blech32Address.fromString(address, blech32_1.BLECH32);
+  } catch {
+    result = blech32_1.Blech32Address.fromString(address, blech32_1.BLECH32M);
+  }
   const pubkey = Buffer.from(result.blindingPublicKey, 'hex');
   const prg = Buffer.from(result.witness, 'hex');
   const data = Buffer.concat([
@@ -132,11 +171,12 @@ function toBech32(data, version, prefix) {
     : bech32_1.bech32m.encode(prefix, words);
 }
 exports.toBech32 = toBech32;
-function toBlech32(data, pubkey, prefix) {
+function toBlech32(data, pubkey, prefix, witnessVersion) {
   return blech32_1.Blech32Address.from(
     data.slice(2).toString('hex'),
     pubkey.toString('hex'),
     prefix,
+    witnessVersion,
   ).address;
 }
 exports.toBlech32 = toBlech32;
@@ -232,7 +272,7 @@ function isNetwork(network, address) {
       prefix === network.scriptHash
     )
       return true;
-  } catch (_a) {
+  } catch {
     return false;
   }
   return false;
@@ -297,7 +337,7 @@ function toConfidentialLegacy(address, blindingKey, network) {
 }
 function toConfidentialSegwit(address, blindingKey, network) {
   const data = toOutputScript(address, network);
-  return toBlech32(data, blindingKey, network.blech32);
+  return toBlech32(data, blindingKey, network.blech32, 0);
 }
 function isBlech32(address, network) {
   return address.startsWith(network.blech32);

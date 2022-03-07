@@ -1,11 +1,13 @@
 import { describe, it } from 'mocha';
-import { networks as NETWORKS } from '../..';
-import * as liquid from '../..';
+import { networks as NETWORKS } from '../../ts_src';
+import * as liquid from '../../ts_src';
 import * as regtestUtils from './_regtest';
 const NETWORK = NETWORKS.regtest;
+const ECPair = liquid.ECPair;
+
 const keyPairs = [
-  liquid.ECPair.makeRandom({ network: NETWORK }),
-  liquid.ECPair.makeRandom({ network: NETWORK }),
+  ECPair.makeRandom({ network: NETWORK }),
+  ECPair.makeRandom({ network: NETWORK }),
 ];
 
 async function buildAndSign(

@@ -4,10 +4,10 @@ import { broadcast, faucet } from './_regtest';
 import {
   address,
   confidential,
-  ECPair,
   Psbt,
   Transaction,
   networks as NETWORKS,
+  ECPair,
 } from '../../ts_src';
 import { strictEqual } from 'assert';
 import {

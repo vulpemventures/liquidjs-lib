@@ -5,9 +5,9 @@ import {
   ECPair,
   networks as NETWORKS,
   Psbt,
-} from '..';
-const { satoshiToConfidentialValue } = require('../src/confidential');
-const bscript = require('../src/script');
+  script as bscript,
+} from '../ts_src';
+import { satoshiToConfidentialValue } from '../ts_src/confidential';
 import * as preFixtures from './fixtures/psbt.json';
 
 const initBuffers = (object: any): typeof preFixtures =>
@@ -133,7 +133,6 @@ describe('Psbt', () => {
           '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
         index: 0,
         witnessUtxo,
-        sighashType: 1,
       });
       psbt.addOutput({
         asset: Buffer.concat([
@@ -603,11 +602,15 @@ describe('Psbt', () => {
     it('Correctly validates a signature against a pubkey', () => {
       const psbt = Psbt.fromBase64(f.psbt);
       assert.strictEqual(
-        psbt.validateSignaturesOfInput(f.index, f.pubkey as any),
+        psbt.validateSignaturesOfInput(f.index, undefined, f.pubkey as any),
         true,
       );
       assert.throws(() => {
-        psbt.validateSignaturesOfInput(f.index, f.incorrectPubkey as any);
+        psbt.validateSignaturesOfInput(
+          f.index,
+          undefined,
+          f.incorrectPubkey as any,
+        );
       }, new RegExp('No signatures for this pubkey'));
     });
   });
@@ -649,7 +652,6 @@ describe('Psbt', () => {
           'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000000000190000000000000',
         'hex',
       ),
-      sighashType: 1,
     });
     psbt.addOutput({
       asset: Buffer.concat([

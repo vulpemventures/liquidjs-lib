@@ -5,7 +5,7 @@ import * as types from '../ts_src/types';
 import { AddIssuanceArgs, Psbt } from './../ts_src/psbt';
 import { Transaction } from './../ts_src/transaction';
 
-import { ECPair, networks } from '../ts_src';
+import { networks, ECPair } from '../ts_src';
 import { satoshiToConfidentialValue } from './../ts_src/confidential';
 import * as fixtures from './fixtures/issuance.json';
 import contractFixtures from './fixtures/contract_hash.json';
@@ -138,7 +138,10 @@ describe('Issuance', () => {
     );
 
     const input = {
-      hash: '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
+      hash: Buffer.from(
+        '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
+        'hex',
+      ).reverse(),
       index: 0,
       nonWitnessUtxo: Buffer.from(
         '0200000000010caf381d44f094661f2da71a11946251a27d656d6c141577e27c483a6' +
@@ -151,7 +154,6 @@ describe('Issuance', () => {
           'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000000000190000000000000',
         'hex',
       ),
-      sighashType: 1,
     };
 
     const output = {
