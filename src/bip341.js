@@ -1,13 +1,14 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.taprootSignKey = exports.taprootSignScriptStack = exports.taprootOutputScript = exports.taprootTreeHelper = void 0;
+exports.taprootSignKey = exports.taprootSignScriptStack = exports.taprootOutputScript = exports.findScriptPath = exports.toHashTree = exports.tapLeafHash = void 0;
 const crypto_1 = require('./crypto');
 const tiny_secp256k1_1 = require('tiny-secp256k1');
 const bufferutils_1 = require('./bufferutils');
 const ecpair_1 = require('./ecpair');
 const LEAF_VERSION_TAPSCRIPT = 0xc4;
+// hash TaprootLeaf object, could be use to identify a leaf in a MAST tree
 function tapLeafHash(leaf) {
-  const leafVersion = leaf.leafVersion || LEAF_VERSION_TAPSCRIPT;
+  const leafVersion = leaf.version || LEAF_VERSION_TAPSCRIPT;
   const script = Buffer.from(leaf.scriptHex, 'hex');
   const bufferWriter = bufferutils_1.BufferWriter.withCapacity(
     1 + (0, bufferutils_1.varSliceSize)(script),
@@ -16,78 +17,65 @@ function tapLeafHash(leaf) {
   bufferWriter.writeVarSlice(script);
   return (0, crypto_1.taggedHash)('TapLeaf/elements', bufferWriter.end());
 }
-function isLeaf(node) {
-  return typeof node === 'object' && !Array.isArray(node);
-}
+exports.tapLeafHash = tapLeafHash;
 // recursively build the Taproot tree from a ScriptTree structure
-// for each leaf, will compute the corresponding control block
-function taprootTreeHelper(scripts) {
-  if (isLeaf(scripts)) {
-    // if the tree is a leaf, we redirect to length 1 case
-    return taprootTreeHelper([scripts]);
-  }
-  switch (scripts.length) {
+function toHashTree(leaves) {
+  switch (leaves.length) {
     case 0:
-      return { leaves: [], hash: Buffer.alloc(32) };
+      return { hash: Buffer.alloc(32) };
     case 1:
-      // Leaf
-      const leaf = scripts[0];
-      if (!isLeaf(leaf)) {
-        // check if its a branch
-        return taprootTreeHelper(leaf);
-      }
-      const version = leaf.leafVersion || LEAF_VERSION_TAPSCRIPT;
+      const leaf = leaves[0];
+      const version = leaf.version || LEAF_VERSION_TAPSCRIPT;
       if ((version & 1) !== 0) {
         throw new Error('Invalid leaf version');
       }
-      if (!leaf.name) {
-        return { leaves: [], hash: tapLeafHash(leaf) };
-      }
       return {
-        leaves: [
-          {
-            name: leaf.name,
-            scriptHex: leaf.scriptHex,
-            leafVersion: version,
-            controlBlock: Buffer.alloc(0),
-          },
-        ],
         hash: tapLeafHash(leaf),
       };
     default:
       // 2 or more entries
-      const middleIndex = Math.ceil(scripts.length / 2);
-      const left = taprootTreeHelper(scripts.slice(0, middleIndex));
-      const right = taprootTreeHelper(scripts.slice(middleIndex));
-      const finalLeftLeaves = [];
-      const finalRightLeaves = [];
-      for (const l of left.leaves) {
-        finalLeftLeaves.push({
-          ...l,
-          controlBlock: Buffer.concat([l.controlBlock, right.hash]),
-        });
-      }
-      for (const l of right.leaves) {
-        finalRightLeaves.push({
-          ...l,
-          controlBlock: Buffer.concat([l.controlBlock, left.hash]),
-        });
-      }
-      const hashes = [left.hash, right.hash];
+      const middleIndex = Math.ceil(leaves.length / 2);
+      const left = toHashTree(leaves.slice(0, middleIndex));
+      const right = toHashTree(leaves.slice(middleIndex));
+      let leftHash = left.hash;
+      let rightHash = right.hash;
       // check if left is greater than right
       if (left.hash.compare(right.hash) > 0) {
-        hashes.reverse();
+        [leftHash, rightHash] = [rightHash, leftHash];
       }
       return {
-        leaves: [...finalLeftLeaves, ...finalRightLeaves],
+        left,
+        right,
         hash: (0, crypto_1.taggedHash)(
           'TapBranch/elements',
-          Buffer.concat(hashes),
+          Buffer.concat([leftHash, rightHash]),
         ),
       };
   }
 }
-exports.taprootTreeHelper = taprootTreeHelper;
+exports.toHashTree = toHashTree;
+/**
+ * Given a MAST tree, it finds the path of a particular hash.
+ * @param node - the root of the tree
+ * @param hash - the hash to search for
+ * @returns - and array of hashes representing the path, or an empty array if no pat is found
+ */
+function findScriptPath(node, hash) {
+  if (node.left) {
+    if (node.left.hash.equals(hash)) return node.right ? [node.right.hash] : [];
+    const leftPath = findScriptPath(node.left, hash);
+    if (leftPath.length)
+      return node.right ? leftPath.concat([node.right.hash]) : leftPath;
+  }
+  if (node.right) {
+    if (node.right.hash.equals(hash)) return node.left ? [node.left.hash] : [];
+    const rightPath = findScriptPath(node.right, hash);
+    if (rightPath.length)
+      return node.left ? rightPath.concat([node.left.hash]) : rightPath;
+  }
+  return [];
+}
+exports.findScriptPath = findScriptPath;
 function tweakPublicKey(publicKey, hash) {
   const XOnlyPubKey = publicKey.slice(1, 33);
   const toTweak = Buffer.concat([XOnlyPubKey, hash]);
@@ -100,10 +88,10 @@ function tweakPublicKey(publicKey, hash) {
   return tweaked;
 }
 // compute a segwit V1 output script
-function taprootOutputScript(internalPublicKey, scriptTree) {
+function taprootOutputScript(internalPublicKey, tree) {
   let treeHash = Buffer.alloc(0);
-  if (scriptTree) {
-    treeHash = taprootTreeHelper(scriptTree).hash;
+  if (tree) {
+    treeHash = tree.hash;
   }
   const { xOnlyPubkey } = tweakPublicKey(internalPublicKey, treeHash);
   return Buffer.concat([Buffer.from([0x51, 0x20]), xOnlyPubkey]);
@@ -114,23 +102,18 @@ exports.taprootOutputScript = taprootOutputScript;
  * TAPROOT_WITNESS = [SCRIPT, CONTROL_BLOCK]
  * WITNESS_STACK = [...INPUTS, TAPROOT_WITNESS] <- u need to add the script's inputs to the stack
  * @param internalPublicKey the taproot internal public key
- * @param scriptTree the taproot script tree using to recompute path to the leaf. Names have to be specified!
- * @param scriptName the leaf to use
+ * @param leaf the leaf to use to sign the taproot coin
+ * @param path the path to the leaf in the MAST tree see findScriptPath function
  */
-function taprootSignScriptStack(internalPublicKey, scriptTree, scriptName) {
-  const taprootTree = taprootTreeHelper(scriptTree);
-  const scriptLeaf = taprootTree.leaves.find(l => l.name === scriptName);
-  if (!scriptLeaf) {
-    throw new Error('Script not found');
-  }
-  const { parity } = tweakPublicKey(internalPublicKey, taprootTree.hash);
-  const parityBit = Buffer.of(scriptLeaf.leafVersion + parity);
+function taprootSignScriptStack(internalPublicKey, leaf, treeRootHash, path) {
+  const { parity } = tweakPublicKey(internalPublicKey, treeRootHash);
+  const parityBit = Buffer.of(leaf.version || LEAF_VERSION_TAPSCRIPT + parity);
   const control = Buffer.concat([
     parityBit,
     internalPublicKey.slice(1),
-    scriptLeaf.controlBlock,
+    ...path,
   ]);
-  return [Buffer.from(scriptLeaf.scriptHex, 'hex'), control];
+  return [Buffer.from(leaf.scriptHex, 'hex'), control];
 }
 exports.taprootSignScriptStack = taprootSignScriptStack;
 // Order of the curve (N) - 1

@@ -14,11 +14,13 @@ import {
 } from '../../ts_src/confidential';
 import { ECPairInterface } from 'ecpair';
 import {
-  ScriptTree,
+  findScriptPath,
+  tapLeafHash,
+  TaprootLeaf,
   taprootOutputScript,
   taprootSignKey,
   taprootSignScriptStack,
-  taprootTreeHelper,
+  toHashTree,
 } from '../../ts_src/bip341';
 import { compile, OPS } from '../../ts_src/script';
 import { signSchnorr, verifySchnorr } from 'tiny-secp256k1';
@@ -70,19 +72,18 @@ describe('liquidjs-lib (transaction with taproot)', () => {
 
     // in this exemple, alice is the internal key (can spend via keypath spend)
     // however, the script tree allows bob to spend the coin with a simple p2pkh
-    const tree: ScriptTree = [
+    const leaves: TaprootLeaf[] = [
       {
-        name: 'bob',
         scriptHex: bobScript.toString('hex'),
       },
       {
-        name: 'unspendable',
         scriptHex:
           '20b617298552a72ade070667e86ca63b8f5789a9fe8731ef91202a91c9f3459007ac',
       },
     ];
 
-    const output = taprootOutputScript(alice.publicKey, tree);
+    const hashTree = toHashTree(leaves);
+    const output = taprootOutputScript(alice.publicKey, hashTree);
     const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
     const utxo = await faucet(faucetAddress);
 
@@ -97,9 +98,15 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       faucetAddress,
     );
 
-    const taprootStack = taprootSignScriptStack(alice.publicKey, tree, 'bob');
-
-    const leafHash = taprootTreeHelper(tree[0]).hash;
+    const bobLeaf = leaves[0];
+    const leafHash = tapLeafHash(bobLeaf);
+    const pathToBobLeaf = findScriptPath(hashTree, leafHash);
+    const taprootStack = taprootSignScriptStack(
+      alice.publicKey,
+      bobLeaf,
+      hashTree.hash,
+      pathToBobLeaf,
+    );
 
     const inputsStack = makeStackCheckSig(
       bob,
