@@ -1,17 +1,15 @@
 import * as assert from 'assert';
 import * as bip32 from 'bip32';
 import * as regtestUtils from './_regtest';
-
 import { describe, it } from 'mocha';
-
 import { createPayment, getInputData, nonWitnessUtxoBuffer } from './utils';
 import {
   confidential,
-  ECPair,
   payments,
   Psbt,
   networks as NETWORKS,
 } from '../../ts_src';
+import { ECPair } from '../../ts_src/ecpair';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;

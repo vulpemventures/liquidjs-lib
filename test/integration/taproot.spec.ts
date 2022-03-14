@@ -1,12 +1,12 @@
 import { describe, it } from 'mocha';
 import {
-  ECPair,
   networks,
   AssetHash,
   Transaction,
   payments,
   address,
 } from '../../ts_src/index';
+import { ECPair } from '../../ts_src/ecpair';
 import { broadcast, faucet } from './_regtest';
 import {
   confidentialValueToSatoshi,
