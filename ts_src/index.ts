@@ -6,7 +6,6 @@ import * as payments from './payments';
 import * as script from './script';
 import * as issuance from './issuance';
 import * as bip341 from './bip341';
-export * from './ecpair';
 export * from './asset';
 
 export {

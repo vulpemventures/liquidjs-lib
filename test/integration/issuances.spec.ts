@@ -7,8 +7,8 @@ import {
   Psbt,
   Transaction,
   networks as NETWORKS,
-  ECPair,
 } from '../../ts_src';
+import { ECPair } from '../../ts_src/ecpair';
 import { strictEqual } from 'assert';
 import {
   issuanceEntropyFromInput,

@@ -1,12 +1,7 @@
 import * as assert from 'assert';
 import { describe, it } from 'mocha';
-import {
-  // bip32,
-  ECPair,
-  networks as NETWORKS,
-  Psbt,
-  script as bscript,
-} from '../ts_src';
+import { networks as NETWORKS, Psbt, script as bscript } from '../ts_src';
+import { ECPair } from '../ts_src/ecpair';
 import { satoshiToConfidentialValue } from '../ts_src/confidential';
 import * as preFixtures from './fixtures/psbt.json';
 

@@ -1,5 +1,6 @@
 import * as liquid from '../../ts_src';
 import * as regtestUtils from './_regtest';
+import { ECPair } from '../../ts_src/ecpair';
 
 export function createPayment(
   _type: string,
@@ -21,13 +22,13 @@ export function createPayment(
       throw new Error('Need n keys for multisig');
     }
     while (!myKeys && n > 1) {
-      keys.push(liquid.ECPair.makeRandom({ network }));
+      keys.push(ECPair.makeRandom({ network }));
       n--;
     }
   }
-  if (!myKeys) keys.push(liquid.ECPair.makeRandom({ network }));
+  if (!myKeys) keys.push(ECPair.makeRandom({ network }));
   if (confidential)
-    blindingKeys.push(liquid.ECPair.makeRandom({ network }).privateKey!);
+    blindingKeys.push(ECPair.makeRandom({ network }).privateKey!);
 
   let payment: any;
   splitType.forEach(type => {
@@ -40,7 +41,7 @@ export function createPayment(
     } else if (['p2sh', 'p2wsh'].indexOf(type) > -1) {
       const blindkey =
         confidential && (type === 'p2sh' || splitType.indexOf('p2sh') < 0)
-          ? liquid.ECPair.fromPrivateKey(blindingKeys[0]).publicKey
+          ? ECPair.fromPrivateKey(blindingKeys[0]).publicKey
           : undefined;
       payment = (liquid.payments as any)[type]({
         redeem: payment,
@@ -50,7 +51,7 @@ export function createPayment(
     } else {
       const blindkey =
         confidential && splitType.length === 1
-          ? liquid.ECPair.fromPrivateKey(blindingKeys[0]).publicKey
+          ? ECPair.fromPrivateKey(blindingKeys[0]).publicKey
           : undefined;
       payment = (liquid.payments as any)[type]({
         pubkey: keys[0].publicKey,
