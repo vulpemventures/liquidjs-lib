@@ -1,5 +1,5 @@
 const OPS: { [key: string]: number } = {
-    // push value
+  // push value
   OP_FALSE: 0x00,
   OP_0: 0x00,
   OP_PUSHDATA1: 0x4c,
