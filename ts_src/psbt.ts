@@ -96,7 +96,7 @@ export type ValidateSigFunction = (
 
 export type KeysGenerator = (
   opts?: RngOpts,
-) => { publicKey: Buffer, privateKey: Buffer };
+) => { publicKey: Buffer; privateKey: Buffer };
 
 /**
  * These are the default arguments for a Psbt instance.
@@ -953,7 +953,7 @@ export class Psbt {
       const publicKey = ECPairFactory(ecc).fromPrivateKey(privateKey).publicKey;
       return {
         privateKey,
-        publicKey
+        publicKey,
       };
     };
   }
