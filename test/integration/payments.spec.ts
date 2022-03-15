@@ -2,7 +2,7 @@ import { describe, it } from 'mocha';
 import { networks as NETWORKS } from '../../ts_src';
 import * as liquid from '../../ts_src';
 import * as regtestUtils from './_regtest';
-import { ECPair } from '../../ts_src/ecpair';
+import { ECPair } from '../ecc';
 
 const NETWORK = NETWORKS.regtest;
 

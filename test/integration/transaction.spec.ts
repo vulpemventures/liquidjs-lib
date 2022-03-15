@@ -9,7 +9,7 @@ import {
   Psbt,
   networks as NETWORKS,
 } from '../../ts_src';
-import { ECPair } from '../../ts_src/ecpair';
+import { ECPair, ecc } from '../ecc';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
@@ -99,7 +99,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       },
     ]);
     psbt.signInput(0, alice);
-    psbt.validateSignaturesOfInput(0);
+    psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc));
     psbt.finalizeAllInputs();
     assert.strictEqual(
       psbt.extractTransaction().toHex(),
@@ -154,9 +154,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         script: Buffer.alloc(0),
       },
     ]);
-    psbt.blindOutputs(blindingPrivkeys, bliningPubkeys);
+    psbt.blindOutputs(
+      Psbt.ECCKeysGenerator(ecc),
+      blindingPrivkeys,
+      bliningPubkeys,
+    );
     psbt.signInput(0, bob);
-    psbt.validateSignaturesOfInput(0);
+    psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc));
     psbt.finalizeAllInputs();
     psbt.extractTransaction();
   });
@@ -238,8 +242,14 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     // Finalizer wants to check all signatures are valid before finalizing.
     // If the finalizer wants to check for specific pubkeys, the second arg
     // can be passed. See the first multisig example below.
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
-    assert.strictEqual(psbt.validateSignaturesOfInput(1), true);
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(1, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
 
     // This step it new. Since we separate the signing operation and
     // the creation of the scriptSig and witness stack, we are able to
@@ -293,14 +303,21 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         script: Buffer.alloc(0),
         value: satoshiToConfidentialValue(7000),
       }) // fees in Liquid are explicit
-      .blindOutputs(alice1.blindingKeys, blindingPubkeys);
+      .blindOutputs(
+        Psbt.ECCKeysGenerator(ecc),
+        alice1.blindingKeys,
+        blindingPubkeys,
+      );
 
     psbt = psbt.signAllInputs(alice1.keys[0]);
 
     // Finalizer wants to check all signatures are valid before finalizing.
     // If the finalizer wants to check for specific pubkeys, the second arg
     // can be passed. See the first multisig example below.
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
 
     // This step it new. Since we separate the signing operation and
     // the creation of the scriptSig and witness stack, we are able to
@@ -369,13 +386,17 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           value: satoshiToConfidentialValue(7000),
         }) // fees in Liquid are explicit
         .blindOutputsByIndex(
+          Psbt.ECCKeysGenerator(ecc),
           new Map().set(0, aliceBlindingPrivateKey),
           new Map().set(1, aliceBlindingPubKey).set(2, aliceBlindingPubKey),
         );
 
       psbt = psbt.signAllInputs(alicePayment.keys[0]);
 
-      assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
+      assert.strictEqual(
+        psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+        true,
+      );
       psbt.finalizeAllInputs();
 
       // build and broadcast our RegTest network
@@ -453,6 +474,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           value: satoshiToConfidentialValue(7000),
         }) // fees in Liquid are explicit
         .blindOutputsByIndex(
+          Psbt.ECCKeysGenerator(ecc),
           new Map().set(1, aliceBlindingPrivateKey),
           new Map().set(1, aliceBlindingPubKey).set(2, aliceBlindingPubKey),
         );
@@ -463,8 +485,14 @@ describe('liquidjs-lib (transactions with psbt)', () => {
 
       assert.doesNotThrow(() => Psbt.fromBase64(psbt.toBase64()));
 
-      assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
-      assert.strictEqual(psbt.validateSignaturesOfInput(1), true);
+      assert.strictEqual(
+        psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+        true,
+      );
+      assert.strictEqual(
+        psbt.validateSignaturesOfInput(1, Psbt.ECDSASigValidator(ecc)),
+        true,
+      );
 
       psbt.finalizeAllInputs();
 
@@ -534,13 +562,17 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           value: satoshiToConfidentialValue(7000),
         }) // fees in Liquid are explicit
         .blindOutputsByIndex(
+          Psbt.ECCKeysGenerator(ecc),
           new Map().set(0, inputBlindingData),
           new Map().set(1, aliceBlindingPubKey).set(2, aliceBlindingPubKey),
         );
 
       psbt.signInput(0, alicePaymentConfidential.keys[0]);
 
-      assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
+      assert.strictEqual(
+        psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+        true,
+      );
 
       psbt.finalizeAllInputs();
 
@@ -581,7 +613,10 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       })
       .signInput(0, alice1.keys[0]);
 
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
     psbt.finalizeAllInputs();
 
     // build and broadcast to the RegTest network
@@ -626,13 +661,24 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       .signInput(0, multisig.keys[0])
       .signInput(0, multisig.keys[2]);
 
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
     assert.strictEqual(
-      psbt.validateSignaturesOfInput(0, undefined, multisig.keys[0].publicKey),
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(
+        0,
+        Psbt.ECDSASigValidator(ecc),
+        multisig.keys[0].publicKey,
+      ),
       true,
     );
     assert.throws(() => {
-      psbt.validateSignaturesOfInput(0, undefined, multisig.keys[3].publicKey);
+      psbt.validateSignaturesOfInput(
+        0,
+        Psbt.ECDSASigValidator(ecc),
+        multisig.keys[3].publicKey,
+      );
     }, new RegExp('No signatures for this pubkey'));
     psbt.finalizeAllInputs();
 
@@ -726,7 +772,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     const psbt = await new Psbt()
       .addInputs([inputData, inputData2])
       .addOutputs([outputData, outputData2, outputData3])
-      .blindOutputs(blindingKeys, blindingPubkeys);
+      .blindOutputs(Psbt.ECCKeysGenerator(ecc), blindingKeys, blindingPubkeys);
 
     const tx = psbt.signAllInputs(keyPair);
 
@@ -795,7 +841,11 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       const psbt = await new Psbt()
         .addInputs([inputData, inputData2])
         .addOutputs([outputData, outputData2])
-        .blindOutputs(blindingKeys, blindingPubkeys);
+        .blindOutputs(
+          Psbt.ECCKeysGenerator(ecc),
+          blindingKeys,
+          blindingPubkeys,
+        );
 
       const tx = psbt
         .signAllInputs(keyPair)
@@ -837,7 +887,10 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       ])
       .signInput(0, p2wpkh.keys[0]);
 
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
     psbt.finalizeAllInputs();
 
     const tx = psbt.extractTransaction();
@@ -878,11 +931,18 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           value: satoshiToConfidentialValue(3500),
         },
       ])
-      .blindOutputs(p2wpkh.blindingKeys, blindingPubkeys);
+      .blindOutputs(
+        Psbt.ECCKeysGenerator(ecc),
+        p2wpkh.blindingKeys,
+        blindingPubkeys,
+      );
 
     psbt = psbt.signInput(0, p2wpkh.keys[0]);
 
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
     psbt.finalizeAllInputs();
 
     const tx = psbt.extractTransaction();
@@ -951,7 +1011,11 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             value: satoshiToConfidentialValue(3500),
           },
         ])
-        .blindOutputs(p2wpkh.blindingKeys, blindingPubkeys);
+        .blindOutputs(
+          Psbt.ECCKeysGenerator(ecc),
+          p2wpkh.blindingKeys,
+          blindingPubkeys,
+        );
 
       psbt = psbt.signInput(0, p2wpkh.keys[0]);
       psbt.finalizeAllInputs();
@@ -997,7 +1061,10 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       ])
       .signInput(0, p2wsh.keys[0]);
 
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
     psbt.finalizeAllInputs();
 
     const tx = psbt.extractTransaction();
@@ -1044,10 +1111,17 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           value: satoshiToConfidentialValue(3500),
         },
       ])
-      .blindOutputs(p2wsh.blindingKeys, blindingPubkeys);
+      .blindOutputs(
+        Psbt.ECCKeysGenerator(ecc),
+        p2wsh.blindingKeys,
+        blindingPubkeys,
+      );
 
     psbt = psbt.signInput(0, p2wsh.keys[0]);
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
     psbt.finalizeAllInputs();
 
     const tx = psbt.extractTransaction();
@@ -1116,7 +1190,11 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             value: satoshiToConfidentialValue(3500),
           },
         ])
-        .blindOutputs(p2wsh.blindingKeys, blindingPubkeys);
+        .blindOutputs(
+          Psbt.ECCKeysGenerator(ecc),
+          p2wsh.blindingKeys,
+          blindingPubkeys,
+        );
 
       psbt = psbt.signInput(0, p2wsh.keys[0]).finalizeAllInputs();
       const tx = psbt.extractTransaction();
@@ -1167,13 +1245,24 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         .signInput(0, p2sh.keys[2])
         .signInput(0, p2sh.keys[3]);
 
-      assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
       assert.strictEqual(
-        psbt.validateSignaturesOfInput(0, undefined, p2sh.keys[3].publicKey),
+        psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+        true,
+      );
+      assert.strictEqual(
+        psbt.validateSignaturesOfInput(
+          0,
+          Psbt.ECDSASigValidator(ecc),
+          p2sh.keys[3].publicKey,
+        ),
         true,
       );
       assert.throws(() => {
-        psbt.validateSignaturesOfInput(0, undefined, p2sh.keys[1].publicKey);
+        psbt.validateSignaturesOfInput(
+          0,
+          Psbt.ECDSASigValidator(ecc),
+          p2sh.keys[1].publicKey,
+        );
       }, new RegExp('No signatures for this pubkey'));
       psbt.finalizeAllInputs();
 
@@ -1231,20 +1320,35 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             value: satoshiToConfidentialValue(3500),
           },
         ])
-        .blindOutputs(p2sh.blindingKeys, blindingPubkeys);
+        .blindOutputs(
+          Psbt.ECCKeysGenerator(ecc),
+          p2sh.blindingKeys,
+          blindingPubkeys,
+        );
 
       psbt
         .signInput(0, p2sh.keys[0])
         .signInput(0, p2sh.keys[2])
         .signInput(0, p2sh.keys[3]);
 
-      assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
       assert.strictEqual(
-        psbt.validateSignaturesOfInput(0, undefined, p2sh.keys[3].publicKey),
+        psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+        true,
+      );
+      assert.strictEqual(
+        psbt.validateSignaturesOfInput(
+          0,
+          Psbt.ECDSASigValidator(ecc),
+          p2sh.keys[3].publicKey,
+        ),
         true,
       );
       assert.throws(() => {
-        psbt.validateSignaturesOfInput(0, undefined, p2sh.keys[1].publicKey);
+        psbt.validateSignaturesOfInput(
+          0,
+          Psbt.ECDSASigValidator(ecc),
+          p2sh.keys[1].publicKey,
+        );
       }, new RegExp('No signatures for this pubkey'));
       psbt.finalizeAllInputs();
 
@@ -1326,7 +1430,11 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             value: satoshiToConfidentialValue(3500),
           },
         ])
-        .blindOutputs(p2sh.blindingKeys, blindingPubkeys);
+        .blindOutputs(
+          Psbt.ECCKeysGenerator(ecc),
+          p2sh.blindingKeys,
+          blindingPubkeys,
+        );
 
       psbt
         .signInput(0, p2sh.keys[0])
@@ -1409,7 +1517,11 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             value: satoshiToConfidentialValue(3500),
           },
         ])
-        .blindOutputs(p2sh.blindingKeys, blindingPubkeys);
+        .blindOutputs(
+          Psbt.ECCKeysGenerator(ecc),
+          p2sh.blindingKeys,
+          blindingPubkeys,
+        );
 
       psbt.signInput(0, p2sh.keys[0]).finalizeAllInputs();
       const tx = psbt.extractTransaction();
@@ -1473,9 +1585,16 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       ])
       .signInputHD(0, hdRoot); // must sign with root!!!
 
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
     assert.strictEqual(
-      psbt.validateSignaturesOfInput(0, undefined, childNode.publicKey),
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(
+        0,
+        Psbt.ECDSASigValidator(ecc),
+        childNode.publicKey,
+      ),
       true,
     );
     psbt.finalizeAllInputs();
@@ -1543,13 +1662,24 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           value: satoshiToConfidentialValue(3500),
         },
       ])
-      .blindOutputs(p2wpkh.blindingKeys, blindingPubkeys);
+      .blindOutputs(
+        Psbt.ECCKeysGenerator(ecc),
+        p2wpkh.blindingKeys,
+        blindingPubkeys,
+      );
 
     psbt.signInputHD(0, hdRoot); // must sign with root!!!
 
-    assert.strictEqual(psbt.validateSignaturesOfInput(0), true);
     assert.strictEqual(
-      psbt.validateSignaturesOfInput(0, undefined, childNode.publicKey),
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
+    assert.strictEqual(
+      psbt.validateSignaturesOfInput(
+        0,
+        Psbt.ECDSASigValidator(ecc),
+        childNode.publicKey,
+      ),
       true,
     );
     psbt.finalizeAllInputs();

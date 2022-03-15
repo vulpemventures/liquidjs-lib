@@ -1,5 +1,22 @@
 /// <reference types="node" />
-import { ECPairInterface } from 'ecpair';
+import { ECPairInterface, TinySecp256k1Interface as ECPairSecp256k1Interface } from 'ecpair';
+export interface XOnlyPointAddTweakResult {
+    parity: 1 | 0;
+    xOnlyPubkey: Uint8Array;
+}
+export interface TinySecp256k1Interface extends ECPairSecp256k1Interface {
+    xOnlyPointAddTweak(p: Uint8Array, tweak: Uint8Array): XOnlyPointAddTweakResult | null;
+    privateAdd(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
+    privateSub(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
+    signSchnorr(h: Uint8Array, d: Uint8Array, e?: Uint8Array): Uint8Array;
+    verifySchnorr(h: Uint8Array, Q: Uint8Array, signature: Uint8Array): boolean;
+}
+export interface BIP341API {
+    taprootSignKey(messageHash: Buffer, key: ECPairInterface): Buffer;
+    taprootSignScriptStack(internalPublicKey: Buffer, leaf: TaprootLeaf, treeRootHash: Buffer, path: Buffer[]): Buffer[];
+    taprootOutputScript(internalPublicKey: Buffer, tree?: HashTree): Buffer;
+}
+export declare function BIP341Factory(ecc: TinySecp256k1Interface): BIP341API;
 export interface TaprootLeaf {
     scriptHex: string;
     version?: number;
@@ -19,14 +36,3 @@ export declare function toHashTree(leaves: TaprootLeaf[]): HashTree;
  * @returns - and array of hashes representing the path, or an empty array if no pat is found
  */
 export declare function findScriptPath(node: HashTree, hash: Buffer): Buffer[];
-export declare function taprootOutputScript(internalPublicKey: Buffer, tree?: HashTree): Buffer;
-/**
- * Compute the taproot part of the witness stack needed to spend a P2TR output via script path
- * TAPROOT_WITNESS = [SCRIPT, CONTROL_BLOCK]
- * WITNESS_STACK = [...INPUTS, TAPROOT_WITNESS] <- u need to add the script's inputs to the stack
- * @param internalPublicKey the taproot internal public key
- * @param leaf the leaf to use to sign the taproot coin
- * @param path the path to the leaf in the MAST tree see findScriptPath function
- */
-export declare function taprootSignScriptStack(internalPublicKey: Buffer, leaf: TaprootLeaf, treeRootHash: Buffer, path: Buffer[]): Buffer[];
-export declare function taprootSignKey(messageHash: Buffer, key: ECPairInterface): Buffer;

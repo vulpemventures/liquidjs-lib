@@ -19,7 +19,6 @@ import { reverseBuffer } from './bufferutils';
 import { hash160 } from './crypto';
 import { Network, liquid as btcNetwork } from './networks';
 import { Output, Transaction, ZERO } from './transaction';
-import { ECPair } from './ecpair';
 import {
   calculateAsset,
   calculateReissuanceToken,
@@ -41,6 +40,7 @@ import * as bscript from './script';
 import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
 import { checkForInput } from 'bip174-liquid/src/lib/utils';
+import { TinySecp256k1Interface, ECPairFactory } from 'ecpair';
 
 // psbt.addIssuance options
 export interface AddIssuanceArgs {
@@ -93,6 +93,10 @@ export type ValidateSigFunction = (
   msghash: Buffer,
   signature: Buffer,
 ) => boolean;
+
+export type KeysGenerator = (
+  opts?: RngOpts,
+) => { publicKey: Buffer, privateKey: Buffer };
 
 /**
  * These are the default arguments for a Psbt instance.
@@ -575,17 +579,23 @@ export class Psbt {
     );
   }
 
-  static eccValidator(
-    pubkey: Buffer,
-    msghash: Buffer,
-    signature: Buffer,
-  ): boolean {
-    return ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+  static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction {
+    return (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
+      return ECPairFactory(ecc)
+        .fromPublicKey(pubkey)
+        .verify(msghash, signature);
+    };
   }
 
-  validateSignaturesOfAllInputs(
-    validator: ValidateSigFunction = Psbt.eccValidator,
-  ): boolean {
+  static SchnorrSigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction {
+    return (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
+      return ECPairFactory(ecc)
+        .fromPublicKey(pubkey)
+        .verifySchnorr(msghash, signature);
+    };
+  }
+
+  validateSignaturesOfAllInputs(validator: ValidateSigFunction): boolean {
     checkForInput(this.data.inputs, 0); // making sure we have at least one
     const results = range(this.data.inputs.length).map(idx =>
       this.validateSignaturesOfInput(idx, validator),
@@ -595,7 +605,7 @@ export class Psbt {
 
   validateSignaturesOfInput(
     inputIndex: number,
-    validator: ValidateSigFunction = Psbt.eccValidator,
+    validator: ValidateSigFunction,
     pubkey?: Buffer,
   ): boolean {
     const input = this.data.inputs[inputIndex];
@@ -937,7 +947,19 @@ export class Psbt {
     return this;
   }
 
+  static ECCKeysGenerator(ecc: TinySecp256k1Interface): KeysGenerator {
+    return (opts?: RngOpts) => {
+      const privateKey = randomBytes(opts);
+      const publicKey = ECPairFactory(ecc).fromPrivateKey(privateKey).publicKey;
+      return {
+        privateKey,
+        publicKey
+      };
+    };
+  }
+
   blindOutputs(
+    keysGenerator: KeysGenerator,
     blindingDataLike: BlindingDataLike[],
     blindingPubkeys: Buffer[],
     opts?: RngOpts,
@@ -946,12 +968,14 @@ export class Psbt {
       blindingDataLike,
       blindingPubkeys,
       undefined,
+      keysGenerator,
       undefined,
       opts,
     );
   }
 
   blindOutputsByIndex(
+    keysGenerator: KeysGenerator,
     inputsBlindingData: Map<number, BlindingDataLike>,
     outputsBlindingPubKeys: Map<number, Buffer>,
     issuancesBlindingKeys?: Map<number, IssuanceBlindingKeys>,
@@ -977,6 +1001,7 @@ export class Psbt {
       blindingPrivKeysArgs,
       blindingPublicKey,
       blindingPrivKeysIssuancesArgs,
+      keysGenerator,
       outputIndexes,
       opts,
     );
@@ -1202,6 +1227,7 @@ export class Psbt {
     blindingData: confidential.UnblindOutputResult[],
     blindingPubkeys: Buffer[],
     outputIndexes: number[],
+    keysGenerator: KeysGenerator,
     opts?: RngOpts,
   ): Promise<this> {
     // get data (satoshis & asset) outputs to blind
@@ -1228,8 +1254,8 @@ export class Psbt {
     let indexInArray = 0;
     for (const outputIndex of outputIndexes) {
       const randomSeed = randomBytes(opts);
-      const ephemeralPrivKey = randomBytes(opts);
-      const outputNonce = ECPair.fromPrivateKey(ephemeralPrivKey).publicKey;
+      const ephemeralKeys = keysGenerator(opts);
+      const outputNonce = ephemeralKeys.publicKey;
       const outputBlindingData = outputsBlindingData[indexInArray];
 
       // commitments
@@ -1248,7 +1274,7 @@ export class Psbt {
       const rangeProof = await confidential.rangeProofWithNonceHash(
         outputBlindingData.value,
         blindingPubkeys[indexInArray],
-        ephemeralPrivKey,
+        ephemeralKeys.privateKey,
         outputBlindingData.asset,
         outputBlindingData.assetBlindingFactor,
         outputBlindingData.valueBlindingFactor,
@@ -1280,6 +1306,7 @@ export class Psbt {
     blindingDataLike: BlindingDataLike[],
     blindingPubkeys: Buffer[],
     issuanceBlindingPrivKeys: Array<IssuanceBlindingKeys | undefined> = [],
+    keysGenerator: KeysGenerator,
     outputIndexes?: number[],
     opts?: RngOpts,
   ): Promise<this> {
@@ -1343,6 +1370,7 @@ export class Psbt {
       totalBlindingData,
       blindingPubkeys,
       outputIndexes,
+      keysGenerator,
       opts,
     );
     await this.blindInputs(totalBlindingData, issuanceBlindingPrivKeys);
@@ -1532,6 +1560,16 @@ function checkCache(cache: PsbtCache): void {
   }
 }
 
+function compressPubkey(pubkey: Buffer): Buffer {
+  if (pubkey.length === 65) {
+    const parity = pubkey[64] & 1;
+    const newKey = pubkey.slice(0, 33);
+    newKey[0] = 2 | parity;
+    return newKey;
+  }
+  return pubkey.slice();
+}
+
 function hasSigs(
   neededSigs: number,
   partialSig?: any[],
@@ -1542,8 +1580,7 @@ function hasSigs(
   if (pubkeys) {
     sigs = pubkeys
       .map(pkey => {
-        const pubkey = ECPair.fromPublicKey(pkey, { compressed: true })
-          .publicKey;
+        const pubkey = compressPubkey(pkey);
         return partialSig.find(pSig => pSig.pubkey.equals(pubkey));
       })
       .filter(v => !!v);

@@ -1,11 +1,18 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.taprootSignKey = exports.taprootSignScriptStack = exports.taprootOutputScript = exports.findScriptPath = exports.toHashTree = exports.tapLeafHash = void 0;
+exports.findScriptPath = exports.toHashTree = exports.tapLeafHash = exports.BIP341Factory = void 0;
 const crypto_1 = require('./crypto');
-const tiny_secp256k1_1 = require('tiny-secp256k1');
+const ecpair_1 = require('ecpair');
 const bufferutils_1 = require('./bufferutils');
-const ecpair_1 = require('./ecpair');
 const LEAF_VERSION_TAPSCRIPT = 0xc4;
+function BIP341Factory(ecc) {
+  return {
+    taprootSignKey: taprootSignKey(ecc),
+    taprootSignScriptStack: taprootSignScriptStack(ecc),
+    taprootOutputScript: taprootOutputScript(ecc),
+  };
+}
+exports.BIP341Factory = BIP341Factory;
 // hash TaprootLeaf object, could be use to identify a leaf in a MAST tree
 function tapLeafHash(leaf) {
   const leafVersion = leaf.version || LEAF_VERSION_TAPSCRIPT;
@@ -76,27 +83,25 @@ function findScriptPath(node, hash) {
   return [];
 }
 exports.findScriptPath = findScriptPath;
-function tweakPublicKey(publicKey, hash) {
+function tweakPublicKey(publicKey, hash, ecc) {
   const XOnlyPubKey = publicKey.slice(1, 33);
   const toTweak = Buffer.concat([XOnlyPubKey, hash]);
   const tweakHash = (0, crypto_1.taggedHash)('TapTweak/elements', toTweak);
-  const tweaked = (0, tiny_secp256k1_1.xOnlyPointAddTweak)(
-    XOnlyPubKey,
-    tweakHash,
-  );
+  const tweaked = ecc.xOnlyPointAddTweak(XOnlyPubKey, tweakHash);
   if (!tweaked) throw new Error('Invalid tweaked key');
   return tweaked;
 }
 // compute a segwit V1 output script
-function taprootOutputScript(internalPublicKey, tree) {
-  let treeHash = Buffer.alloc(0);
-  if (tree) {
-    treeHash = tree.hash;
-  }
-  const { xOnlyPubkey } = tweakPublicKey(internalPublicKey, treeHash);
-  return Buffer.concat([Buffer.from([0x51, 0x20]), xOnlyPubkey]);
+function taprootOutputScript(ecc) {
+  return (internalPublicKey, tree) => {
+    let treeHash = Buffer.alloc(0);
+    if (tree) {
+      treeHash = tree.hash;
+    }
+    const { xOnlyPubkey } = tweakPublicKey(internalPublicKey, treeHash, ecc);
+    return Buffer.concat([Buffer.from([0x51, 0x20]), xOnlyPubkey]);
+  };
 }
-exports.taprootOutputScript = taprootOutputScript;
 /**
  * Compute the taproot part of the witness stack needed to spend a P2TR output via script path
  * TAPROOT_WITNESS = [SCRIPT, CONTROL_BLOCK]
@@ -105,17 +110,20 @@ exports.taprootOutputScript = taprootOutputScript;
  * @param leaf the leaf to use to sign the taproot coin
  * @param path the path to the leaf in the MAST tree see findScriptPath function
  */
-function taprootSignScriptStack(internalPublicKey, leaf, treeRootHash, path) {
-  const { parity } = tweakPublicKey(internalPublicKey, treeRootHash);
-  const parityBit = Buffer.of(leaf.version || LEAF_VERSION_TAPSCRIPT + parity);
-  const control = Buffer.concat([
-    parityBit,
-    internalPublicKey.slice(1),
-    ...path,
-  ]);
-  return [Buffer.from(leaf.scriptHex, 'hex'), control];
+function taprootSignScriptStack(ecc) {
+  return (internalPublicKey, leaf, treeRootHash, path) => {
+    const { parity } = tweakPublicKey(internalPublicKey, treeRootHash, ecc);
+    const parityBit = Buffer.of(
+      leaf.version || LEAF_VERSION_TAPSCRIPT + parity,
+    );
+    const control = Buffer.concat([
+      parityBit,
+      internalPublicKey.slice(1),
+      ...path,
+    ]);
+    return [Buffer.from(leaf.scriptHex, 'hex'), control];
+  };
 }
-exports.taprootSignScriptStack = taprootSignScriptStack;
 // Order of the curve (N) - 1
 const N_LESS_1 = Buffer.from(
   'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140',
@@ -127,36 +135,34 @@ const ONE = Buffer.from(
   'hex',
 );
 // Compute the witness signature for a P2TR output (key path)
-function taprootSignKey(messageHash, key) {
-  if (!key.privateKey) {
-    throw new Error('Private key is required');
-  }
-  const privateKey =
-    key.publicKey[0] === 2
-      ? key.privateKey
-      : (0, tiny_secp256k1_1.privateAdd)(
-          (0, tiny_secp256k1_1.privateSub)(N_LESS_1, key.privateKey),
-          ONE,
-        );
-  const tweakHash = (0, crypto_1.taggedHash)(
-    'TapTweak/elements',
-    key.publicKey.slice(1, 33),
-  );
-  const newPrivateKey = (0, tiny_secp256k1_1.privateAdd)(privateKey, tweakHash);
-  if (newPrivateKey === null) throw new Error('Invalid Tweak');
-  const signed = (0, tiny_secp256k1_1.signSchnorr)(
-    messageHash,
-    newPrivateKey,
-    Buffer.alloc(32),
-  );
-  const ok = (0, tiny_secp256k1_1.verifySchnorr)(
-    messageHash,
-    ecpair_1.ECPair.fromPrivateKey(Buffer.from(newPrivateKey)).publicKey.slice(
-      1,
-    ),
-    signed,
-  );
-  if (!ok) throw new Error('Invalid Signature');
-  return Buffer.from(signed);
+function taprootSignKey(ecc) {
+  return (messageHash, key) => {
+    if (!key.privateKey) {
+      throw new Error('Private key is required');
+    }
+    const privateKey =
+      key.publicKey[0] === 2
+        ? key.privateKey
+        : ecc.privateAdd(ecc.privateSub(N_LESS_1, key.privateKey), ONE);
+    const tweakHash = (0, crypto_1.taggedHash)(
+      'TapTweak/elements',
+      key.publicKey.slice(1, 33),
+    );
+    const newPrivateKey = ecc.privateAdd(privateKey, tweakHash);
+    if (newPrivateKey === null) throw new Error('Invalid Tweak');
+    const signed = ecc.signSchnorr(
+      messageHash,
+      newPrivateKey,
+      Buffer.alloc(32),
+    );
+    const ok = ecc.verifySchnorr(
+      messageHash,
+      (0, ecpair_1.ECPairFactory)(ecc)
+        .fromPrivateKey(Buffer.from(newPrivateKey))
+        .publicKey.slice(1),
+      signed,
+    );
+    if (!ok) throw new Error('Invalid Signature');
+    return Buffer.from(signed);
+  };
 }
-exports.taprootSignKey = taprootSignKey;
