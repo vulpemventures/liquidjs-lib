@@ -137,16 +137,14 @@ const ONE = Buffer.from(
 // Compute the witness signature for a P2TR output (key path)
 function taprootSignKey(ecc) {
   return (messageHash, key) => {
-    if (!key.privateKey) {
-      throw new Error('Private key is required');
-    }
+    const signingEcPair = (0, ecpair_1.ECPairFactory)(ecc).fromPrivateKey(key);
     const privateKey =
-      key.publicKey[0] === 2
-        ? key.privateKey
-        : ecc.privateAdd(ecc.privateSub(N_LESS_1, key.privateKey), ONE);
+      signingEcPair.publicKey[0] === 2
+        ? signingEcPair.privateKey
+        : ecc.privateAdd(ecc.privateSub(N_LESS_1, key), ONE);
     const tweakHash = (0, crypto_1.taggedHash)(
       'TapTweak/elements',
-      key.publicKey.slice(1, 33),
+      signingEcPair.publicKey.slice(1, 33),
     );
     const newPrivateKey = ecc.privateAdd(privateKey, tweakHash);
     if (newPrivateKey === null) throw new Error('Invalid Tweak');

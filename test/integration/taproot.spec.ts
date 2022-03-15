@@ -246,7 +246,7 @@ function createSigned(
       Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
       net.genesisBlockHash, // block hash
     );
-    const signature = bip341.taprootSignKey(sighash, key);
+    const signature = bip341.taprootSignKey(sighash, key.privateKey!);
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
     tx.ins[0].witness = [signature];

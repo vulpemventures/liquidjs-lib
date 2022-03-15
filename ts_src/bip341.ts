@@ -1,6 +1,5 @@
 import { taggedHash } from './crypto';
 import {
-  ECPairInterface,
   ECPairFactory,
   TinySecp256k1Interface as ECPairSecp256k1Interface,
 } from 'ecpair';
@@ -28,7 +27,7 @@ export interface TinySecp256k1Interface extends ECPairSecp256k1Interface {
 // Use factory to inject TinySecp256k1Interface lib
 export interface BIP341API {
   // tweak the internal key and sign the message hash (schnorr)
-  taprootSignKey(messageHash: Buffer, key: ECPairInterface): Buffer;
+  taprootSignKey(messageHash: Buffer, privateKey: Buffer): Buffer;
   // tweak the internal pubkey, and create the control block from the path + treeRootHash
   taprootSignScriptStack(
     internalPublicKey: Buffer,
@@ -211,20 +210,18 @@ const ONE = Buffer.from(
 function taprootSignKey(
   ecc: TinySecp256k1Interface,
 ): BIP341API['taprootSignKey'] {
-  return (messageHash: Buffer, key: ECPairInterface): Buffer => {
-    if (!key.privateKey) {
-      throw new Error('Private key is required');
-    }
+  return (messageHash: Buffer, key: Buffer): Buffer => {
+    const signingEcPair = ECPairFactory(ecc).fromPrivateKey(key);
 
     const privateKey =
-      key.publicKey[0] === 2
-        ? key.privateKey
-        : ecc.privateAdd(ecc.privateSub(N_LESS_1, key.privateKey)!, ONE)!;
+      signingEcPair.publicKey[0] === 2
+        ? signingEcPair.privateKey
+        : ecc.privateAdd(ecc.privateSub(N_LESS_1, key)!, ONE);
     const tweakHash = taggedHash(
       'TapTweak/elements',
-      key.publicKey.slice(1, 33),
+      signingEcPair.publicKey.slice(1, 33),
     );
-    const newPrivateKey = ecc.privateAdd(privateKey, tweakHash);
+    const newPrivateKey = ecc.privateAdd(privateKey!, tweakHash);
     if (newPrivateKey === null) throw new Error('Invalid Tweak');
     const signed = ecc.signSchnorr(
       messageHash,

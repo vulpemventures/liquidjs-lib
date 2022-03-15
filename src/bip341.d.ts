@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { ECPairInterface, TinySecp256k1Interface as ECPairSecp256k1Interface } from 'ecpair';
+import { TinySecp256k1Interface as ECPairSecp256k1Interface } from 'ecpair';
 export interface XOnlyPointAddTweakResult {
     parity: 1 | 0;
     xOnlyPubkey: Uint8Array;
@@ -12,7 +12,7 @@ export interface TinySecp256k1Interface extends ECPairSecp256k1Interface {
     verifySchnorr(h: Uint8Array, Q: Uint8Array, signature: Uint8Array): boolean;
 }
 export interface BIP341API {
-    taprootSignKey(messageHash: Buffer, key: ECPairInterface): Buffer;
+    taprootSignKey(messageHash: Buffer, privateKey: Buffer): Buffer;
     taprootSignScriptStack(internalPublicKey: Buffer, leaf: TaprootLeaf, treeRootHash: Buffer, path: Buffer[]): Buffer[];
     taprootOutputScript(internalPublicKey: Buffer, tree?: HashTree): Buffer;
 }
