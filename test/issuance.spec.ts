@@ -6,7 +6,7 @@ import { AddIssuanceArgs, Psbt } from './../ts_src/psbt';
 import { Transaction } from './../ts_src/transaction';
 
 import { networks } from '../ts_src';
-import { ECPair } from '../ts_src/ecpair';
+import { ECPair } from './ecc';
 import { satoshiToConfidentialValue } from './../ts_src/confidential';
 import * as fixtures from './fixtures/issuance.json';
 import contractFixtures from './fixtures/contract_hash.json';

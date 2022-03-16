@@ -1,6 +1,6 @@
 import * as liquid from '../../ts_src';
 import * as regtestUtils from './_regtest';
-import { ECPair } from '../../ts_src/ecpair';
+import { ECPair } from '../ecc';
 
 export function createPayment(
   _type: string,

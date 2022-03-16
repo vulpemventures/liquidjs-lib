@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import axios from 'axios';
 import { describe, it } from 'mocha';
 import * as liquid from '../../ts_src';
-import { ECPair } from '../../ts_src/ecpair';
+import { ECPair } from '../ecc';
 const REGTEST = liquid.networks.regtest;
 
 describe('liquidjs-lib (addresses)', () => {

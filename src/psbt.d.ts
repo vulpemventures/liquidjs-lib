@@ -6,6 +6,7 @@ import { Output, Transaction } from './transaction';
 import { IssuanceContract, Outpoint } from './issuance';
 import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
+import { TinySecp256k1Interface } from 'ecpair';
 export interface AddIssuanceArgs {
     assetAmount: number;
     assetAddress: string;
@@ -42,6 +43,10 @@ export interface PsbtTxOutput extends Output {
     address?: string;
 }
 export declare type ValidateSigFunction = (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
+export declare type KeysGenerator = (opts?: RngOpts) => {
+    publicKey: Buffer;
+    privateKey: Buffer;
+};
 /**
  * Psbt class can parse and generate a PSBT binary based off of the BIP174.
  * There are 6 roles that this class fulfills. (Explained in BIP174)
@@ -111,9 +116,10 @@ export declare class Psbt {
     inputHasHDKey(inputIndex: number, root: HDSigner): boolean;
     outputHasPubkey(outputIndex: number, pubkey: Buffer): boolean;
     outputHasHDKey(outputIndex: number, root: HDSigner): boolean;
-    static eccValidator(pubkey: Buffer, msghash: Buffer, signature: Buffer): boolean;
-    validateSignaturesOfAllInputs(validator?: ValidateSigFunction): boolean;
-    validateSignaturesOfInput(inputIndex: number, validator?: ValidateSigFunction, pubkey?: Buffer): boolean;
+    static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction;
+    static SchnorrSigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction;
+    validateSignaturesOfAllInputs(validator: ValidateSigFunction): boolean;
+    validateSignaturesOfInput(inputIndex: number, validator: ValidateSigFunction, pubkey?: Buffer): boolean;
     signAllInputsHD(hdKeyPair: HDSigner, sighashTypes?: number[]): this;
     signAllInputsHDAsync(hdKeyPair: HDSigner | HDSignerAsync, sighashTypes?: number[]): Promise<void>;
     signInputHD(inputIndex: number, hdKeyPair: HDSigner, sighashTypes?: number[]): this;
@@ -128,8 +134,9 @@ export declare class Psbt {
     updateGlobal(updateData: PsbtGlobalUpdate): this;
     updateInput(inputIndex: number, updateData: PsbtInputUpdate): this;
     updateOutput(outputIndex: number, updateData: PsbtOutputUpdate): this;
-    blindOutputs(blindingDataLike: BlindingDataLike[], blindingPubkeys: Buffer[], opts?: RngOpts): Promise<this>;
-    blindOutputsByIndex(inputsBlindingData: Map<number, BlindingDataLike>, outputsBlindingPubKeys: Map<number, Buffer>, issuancesBlindingKeys?: Map<number, IssuanceBlindingKeys>, opts?: RngOpts): Promise<this>;
+    static ECCKeysGenerator(ecc: TinySecp256k1Interface): KeysGenerator;
+    blindOutputs(keysGenerator: KeysGenerator, blindingDataLike: BlindingDataLike[], blindingPubkeys: Buffer[], opts?: RngOpts): Promise<this>;
+    blindOutputsByIndex(keysGenerator: KeysGenerator, inputsBlindingData: Map<number, BlindingDataLike>, outputsBlindingPubKeys: Map<number, Buffer>, issuancesBlindingKeys?: Map<number, IssuanceBlindingKeys>, opts?: RngOpts): Promise<this>;
     addUnknownKeyValToGlobal(keyVal: KeyValue): this;
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;

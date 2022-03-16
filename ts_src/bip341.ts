@@ -1,17 +1,51 @@
 import { taggedHash } from './crypto';
 import {
-  privateAdd,
-  privateSub,
-  signSchnorr,
-  verifySchnorr,
-  xOnlyPointAddTweak,
-  XOnlyPointAddTweakResult,
-} from 'tiny-secp256k1';
+  ECPairFactory,
+  TinySecp256k1Interface as ECPairSecp256k1Interface,
+} from 'ecpair';
 import { BufferWriter, varSliceSize } from './bufferutils';
-import { ECPairInterface } from 'ecpair';
-import { ECPair } from './ecpair';
 
 const LEAF_VERSION_TAPSCRIPT = 0xc4;
+
+export interface XOnlyPointAddTweakResult {
+  parity: 1 | 0;
+  xOnlyPubkey: Uint8Array;
+}
+
+export interface TinySecp256k1Interface extends ECPairSecp256k1Interface {
+  xOnlyPointAddTweak(
+    p: Uint8Array,
+    tweak: Uint8Array,
+  ): XOnlyPointAddTweakResult | null;
+  privateAdd(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
+  privateSub(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
+  signSchnorr(h: Uint8Array, d: Uint8Array, e?: Uint8Array): Uint8Array;
+  verifySchnorr(h: Uint8Array, Q: Uint8Array, signature: Uint8Array): boolean;
+}
+
+// All the "taproot" crypto functions
+// Use factory to inject TinySecp256k1Interface lib
+export interface BIP341API {
+  // tweak the internal key and sign the message hash (schnorr)
+  taprootSignKey(messageHash: Buffer, privateKey: Buffer): Buffer;
+  // tweak the internal pubkey, and create the control block from the path + treeRootHash
+  taprootSignScriptStack(
+    internalPublicKey: Buffer,
+    leaf: TaprootLeaf,
+    treeRootHash: Buffer,
+    path: Buffer[],
+  ): Buffer[];
+  // tweak the internal pubkey and return the P2TR output script (witness v1)
+  taprootOutputScript(internalPublicKey: Buffer, tree?: HashTree): Buffer;
+}
+
+export function BIP341Factory(ecc: TinySecp256k1Interface): BIP341API {
+  return {
+    taprootSignKey: taprootSignKey(ecc),
+    taprootSignScriptStack: taprootSignScriptStack(ecc),
+    taprootOutputScript: taprootOutputScript(ecc),
+  };
+}
 
 // Leaf is the base object representing a leaf in taproot tree
 // if leafVersion is unspecified, will use LEAF_VERSION_TAPSCRIPT
@@ -105,27 +139,29 @@ export function findScriptPath(node: HashTree, hash: Buffer): Buffer[] {
 function tweakPublicKey(
   publicKey: Buffer,
   hash: Buffer,
+  ecc: TinySecp256k1Interface,
 ): XOnlyPointAddTweakResult {
   const XOnlyPubKey = publicKey.slice(1, 33);
   const toTweak = Buffer.concat([XOnlyPubKey, hash]);
   const tweakHash = taggedHash('TapTweak/elements', toTweak);
-  const tweaked = xOnlyPointAddTweak(XOnlyPubKey, tweakHash);
+  const tweaked = ecc.xOnlyPointAddTweak(XOnlyPubKey, tweakHash);
   if (!tweaked) throw new Error('Invalid tweaked key');
   return tweaked;
 }
 
 // compute a segwit V1 output script
-export function taprootOutputScript(
-  internalPublicKey: Buffer,
-  tree?: HashTree,
-): Buffer {
-  let treeHash = Buffer.alloc(0);
-  if (tree) {
-    treeHash = tree.hash;
-  }
+function taprootOutputScript(
+  ecc: TinySecp256k1Interface,
+): BIP341API['taprootOutputScript'] {
+  return (internalPublicKey: Buffer, tree?: HashTree): Buffer => {
+    let treeHash = Buffer.alloc(0);
+    if (tree) {
+      treeHash = tree.hash;
+    }
 
-  const { xOnlyPubkey } = tweakPublicKey(internalPublicKey, treeHash);
-  return Buffer.concat([Buffer.from([0x51, 0x20]), xOnlyPubkey]);
+    const { xOnlyPubkey } = tweakPublicKey(internalPublicKey, treeHash, ecc);
+    return Buffer.concat([Buffer.from([0x51, 0x20]), xOnlyPubkey]);
+  };
 }
 
 /**
@@ -136,21 +172,27 @@ export function taprootOutputScript(
  * @param leaf the leaf to use to sign the taproot coin
  * @param path the path to the leaf in the MAST tree see findScriptPath function
  */
-export function taprootSignScriptStack(
-  internalPublicKey: Buffer,
-  leaf: TaprootLeaf,
-  treeRootHash: Buffer,
-  path: Buffer[],
-): Buffer[] {
-  const { parity } = tweakPublicKey(internalPublicKey, treeRootHash);
-  const parityBit = Buffer.of(leaf.version || LEAF_VERSION_TAPSCRIPT + parity);
-  const control = Buffer.concat([
-    parityBit,
-    internalPublicKey.slice(1),
-    ...path,
-  ]);
+function taprootSignScriptStack(
+  ecc: TinySecp256k1Interface,
+): BIP341API['taprootSignScriptStack'] {
+  return (
+    internalPublicKey: Buffer,
+    leaf: TaprootLeaf,
+    treeRootHash: Buffer,
+    path: Buffer[],
+  ): Buffer[] => {
+    const { parity } = tweakPublicKey(internalPublicKey, treeRootHash, ecc);
+    const parityBit = Buffer.of(
+      leaf.version || LEAF_VERSION_TAPSCRIPT + parity,
+    );
+    const control = Buffer.concat([
+      parityBit,
+      internalPublicKey.slice(1),
+      ...path,
+    ]);
 
-  return [Buffer.from(leaf.scriptHex, 'hex'), control];
+    return [Buffer.from(leaf.scriptHex, 'hex'), control];
+  };
 }
 
 // Order of the curve (N) - 1
@@ -165,29 +207,37 @@ const ONE = Buffer.from(
 );
 
 // Compute the witness signature for a P2TR output (key path)
-export function taprootSignKey(
-  messageHash: Buffer,
-  key: ECPairInterface,
-): Buffer {
-  if (!key.privateKey) {
-    throw new Error('Private key is required');
-  }
+function taprootSignKey(
+  ecc: TinySecp256k1Interface,
+): BIP341API['taprootSignKey'] {
+  return (messageHash: Buffer, key: Buffer): Buffer => {
+    const signingEcPair = ECPairFactory(ecc).fromPrivateKey(key);
 
-  const privateKey =
-    key.publicKey[0] === 2
-      ? key.privateKey
-      : privateAdd(privateSub(N_LESS_1, key.privateKey)!, ONE)!;
-  const tweakHash = taggedHash('TapTweak/elements', key.publicKey.slice(1, 33));
-  const newPrivateKey = privateAdd(privateKey, tweakHash);
-  if (newPrivateKey === null) throw new Error('Invalid Tweak');
-  const signed = signSchnorr(messageHash, newPrivateKey, Buffer.alloc(32));
+    const privateKey =
+      signingEcPair.publicKey[0] === 2
+        ? signingEcPair.privateKey
+        : ecc.privateAdd(ecc.privateSub(N_LESS_1, key)!, ONE);
+    const tweakHash = taggedHash(
+      'TapTweak/elements',
+      signingEcPair.publicKey.slice(1, 33),
+    );
+    const newPrivateKey = ecc.privateAdd(privateKey!, tweakHash);
+    if (newPrivateKey === null) throw new Error('Invalid Tweak');
+    const signed = ecc.signSchnorr(
+      messageHash,
+      newPrivateKey,
+      Buffer.alloc(32),
+    );
 
-  const ok = verifySchnorr(
-    messageHash,
-    ECPair.fromPrivateKey(Buffer.from(newPrivateKey)).publicKey.slice(1),
-    signed,
-  );
-  if (!ok) throw new Error('Invalid Signature');
+    const ok = ecc.verifySchnorr(
+      messageHash,
+      ECPairFactory(ecc)
+        .fromPrivateKey(Buffer.from(newPrivateKey))
+        .publicKey.slice(1),
+      signed,
+    );
+    if (!ok) throw new Error('Invalid Signature');
 
-  return Buffer.from(signed);
+    return Buffer.from(signed);
+  };
 }

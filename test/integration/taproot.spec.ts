@@ -6,7 +6,7 @@ import {
   payments,
   address,
 } from '../../ts_src/index';
-import { ECPair } from '../../ts_src/ecpair';
+import { ECPair, ecc } from '../ecc';
 import { broadcast, faucet } from './_regtest';
 import {
   confidentialValueToSatoshi,
@@ -17,13 +17,12 @@ import {
   findScriptPath,
   tapLeafHash,
   TaprootLeaf,
-  taprootOutputScript,
-  taprootSignKey,
-  taprootSignScriptStack,
   toHashTree,
+  BIP341Factory,
 } from '../../ts_src/bip341';
 import { compile, OPS } from '../../ts_src/script';
-import { signSchnorr, verifySchnorr } from 'tiny-secp256k1';
+
+const bip341 = BIP341Factory(ecc);
 
 const net = networks.regtest;
 
@@ -41,7 +40,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       pubkey: alice.publicKey,
       network: net,
     }).address;
-    const output = taprootOutputScript(alice.publicKey);
+    const output = bip341.taprootOutputScript(alice.publicKey);
     const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
     const utxo = await faucet(faucetAddress);
 
@@ -83,7 +82,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     ];
 
     const hashTree = toHashTree(leaves);
-    const output = taprootOutputScript(alice.publicKey, hashTree);
+    const output = bip341.taprootOutputScript(alice.publicKey, hashTree);
     const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
     const utxo = await faucet(faucetAddress);
 
@@ -101,7 +100,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     const bobLeaf = leaves[0];
     const leafHash = tapLeafHash(bobLeaf);
     const pathToBobLeaf = findScriptPath(hashTree, leafHash);
-    const taprootStack = taprootSignScriptStack(
+    const taprootStack = bip341.taprootSignScriptStack(
       alice.publicKey,
       bobLeaf,
       hashTree.hash,
@@ -147,9 +146,9 @@ function makeStackCheckSig(
     net.genesisBlockHash,
     leafHash,
   );
-  const sig = signSchnorr(hash, keyPair.privateKey!, Buffer.alloc(32));
+  const sig = ecc.signSchnorr(hash, keyPair.privateKey!, Buffer.alloc(32));
 
-  const ok = verifySchnorr(hash, keyPair.publicKey.slice(1), sig);
+  const ok = ecc.verifySchnorr(hash, keyPair.publicKey.slice(1), sig);
   if (!ok) {
     throw new Error('Signature is not valid');
   }
@@ -247,7 +246,7 @@ function createSigned(
       Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
       net.genesisBlockHash, // block hash
     );
-    const signature = taprootSignKey(sighash, key);
+    const signature = bip341.taprootSignKey(sighash, key.privateKey!);
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
     tx.ins[0].witness = [signature];

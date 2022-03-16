@@ -8,7 +8,7 @@ import {
   Transaction,
   networks as NETWORKS,
 } from '../../ts_src';
-import { ECPair } from '../../ts_src/ecpair';
+import { ECPair, ecc } from '../ecc';
 import { strictEqual } from 'assert';
 import {
   issuanceEntropyFromInput,
@@ -83,6 +83,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       ]);
 
     await psbt.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
       new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
       new Map<number, Buffer>()
         .set(0, blindingPubKeys[0])
@@ -94,7 +95,10 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
 
     psbt.signAllInputs(alice1.keys[0]);
-    const valid = psbt.validateSignaturesOfInput(0);
+    const valid = psbt.validateSignaturesOfInput(
+      0,
+      Psbt.ECDSASigValidator(ecc),
+    );
     if (!valid) {
       throw new Error('signature is not valid');
     }
@@ -150,6 +154,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       },
     ]);
     await psbt.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
       new Map<number, Buffer>().set(0, blindingPrivkeys[0]),
       new Map<number, Buffer>()
         .set(0, blindingPubKeys[0])
@@ -157,7 +162,10 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
     psbt.signInput(0, alice1.keys[0]);
 
-    strictEqual(psbt.validateSignaturesOfInput(0), true);
+    strictEqual(
+      psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
     psbt.finalizeAllInputs();
     const hex = psbt.extractTransaction().toHex();
     await broadcast(hex);
@@ -206,7 +214,9 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
 
     psbt.signAllInputs(alice1.keys[0]);
 
-    const valid = psbt.validateSignaturesOfAllInputs();
+    const valid = psbt.validateSignaturesOfAllInputs(
+      Psbt.ECDSASigValidator(ecc),
+    );
     strictEqual(valid, true);
 
     psbt.finalizeAllInputs();
@@ -269,6 +279,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       ]);
 
     await issuancePset.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
       new Map<number, Buffer>().set(0, aliceBlindingPrivkeys[0]),
       new Map<number, Buffer>()
         .set(0, blindingKeysPair[0].publicKey)
@@ -281,7 +292,9 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
 
     issuancePset.signAllInputs(alice.keys[0]);
-    const valid = issuancePset.validateSignaturesOfAllInputs();
+    const valid = issuancePset.validateSignaturesOfAllInputs(
+      Psbt.ECDSASigValidator(ecc),
+    );
     if (!valid) {
       throw new Error('signature is not valid');
     }
@@ -343,6 +356,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       });
 
     await reissuancePset.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
       new Map<number, Buffer>()
         .set(0, aliceBlindingPrivkeys[0])
         .set(1, aliceBlindingPrivkeys[0]),
@@ -356,7 +370,9 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
 
     reissuancePset.signAllInputs(alice.keys[0]);
-    const validReissuance = reissuancePset.validateSignaturesOfAllInputs();
+    const validReissuance = reissuancePset.validateSignaturesOfAllInputs(
+      Psbt.ECDSASigValidator(ecc),
+    );
     strictEqual(validReissuance, true);
     reissuancePset.finalizeAllInputs();
     const reissuanceHex = reissuancePset.extractTransaction().toHex();
@@ -398,7 +414,9 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     ]);
 
     issuePsbt.signAllInputs(alice.keys[0]);
-    const valid = issuePsbt.validateSignaturesOfAllInputs();
+    const valid = issuePsbt.validateSignaturesOfAllInputs(
+      Psbt.ECDSASigValidator(ecc),
+    );
     strictEqual(valid, true);
 
     issuePsbt.finalizeAllInputs();
@@ -443,6 +461,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       ]);
 
     await makeConfPsbt.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
       new Map(),
       new Map()
         .set(0, aliceBlindKeys.publicKey)
@@ -450,7 +469,10 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
 
     makeConfPsbt.signAllInputs(alice.keys[0]);
-    strictEqual(makeConfPsbt.validateSignaturesOfAllInputs(), true);
+    strictEqual(
+      makeConfPsbt.validateSignaturesOfAllInputs(Psbt.ECDSASigValidator(ecc)),
+      true,
+    );
 
     makeConfPsbt.finalizeAllInputs();
     const confHex = makeConfPsbt.extractTransaction().toHex();
@@ -513,6 +535,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       });
 
     await reissuancePset.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
       new Map<number, Buffer>()
         .set(0, alice.blindingKeys[0])
         .set(1, alice.blindingKeys[0]),
@@ -520,7 +543,9 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
 
     reissuancePset.signAllInputs(alice.keys[0]);
-    const validReissuance = reissuancePset.validateSignaturesOfAllInputs();
+    const validReissuance = reissuancePset.validateSignaturesOfAllInputs(
+      Psbt.ECDSASigValidator(ecc),
+    );
     strictEqual(validReissuance, true);
     reissuancePset.finalizeAllInputs();
     const reissuanceHex = reissuancePset.extractTransaction().toHex();

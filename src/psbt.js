@@ -52,7 +52,6 @@ const bufferutils_1 = require('./bufferutils');
 const crypto_1 = require('./crypto');
 const networks_1 = require('./networks');
 const transaction_1 = require('./transaction');
-const ecpair_1 = require('./ecpair');
 const issuance_1 = require('./issuance');
 const address_2 = require('./address');
 const bufferutils_2 = require('./bufferutils');
@@ -60,6 +59,7 @@ const payments = __importStar(require('./payments'));
 const bscript = __importStar(require('./script'));
 const bip174_liquid_1 = require('bip174-liquid');
 const utils_1 = require('bip174-liquid/src/lib/utils');
+const ecpair_1 = require('ecpair');
 const _randomBytes = require('randombytes');
 const issuancePrefix = Buffer.of(0x01);
 /**
@@ -492,17 +492,28 @@ class Psbt {
       !!output.bip32Derivation && output.bip32Derivation.some(derivationIsMine)
     );
   }
-  static eccValidator(pubkey, msghash, signature) {
-    return ecpair_1.ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+  static ECDSASigValidator(ecc) {
+    return (pubkey, msghash, signature) => {
+      return (0, ecpair_1.ECPairFactory)(ecc)
+        .fromPublicKey(pubkey)
+        .verify(msghash, signature);
+    };
   }
-  validateSignaturesOfAllInputs(validator = Psbt.eccValidator) {
+  static SchnorrSigValidator(ecc) {
+    return (pubkey, msghash, signature) => {
+      return (0, ecpair_1.ECPairFactory)(ecc)
+        .fromPublicKey(pubkey)
+        .verifySchnorr(msghash, signature);
+    };
+  }
+  validateSignaturesOfAllInputs(validator) {
     (0, utils_1.checkForInput)(this.data.inputs, 0); // making sure we have at least one
     const results = range(this.data.inputs.length).map(idx =>
       this.validateSignaturesOfInput(idx, validator),
     );
     return results.reduce((final, res) => res === true && final, true);
   }
-  validateSignaturesOfInput(inputIndex, validator = Psbt.eccValidator, pubkey) {
+  validateSignaturesOfInput(inputIndex, validator, pubkey) {
     const input = this.data.inputs[inputIndex];
     const partialSig = (input || {}).partialSig;
     if (!input || !partialSig || partialSig.length < 1)
@@ -805,16 +816,30 @@ class Psbt {
     this.data.updateOutput(outputIndex, updateData);
     return this;
   }
-  blindOutputs(blindingDataLike, blindingPubkeys, opts) {
+  static ECCKeysGenerator(ecc) {
+    return opts => {
+      const privateKey = randomBytes(opts);
+      const publicKey = (0, ecpair_1.ECPairFactory)(ecc).fromPrivateKey(
+        privateKey,
+      ).publicKey;
+      return {
+        privateKey,
+        publicKey,
+      };
+    };
+  }
+  blindOutputs(keysGenerator, blindingDataLike, blindingPubkeys, opts) {
     return this.rawBlindOutputs(
       blindingDataLike,
       blindingPubkeys,
       undefined,
+      keysGenerator,
       undefined,
       opts,
     );
   }
   blindOutputsByIndex(
+    keysGenerator,
     inputsBlindingData,
     outputsBlindingPubKeys,
     issuancesBlindingKeys,
@@ -838,6 +863,7 @@ class Psbt {
       blindingPrivKeysArgs,
       blindingPublicKey,
       blindingPrivKeysIssuancesArgs,
+      keysGenerator,
       outputIndexes,
       opts,
     );
@@ -1028,7 +1054,13 @@ class Psbt {
     }
     return this;
   }
-  async blindOutputsRaw(blindingData, blindingPubkeys, outputIndexes, opts) {
+  async blindOutputsRaw(
+    blindingData,
+    blindingPubkeys,
+    outputIndexes,
+    keysGenerator,
+    opts,
+  ) {
     // get data (satoshis & asset) outputs to blind
     const outputsData = outputIndexes.map(index => {
       const output = this.__CACHE.__TX.outs[index];
@@ -1049,9 +1081,8 @@ class Psbt {
     let indexInArray = 0;
     for (const outputIndex of outputIndexes) {
       const randomSeed = randomBytes(opts);
-      const ephemeralPrivKey = randomBytes(opts);
-      const outputNonce = ecpair_1.ECPair.fromPrivateKey(ephemeralPrivKey)
-        .publicKey;
+      const ephemeralKeys = keysGenerator(opts);
+      const outputNonce = ephemeralKeys.publicKey;
       const outputBlindingData = outputsBlindingData[indexInArray];
       // commitments
       const assetCommitment = await confidential.assetCommitment(
@@ -1067,7 +1098,7 @@ class Psbt {
       const rangeProof = await confidential.rangeProofWithNonceHash(
         outputBlindingData.value,
         blindingPubkeys[indexInArray],
-        ephemeralPrivKey,
+        ephemeralKeys.privateKey,
         outputBlindingData.asset,
         outputBlindingData.assetBlindingFactor,
         outputBlindingData.valueBlindingFactor,
@@ -1095,6 +1126,7 @@ class Psbt {
     blindingDataLike,
     blindingPubkeys,
     issuanceBlindingPrivKeys = [],
+    keysGenerator,
     outputIndexes,
     opts,
   ) {
@@ -1142,6 +1174,7 @@ class Psbt {
       totalBlindingData,
       blindingPubkeys,
       outputIndexes,
+      keysGenerator,
       opts,
     );
     await this.blindInputs(totalBlindingData, issuanceBlindingPrivKeys);
@@ -1240,14 +1273,22 @@ function checkCache(cache) {
     throw new Error('Not BIP174 compliant, can not export');
   }
 }
+function compressPubkey(pubkey) {
+  if (pubkey.length === 65) {
+    const parity = pubkey[64] & 1;
+    const newKey = pubkey.slice(0, 33);
+    newKey[0] = 2 | parity;
+    return newKey;
+  }
+  return pubkey.slice();
+}
 function hasSigs(neededSigs, partialSig, pubkeys) {
   if (!partialSig) return false;
   let sigs;
   if (pubkeys) {
     sigs = pubkeys
       .map(pkey => {
-        const pubkey = ecpair_1.ECPair.fromPublicKey(pkey, { compressed: true })
-          .publicKey;
+        const pubkey = compressPubkey(pkey);
         return partialSig.find(pSig => pSig.pubkey.equals(pubkey));
       })
       .filter(v => !!v);
