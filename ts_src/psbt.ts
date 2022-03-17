@@ -30,8 +30,6 @@ import {
   issuanceEntropyFromInput,
   newIssuance,
   Outpoint,
-  toConfidentialAssetAmount,
-  toConfidentialTokenAmount,
 } from './issuance';
 import { fromOutputScript } from './address';
 import { cloneBuffer } from './bufferutils';
@@ -44,11 +42,10 @@ import { TinySecp256k1Interface, ECPairFactory } from 'ecpair';
 
 // psbt.addIssuance options
 export interface AddIssuanceArgs {
-  assetAmount: number;
+  assetSats: number;
   assetAddress: string;
-  tokenAmount: number;
+  tokenSats: number;
   tokenAddress?: string;
-  precision: number;
   contract?: IssuanceContract;
   blindedIssuance?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance's input
 }
@@ -59,11 +56,10 @@ export interface AddReissuanceArgs {
   nonWitnessUtxo?: NonWitnessUtxo;
   prevoutBlinder: Buffer;
   entropy: Buffer;
-  assetAmount: number;
+  assetSats: number;
   assetAddress: string;
-  tokenAmount: number;
+  tokenSats: number;
   tokenAddress: string;
-  precision: number;
   blindedIssuance?: boolean; // used to compute the token, set to "true" if the asset's issuance was confidential
 }
 
@@ -337,9 +333,8 @@ export class Psbt {
 
     // create an issuance object using the vout and the args
     const issuance: Issuance = newIssuance(
-      args.assetAmount,
-      args.tokenAmount,
-      args.precision,
+      args.assetSats,
+      args.tokenSats,
       args.contract,
     );
 
@@ -363,7 +358,7 @@ export class Psbt {
     });
 
     // check if the token amount is not 0
-    if (args.tokenAmount !== 0) {
+    if (args.tokenSats !== 0) {
       if (!args.tokenAddress)
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
 
@@ -401,9 +396,8 @@ export class Psbt {
 
     this.addInput(inputData);
 
-    const satsToReissue = toConfidentialAssetAmount(
-      args.assetAmount,
-      args.precision,
+    const satsToReissue = confidential.satoshiToConfidentialValue(
+      args.assetSats,
     );
 
     // add the issuance object to input
@@ -421,7 +415,7 @@ export class Psbt {
       value: satsToReissue,
       script: toOutputScript(args.assetAddress),
       asset,
-      nonce: Buffer.from('00', 'hex'),
+      nonce: Buffer.of(0x00),
     });
 
     const token = Buffer.concat([
@@ -431,10 +425,13 @@ export class Psbt {
 
     // send the token amount to the token address.
     this.addOutput({
-      value: toConfidentialTokenAmount(args.tokenAmount, args.precision),
+      value:
+        args.tokenSats === 0
+          ? Buffer.of(0x00)
+          : confidential.satoshiToConfidentialValue(args.tokenSats),
       script: toOutputScript(args.tokenAddress),
       asset: token,
-      nonce: Buffer.from('00', 'hex'),
+      nonce: Buffer.of(0x00),
     });
 
     return this;
@@ -2611,9 +2608,9 @@ function getUnconfidentialWitnessUtxoBlindingData(
 }
 
 export function validateAddIssuanceArgs(args: AddIssuanceArgs): void {
-  if (args.assetAmount <= 0)
+  if (args.assetSats <= 0)
     throw new Error('asset amount must be greater than zero.');
-  if (args.tokenAmount < 0) {
+  if (args.tokenSats < 0) {
     throw new Error('token amount must be positive.');
   }
 
@@ -2633,11 +2630,11 @@ export function validateAddReissuanceArgs(args: AddReissuanceArgs): void {
     throw new Error('need witnessUtxo or nonWitnessUtxo');
   }
 
-  if (args.assetAmount <= 0) {
+  if (args.assetSats <= 0) {
     throw new Error('asset amount must be greater than zero.');
   }
 
-  if (args.tokenAmount < 0) {
+  if (args.tokenSats < 0) {
     throw new Error('token amount must be positive.');
   }
 

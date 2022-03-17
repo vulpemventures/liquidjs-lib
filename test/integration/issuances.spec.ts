@@ -11,8 +11,8 @@ import {
 import { ECPair, ecc } from '../ecc';
 import { strictEqual } from 'assert';
 import {
+  amountWithPrecisionToSatoshis,
   issuanceEntropyFromInput,
-  toConfidentialTokenAmount,
 } from '../../ts_src/issuance';
 import { fromConfidential } from '../../ts_src/address';
 
@@ -52,9 +52,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
           tokenPay.payment.output,
           regtest,
         ),
-        assetAmount: 100,
-        tokenAmount: 1,
-        precision: 8,
+        assetSats: amountWithPrecisionToSatoshis(100),
+        tokenSats: amountWithPrecisionToSatoshis(1),
         blindedIssuance: true, // must be true, we'll blind the issuance!
         contract: {
           issuer_pubkey: '0000',
@@ -125,9 +124,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     psbt.addIssuance({
       assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
       tokenAddress: address.fromOutputScript(tokenPay.payment.output, regtest),
-      assetAmount: 100,
-      tokenAmount: 1,
-      precision: 8,
+      assetSats: 100_0000_0000,
+      tokenSats: 1_0000_0000,
       contract: {
         issuer_pubkey: '0000',
         name: 'testcoin-bis',
@@ -183,9 +181,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     psbt.addIssuance({
       assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
       tokenAddress: address.fromOutputScript(tokenPay.payment.output, regtest),
-      assetAmount: 100,
-      tokenAmount: 1,
-      precision: 8,
+      assetSats: 100_0000_0000,
+      tokenSats: 1_0000_0000,
       contract: {
         issuer_pubkey: '0000',
         name: 'testcoin-bis',
@@ -248,9 +245,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       .addIssuance({
         assetAddress,
         tokenAddress,
-        assetAmount: 100,
-        tokenAmount: 1,
-        precision: 8,
+        assetSats: 100_0000_0000,
+        tokenSats: 1_0000_0000,
         blindedIssuance: true, // must be true, we'll blind the issuance!
         contract: {
           issuer_pubkey: '0000',
@@ -340,12 +336,11 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         tokenPrevout: { txHash: issuanceTx.getHash(false), vout: 1 },
         prevoutBlinder: tokenBlinder,
         entropy,
-        assetAmount: 2000,
-        tokenAmount: 1,
+        assetSats: amountWithPrecisionToSatoshis(2000),
+        tokenSats: amountWithPrecisionToSatoshis(1),
         assetAddress,
         tokenAddress,
         witnessUtxo: tokenOutput,
-        precision: 8,
         blindedIssuance: true, // must be true, we'll blind the issuance!
       })
       .addOutput({
@@ -393,9 +388,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     issuePsbt.addIssuance({
       assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
       tokenAddress: address.fromOutputScript(alice.payment.output, regtest),
-      assetAmount: 1,
-      tokenAmount: 2,
-      precision: 8,
+      assetSats: 1_0000_0000,
+      tokenSats: 2_0000_0000,
       // confidentialFlag: true,
     });
     issuePsbt.addOutputs([
@@ -443,7 +437,9 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         {
           nonce,
           asset: tokenOutput.asset,
-          value: toConfidentialTokenAmount(2, 8),
+          value: confidential.satoshiToConfidentialValue(
+            amountWithPrecisionToSatoshis(2),
+          ),
           script: alice.payment.output,
         },
         {
@@ -519,12 +515,11 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         tokenPrevout: { txHash: confTx.getHash(false), vout: 0 },
         prevoutBlinder: tokenBlinder,
         entropy,
-        assetAmount: 200,
-        tokenAmount: 2,
+        assetSats: amountWithPrecisionToSatoshis(200),
+        tokenSats: amountWithPrecisionToSatoshis(2),
         assetAddress: aliceConfidential.payment.confidentialAddress,
         tokenAddress: aliceConfidential.payment.confidentialAddress,
         witnessUtxo: tokenOutput,
-        precision: 8,
         blindedIssuance: false,
       })
       .addOutput({

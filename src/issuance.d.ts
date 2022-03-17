@@ -47,13 +47,12 @@ export declare function validateIssuanceContract(contract: IssuanceContract): bo
  */
 export declare function hashContract(contract: IssuanceContract): Buffer;
 /**
- * Returns an Issuance object for issuance transaction input.
- * @param assetAmount the number of asset to issue.
- * @param tokenAmount the number of token to issue.
- * @param precision the number of digit after the decimal point (8 for satoshi).
+ * Returns an unblinded Issuance object for issuance transaction input.
+ * @param assetSats the number of asset to issue.
+ * @param tokenSats the number of token to issue.
  * @param contract the asset ricarding contract of the issuance.
  */
-export declare function newIssuance(assetAmount: number, tokenAmount: number, precision?: number, contract?: IssuanceContract): Issuance;
+export declare function newIssuance(assetSats: number, tokenSats: number, contract?: IssuanceContract): Issuance;
 export declare function isReissuance(issuance: Issuance): boolean;
 /**
  * Generate the entropy.
@@ -78,14 +77,9 @@ export declare function calculateAsset(entropy: Buffer): Buffer;
  */
 export declare function calculateReissuanceToken(entropy: Buffer, confidential?: boolean): Buffer;
 /**
- * converts asset amount to confidential value.
+ * converts asset amount to satoshis.
+ * satoshis = assetAmount * 10^precision
  * @param assetAmount the asset amount.
- * @param precision the precision, 8 by default.
+ * @param precision the precision, 8 by default (like L-BTC).
  */
-export declare function toConfidentialAssetAmount(assetAmount: number, precision?: number): Buffer;
-/**
- * converts token amount to confidential value.
- * @param assetAmount the token amount.
- * @param precision the precision, 8 by default.
- */
-export declare function toConfidentialTokenAmount(tokenAmount: number, precision?: number): Buffer;
+export declare function amountWithPrecisionToSatoshis(assetAmount: number, precision?: number): number;

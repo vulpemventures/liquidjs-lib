@@ -8,11 +8,10 @@ import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
 import { TinySecp256k1Interface } from 'ecpair';
 export interface AddIssuanceArgs {
-    assetAmount: number;
+    assetSats: number;
     assetAddress: string;
-    tokenAmount: number;
+    tokenSats: number;
     tokenAddress?: string;
-    precision: number;
     contract?: IssuanceContract;
     blindedIssuance?: boolean;
 }
@@ -22,11 +21,10 @@ export interface AddReissuanceArgs {
     nonWitnessUtxo?: NonWitnessUtxo;
     prevoutBlinder: Buffer;
     entropy: Buffer;
-    assetAmount: number;
+    assetSats: number;
     assetAddress: string;
-    tokenAmount: number;
+    tokenSats: number;
     tokenAddress: string;
-    precision: number;
     blindedIssuance?: boolean;
 }
 export interface TransactionInput {

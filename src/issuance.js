@@ -44,7 +44,7 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.toConfidentialTokenAmount = exports.toConfidentialAssetAmount = exports.calculateReissuanceToken = exports.calculateAsset = exports.issuanceEntropyFromInput = exports.generateEntropy = exports.isReissuance = exports.newIssuance = exports.hashContract = exports.validateIssuanceContract = exports.hasTokenAmount = void 0;
+exports.amountWithPrecisionToSatoshis = exports.calculateReissuanceToken = exports.calculateAsset = exports.issuanceEntropyFromInput = exports.generateEntropy = exports.isReissuance = exports.newIssuance = exports.hashContract = exports.validateIssuanceContract = exports.hasTokenAmount = void 0;
 const bufferutils_1 = require('./bufferutils');
 const confidential_1 = require('./confidential');
 const bcrypto = __importStar(require('./crypto'));
@@ -86,30 +86,23 @@ function hashContract(contract) {
 }
 exports.hashContract = hashContract;
 /**
- * Returns an Issuance object for issuance transaction input.
- * @param assetAmount the number of asset to issue.
- * @param tokenAmount the number of token to issue.
- * @param precision the number of digit after the decimal point (8 for satoshi).
+ * Returns an unblinded Issuance object for issuance transaction input.
+ * @param assetSats the number of asset to issue.
+ * @param tokenSats the number of token to issue.
  * @param contract the asset ricarding contract of the issuance.
  */
-function newIssuance(assetAmount, tokenAmount, precision = 8, contract) {
-  if (assetAmount < 0) throw new Error('Invalid asset amount');
-  if (tokenAmount < 0) throw new Error('Invalid token amount');
-  if (precision < 0 || precision > 8) throw new Error('Invalid precision');
-  let contractHash = Buffer.alloc(32);
-  if (contract) {
-    if (contract.precision !== precision)
-      throw new Error('precision is not equal to the asset contract precision');
-    contractHash = hashContract(contract);
-  }
-  const iss = {
-    assetAmount: toConfidentialAssetAmount(assetAmount, precision),
-    tokenAmount: toConfidentialTokenAmount(tokenAmount, precision),
+function newIssuance(assetSats, tokenSats, contract) {
+  if (assetSats <= 0) throw new Error('Invalid asset amount');
+  if (tokenSats < 0) throw new Error('Invalid token amount');
+  const contractHash = contract ? hashContract(contract) : Buffer.alloc(32);
+  const issuanceObject = {
+    assetAmount: (0, confidential_1.satoshiToConfidentialValue)(assetSats),
+    tokenAmount: (0, confidential_1.satoshiToConfidentialValue)(tokenSats),
     assetBlindingNonce: Buffer.alloc(32),
     // in case of issuance, the asset entropy = the contract hash.
     assetEntropy: contractHash,
   };
-  return iss;
+  return issuanceObject;
 }
 exports.newIssuance = newIssuance;
 function isReissuance(issuance) {
@@ -179,22 +172,12 @@ function getTokenFlag(confidential) {
   return 0;
 }
 /**
- * converts asset amount to confidential value.
+ * converts asset amount to satoshis.
+ * satoshis = assetAmount * 10^precision
  * @param assetAmount the asset amount.
- * @param precision the precision, 8 by default.
+ * @param precision the precision, 8 by default (like L-BTC).
  */
-function toConfidentialAssetAmount(assetAmount, precision = 8) {
-  const amount = Math.pow(10, precision) * assetAmount;
-  return (0, confidential_1.satoshiToConfidentialValue)(amount);
+function amountWithPrecisionToSatoshis(assetAmount, precision = 8) {
+  return Math.pow(10, precision) * assetAmount;
 }
-exports.toConfidentialAssetAmount = toConfidentialAssetAmount;
-/**
- * converts token amount to confidential value.
- * @param assetAmount the token amount.
- * @param precision the precision, 8 by default.
- */
-function toConfidentialTokenAmount(tokenAmount, precision = 8) {
-  if (tokenAmount === 0) return Buffer.from('00', 'hex');
-  return toConfidentialAssetAmount(tokenAmount, precision);
-}
-exports.toConfidentialTokenAmount = toConfidentialTokenAmount;
+exports.amountWithPrecisionToSatoshis = amountWithPrecisionToSatoshis;

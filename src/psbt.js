@@ -276,9 +276,8 @@ class Psbt {
     const { hash, index } = this.__CACHE.__TX.ins[inputIndex];
     // create an issuance object using the vout and the args
     const issuance = (0, issuance_1.newIssuance)(
-      args.assetAmount,
-      args.tokenAmount,
-      args.precision,
+      args.assetSats,
+      args.tokenSats,
       args.contract,
     );
     const entropy = (0, issuance_1.generateEntropy)(
@@ -300,7 +299,7 @@ class Psbt {
       nonce: Buffer.from('00', 'hex'),
     });
     // check if the token amount is not 0
-    if (args.tokenAmount !== 0) {
+    if (args.tokenSats !== 0) {
       if (!args.tokenAddress)
         throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
       const token = (0, issuance_1.calculateReissuanceToken)(
@@ -332,9 +331,8 @@ class Psbt {
       inputData.nonWitnessUtxo = args.nonWitnessUtxo;
     }
     this.addInput(inputData);
-    const satsToReissue = (0, issuance_1.toConfidentialAssetAmount)(
-      args.assetAmount,
-      args.precision,
+    const satsToReissue = confidential.satoshiToConfidentialValue(
+      args.assetSats,
     );
     // add the issuance object to input
     this.__CACHE.__TX.ins[inputIndex].issuance = {
@@ -352,7 +350,7 @@ class Psbt {
       value: satsToReissue,
       script: (0, address_1.toOutputScript)(args.assetAddress),
       asset,
-      nonce: Buffer.from('00', 'hex'),
+      nonce: Buffer.of(0x00),
     });
     const token = Buffer.concat([
       issuancePrefix,
@@ -363,13 +361,13 @@ class Psbt {
     ]);
     // send the token amount to the token address.
     this.addOutput({
-      value: (0, issuance_1.toConfidentialTokenAmount)(
-        args.tokenAmount,
-        args.precision,
-      ),
+      value:
+        args.tokenSats === 0
+          ? Buffer.of(0x00)
+          : confidential.satoshiToConfidentialValue(args.tokenSats),
       script: (0, address_1.toOutputScript)(args.tokenAddress),
       asset: token,
-      nonce: Buffer.from('00', 'hex'),
+      nonce: Buffer.of(0x00),
     });
     return this;
   }
@@ -2078,9 +2076,9 @@ function getUnconfidentialWitnessUtxoBlindingData(prevout) {
   return unblindedInputBlindingData;
 }
 function validateAddIssuanceArgs(args) {
-  if (args.assetAmount <= 0)
+  if (args.assetSats <= 0)
     throw new Error('asset amount must be greater than zero.');
-  if (args.tokenAmount < 0) {
+  if (args.tokenSats < 0) {
     throw new Error('token amount must be positive.');
   }
   if (args.tokenAddress) {
@@ -2099,10 +2097,10 @@ function validateAddReissuanceArgs(args) {
   if (!args.nonWitnessUtxo && !args.witnessUtxo) {
     throw new Error('need witnessUtxo or nonWitnessUtxo');
   }
-  if (args.assetAmount <= 0) {
+  if (args.assetSats <= 0) {
     throw new Error('asset amount must be greater than zero.');
   }
-  if (args.tokenAmount < 0) {
+  if (args.tokenSats < 0) {
     throw new Error('token amount must be positive.');
   }
   if (args.tokenPrevout.txHash.length !== 32) {
