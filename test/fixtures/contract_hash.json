@@ -40,12 +40,11 @@
   },
   {
     "contractJSON": {
+      "name": "Attestato OIES #22",
       "entity": {
         "domain": "nft.siliconlake.it"
       },
-      "file": "QmSBt7nJMbHN6ndYGBbXj8FLCqdffnNRPbSu4oXLqV2p9E",
       "issuer_pubkey": "032707d05b6aa5e823956b5a0d83e5d1d2acd80e8d8d5a2833f3157f3604b0ef8d",
-      "name": "Attestato OIES #22",
       "nft": {
         "cid": "QmSpGmZqL9HHcDtT6xHBev6Uwj8hf2DfFJWJQAT2GTAT2p",
         "domain": "nft.siliconlake.it",
@@ -53,7 +52,8 @@
       },
       "precision": 0,
       "ticker": "OIE22",
-      "version": 0
+      "version": 0,
+      "file": "QmSBt7nJMbHN6ndYGBbXj8FLCqdffnNRPbSu4oXLqV2p9E"
     },
     "contractHash": "6c797254d3974813ed556220bfab10cb3a70ee3a5bd827b8f9525920ec6b3d6b"
   }
