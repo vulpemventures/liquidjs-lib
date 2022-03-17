@@ -13,6 +13,7 @@ export interface IssuanceContract {
     precision: number;
     ticker: string;
     version: number;
+    [key: string]: any;
 }
 /**
  * An object describing an output point of the blockchain.

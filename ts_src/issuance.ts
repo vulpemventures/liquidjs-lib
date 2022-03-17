@@ -19,6 +19,7 @@ export interface IssuanceContract {
   precision: number;
   ticker: string;
   version: number;
+  [key: string]: any;
 }
 
 /**
@@ -65,15 +66,14 @@ export function hashContract(contract: IssuanceContract): Buffer {
   if (!validateIssuanceContract(contract))
     throw new Error('Invalid asset contract');
 
-  const constractJSON = `{"entity":{"domain":"${
-    contract.entity.domain
-  }"},"issuer_pubkey":"${contract.issuer_pubkey}","name":"${
-    contract.name
-  }","precision":${contract.precision},"ticker":"${
-    contract.ticker
-  }","version":${contract.version}}`;
+  const sortedKeys = Object.keys(contract).sort();
+  const sortedContract = sortedKeys.reduce(
+    (obj, key) => ({ ...obj, [key]: contract[key] }),
+    {},
+  );
+
   return bcrypto
-    .sha256(Buffer.from(constractJSON))
+    .sha256(Buffer.from(JSON.stringify(sortedContract)))
     .slice()
     .reverse();
 }
