@@ -224,6 +224,141 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     await broadcast(hex);
   });
 
+  it.only('can create an unblinded issuance together with an unblinded reissuance', async () => {
+    const alice = createPayment('p2wpkh', undefined, undefined, true);
+    const aliceBlindingPrivkeys = alice.blindingKeys;
+    // btc utxo
+    const inputData = await getInputData(alice.payment, true, 'noredeem');
+
+    // const reissuableAssetPay = createPayment('p2wpkh', undefined, undefined, true); // unconfidential
+
+    // 1. issue the reissubale asset first
+    const issuePsbt = new Psbt();
+    issuePsbt.addInput(inputData);
+    issuePsbt.addIssuance({
+      assetAddress: address.fromOutputScript(alice.payment.output, regtest),
+      tokenAddress: address.fromOutputScript(alice.payment.output, regtest),
+      assetAmount: 0.00000001,
+      tokenAmount: 0.00000001,
+      precision: 8,
+      blindedIssuance: false,
+    });
+    issuePsbt.addOutputs([
+      {
+        nonce,
+        asset,
+        value: confidential.satoshiToConfidentialValue(99999500),
+        script: alice.payment.output,
+      },
+      {
+        nonce,
+        asset,
+        value: confidential.satoshiToConfidentialValue(500),
+        script: Buffer.alloc(0),
+      },
+    ]);
+    // blind the token output
+    await issuePsbt.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
+      new Map<number, Buffer>().set(0, aliceBlindingPrivkeys[0]),
+      // blind only the token output
+      new Map<number, Buffer>().set(
+        1,
+        fromConfidential(alice.payment.confidentialAddress).blindingKey,
+      ),
+    );
+    // sign the issuance
+    issuePsbt.signAllInputs(alice.keys[0]);
+    const valid = issuePsbt.validateSignaturesOfAllInputs(
+      Psbt.ECDSASigValidator(ecc),
+    );
+    strictEqual(valid, true);
+
+    issuePsbt.finalizeAllInputs();
+    const hex = issuePsbt.extractTransaction().toHex();
+    await broadcast(hex);
+    // 2. reissue the asset together with an issuance
+    const issuanceTx = Transaction.fromHex(hex);
+    const issuanceInput = issuanceTx.ins[0];
+
+    if (!issuanceInput.issuance) {
+      throw new Error('no issuance in issuance input');
+    }
+
+    const entropy = issuanceEntropyFromInput(issuanceInput);
+
+    const tokenOutput = issuanceTx.outs[1];
+    const changeOutput = issuanceTx.outs[2];
+
+    const unblindedTokenOutput = await confidential.unblindOutputWithKey(
+      tokenOutput,
+      aliceBlindingPrivkeys[0],
+    );
+
+    const tokenBlinder = unblindedTokenOutput.assetBlindingFactor;
+
+    const reissuancePsbt = new Psbt()
+      .addInput({
+        hash: issuanceTx.getId(),
+        index: 2,
+        witnessUtxo: changeOutput,
+      })
+      .addOutput({
+        nonce,
+        asset,
+        value: confidential.satoshiToConfidentialValue(99998500),
+        script: alice.payment.output,
+      })
+      .addReissuance({
+        entropy,
+        tokenPrevout: { txHash: issuanceTx.getHash(false), vout: 1 },
+        prevoutBlinder: tokenBlinder,
+        witnessUtxo: tokenOutput,
+        assetAmount: 0.005,
+        tokenAmount: 0.00000001,
+        assetAddress: alice.payment.confidentialAddress,
+        tokenAddress: alice.payment.confidentialAddress,
+        precision: 8,
+        blindedIssuance: false
+      })
+      .addIssuance({
+        assetAddress: alice.payment.confidentialAddress,
+        assetAmount: 1,
+        tokenAmount: 0,
+        precision: 0,
+        blindedIssuance: false,
+      })
+      .addOutput({
+        nonce,
+        asset,
+        value: confidential.satoshiToConfidentialValue(1000),
+        script: Buffer.alloc(0),
+      });
+
+       // blind the token output
+    await reissuancePsbt.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
+      new Map<number, Buffer>().set(1, aliceBlindingPrivkeys[0]),
+      // blind only the token output
+      new Map<number, Buffer>()
+      .set(
+        2,
+        fromConfidential(alice.payment.confidentialAddress).blindingKey,
+      )
+    );
+    // sign the issuance
+    reissuancePsbt.signAllInputs(alice.keys[0]);
+    const validReissuance = reissuancePsbt.validateSignaturesOfAllInputs(
+      Psbt.ECDSASigValidator(ecc),
+    );
+    strictEqual(validReissuance, true);
+
+    reissuancePsbt.finalizeAllInputs();
+    const hexReissuance = reissuancePsbt.extractTransaction().toHex();
+    console.log(hexReissuance);
+    await broadcast(hexReissuance);
+  });
+
   it('can create a confidential reissuance transaction from confidential issuance transaction', async () => {
     // Issuance
     const alice = createPayment('p2wpkh', undefined, undefined, true);
