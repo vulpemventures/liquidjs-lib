@@ -236,8 +236,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const issuePsbt = new Psbt();
     issuePsbt.addInput(inputData);
     issuePsbt.addIssuance({
-      assetAddress: address.fromOutputScript(alice.payment.output, regtest),
-      tokenAddress: address.fromOutputScript(alice.payment.output, regtest),
+      assetAddress: alice.payment.confidentialAddress,
+      tokenAddress: alice.payment.confidentialAddress,
       assetAmount: 0.00000001,
       tokenAmount: 0.00000001,
       precision: 8,
@@ -276,6 +276,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
 
     issuePsbt.finalizeAllInputs();
     const hex = issuePsbt.extractTransaction().toHex();
+    console.log(hex)
     await broadcast(hex);
     // 2. reissue the asset together with an issuance
     const issuanceTx = Transaction.fromHex(hex);
@@ -356,7 +357,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     reissuancePsbt.finalizeAllInputs();
     const hexReissuance = reissuancePsbt.extractTransaction().toHex();
     console.log(hexReissuance);
-    await broadcast(hexReissuance);
+    //await broadcast(hexReissuance);
   });
 
   it('can create a confidential reissuance transaction from confidential issuance transaction', async () => {
