@@ -234,9 +234,9 @@ describe('Issuance', () => {
       assert.throws(() => psbt.addIssuance(argsInvalidToken));
     });
 
-    it('should throw an error if the asset amount is 0', () => {
+    it('should throw an error if the asset amount is 0 & token amount is 0', () => {
       const psbt = createPsbt();
-      const argsInvalidAsset = { ...issueArgs, assetSats: 0 };
+      const argsInvalidAsset = { ...issueArgs, assetSats: 0, tokenSats: 0 };
       assert.throws(() => psbt.addIssuance(argsInvalidAsset));
     });
 

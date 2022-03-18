@@ -9,7 +9,7 @@ import { Psbt as PsbtBase } from 'bip174-liquid';
 import { TinySecp256k1Interface } from 'ecpair';
 export interface AddIssuanceArgs {
     assetSats: number;
-    assetAddress: string;
+    assetAddress?: string;
     tokenSats: number;
     tokenAddress?: string;
     contract?: IssuanceContract;

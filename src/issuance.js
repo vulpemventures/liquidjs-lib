@@ -92,12 +92,18 @@ exports.hashContract = hashContract;
  * @param contract the asset ricarding contract of the issuance.
  */
 function newIssuance(assetSats, tokenSats, contract) {
-  if (assetSats <= 0) throw new Error('Invalid asset amount');
+  if (assetSats < 0) throw new Error('Invalid asset amount');
   if (tokenSats < 0) throw new Error('Invalid token amount');
   const contractHash = contract ? hashContract(contract) : Buffer.alloc(32);
   const issuanceObject = {
-    assetAmount: (0, confidential_1.satoshiToConfidentialValue)(assetSats),
-    tokenAmount: (0, confidential_1.satoshiToConfidentialValue)(tokenSats),
+    assetAmount:
+      assetSats === 0
+        ? Buffer.of(0x00)
+        : (0, confidential_1.satoshiToConfidentialValue)(assetSats),
+    tokenAmount:
+      tokenSats === 0
+        ? Buffer.of(0x00)
+        : (0, confidential_1.satoshiToConfidentialValue)(tokenSats),
     assetBlindingNonce: Buffer.alloc(32),
     // in case of issuance, the asset entropy = the contract hash.
     assetEntropy: contractHash,

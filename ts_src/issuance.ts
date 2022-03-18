@@ -89,13 +89,15 @@ export function newIssuance(
   tokenSats: number,
   contract?: IssuanceContract,
 ): Issuance {
-  if (assetSats <= 0) throw new Error('Invalid asset amount');
+  if (assetSats < 0) throw new Error('Invalid asset amount');
   if (tokenSats < 0) throw new Error('Invalid token amount');
 
   const contractHash = contract ? hashContract(contract) : Buffer.alloc(32);
   const issuanceObject: Issuance = {
-    assetAmount: satoshiToConfidentialValue(assetSats),
-    tokenAmount: satoshiToConfidentialValue(tokenSats),
+    assetAmount:
+      assetSats === 0 ? Buffer.of(0x00) : satoshiToConfidentialValue(assetSats),
+    tokenAmount:
+      tokenSats === 0 ? Buffer.of(0x00) : satoshiToConfidentialValue(tokenSats),
     assetBlindingNonce: Buffer.alloc(32),
     // in case of issuance, the asset entropy = the contract hash.
     assetEntropy: contractHash,

@@ -43,7 +43,7 @@ import { TinySecp256k1Interface, ECPairFactory } from 'ecpair';
 // psbt.addIssuance options
 export interface AddIssuanceArgs {
   assetSats: number;
-  assetAddress: string;
+  assetAddress?: string;
   tokenSats: number;
   tokenAddress?: string;
   contract?: IssuanceContract;
@@ -346,21 +346,30 @@ export class Psbt {
     // add the issuance to the input.
     this.__CACHE.__TX.ins[inputIndex].issuance = issuance;
 
-    const asset = Buffer.concat([issuancePrefix, calculateAsset(entropy)]);
-    const assetScript = toOutputScript(args.assetAddress);
+    if (args.assetSats > 0) {
+      if (!args.assetAddress)
+        throw new Error(
+          'assetAddress is required when assetSats is greater than 0',
+        );
 
-    // send the asset amount to the asset address.
-    this.addOutput({
-      value: issuance.assetAmount,
-      script: assetScript,
-      asset,
-      nonce: Buffer.from('00', 'hex'),
-    });
+      const asset = Buffer.concat([issuancePrefix, calculateAsset(entropy)]);
+      const assetScript = toOutputScript(args.assetAddress);
+
+      // send the asset amount to the asset address.
+      this.addOutput({
+        value: issuance.assetAmount,
+        script: assetScript,
+        asset,
+        nonce: Buffer.of(0x00),
+      });
+    }
 
     // check if the token amount is not 0
-    if (args.tokenSats !== 0) {
+    if (args.tokenSats > 0) {
       if (!args.tokenAddress)
-        throw new Error("tokenAddress can't be undefined if tokenAmount > 0");
+        throw new Error(
+          'tokenAddress is required when tokenSats is greater than 0',
+        );
 
       const token = calculateReissuanceToken(entropy, args.blindedIssuance);
       const tokenScript = toOutputScript(args.tokenAddress);
@@ -370,7 +379,7 @@ export class Psbt {
         script: tokenScript,
         value: issuance.tokenAmount,
         asset: Buffer.concat([issuancePrefix, token]),
-        nonce: Buffer.from('00', 'hex'),
+        nonce: Buffer.of(0x00),
       });
     }
 
@@ -1057,10 +1066,14 @@ export class Psbt {
             : false;
 
         const entropy = issuanceEntropyFromInput(input);
+
+        // if (hasAssetAmount(input.issuance)) {
         const asset = calculateAsset(entropy);
-        const value = confidential
-          .confidentialValueToSatoshi(input.issuance.assetAmount)
-          .toString(10);
+        const value = input.issuance.assetAmount.equals(Buffer.of(0x00))
+          ? '0'
+          : confidential
+              .confidentialValueToSatoshi(input.issuance.assetAmount)
+              .toString(10);
 
         const assetBlindingData = {
           value,
@@ -1070,6 +1083,7 @@ export class Psbt {
         };
 
         pseudoBlindingDataFromIssuances.push(assetBlindingData);
+        // }
 
         if (!isReissuance(input.issuance) && hasTokenAmount(input.issuance)) {
           const token = calculateReissuanceToken(
@@ -1128,6 +1142,7 @@ export class Psbt {
         }
 
         const entropy = issuanceEntropyFromInput(input);
+
         const issuedAsset = calculateAsset(entropy);
         const blindingFactorsAsset = getBlindingFactors(issuedAsset);
 
@@ -1160,7 +1175,7 @@ export class Psbt {
           blindingFactorsAsset.valueBlindingFactor,
           valueCommitment,
           Buffer.alloc(0),
-          '1',
+          '0',
           0,
           52,
         );
@@ -2608,20 +2623,16 @@ function getUnconfidentialWitnessUtxoBlindingData(
 }
 
 export function validateAddIssuanceArgs(args: AddIssuanceArgs): void {
-  if (args.assetSats <= 0)
+  if (args.assetSats < 0)
     throw new Error('asset amount must be greater than zero.');
   if (args.tokenSats < 0) {
     throw new Error('token amount must be positive.');
   }
 
-  if (args.tokenAddress) {
-    if (
-      isConfidential(args.assetAddress) !== isConfidential(args.tokenAddress)
-    ) {
-      throw new Error(
-        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
-      );
-    }
+  if (args.assetSats === 0 && args.tokenSats === 0) {
+    throw new Error(
+      'if assetSats is 0, need to issue a least 1 token satoshi.',
+    );
   }
 }
 
