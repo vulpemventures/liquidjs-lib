@@ -7,7 +7,7 @@ conf_addr_for_reissuance_token=`$ecli getnewaddress`
 unconf_addr_random="ert1qtz89cfq54fdgekhu9m759pn3xpr64ek7mmm5ds"
 
 # Issue an asset with supply 0 
-issued_asset=`$ecli --liquid issueasset 0 0.00000001 false`
+issued_asset=`$ecli issueasset 0 0.00000001 false`
 txid=`echo $issued_asset | jq -r .txid`
 asset=`echo $issued_asset | jq -r .asset`
 token=`echo $issued_asset | jq -r .token`
@@ -41,7 +41,7 @@ reissue_tx=`echo $result_reissue_tx | jq -r .hex`
 
 
 # attach NFT issuance stuff
-result_issue_tx=`$ecli rawissueasset "$reissue_tx" '[{"asset_amount":0.00000001,"asset_address":"'$unconf_addr_random'"}]'`
+result_issue_tx=`$ecli rawissueasset "$reissue_tx" '[{"asset_amount":0.00000001,"asset_address":"'$conf_addr_for_reissuance_token'"}]'`
 issue_tx=`echo $result_issue_tx | jq -r '.[0] | .hex'`
 
 
