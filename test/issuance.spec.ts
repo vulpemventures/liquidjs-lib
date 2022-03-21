@@ -107,9 +107,14 @@ describe('Issuance', () => {
     it('should create a valid Issuance object with an issuance contract', () => {
       const contract = fixtureWithContract.contract as issuance.IssuanceContract;
       const iss: issuance.Issuance = issuance.newIssuance(
-        fixtureWithContract.assetAmount,
-        fixtureWithContract.tokenAmount,
-        fixtureWithContract.precision,
+        issuance.amountWithPrecisionToSatoshis(
+          fixtureWithContract.assetAmount,
+          fixtureWithContract.precision,
+        ),
+        issuance.amountWithPrecisionToSatoshis(
+          fixtureWithContract.tokenAmount,
+          fixtureWithContract.precision,
+        ),
         contract,
       );
       assert.strictEqual(validate(iss), true);
@@ -122,13 +127,12 @@ describe('Issuance', () => {
 
   // a static set of arguments using with the function addIssuance.
   const issueArgs: AddIssuanceArgs = {
-    assetAmount: 100,
+    assetSats: issuance.amountWithPrecisionToSatoshis(100),
     assetAddress:
       'AzpudM1xn9jKRwnDFyDPDPTQ8jaxEUaSwe5JSFtVdULh6CwJftVVZcQWZbNacvYLLG24jTpKKNsNUVii',
-    tokenAmount: 1,
+    tokenSats: issuance.amountWithPrecisionToSatoshis(1),
     tokenAddress:
       'AzpudM1xn9jKRwnDFyDPDPTQ8jaxEUaSwe5JSFtVdULh6CwJftVVZcQWZbNacvYLLG24jTpKKNsNUVii',
-    precision: 8,
   };
 
   describe('Psbt: add issuance to input', () => {
@@ -226,19 +230,19 @@ describe('Issuance', () => {
 
     it('should throw an error if the token amount is < 0', () => {
       const psbt = createPsbt();
-      const argsInvalidToken = { ...issueArgs, tokenAmount: -2 };
+      const argsInvalidToken = { ...issueArgs, tokenSats: -2 };
       assert.throws(() => psbt.addIssuance(argsInvalidToken));
     });
 
-    it('should throw an error if the asset amount is 0', () => {
+    it('should throw an error if the asset amount is 0 & token amount is 0', () => {
       const psbt = createPsbt();
-      const argsInvalidAsset = { ...issueArgs, assetAmount: 0 };
+      const argsInvalidAsset = { ...issueArgs, assetSats: 0, tokenSats: 0 };
       assert.throws(() => psbt.addIssuance(argsInvalidAsset));
     });
 
     it('should throw an error if the asset amount is < 0', () => {
       const psbt = createPsbt();
-      const argsInvalidAsset = { ...issueArgs, assetAmount: -12 };
+      const argsInvalidAsset = { ...issueArgs, assetSats: -12 };
       assert.throws(() => psbt.addIssuance(argsInvalidAsset));
     });
 
@@ -254,7 +258,7 @@ describe('Issuance', () => {
       assert.doesNotThrow(() => {
         psbt.addIssuance({
           ...issueArgs,
-          tokenAmount: 0,
+          tokenSats: 0,
           tokenAddress: undefined,
         });
       });
@@ -271,7 +275,7 @@ describe('Issuance', () => {
     it('should add one output if token amount = 0', () => {
       const psbt = createPsbt();
       const lenOutsBeforeIssuance = psbt.data.outputs.length;
-      psbt.addIssuance({ ...issueArgs, tokenAmount: 0 });
+      psbt.addIssuance({ ...issueArgs, tokenSats: 0 });
       const lenOutsAfterIssuance = psbt.data.outputs.length;
       assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 1);
     });

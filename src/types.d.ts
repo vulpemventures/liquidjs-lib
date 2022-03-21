@@ -10,7 +10,7 @@ export declare function Signer(obj: any): boolean;
 export declare const ECPoint: any;
 export declare const Network: any;
 export interface IssuanceBlindingKeys {
-    assetKey: Buffer;
+    assetKey?: Buffer;
     tokenKey?: Buffer;
 }
 export declare const Buffer256bit: any;

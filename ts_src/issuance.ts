@@ -19,6 +19,7 @@ export interface IssuanceContract {
   precision: number;
   ticker: string;
   version: number;
+  [key: string]: any;
 }
 
 /**
@@ -65,49 +66,43 @@ export function hashContract(contract: IssuanceContract): Buffer {
   if (!validateIssuanceContract(contract))
     throw new Error('Invalid asset contract');
 
-  const constractJSON = `{"entity":{"domain":"${
-    contract.entity.domain
-  }"},"issuer_pubkey":"${contract.issuer_pubkey}","name":"${
-    contract.name
-  }","precision":${contract.precision},"ticker":"${
-    contract.ticker
-  }","version":${contract.version}}`;
+  const sortedKeys = Object.keys(contract).sort();
+  const sortedContract = sortedKeys.reduce(
+    (obj, key) => ({ ...obj, [key]: contract[key] }),
+    {},
+  );
+
   return bcrypto
-    .sha256(Buffer.from(constractJSON))
+    .sha256(Buffer.from(JSON.stringify(sortedContract)))
     .slice()
     .reverse();
 }
 
 /**
- * Returns an Issuance object for issuance transaction input.
- * @param assetAmount the number of asset to issue.
- * @param tokenAmount the number of token to issue.
- * @param precision the number of digit after the decimal point (8 for satoshi).
+ * Returns an unblinded Issuance object for issuance transaction input.
+ * @param assetSats the number of asset to issue.
+ * @param tokenSats the number of token to issue.
  * @param contract the asset ricarding contract of the issuance.
  */
 export function newIssuance(
-  assetAmount: number,
-  tokenAmount: number,
-  precision: number = 8,
+  assetSats: number,
+  tokenSats: number,
   contract?: IssuanceContract,
 ): Issuance {
-  if (assetAmount < 0) throw new Error('Invalid asset amount');
-  if (tokenAmount < 0) throw new Error('Invalid token amount');
-  if (precision < 0 || precision > 8) throw new Error('Invalid precision');
-  let contractHash = Buffer.alloc(32);
-  if (contract) {
-    if (contract.precision !== precision)
-      throw new Error('precision is not equal to the asset contract precision');
-    contractHash = hashContract(contract);
-  }
-  const iss: Issuance = {
-    assetAmount: toConfidentialAssetAmount(assetAmount, precision),
-    tokenAmount: toConfidentialTokenAmount(tokenAmount, precision),
+  if (assetSats < 0) throw new Error('Invalid asset amount');
+  if (tokenSats < 0) throw new Error('Invalid token amount');
+
+  const contractHash = contract ? hashContract(contract) : Buffer.alloc(32);
+  const issuanceObject: Issuance = {
+    assetAmount:
+      assetSats === 0 ? Buffer.of(0x00) : satoshiToConfidentialValue(assetSats),
+    tokenAmount:
+      tokenSats === 0 ? Buffer.of(0x00) : satoshiToConfidentialValue(tokenSats),
     assetBlindingNonce: Buffer.alloc(32),
     // in case of issuance, the asset entropy = the contract hash.
     assetEntropy: contractHash,
   };
-  return iss;
+  return issuanceObject;
 }
 
 export function isReissuance(issuance: Issuance): boolean {
@@ -184,27 +179,14 @@ function getTokenFlag(confidential: boolean): 1 | 0 {
 }
 
 /**
- * converts asset amount to confidential value.
+ * converts asset amount to satoshis.
+ * satoshis = assetAmount * 10^precision
  * @param assetAmount the asset amount.
- * @param precision the precision, 8 by default.
+ * @param precision the precision, 8 by default (like L-BTC).
  */
-export function toConfidentialAssetAmount(
+export function amountWithPrecisionToSatoshis(
   assetAmount: number,
   precision: number = 8,
-): Buffer {
-  const amount = Math.pow(10, precision) * assetAmount;
-  return satoshiToConfidentialValue(amount);
-}
-
-/**
- * converts token amount to confidential value.
- * @param assetAmount the token amount.
- * @param precision the precision, 8 by default.
- */
-export function toConfidentialTokenAmount(
-  tokenAmount: number,
-  precision: number = 8,
-): Buffer {
-  if (tokenAmount === 0) return Buffer.from('00', 'hex');
-  return toConfidentialAssetAmount(tokenAmount, precision);
+): number {
+  return Math.pow(10, precision) * assetAmount;
 }

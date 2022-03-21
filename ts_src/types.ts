@@ -63,7 +63,7 @@ export const Network = typeforce.compile({
 });
 
 export interface IssuanceBlindingKeys {
-  assetKey: Buffer;
+  assetKey?: Buffer;
   tokenKey?: Buffer;
 }
 
