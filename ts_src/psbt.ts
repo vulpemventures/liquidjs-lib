@@ -520,26 +520,31 @@ export class Psbt {
       input,
       this.__CACHE,
     );
-    if (!script) throw new Error(`No script found for input #${inputIndex}`);
+    if (!script) {
+      // this is a trick to allow us to support segwitv1
+      // should be removed in the future
+      if (!input.finalScriptWitness)
+        throw new Error(`No script found for input #${inputIndex}`);
+    } else {
+      checkPartialSigSighashes(input);
+      const { finalScriptSig, finalScriptWitness } = finalScriptsFunc(
+        inputIndex,
+        input,
+        script,
+        isSegwit,
+        isP2SH,
+        isP2WSH,
+      );
 
-    checkPartialSigSighashes(input);
+      if (finalScriptSig) this.data.updateInput(inputIndex, { finalScriptSig });
+      if (finalScriptWitness)
+        this.data.updateInput(inputIndex, { finalScriptWitness });
+      if (!finalScriptSig && !finalScriptWitness)
+        throw new Error(`Unknown error finalizing input #${inputIndex}`);
 
-    const { finalScriptSig, finalScriptWitness } = finalScriptsFunc(
-      inputIndex,
-      input,
-      script,
-      isSegwit,
-      isP2SH,
-      isP2WSH,
-    );
+      this.data.clearFinalizedInput(inputIndex);
+    }
 
-    if (finalScriptSig) this.data.updateInput(inputIndex, { finalScriptSig });
-    if (finalScriptWitness)
-      this.data.updateInput(inputIndex, { finalScriptWitness });
-    if (!finalScriptSig && !finalScriptWitness)
-      throw new Error(`Unknown error finalizing input #${inputIndex}`);
-
-    this.data.clearFinalizedInput(inputIndex);
     return this;
   }
 
@@ -2207,7 +2212,7 @@ function sighashTypeToString(sighashType: number): string {
   return text;
 }
 
-function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
+export function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
   let buffer = Buffer.allocUnsafe(0);
 
   function writeSlice(slice: Buffer): void {

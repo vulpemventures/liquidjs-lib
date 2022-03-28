@@ -44,7 +44,7 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.validateAddReissuanceArgs = exports.validateAddIssuanceArgs = exports.toBlindingData = exports.computeOutputsBlindingData = exports.Psbt = void 0;
+exports.validateAddReissuanceArgs = exports.validateAddIssuanceArgs = exports.toBlindingData = exports.computeOutputsBlindingData = exports.witnessStackToScriptWitness = exports.Psbt = void 0;
 const confidential = __importStar(require('./confidential'));
 const varuint = __importStar(require('bip174-liquid/src/lib/converter/varint'));
 const address_1 = require('./address');
@@ -443,22 +443,28 @@ class Psbt {
       input,
       this.__CACHE,
     );
-    if (!script) throw new Error(`No script found for input #${inputIndex}`);
-    checkPartialSigSighashes(input);
-    const { finalScriptSig, finalScriptWitness } = finalScriptsFunc(
-      inputIndex,
-      input,
-      script,
-      isSegwit,
-      isP2SH,
-      isP2WSH,
-    );
-    if (finalScriptSig) this.data.updateInput(inputIndex, { finalScriptSig });
-    if (finalScriptWitness)
-      this.data.updateInput(inputIndex, { finalScriptWitness });
-    if (!finalScriptSig && !finalScriptWitness)
-      throw new Error(`Unknown error finalizing input #${inputIndex}`);
-    this.data.clearFinalizedInput(inputIndex);
+    if (!script) {
+      // this is a trick to allow us to support segwitv1
+      // should be removed in the future
+      if (!input.finalScriptWitness)
+        throw new Error(`No script found for input #${inputIndex}`);
+    } else {
+      checkPartialSigSighashes(input);
+      const { finalScriptSig, finalScriptWitness } = finalScriptsFunc(
+        inputIndex,
+        input,
+        script,
+        isSegwit,
+        isP2SH,
+        isP2WSH,
+      );
+      if (finalScriptSig) this.data.updateInput(inputIndex, { finalScriptSig });
+      if (finalScriptWitness)
+        this.data.updateInput(inputIndex, { finalScriptWitness });
+      if (!finalScriptSig && !finalScriptWitness)
+        throw new Error(`Unknown error finalizing input #${inputIndex}`);
+      this.data.clearFinalizedInput(inputIndex);
+    }
     return this;
   }
   getInputType(inputIndex) {
@@ -1813,6 +1819,7 @@ function witnessStackToScriptWitness(witness) {
   writeVector(witness);
   return buffer;
 }
+exports.witnessStackToScriptWitness = witnessStackToScriptWitness;
 function addNonWitnessTxCache(cache, input, inputIndex) {
   cache.__NON_WITNESS_UTXO_BUF_CACHE[inputIndex] = input.nonWitnessUtxo;
   const tx = transaction_1.Transaction.fromBuffer(input.nonWitnessUtxo);
