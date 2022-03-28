@@ -84,6 +84,7 @@ export declare class Psbt {
     static fromBuffer(buffer: Buffer, opts?: PsbtOptsOptional): Psbt;
     private __CACHE;
     private opts;
+    get TX(): Transaction;
     constructor(opts?: PsbtOptsOptional, data?: PsbtBase);
     get inputCount(): number;
     get version(): number;

@@ -160,6 +160,9 @@ class Psbt {
     checkTxForDupeIns(psbt.__CACHE.__TX, psbt.__CACHE);
     return psbt;
   }
+  get TX() {
+    return this.__CACHE.__TX;
+  }
   get inputCount() {
     return this.data.inputs.length;
   }
