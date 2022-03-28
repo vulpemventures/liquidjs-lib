@@ -164,6 +164,10 @@ export class Psbt {
   private __CACHE: PsbtCache;
   private opts: PsbtOpts;
 
+  get TX(): Transaction {
+    return this.__CACHE.__TX;
+  }
+
   constructor(
     opts: PsbtOptsOptional = {},
     readonly data: PsbtBase = new PsbtBase(new PsbtTransaction()),

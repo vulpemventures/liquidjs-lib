@@ -189,8 +189,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
 
     const inputsStack = makeStackCheckSig(
       bob,
-      // @ts-ignore
-      pset['__CACHE'].__TX,
+      pset.TX,
       0,
       output,
       [
