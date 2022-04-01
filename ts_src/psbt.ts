@@ -77,15 +77,6 @@ export interface PsbtTxInput extends TransactionInput {
   witnessScript?: Buffer;
   witnessUtxo?: WitnessUtxo;
   nonWitnessUtxo?: Buffer;
-  taproot?: {
-    tapKeySig?: Buffer; // internal
-    tapScriptSigs?: Record<string, Buffer>; // xpub in tapscript -> schnorr sig
-    tapScript?: {
-      controlBlock: Buffer;
-      script: Buffer;
-      leafVersion?: number;
-    }; // leaf to use for signing the input
-  };
 }
 
 export interface PsbtTxOutput extends Output {
