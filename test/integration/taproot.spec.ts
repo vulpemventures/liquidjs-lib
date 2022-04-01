@@ -8,7 +8,7 @@ import {
   Psbt,
 } from '../../ts_src/index';
 import { ECPair, ecc } from '../ecc';
-import { broadcast, faucet } from './_regtest';
+import { broadcast, faucet, fetchTx } from './_regtest';
 import {
   confidentialValueToSatoshi,
   satoshiToConfidentialValue,
@@ -113,7 +113,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       bob,
       tx,
       0,
-      output,
+      [output],
       [
         {
           asset: AssetHash.fromHex(utxo.asset, false).bytes,
@@ -191,7 +191,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       bob,
       pset.TX,
       0,
-      output,
+      [output],
       [
         {
           asset: AssetHash.fromHex(utxo.asset, false).bytes,
@@ -213,6 +213,126 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     const hex = tx.toHex();
     await broadcast(hex, true);
   });
+
+  it('can create (and broadcast via 3PBP) a confidential taproot scriptspend Pset (v0)', async () => {
+    const BOB = ECPair.makeRandom({ network: net });
+    const blindingKeys = ECPair.makeRandom({ network: net });
+
+    const bobPay = payments.p2wpkh({
+      pubkey: BOB.publicKey,
+      blindkey: blindingKeys.publicKey,
+      network: net,
+    });
+    const bobScript = compile([BOB.publicKey.slice(1), OPS.OP_CHECKSIG]);
+
+    // in this exemple, alice is the internal key (can spend via keypath spend)
+    // however, the script tree allows bob to spend the coin with a simple p2pkh
+    const leaves: TaprootLeaf[] = [
+      {
+        scriptHex: bobScript.toString('hex'),
+      },
+      {
+        scriptHex:
+          '20b617298552a72ade070667e86ca63b8f5789a9fe8731ef91202a91c9f3459007ac',
+      },
+    ];
+
+    const hashTree = toHashTree(leaves);
+    const output = bip341.taprootOutputScript(alice.publicKey, hashTree);
+    const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
+
+    const confUtxo = await faucet(bobPay.confidentialAddress!);
+    const utxo = await faucet(faucetAddress);
+    const txhex = await fetchTx(utxo.txid);
+    const confTxHex = await fetchTx(confUtxo.txid);
+    const prevoutTx = Transaction.fromHex(txhex);
+    const prevoutConfTx = Transaction.fromHex(confTxHex);
+
+    const sendAmount = 1_0000_0000 - 10000;
+    // bob spends the coin with the script path of the leaf
+    // he gets the change and send the other one to the same taproot address
+
+    const lbtc = AssetHash.fromHex(net.assetHash, false);
+
+    const pset = new Psbt({ network: net })
+      .addInput({
+        hash: confUtxo.txid,
+        index: confUtxo.vout,
+        witnessUtxo: prevoutConfTx.outs[confUtxo.vout],
+      })
+      .addInput({
+        hash: utxo.txid,
+        index: utxo.vout,
+        witnessUtxo: prevoutTx.outs[utxo.vout],
+      })
+      .addOutput({
+        script: output,
+        asset: lbtc.bytes,
+        value: satoshiToConfidentialValue(sendAmount),
+        nonce: Buffer.of(0x00),
+      })
+      .addOutput({
+        script: output,
+        asset: lbtc.bytes,
+        value: satoshiToConfidentialValue(1_0000_0000 + 10000 - FEES),
+        nonce: Buffer.of(0x00),
+      })
+      .addOutput({
+        script: Buffer.alloc(0),
+        asset: lbtc.bytes,
+        value: satoshiToConfidentialValue(FEES),
+        nonce: Buffer.of(0x00),
+      });
+
+    const bobLeaf = leaves[0];
+    const leafHash = tapLeafHash(bobLeaf);
+    const pathToBobLeaf = findScriptPath(hashTree, leafHash);
+    const taprootStack = bip341.taprootSignScriptStack(
+      alice.publicKey,
+      bobLeaf,
+      hashTree.hash,
+      pathToBobLeaf,
+    );
+
+    await pset.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
+      new Map().set(0, blindingKeys.privateKey),
+      new Map().set(0, blindingKeys.publicKey).set(1, blindingKeys.publicKey),
+    );
+
+    const inputsStack = makeStackCheckSig(
+      BOB,
+      pset.TX,
+      1,
+      [prevoutConfTx.outs[confUtxo.vout].script, output],
+      [
+        {
+          asset: prevoutConfTx.outs[confUtxo.vout].asset,
+          value: prevoutConfTx.outs[confUtxo.vout].value,
+        },
+        {
+          asset: prevoutTx.outs[utxo.vout].asset,
+          value: prevoutTx.outs[utxo.vout].value,
+        },
+      ],
+      leafHash,
+    );
+
+    pset.signInput(0, BOB);
+
+    pset.updateInput(1, {
+      finalScriptWitness: witnessStackToScriptWitness([
+        ...inputsStack,
+        ...taprootStack,
+      ]),
+    });
+
+    pset.finalizeAllInputs();
+    const tx = pset.extractTransaction();
+    const hex = tx.toHex();
+
+    await broadcast(hex, true);
+  });
 });
 
 const FEES = 500;
@@ -221,13 +341,13 @@ function makeStackCheckSig(
   keyPair: ECPairInterface,
   transaction: Transaction,
   inputIndex: number,
-  prevoutScript: Buffer,
+  prevoutScripts: Buffer[],
   values: { asset: Buffer; value: Buffer }[],
   leafHash: Buffer,
 ): Buffer[] {
   const hash = transaction.hashForWitnessV1(
     inputIndex,
-    [prevoutScript],
+    prevoutScripts,
     values,
     Transaction.SIGHASH_DEFAULT,
     net.genesisBlockHash,

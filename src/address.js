@@ -337,7 +337,8 @@ function toConfidentialLegacy(address, blindingKey, network) {
 }
 function toConfidentialSegwit(address, blindingKey, network) {
   const data = toOutputScript(address, network);
-  return toBlech32(data, blindingKey, network.blech32, 0);
+  const version = fromBech32(address).version;
+  return toBlech32(data, blindingKey, network.blech32, version);
 }
 function isBlech32(address, network) {
   return address.startsWith(network.blech32);

@@ -36,6 +36,15 @@ export interface PsbtTxInput extends TransactionInput {
     witnessScript?: Buffer;
     witnessUtxo?: WitnessUtxo;
     nonWitnessUtxo?: Buffer;
+    taproot?: {
+        tapKeySig?: Buffer;
+        tapScriptSigs?: Record<string, Buffer>;
+        tapScript?: {
+            controlBlock: Buffer;
+            script: Buffer;
+            leafVersion?: number;
+        };
+    };
 }
 export interface PsbtTxOutput extends Output {
     address?: string;

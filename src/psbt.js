@@ -464,8 +464,10 @@ class Psbt {
       if (finalScriptSig) this.data.updateInput(inputIndex, { finalScriptSig });
       if (finalScriptWitness)
         this.data.updateInput(inputIndex, { finalScriptWitness });
-      if (!finalScriptSig && !finalScriptWitness)
-        throw new Error(`Unknown error finalizing input #${inputIndex}`);
+      if (!finalScriptSig && !finalScriptWitness) {
+        if (!input.finalScriptWitness)
+          throw new Error(`Unknown error finalizing input #${inputIndex}`);
+      }
       this.data.clearFinalizedInput(inputIndex);
     }
     return this;
@@ -1283,6 +1285,8 @@ function canFinalize(input, script, scriptType) {
     case 'multisig':
       const p2ms = payments.p2ms({ output: script });
       return hasSigs(p2ms.m, input.partialSig, p2ms.pubkeys);
+    case 'nonstandard':
+      if (script[0] === 81) return true;
     default:
       return false;
   }
@@ -1498,6 +1502,11 @@ function prepareFinalScripts(
   isP2SH,
   isP2WSH,
 ) {
+  if (scriptType === 'nonstandard')
+    return {
+      finalScriptSig: undefined,
+      finalScriptWitness: undefined,
+    };
   let finalScriptSig;
   let finalScriptWitness;
   // Wow, the payments API is very handy
