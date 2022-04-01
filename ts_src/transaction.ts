@@ -1046,8 +1046,8 @@ function getOutputWitnessesSHA256(outs: Output[]): Buffer {
   const size = outs.reduce((sum, o) => sum + outProofsSize(o), 0);
   const bufferWriter = BufferWriter.withCapacity(size);
   for (const out of outs) {
-    bufferWriter.writeVarSlice(out.rangeProof || Buffer.of(0x00));
     bufferWriter.writeVarSlice(out.surjectionProof || Buffer.of(0x00));
+    bufferWriter.writeVarSlice(out.rangeProof || Buffer.of(0x00));
   }
   return bcrypto.sha256(bufferWriter.end());
 }
