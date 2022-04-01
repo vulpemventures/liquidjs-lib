@@ -5,7 +5,6 @@ export const TESTNET_APIURL = 'https://blockstream.info/liquidtestnet/api';
 
 export async function faucet(address: string): Promise<any> {
   try {
-    console.log(`Faucet ${address}`);
     const resp = await axios.post(`${APIURL}/faucet`, { address });
     if (resp.status !== 200) {
       throw new Error('Invalid address');
