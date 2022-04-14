@@ -28,6 +28,7 @@ export {
   HDSigner,
   HDSignerAsync,
   witnessStackToScriptWitness,
+  BlindingDataLike,
 } from './psbt';
 export { OPS as opcodes } from './ops';
 export { Transaction } from './transaction';
