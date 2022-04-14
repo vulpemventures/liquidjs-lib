@@ -131,7 +131,12 @@ export function fromBlech32(address: string): Blech32Result {
   const pubkey = Buffer.from(result.blindingPublicKey, 'hex');
   const prg = Buffer.from(result.witness, 'hex');
   const data = Buffer.concat([
-    Buffer.from([result.witnessVersion, prg.length]),
+    Buffer.from([
+      result.witnessVersion
+        ? result.witnessVersion + 0x50
+        : result.witnessVersion,
+      prg.length,
+    ]),
     prg,
   ]);
   return {
