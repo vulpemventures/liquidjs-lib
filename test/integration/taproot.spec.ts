@@ -23,6 +23,7 @@ import {
 } from '../../ts_src/bip341';
 import { compile, OPS } from '../../ts_src/script';
 import { witnessStackToScriptWitness } from '../../ts_src/psbt';
+import * as assert from 'assert';
 
 const bip341 = BIP341Factory(ecc);
 
@@ -36,6 +37,43 @@ describe('liquidjs-lib (transaction with taproot)', () => {
   const bob = ECPair.fromWIF(
     'KwoJAjrautr5EUPVxvnisVgixipMiYGKxykiV8U6e6JtAP9ZURV5',
   );
+
+  it('should be able to compute confidential address from taproot output script', () => {
+    const bobScript = compile([bob.publicKey.slice(1), OPS.OP_CHECKSIG]);
+
+    // in this exemple, alice is the internal key (can spend via keypath spend)
+    // however, the script tree allows bob to spend the coin with a simple p2pkh
+    const leaves: TaprootLeaf[] = [
+      {
+        scriptHex: bobScript.toString('hex'),
+      },
+      {
+        scriptHex:
+          '20b617298552a72ade070667e86ca63b8f5789a9fe8731ef91202a91c9f3459007ac',
+      },
+    ];
+
+    const hashTree = toHashTree(leaves);
+    const output = bip341.taprootOutputScript(alice.publicKey, hashTree);
+
+    const unconfidentialAddress = address.fromOutputScript(
+      output,
+      networks.regtest,
+    );
+    const confidentialAddress = address.toConfidential(
+      unconfidentialAddress,
+      bob.publicKey,
+    );
+    const fromConf = address.fromConfidential(confidentialAddress);
+    assert.strictEqual(unconfidentialAddress, fromConf.unconfidentialAddress);
+
+    assert.ok(fromConf.blindingKey.equals(bob.publicKey));
+    const scriptFromConfidential = address.toOutputScript(
+      confidentialAddress,
+      networks.regtest,
+    );
+    assert.ok(scriptFromConfidential.equals(output));
+  });
 
   it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
     const changeAddress = payments.p2pkh({

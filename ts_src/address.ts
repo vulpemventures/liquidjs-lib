@@ -35,11 +35,6 @@ const FUTURE_SEGWIT_MIN_SIZE: number = 2;
 const FUTURE_SEGWIT_MAX_VERSION: number = 16;
 const FUTURE_SEGWIT_MIN_VERSION: number = 1;
 const FUTURE_SEGWIT_VERSION_DIFF: number = 0x50;
-const FUTURE_SEGWIT_VERSION_WARNING: string =
-  'WARNING: Sending to a future segwit version address can lead to loss of funds. ' +
-  'End users MUST be warned carefully in the GUI and asked if they wish to proceed ' +
-  'with caution. Wallets should verify the segwit version from the output of fromBech32, ' +
-  'then decide when it is safe to use which version of segwit.';
 
 function _toFutureSegwitAddress(output: Buffer, network: Network): string {
   const data = output.slice(2);
@@ -60,8 +55,6 @@ function _toFutureSegwitAddress(output: Buffer, network: Network): string {
 
   if (output[1] !== data.length)
     throw new TypeError('Invalid script for segwit address');
-
-  console.warn(FUTURE_SEGWIT_VERSION_WARNING);
 
   return toBech32(data, version, network.bech32);
 }
@@ -131,7 +124,12 @@ export function fromBlech32(address: string): Blech32Result {
   const pubkey = Buffer.from(result.blindingPublicKey, 'hex');
   const prg = Buffer.from(result.witness, 'hex');
   const data = Buffer.concat([
-    Buffer.from([result.witnessVersion, prg.length]),
+    Buffer.from([
+      result.witnessVersion
+        ? result.witnessVersion + FUTURE_SEGWIT_VERSION_DIFF
+        : result.witnessVersion,
+      prg.length,
+    ]),
     prg,
   ]);
   return {
@@ -254,8 +252,6 @@ export function toOutputScript(address: string, network?: Network): Buffer {
         decodedBech32.data.length >= FUTURE_SEGWIT_MIN_SIZE &&
         decodedBech32.data.length <= FUTURE_SEGWIT_MAX_SIZE
       ) {
-        console.warn(FUTURE_SEGWIT_VERSION_WARNING);
-
         return bscript.compile([
           decodedBech32.version + FUTURE_SEGWIT_VERSION_DIFF,
           decodedBech32.data,
