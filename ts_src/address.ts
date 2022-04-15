@@ -126,7 +126,7 @@ export function fromBlech32(address: string): Blech32Result {
   const data = Buffer.concat([
     Buffer.from([
       result.witnessVersion
-        ? result.witnessVersion + 0x50
+        ? result.witnessVersion + FUTURE_SEGWIT_VERSION_DIFF
         : result.witnessVersion,
       prg.length,
     ]),
