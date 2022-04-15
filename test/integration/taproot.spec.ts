@@ -56,16 +56,22 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     const hashTree = toHashTree(leaves);
     const output = bip341.taprootOutputScript(alice.publicKey, hashTree);
 
-    const unconfidentialAddress = address.fromOutputScript(output);
+    const unconfidentialAddress = address.fromOutputScript(
+      output,
+      networks.regtest,
+    );
     const confidentialAddress = address.toConfidential(
       unconfidentialAddress,
       bob.publicKey,
     );
-    assert.strictEqual(
-      unconfidentialAddress,
-      address.fromConfidential(confidentialAddress).unconfidentialAddress,
+    const fromConf = address.fromConfidential(confidentialAddress);
+    assert.strictEqual(unconfidentialAddress, fromConf.unconfidentialAddress);
+
+    assert.ok(fromConf.blindingKey.equals(bob.publicKey));
+    const scriptFromConfidential = address.toOutputScript(
+      confidentialAddress,
+      networks.regtest,
     );
-    const scriptFromConfidential = address.toOutputScript(confidentialAddress);
     assert.ok(scriptFromConfidential.equals(output));
   });
 
