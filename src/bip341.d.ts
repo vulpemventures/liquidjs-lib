@@ -28,7 +28,7 @@ export interface HashTree {
     right?: HashTree;
 }
 export declare function tapLeafHash(leaf: TaprootLeaf): Buffer;
-export declare function toHashTree(leaves: TaprootLeaf[]): HashTree;
+export declare function toHashTree(leaves: TaprootLeaf[], withScriptHex?: boolean): HashTree;
 /**
  * Given a MAST tree, it finds the path of a particular hash.
  * @param node - the root of the tree

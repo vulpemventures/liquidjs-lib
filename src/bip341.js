@@ -26,7 +26,7 @@ function tapLeafHash(leaf) {
 }
 exports.tapLeafHash = tapLeafHash;
 // recursively build the Taproot tree from a ScriptTree structure
-function toHashTree(leaves) {
+function toHashTree(leaves, withScriptHex = false) {
   switch (leaves.length) {
     case 0:
       return { hash: Buffer.alloc(32) };
@@ -38,6 +38,7 @@ function toHashTree(leaves) {
       }
       return {
         hash: tapLeafHash(leaf),
+        scriptHex: withScriptHex ? leaf.scriptHex : undefined,
       };
     default:
       // 2 or more entries
