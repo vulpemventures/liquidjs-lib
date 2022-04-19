@@ -43,8 +43,8 @@ function toHashTree(leaves, withScriptHex = false) {
     default:
       // 2 or more entries
       const middleIndex = Math.ceil(leaves.length / 2);
-      const left = toHashTree(leaves.slice(0, middleIndex));
-      const right = toHashTree(leaves.slice(middleIndex));
+      const left = toHashTree(leaves.slice(0, middleIndex), withScriptHex);
+      const right = toHashTree(leaves.slice(middleIndex), withScriptHex);
       let leftHash = left.hash;
       let rightHash = right.hash;
       // check if left is greater than right
