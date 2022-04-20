@@ -74,7 +74,10 @@ export function tapLeafHash(leaf: TaprootLeaf): Buffer {
 }
 
 // recursively build the Taproot tree from a ScriptTree structure
-export function toHashTree(leaves: TaprootLeaf[]): HashTree {
+export function toHashTree(
+  leaves: TaprootLeaf[],
+  withScriptHex = false,
+): HashTree {
   switch (leaves.length) {
     case 0:
       return { hash: Buffer.alloc(32) };
@@ -87,12 +90,13 @@ export function toHashTree(leaves: TaprootLeaf[]): HashTree {
 
       return {
         hash: tapLeafHash(leaf),
+        scriptHex: withScriptHex ? leaf.scriptHex : undefined,
       };
     default:
       // 2 or more entries
       const middleIndex = Math.ceil(leaves.length / 2);
-      const left = toHashTree(leaves.slice(0, middleIndex));
-      const right = toHashTree(leaves.slice(middleIndex));
+      const left = toHashTree(leaves.slice(0, middleIndex), withScriptHex);
+      const right = toHashTree(leaves.slice(middleIndex), withScriptHex);
       let leftHash = left.hash;
       let rightHash = right.hash;
 
