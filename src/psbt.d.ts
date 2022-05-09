@@ -1,12 +1,12 @@
 /// <reference types="node" />
 import * as confidential from './confidential';
-import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutputUpdate, WitnessUtxo, NonWitnessUtxo } from 'bip174-liquid/src/lib/interfaces';
+import { KeyValue, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutputUpdate, WitnessUtxo, NonWitnessUtxo, TapScriptSig, TapBip32Derivation, TapInternalKey, TapKeySig, TapLeafScript, TapMerkleRoot } from 'bip174-liquid/src/lib/interfaces';
 import { Network } from './networks';
 import { Output, Transaction } from './transaction';
 import { IssuanceContract, Outpoint } from './issuance';
 import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
-import { TinySecp256k1Interface } from 'ecpair';
+import { TinySecp256k1Interface, Signer as ECPairSigner, SignerAsync as ECPairSignerAsync } from 'ecpair';
 export interface AddIssuanceArgs {
     assetSats: number;
     assetAddress?: string;
@@ -36,6 +36,12 @@ export interface PsbtTxInput extends TransactionInput {
     witnessScript?: Buffer;
     witnessUtxo?: WitnessUtxo;
     nonWitnessUtxo?: Buffer;
+    tapKeySig?: TapKeySig;
+    tapScriptSig?: TapScriptSig[];
+    tapLeafScript?: TapLeafScript[];
+    tapBip32Derivation?: TapBip32Derivation[];
+    tapInternalKey?: TapInternalKey;
+    tapMerkleRoot?: TapMerkleRoot;
 }
 export interface PsbtTxOutput extends Output {
     address?: string;
@@ -179,17 +185,11 @@ export interface HDSignerAsync extends HDSignerBase {
     derivePath(path: string): HDSignerAsync;
     sign(hash: Buffer): Promise<Buffer>;
 }
-export interface Signer {
-    publicKey: Buffer;
-    network?: any;
-    sign(hash: Buffer, lowR?: boolean): Buffer;
-    getPublicKey?(): Buffer;
+export interface Signer extends ECPairSigner {
+    signSchnorr?(hash: Buffer): Buffer;
 }
-export interface SignerAsync {
-    publicKey: Buffer;
-    network?: any;
-    sign(hash: Buffer, lowR?: boolean): Promise<Buffer>;
-    getPublicKey?(): Buffer;
+export interface SignerAsync extends ECPairSignerAsync {
+    signSchnorr?(hash: Buffer): Promise<Buffer>;
 }
 /**
  * This function must do two things:
@@ -202,7 +202,8 @@ input: PsbtInput, // The PSBT input contents
 script: Buffer, // The "meaningful" locking script Buffer (redeemScript for P2SH etc.)
 isSegwit: boolean, // Is it segwit?
 isP2SH: boolean, // Is it P2SH?
-isP2WSH: boolean) => {
+isP2WSH: boolean, // Is it P2WSH?
+isTaproot: boolean) => {
     finalScriptSig: Buffer | undefined;
     finalScriptWitness: Buffer | undefined;
 };

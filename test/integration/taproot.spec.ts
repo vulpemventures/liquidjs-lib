@@ -80,7 +80,20 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       pubkey: alice.publicKey,
       network: net,
     }).address;
-    const output = bip341.taprootOutputScript(alice.publicKey);
+    const leaves: TaprootLeaf[] = [
+      {
+        scriptHex: '00',
+      },
+      {
+        scriptHex:
+          '20b617298552a72ade070667e86ca63b8f5789a9fe8731ef91202a91c9f3459007ac',
+      },
+    ];
+
+    const output = bip341.taprootOutputScript(
+      alice.publicKey,
+      toHashTree(leaves),
+    );
     const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
     const utxo = await faucet(faucetAddress);
 
@@ -100,6 +113,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
         },
       ],
       changeAddress!,
+      toHashTree(leaves).hash,
     );
 
     const hex = tx.toHex();
@@ -249,7 +263,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     pset.finalizeAllInputs();
     const tx = pset.extractTransaction();
     const hex = tx.toHex();
-    await broadcast(hex, true);
+    await broadcast(hex);
   });
 
   it('can create (and broadcast via 3PBP) a confidential taproot scriptspend Pset (v0)', async () => {
@@ -369,7 +383,133 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     const tx = pset.extractTransaction();
     const hex = tx.toHex();
 
-    await broadcast(hex, true);
+    await broadcast(hex);
+  });
+
+  it('can create (and broadcast via 3PBP) a confidential taproot keypathspend Pset (v0)', async () => {
+    const BOB = ECPair.makeRandom({ network: net });
+    const blindingKeys = ECPair.makeRandom({ network: net });
+
+    const bobPay = payments.p2wpkh({
+      pubkey: BOB.publicKey,
+      blindkey: blindingKeys.publicKey,
+      network: net,
+    });
+    const bobScript = compile([BOB.publicKey.slice(1), OPS.OP_CHECKSIG]);
+
+    // in this exemple, alice is the internal key (can spend via keypath spend)
+    const leaves: TaprootLeaf[] = [
+      {
+        scriptHex: bobScript.toString('hex'),
+      },
+      {
+        scriptHex:
+          '20b617298552a72ade070667e86ca63b8f5789a9fe8731ef91202a91c9f3459007ac',
+      },
+    ];
+
+    const hashTree = toHashTree(leaves);
+    const output = bip341.taprootOutputScript(alice.publicKey, hashTree);
+    const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
+
+    const confUtxo = await faucet(bobPay.confidentialAddress!);
+    const utxo = await faucet(faucetAddress);
+    const txhex = await fetchTx(utxo.txid);
+    const confTxHex = await fetchTx(confUtxo.txid);
+    const prevoutTx = Transaction.fromHex(txhex);
+    const prevoutConfTx = Transaction.fromHex(confTxHex);
+
+    const sendAmount = 1_0000_0000 - 10000;
+    // bob spends the coin with the script path of the leaf
+    // he gets the change and send the other one to the same taproot address
+
+    const lbtc = AssetHash.fromHex(net.assetHash, false);
+
+    const pset = new Psbt({ network: net })
+      .addInput({
+        hash: confUtxo.txid,
+        index: confUtxo.vout,
+        witnessUtxo: prevoutConfTx.outs[confUtxo.vout],
+      })
+      .addInput({
+        hash: utxo.txid,
+        index: utxo.vout,
+        witnessUtxo: prevoutTx.outs[utxo.vout],
+      })
+      .addOutput({
+        script: output,
+        asset: lbtc.bytes,
+        value: satoshiToConfidentialValue(sendAmount),
+        nonce: Buffer.of(0x00),
+      })
+      .addOutput({
+        script: output,
+        asset: lbtc.bytes,
+        value: satoshiToConfidentialValue(1_0000_0000 + 10000 - FEES),
+        nonce: Buffer.of(0x00),
+      })
+      .addOutput({
+        script: Buffer.alloc(0),
+        asset: lbtc.bytes,
+        value: satoshiToConfidentialValue(FEES),
+        nonce: Buffer.of(0x00),
+      });
+
+    await pset.blindOutputsByIndex(
+      Psbt.ECCKeysGenerator(ecc),
+      new Map().set(0, blindingKeys.privateKey),
+      new Map().set(0, blindingKeys.publicKey).set(1, blindingKeys.publicKey),
+    );
+
+    pset.signInput(0, BOB);
+    pset.signInput(
+      1,
+      ECPair.fromPrivateKey(
+        bip341.taprootTweakKey(alice.privateKey!, hashTree.hash),
+      ),
+    );
+    pset.finalizeAllInputs();
+    const tx = pset.extractTransaction();
+    const hex = tx.toHex();
+    await broadcast(hex);
+  });
+
+  it('should be able to transport BIP371 fields', () => {
+    const fakePset = new Psbt({ network: net })
+      .addInput({
+        hash: Buffer.alloc(32),
+        index: 0,
+      })
+      .addOutput({
+        script: Buffer.from('00', 'hex'),
+        asset: Buffer.concat([Buffer.of(1), Buffer.alloc(32)]),
+        value: satoshiToConfidentialValue(1_0000_0000),
+        nonce: Buffer.alloc(0),
+      });
+
+    fakePset.updateInput(0, {
+      tapInternalKey: Buffer.alloc(32),
+      tapScriptSig: [
+        {
+          pubkey: Buffer.alloc(32),
+          signature: Buffer.alloc(64),
+          leafHash: Buffer.alloc(32),
+        },
+      ],
+      tapMerkleRoot: Buffer.alloc(32),
+      tapKeySig: Buffer.alloc(64),
+      tapLeafScript: [
+        {
+          script: Buffer.from('0014', 'hex'),
+          leafVersion: 0,
+          controlBlock: Buffer.alloc(65),
+        },
+      ],
+    });
+
+    const deserialized = Psbt.fromBase64(fakePset.toBase64());
+
+    assert.deepStrictEqual(deserialized.txInputs[0], fakePset.txInputs[0]);
   });
 });
 
@@ -449,6 +589,7 @@ function createSigned(
   scriptPubkeys: Buffer[],
   values: { asset: Buffer; value: Buffer }[],
   changeAddress: string,
+  treeRoot: Buffer,
 ): Transaction {
   const changeAmount =
     values.reduce(
@@ -491,7 +632,13 @@ function createSigned(
       Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
       net.genesisBlockHash, // block hash
     );
-    const signature = bip341.taprootSignKey(sighash, key.privateKey!);
+    const tweakedInternalKey = bip341.taprootTweakKey(
+      key.privateKey!,
+      treeRoot,
+    );
+    const signature = ECPair.fromPrivateKey(tweakedInternalKey).signSchnorr(
+      sighash,
+    );
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
     tx.ins[0].witness = [signature];

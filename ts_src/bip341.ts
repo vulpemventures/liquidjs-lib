@@ -27,7 +27,7 @@ export interface TinySecp256k1Interface extends ECPairSecp256k1Interface {
 // Use factory to inject TinySecp256k1Interface lib
 export interface BIP341API {
   // tweak the internal key and sign the message hash (schnorr)
-  taprootSignKey(messageHash: Buffer, privateKey: Buffer): Buffer;
+  taprootTweakKey(privateKey: Buffer, hash?: Buffer): Buffer;
   // tweak the internal pubkey, and create the control block from the path + treeRootHash
   taprootSignScriptStack(
     internalPublicKey: Buffer,
@@ -41,7 +41,7 @@ export interface BIP341API {
 
 export function BIP341Factory(ecc: TinySecp256k1Interface): BIP341API {
   return {
-    taprootSignKey: taprootSignKey(ecc),
+    taprootTweakKey: taprootTweakKey(ecc),
     taprootSignScriptStack: taprootSignScriptStack(ecc),
     taprootOutputScript: taprootOutputScript(ecc),
   };
@@ -211,37 +211,25 @@ const ONE = Buffer.from(
 );
 
 // Compute the witness signature for a P2TR output (key path)
-function taprootSignKey(
+function taprootTweakKey(
   ecc: TinySecp256k1Interface,
-): BIP341API['taprootSignKey'] {
-  return (messageHash: Buffer, key: Buffer): Buffer => {
+): BIP341API['taprootTweakKey'] {
+  return (key: Buffer, hash?: Buffer): Buffer => {
     const signingEcPair = ECPairFactory(ecc).fromPrivateKey(key);
 
     const privateKey =
       signingEcPair.publicKey[0] === 2
         ? signingEcPair.privateKey
         : ecc.privateAdd(ecc.privateSub(N_LESS_1, key)!, ONE);
-    const tweakHash = taggedHash(
-      'TapTweak/elements',
-      signingEcPair.publicKey.slice(1, 33),
-    );
+
+    let tweakData = signingEcPair.publicKey.slice(1, 33);
+    if (hash) {
+      tweakData = Buffer.from(Buffer.concat([tweakData, hash]));
+    }
+
+    const tweakHash = taggedHash('TapTweak/elements', tweakData);
     const newPrivateKey = ecc.privateAdd(privateKey!, tweakHash);
     if (newPrivateKey === null) throw new Error('Invalid Tweak');
-    const signed = ecc.signSchnorr(
-      messageHash,
-      newPrivateKey,
-      Buffer.alloc(32),
-    );
-
-    const ok = ecc.verifySchnorr(
-      messageHash,
-      ECPairFactory(ecc)
-        .fromPrivateKey(Buffer.from(newPrivateKey))
-        .publicKey.slice(1),
-      signed,
-    );
-    if (!ok) throw new Error('Invalid Signature');
-
-    return Buffer.from(signed);
+    return Buffer.from(newPrivateKey);
   };
 }

@@ -7,7 +7,7 @@ const bufferutils_1 = require('./bufferutils');
 const LEAF_VERSION_TAPSCRIPT = 0xc4;
 function BIP341Factory(ecc) {
   return {
-    taprootSignKey: taprootSignKey(ecc),
+    taprootTweakKey: taprootTweakKey(ecc),
     taprootSignScriptStack: taprootSignScriptStack(ecc),
     taprootOutputScript: taprootOutputScript(ecc),
   };
@@ -136,32 +136,20 @@ const ONE = Buffer.from(
   'hex',
 );
 // Compute the witness signature for a P2TR output (key path)
-function taprootSignKey(ecc) {
-  return (messageHash, key) => {
+function taprootTweakKey(ecc) {
+  return (key, hash) => {
     const signingEcPair = (0, ecpair_1.ECPairFactory)(ecc).fromPrivateKey(key);
     const privateKey =
       signingEcPair.publicKey[0] === 2
         ? signingEcPair.privateKey
         : ecc.privateAdd(ecc.privateSub(N_LESS_1, key), ONE);
-    const tweakHash = (0, crypto_1.taggedHash)(
-      'TapTweak/elements',
-      signingEcPair.publicKey.slice(1, 33),
-    );
+    let tweakData = signingEcPair.publicKey.slice(1, 33);
+    if (hash) {
+      tweakData = Buffer.from(Buffer.concat([tweakData, hash]));
+    }
+    const tweakHash = (0, crypto_1.taggedHash)('TapTweak/elements', tweakData);
     const newPrivateKey = ecc.privateAdd(privateKey, tweakHash);
     if (newPrivateKey === null) throw new Error('Invalid Tweak');
-    const signed = ecc.signSchnorr(
-      messageHash,
-      newPrivateKey,
-      Buffer.alloc(32),
-    );
-    const ok = ecc.verifySchnorr(
-      messageHash,
-      (0, ecpair_1.ECPairFactory)(ecc)
-        .fromPrivateKey(Buffer.from(newPrivateKey))
-        .publicKey.slice(1),
-      signed,
-    );
-    if (!ok) throw new Error('Invalid Signature');
-    return Buffer.from(signed);
+    return Buffer.from(newPrivateKey);
   };
 }
