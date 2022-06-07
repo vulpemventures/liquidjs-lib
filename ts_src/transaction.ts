@@ -489,7 +489,7 @@ export class Transaction {
     const isNone = outputType === Transaction.SIGHASH_NONE;
     const isSingle = outputType === Transaction.SIGHASH_SINGLE;
 
-    let hashPrevouts = EMPTY_BUFFER;
+    let hashOutpoints = EMPTY_BUFFER;
     let hashSequences = EMPTY_BUFFER;
     let hashOutputs = EMPTY_BUFFER;
     let hashIssuances = EMPTY_BUFFER;
@@ -503,78 +503,22 @@ export class Transaction {
     );
 
     if (!isAnyoneCanPay) {
-      // Inputs
-      // outpoints sha256 (hashPrevouts)
-      let bufferWriter = BufferWriter.withCapacity(this.ins.length * (32 + 4));
-      for (const i of this.ins) {
-        bufferWriter.writeSlice(i.hash);
-        bufferWriter.writeUInt32(i.index);
-      }
-      hashPrevouts = bcrypto.sha256(bufferWriter.end());
-
-      // scripts sha256 (hashScriptPubKeys)
-      bufferWriter = BufferWriter.withCapacity(
-        prevOutScripts.map(varSliceSize).reduce((a, b) => a + b),
-      );
-      prevOutScripts.forEach(prevOutScript =>
-        bufferWriter.writeVarSlice(prevOutScript),
-      );
-      hashScriptPubKeys = bcrypto.sha256(bufferWriter.end());
-
-      // Sequences
-      bufferWriter = BufferWriter.withCapacity(4 * this.ins.length);
-      this.ins.forEach(txIn => bufferWriter.writeUInt32(txIn.sequence));
-      hashSequences = bcrypto.sha256(bufferWriter.end());
-
-      // Issuances
-      const sizeOfIssuances = this.ins.reduce(
-        (sum, txIn) => (txIn.issuance ? sum + getIssuanceSize(txIn) : sum + 1),
-        0,
-      );
-      const size = sizeOfIssuances === 0 ? this.ins.length : sizeOfIssuances;
-      const writer = BufferWriter.withCapacity(size);
-      this.ins.forEach((txIn: Input) => {
-        if (txIn.issuance) {
-          writer.writeSlice(txIn.issuance!.assetBlindingNonce);
-          writer.writeSlice(txIn.issuance!.assetEntropy);
-          writer.writeSlice(txIn.issuance!.assetAmount);
-          writer.writeSlice(txIn.issuance!.tokenAmount);
-        } else {
-          writer.writeSlice(Buffer.of(0x00));
-        }
-      });
-
-      hashIssuances = bcrypto.sha256(writer.end());
+      hashOutpoints = getOutpointsSHA256(this.ins);
+      hashScriptPubKeys = getPrevoutScriptsSHA256(prevOutScripts);
+      hashSequences = getSequenceSHA256(this.ins);
+      hashIssuances = getIssuanceSHA256(this.ins);
     }
 
     if (!(isNone || isSingle)) {
-      const txOutsSize = this.outs.reduce(
-        (sum, output) =>
-          sum +
-          output.asset.length +
-          output.value.length +
-          output.nonce.length +
-          varSliceSize(output.script),
-        0,
-      );
-      const bufferWriter = BufferWriter.withCapacity(txOutsSize);
-
-      this.outs.forEach(out => {
-        bufferWriter.writeSlice(out.asset);
-        bufferWriter.writeSlice(out.value);
-        bufferWriter.writeSlice(out.nonce);
-        bufferWriter.writeVarSlice(out.script);
-      });
-
-      hashOutputs = bcrypto.sha256(bufferWriter.end());
+      hashOutputs = getOutputsSHA256(this.outs);
     } else if (isSingle && inIndex < this.outs.length) {
       const output = this.outs[inIndex];
 
       const bufferWriter = BufferWriter.withCapacity(
         output.asset.length +
-          output.value.length +
-          output.nonce.length +
-          varSliceSize(output.script),
+        output.value.length +
+        output.nonce.length +
+        varSliceSize(output.script),
       );
       bufferWriter.writeSlice(output.asset);
       bufferWriter.writeSlice(output.value);
@@ -589,13 +533,13 @@ export class Transaction {
     // https://github.com/ElementsProject/elements/blob/84b3f7b0045b50a585d60e56e77e8914b6cf6040/doc/taproot-sighash.mediawiki
     const inputPartSize = isAnyoneCanPay
       ? 1 +
-        32 +
-        4 +
-        32 +
-        32 +
-        varSliceSize(prevOutScripts[inIndex]) +
-        4 +
-        (this.ins[inIndex].issuance ? 32 * 4 + 32 : 1)
+      32 +
+      4 +
+      32 +
+      32 +
+      varSliceSize(prevOutScripts[inIndex]) +
+      4 +
+      (this.ins[inIndex].issuance ? 32 * 4 + 32 : 1)
       : 4;
     const fullMsgSize = 32 * 2 + 1 + 4 + 4 + 1 + inputPartSize;
     const sigMsgSize =
@@ -619,7 +563,7 @@ export class Transaction {
     sigMsgWriter.writeUInt32(this.locktime);
     if (!isAnyoneCanPay) {
       sigMsgWriter.writeSlice(hashOutpointsFlags);
-      sigMsgWriter.writeSlice(hashPrevouts);
+      sigMsgWriter.writeSlice(hashOutpoints);
       sigMsgWriter.writeSlice(hashSpentAssetsAmounts);
       sigMsgWriter.writeSlice(hashScriptPubKeys);
       sigMsgWriter.writeSlice(hashSequences);
@@ -650,7 +594,7 @@ export class Transaction {
 
         const bufferWriter = BufferWriter.withCapacity(
           varSliceSize(input.issuanceRangeProof!) +
-            varSliceSize(input.inflationRangeProof!),
+          varSliceSize(input.inflationRangeProof!),
         );
         bufferWriter.writeVarSlice(input.issuanceRangeProof || Buffer.of(0x00));
         bufferWriter.writeVarSlice(
@@ -1111,4 +1055,72 @@ function getIssuanceSize(txIn: Input): number {
     );
   }
   return 0;
+}
+
+function getOutpointsSHA256(inputs: Transaction['ins']) {
+  const bufferWriter = BufferWriter.withCapacity(inputs.length * (32 + 4));
+  for (const i of inputs) {
+    bufferWriter.writeSlice(i.hash);
+    bufferWriter.writeUInt32(i.index);
+  }
+  return bcrypto.sha256(bufferWriter.end());
+}
+
+function getPrevoutScriptsSHA256(scripts: Buffer[]) {
+  const bufferWriter = BufferWriter.withCapacity(
+    scripts.map(varSliceSize).reduce((a, b) => a + b),
+  );
+  scripts.forEach(prevOutScript =>
+    bufferWriter.writeVarSlice(prevOutScript),
+  );
+  return bcrypto.sha256(bufferWriter.end());
+}
+
+function getSequenceSHA256(inputs: Transaction['ins']) {
+  const bufferWriter = BufferWriter.withCapacity(4 * inputs.length);
+  inputs.forEach(txIn => bufferWriter.writeUInt32(txIn.sequence));
+  return bcrypto.sha256(bufferWriter.end());
+}
+
+function getIssuanceSHA256(inputs: Transaction['ins']) {
+  const sizeOfIssuances = inputs.reduce(
+    (sum, txIn) => (txIn.issuance ? sum + getIssuanceSize(txIn) : sum + 1),
+    0,
+  );
+  const size = sizeOfIssuances === 0 ? inputs.length : sizeOfIssuances;
+  const writer = BufferWriter.withCapacity(size);
+  inputs.forEach((txIn: Input) => {
+    if (txIn.issuance) {
+      writer.writeSlice(txIn.issuance!.assetBlindingNonce);
+      writer.writeSlice(txIn.issuance!.assetEntropy);
+      writer.writeSlice(txIn.issuance!.assetAmount);
+      writer.writeSlice(txIn.issuance!.tokenAmount);
+    } else {
+      writer.writeSlice(Buffer.of(0x00));
+    }
+  });
+
+  return bcrypto.sha256(writer.end());
+}
+
+function getOutputsSHA256(outputs: Transaction['outs']) {
+  const txOutsSize = outputs.reduce(
+    (sum, output) =>
+      sum +
+      output.asset.length +
+      output.value.length +
+      output.nonce.length +
+      varSliceSize(output.script),
+    0,
+  );
+  const bufferWriter = BufferWriter.withCapacity(txOutsSize);
+
+  outputs.forEach(out => {
+    bufferWriter.writeSlice(out.asset);
+    bufferWriter.writeSlice(out.value);
+    bufferWriter.writeSlice(out.nonce);
+    bufferWriter.writeVarSlice(out.script);
+  });
+
+  return bcrypto.sha256(bufferWriter.end());
 }

@@ -75,7 +75,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     assert.ok(scriptFromConfidential.equals(output));
   });
 
-  it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
+  it.only('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
     const changeAddress = payments.p2pkh({
       pubkey: alice.publicKey,
       network: net,
@@ -103,6 +103,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     );
 
     const hex = tx.toHex();
+    console.log(hex);
     await broadcast(hex, true);
   });
 
@@ -458,6 +459,8 @@ function createSigned(
     amountToSend -
     FEES;
 
+  console.log(scriptPubkeys);
+  // console.log(values.map(data => ({ asset: data.asset.slice().reverse().toString('hex'), value: data.value.toString('hex') })));
   const tx = new Transaction();
   tx.version = 2;
   // Add input
@@ -488,13 +491,14 @@ function createSigned(
       0, // which input
       scriptPubkeys, // scriptPubkey
       values, // All previous values of all inputs
-      Transaction.SIGHASH_DEFAULT, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
+      Transaction.SIGHASH_SINGLE, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
       net.genesisBlockHash, // block hash
     );
+    console.log(sighash.toString('hex'));
     const signature = bip341.taprootSignKey(sighash, key.privateKey!);
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
-    tx.ins[0].witness = [signature];
+    tx.ins[0].witness = [Buffer.concat([signature, Buffer.of(Transaction.SIGHASH_SINGLE)])];
     return tx;
   } catch (e) {
     console.error(e);
