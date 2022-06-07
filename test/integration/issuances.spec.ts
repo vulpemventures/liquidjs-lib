@@ -4,6 +4,7 @@ import { broadcast, faucet } from './_regtest';
 import {
   address,
   confidential,
+  ElementsValue,
   Psbt,
   Transaction,
   networks as NETWORKS,
@@ -70,13 +71,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         {
           nonce,
           asset,
-          value: confidential.satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999500).bytes,
           script: alice1.payment.output,
         },
         {
           nonce,
           asset,
-          value: confidential.satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(500).bytes,
           script: Buffer.alloc(0),
         },
       ]);
@@ -141,13 +142,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       {
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(99996500),
+        value: ElementsValue.fromNumber(99996500).bytes,
         script: alice1.payment.output,
       },
       {
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(3500),
+        value: ElementsValue.fromNumber(3500).bytes,
         script: Buffer.alloc(0),
       },
     ]);
@@ -198,13 +199,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       {
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(99999500),
+        value: ElementsValue.fromNumber(99999500).bytes,
         script: alice1.payment.output,
       },
       {
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(500),
+        value: ElementsValue.fromNumber(500).bytes,
         script: Buffer.alloc(0),
       },
     ]);
@@ -263,13 +264,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         {
           nonce,
           asset,
-          value: confidential.satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999000).bytes,
           script: alice.payment.output,
         },
         {
           nonce,
           asset,
-          value: confidential.satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(1000).bytes,
           script: Buffer.alloc(0),
         },
       ]);
@@ -329,7 +330,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       .addOutput({
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(99999000),
+        value: ElementsValue.fromNumber(99998000).bytes,
         script: alice.payment.output,
       })
       .addReissuance({
@@ -346,7 +347,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       .addOutput({
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(500),
+        value: ElementsValue.fromNumber(1000).bytes,
         script: Buffer.alloc(0),
       });
 
@@ -396,13 +397,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       {
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(99999500),
+        value: ElementsValue.fromNumber(99999000).bytes,
         script: alice.payment.output,
       },
       {
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(500),
+        value: ElementsValue.fromNumber(1000).bytes,
         script: Buffer.alloc(0),
       },
     ]);
@@ -437,21 +438,20 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         {
           nonce,
           asset: tokenOutput.asset,
-          value: confidential.satoshiToConfidentialValue(
-            amountWithPrecisionToSatoshis(2),
-          ),
+          value: ElementsValue.fromNumber(amountWithPrecisionToSatoshis(2))
+            .bytes,
           script: alice.payment.output,
         },
         {
           nonce,
           asset,
-          value: confidential.satoshiToConfidentialValue(99999000),
+          value: ElementsValue.fromNumber(99998000).bytes,
           script: alice.payment.output,
         },
         {
           nonce,
           asset,
-          value: confidential.satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(1000).bytes,
           script: Buffer.alloc(0),
         },
       ]);
@@ -508,7 +508,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       .addOutput({
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(99999000 - 500),
+        value: ElementsValue.fromNumber(99997000).bytes,
         script: alice.payment.output,
       })
       .addReissuance({
@@ -525,7 +525,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       .addOutput({
         nonce,
         asset,
-        value: confidential.satoshiToConfidentialValue(500),
+        value: ElementsValue.fromNumber(1000).bytes,
         script: Buffer.alloc(0),
       });
 
@@ -588,13 +588,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         {
           nonce,
           asset,
-          value: confidential.satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999500).bytes,
           script: alice1.payment.output,
         },
         {
           nonce,
           asset,
-          value: confidential.satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(500).bytes,
           script: Buffer.alloc(0),
         },
       ]);
