@@ -6,6 +6,7 @@ import * as types from './types';
 import { BLECH32, Blech32Address, BLECH32M } from 'blech32';
 import { bech32, bech32m } from 'bech32';
 import * as bs58check from 'bs58check';
+import { OPS } from './ops';
 const { typeforce } = types;
 
 export interface Base58CheckResult {
@@ -60,7 +61,7 @@ function _toFutureSegwitAddress(output: Buffer, network: Network): string {
 }
 
 // negative value for confidential types
-enum AddressType {
+export enum AddressType {
   P2Pkh = 0,
   P2Sh = 1,
   P2Wpkh = 2,
@@ -69,6 +70,14 @@ enum AddressType {
   ConfidentialP2Sh,
   ConfidentialP2Wpkh,
   ConfidentialP2Wsh,
+}
+
+export enum ScriptType {
+  P2Pkh = 0,
+  P2Sh = 1,
+  P2Wpkh = 2,
+  P2Wsh = 3,
+  P2Tr = 4,
 }
 
 function isConfidentialAddressType(addressType: AddressType): boolean {
@@ -432,7 +441,6 @@ function decodeBase58(address: string, network: Network): AddressType {
   // Blinded decoded haddress has the form:
   // BLIND_PREFIX|ADDRESS_PREFIX|BLINDING_KEY|SCRIPT_HASH
   // Prefixes are 1 byte long, thus blinding key always starts at 3rd byte
-  const prefix = payload.readUInt8(1);
   if (payload.readUInt8(0) === network.confidentialPrefix) {
     const unconfidentialPart = payload.slice(35); // ignore the blinding key
     if (unconfidentialPart.length !== 20) {
@@ -440,6 +448,7 @@ function decodeBase58(address: string, network: Network): AddressType {
       throw new Error('decoded address is of unknown size');
     }
 
+    const prefix = payload.readUInt8(1);
     switch (prefix) {
       case network.pubKeyHash:
         return AddressType.ConfidentialP2Pkh;
@@ -451,7 +460,8 @@ function decodeBase58(address: string, network: Network): AddressType {
   }
 
   // unconf case
-  const unconfidential = payload.slice(2);
+  const prefix = payload.readUInt8(0);
+  const unconfidential = payload.slice(1);
   if (unconfidential.length !== 20) {
     // ripem160 hash size
     throw new Error('decoded address is of unknown size');
@@ -488,4 +498,23 @@ export function decodeType(address: string, network?: Network): AddressType {
 export function isConfidential(address: string): boolean {
   const type = decodeType(address);
   return isConfidentialAddressType(type);
+}
+
+// GetScriptType returns the type of the given script (p2pkh, p2sh, etc.)
+export function getScriptType(script: Buffer): ScriptType {
+  switch (script[0]) {
+    case OPS.OP_0:
+      if (script.slice(2).length == 20) {
+        return ScriptType.P2Wpkh;
+      }
+      return ScriptType.P2Wsh;
+    case OPS.OP_HASH160:
+      return ScriptType.P2Sh;
+    case OPS.OP_DUP:
+      return ScriptType.P2Pkh;
+    case OPS.OP_1:
+      return ScriptType.P2Tr;
+    default:
+      throw new Error('unknow script type');
+  }
 }
