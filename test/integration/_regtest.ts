@@ -26,6 +26,28 @@ export async function faucet(address: string): Promise<any> {
   }
 }
 
+export async function mint(address: string, quantity: number): Promise<any> {
+  try {
+    const resp = await axios.post(`${APIURL}/mint`, { address, quantity });
+    if (resp.status !== 200) {
+      throw new Error('Invalid request');
+    }
+    const { txId, asset } = resp.data;
+    sleep(1000);
+    let rr = { data: [] };
+    const filter = (): any => rr.data.filter((x: any) => x.txid === txId);
+    while (!rr.data.length || !filter().length) {
+      sleep(1000);
+      rr = await axios.get(`${APIURL}/address/${address}/utxo`);
+    }
+
+    return { asset, txid: filter()[0].txid, index: filter()[0].vout };
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+}
+
 export async function fetchTx(txId: string): Promise<string> {
   const resp = await axios.get(`${APIURL}/tx/${txId}/hex`);
   return resp.data;
