@@ -18,7 +18,7 @@ export interface ConfidentialResult {
     blindingKey: Buffer;
     unconfidentialAddress: string;
 }
-declare enum AddressType {
+export declare enum AddressType {
     P2Pkh = 0,
     P2Sh = 1,
     P2Wpkh = 2,
@@ -27,6 +27,13 @@ declare enum AddressType {
     ConfidentialP2Sh = 5,
     ConfidentialP2Wpkh = 6,
     ConfidentialP2Wsh = 7
+}
+export declare enum ScriptType {
+    P2Pkh = 0,
+    P2Sh = 1,
+    P2Wpkh = 2,
+    P2Wsh = 3,
+    P2Tr = 4
 }
 export declare function fromBase58Check(address: string): Base58CheckResult;
 export declare function fromBech32(address: string): Bech32Result;
@@ -45,4 +52,4 @@ export declare function decodeType(address: string, network?: Network): AddressT
  * @param address address to check.
  */
 export declare function isConfidential(address: string): boolean;
-export {};
+export declare function getScriptType(script: Buffer): ScriptType;

@@ -25,6 +25,7 @@ exports.liquid = {
   confidentialPrefix: 12,
   assetHash: '6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d',
   genesisBlockHash: LiquidGenesisBlockHash,
+  name: 'liquid',
 };
 exports.regtest = {
   messagePrefix: '\x18Liquid Signed Message:\n',
@@ -40,6 +41,7 @@ exports.regtest = {
   confidentialPrefix: 4,
   assetHash: '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
   genesisBlockHash: RegtestGenesisBlockHash,
+  name: 'regtest',
 };
 exports.testnet = {
   ...exports.regtest,
@@ -50,4 +52,5 @@ exports.testnet = {
   confidentialPrefix: 23,
   assetHash: '144c654344aa716d6f3abcc1ca90e5641e4e2a7f633bc09fe3baf64585819a49',
   genesisBlockHash: TestnetGenesisBlockHash,
+  name: 'testnet',
 };

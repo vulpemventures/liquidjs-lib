@@ -1,13 +1,14 @@
 /// <reference types="node" />
-export declare class AssetHash {
+export declare class ElementsValue {
     static UNCONFIDENTIAL_PREFIX: number;
     static CONFIDENTIAL_PREFIXES: number[];
     private prefix;
     private value;
     private constructor();
-    static fromHex(hex: string): AssetHash;
-    static fromBytes(bytes: Buffer): AssetHash;
+    static fromNumber(num: number): ElementsValue;
+    static fromHex(hex: string): ElementsValue;
+    static fromBytes(bytes: Buffer): ElementsValue;
     get hex(): string;
     get bytes(): Buffer;
-    get bytesWithoutPrefix(): Buffer;
+    get number(): number;
 }

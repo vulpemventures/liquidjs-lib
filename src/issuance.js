@@ -46,9 +46,9 @@ var __importStar =
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.amountWithPrecisionToSatoshis = exports.calculateReissuanceToken = exports.calculateAsset = exports.issuanceEntropyFromInput = exports.generateEntropy = exports.isReissuance = exports.newIssuance = exports.hashContract = exports.validateIssuanceContract = exports.hasTokenAmount = void 0;
 const bufferutils_1 = require('./bufferutils');
-const confidential_1 = require('./confidential');
 const bcrypto = __importStar(require('./crypto'));
 const sha256d_1 = require('./sha256d');
+const value_1 = require('./value');
 /**
  * returns true if the issuance's token amount is not 0x00 or null buffer.
  * @param issuance issuance to test
@@ -99,11 +99,11 @@ function newIssuance(assetSats, tokenSats, contract) {
     assetAmount:
       assetSats === 0
         ? Buffer.of(0x00)
-        : (0, confidential_1.satoshiToConfidentialValue)(assetSats),
+        : value_1.ElementsValue.fromNumber(assetSats).bytes,
     tokenAmount:
       tokenSats === 0
         ? Buffer.of(0x00)
-        : (0, confidential_1.satoshiToConfidentialValue)(tokenSats),
+        : value_1.ElementsValue.fromNumber(tokenSats).bytes,
     assetBlindingNonce: Buffer.alloc(32),
     // in case of issuance, the asset entropy = the contract hash.
     assetEntropy: contractHash,

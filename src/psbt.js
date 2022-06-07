@@ -60,6 +60,7 @@ const bscript = __importStar(require('./script'));
 const bip174_liquid_1 = require('bip174-liquid');
 const utils_1 = require('bip174-liquid/src/lib/utils');
 const ecpair_1 = require('ecpair');
+const value_1 = require('./value');
 const _randomBytes = require('randombytes');
 const issuancePrefix = Buffer.of(0x01);
 /**
@@ -342,9 +343,8 @@ class Psbt {
       inputData.nonWitnessUtxo = args.nonWitnessUtxo;
     }
     this.addInput(inputData);
-    const satsToReissue = confidential.satoshiToConfidentialValue(
-      args.assetSats,
-    );
+    const satsToReissue = value_1.ElementsValue.fromNumber(args.assetSats)
+      .bytes;
     // add the issuance object to input
     this.__CACHE.__TX.ins[inputIndex].issuance = {
       assetBlindingNonce: args.prevoutBlinder,
@@ -375,7 +375,7 @@ class Psbt {
       value:
         args.tokenSats === 0
           ? Buffer.of(0x00)
-          : confidential.satoshiToConfidentialValue(args.tokenSats),
+          : value_1.ElementsValue.fromNumber(args.tokenSats).bytes,
       script: (0, address_1.toOutputScript)(args.tokenAddress),
       asset: token,
       nonce: Buffer.of(0x00),
@@ -777,7 +777,7 @@ class Psbt {
         ? witnessUtxo.value
         : typeof witnessUtxo.value === 'string'
         ? Buffer.from(witnessUtxo.value, 'hex')
-        : confidential.satoshiToConfidentialValue(witnessUtxo.value);
+        : value_1.ElementsValue.fromNumber(witnessUtxo.value).bytes;
       // if the asset is a string, by checking the first byte we can determine if
       // it's an asset commitment, in this case we decode the hex string as buffer,
       // or if it's an asset hash, in this case we put the unconf prefix in front of the reversed the buffer
@@ -932,9 +932,9 @@ class Psbt {
         const asset = (0, issuance_1.calculateAsset)(entropy);
         const value = input.issuance.assetAmount.equals(Buffer.of(0x00))
           ? '0'
-          : confidential
-              .confidentialValueToSatoshi(input.issuance.assetAmount)
-              .toString(10);
+          : value_1.ElementsValue.fromBytes(
+              input.issuance.assetAmount,
+            ).number.toString(10);
         const assetBlindingData = {
           value,
           asset,
@@ -953,9 +953,9 @@ class Psbt {
             entropy,
             isConfidentialIssuance,
           );
-          const tokenValue = confidential
-            .confidentialValueToSatoshi(input.issuance.tokenAmount)
-            .toString(10);
+          const tokenValue = value_1.ElementsValue.fromBytes(
+            input.issuance.tokenAmount,
+          ).number.toString(10);
           const tokenBlindingData = {
             value: tokenValue,
             asset: token,
@@ -1088,9 +1088,9 @@ class Psbt {
       // prevent blinding the fee output
       if (output.script.length === 0)
         throw new Error("cant't blind the fee output");
-      const value = confidential
-        .confidentialValueToSatoshi(output.value)
-        .toString(10);
+      const value = value_1.ElementsValue.fromBytes(
+        output.value,
+      ).number.toString(10);
       return [value, output.asset.slice(1)];
     });
     // compute the outputs blinders
@@ -1263,7 +1263,7 @@ class PsbtTransaction {
       : Buffer.from(output.script, 'hex');
     const value = Buffer.isBuffer(output.value)
       ? output.value
-      : confidential.satoshiToConfidentialValue(output.value);
+      : value_1.ElementsValue.fromNumber(output.value).bytes;
     const asset = Buffer.isBuffer(output.asset)
       ? output.asset
       : Buffer.concat([
@@ -2099,7 +2099,7 @@ async function toBlindingData(blindDataLike, witnessUtxo) {
 exports.toBlindingData = toBlindingData;
 function getUnconfidentialWitnessUtxoBlindingData(prevout) {
   const unblindedInputBlindingData = {
-    value: confidential.confidentialValueToSatoshi(prevout.value).toString(10),
+    value: value_1.ElementsValue.fromBytes(prevout.value).number.toString(10),
     valueBlindingFactor: transaction_1.ZERO,
     asset: prevout.asset.slice(1),
     assetBlindingFactor: transaction_1.ZERO,

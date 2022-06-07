@@ -44,7 +44,7 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.isConfidential = exports.decodeType = exports.getNetwork = exports.toOutputScript = exports.fromOutputScript = exports.toConfidential = exports.toBlech32 = exports.toBech32 = exports.toBase58Check = exports.fromConfidential = exports.fromBlech32 = exports.fromBech32 = exports.fromBase58Check = void 0;
+exports.getScriptType = exports.isConfidential = exports.decodeType = exports.getNetwork = exports.toOutputScript = exports.fromOutputScript = exports.toConfidential = exports.toBlech32 = exports.toBech32 = exports.toBase58Check = exports.fromConfidential = exports.fromBlech32 = exports.fromBech32 = exports.fromBase58Check = exports.ScriptType = exports.AddressType = void 0;
 const networks = __importStar(require('./networks'));
 const payments = __importStar(require('./payments'));
 const bscript = __importStar(require('./script'));
@@ -52,6 +52,7 @@ const types = __importStar(require('./types'));
 const blech32_1 = require('blech32');
 const bech32_1 = require('bech32');
 const bs58check = __importStar(require('bs58check'));
+const ops_1 = require('./ops');
 const { typeforce } = types;
 const FUTURE_SEGWIT_MAX_SIZE = 40;
 const FUTURE_SEGWIT_MIN_SIZE = 2;
@@ -86,7 +87,15 @@ var AddressType;
   AddressType[(AddressType['ConfidentialP2Sh'] = 5)] = 'ConfidentialP2Sh';
   AddressType[(AddressType['ConfidentialP2Wpkh'] = 6)] = 'ConfidentialP2Wpkh';
   AddressType[(AddressType['ConfidentialP2Wsh'] = 7)] = 'ConfidentialP2Wsh';
-})(AddressType || (AddressType = {}));
+})((AddressType = exports.AddressType || (exports.AddressType = {})));
+var ScriptType;
+(function(ScriptType) {
+  ScriptType[(ScriptType['P2Pkh'] = 0)] = 'P2Pkh';
+  ScriptType[(ScriptType['P2Sh'] = 1)] = 'P2Sh';
+  ScriptType[(ScriptType['P2Wpkh'] = 2)] = 'P2Wpkh';
+  ScriptType[(ScriptType['P2Wsh'] = 3)] = 'P2Wsh';
+  ScriptType[(ScriptType['P2Tr'] = 4)] = 'P2Tr';
+})((ScriptType = exports.ScriptType || (exports.ScriptType = {})));
 function isConfidentialAddressType(addressType) {
   return addressType >= 4;
 }
@@ -380,13 +389,13 @@ function decodeBase58(address, network) {
   // Blinded decoded haddress has the form:
   // BLIND_PREFIX|ADDRESS_PREFIX|BLINDING_KEY|SCRIPT_HASH
   // Prefixes are 1 byte long, thus blinding key always starts at 3rd byte
-  const prefix = payload.readUInt8(1);
   if (payload.readUInt8(0) === network.confidentialPrefix) {
     const unconfidentialPart = payload.slice(35); // ignore the blinding key
     if (unconfidentialPart.length !== 20) {
       // ripem160 hash size
       throw new Error('decoded address is of unknown size');
     }
+    const prefix = payload.readUInt8(1);
     switch (prefix) {
       case network.pubKeyHash:
         return AddressType.ConfidentialP2Pkh;
@@ -397,7 +406,8 @@ function decodeBase58(address, network) {
     }
   }
   // unconf case
-  const unconfidential = payload.slice(2);
+  const prefix = payload.readUInt8(0);
+  const unconfidential = payload.slice(1);
   if (unconfidential.length !== 20) {
     // ripem160 hash size
     throw new Error('decoded address is of unknown size');
@@ -431,3 +441,22 @@ function isConfidential(address) {
   return isConfidentialAddressType(type);
 }
 exports.isConfidential = isConfidential;
+// GetScriptType returns the type of the given script (p2pkh, p2sh, etc.)
+function getScriptType(script) {
+  switch (script[0]) {
+    case ops_1.OPS.OP_0:
+      if (script.slice(2).length == 20) {
+        return ScriptType.P2Wpkh;
+      }
+      return ScriptType.P2Wsh;
+    case ops_1.OPS.OP_HASH160:
+      return ScriptType.P2Sh;
+    case ops_1.OPS.OP_DUP:
+      return ScriptType.P2Pkh;
+    case ops_1.OPS.OP_1:
+      return ScriptType.P2Tr;
+    default:
+      throw new Error('unknow script type');
+  }
+}
+exports.getScriptType = getScriptType;
