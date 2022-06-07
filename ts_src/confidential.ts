@@ -147,14 +147,14 @@ export async function rangeProofWithNonceHash(
 }
 
 export async function rangeProofVerify(
-  valueCommitment: Buffer,
-  assetCommitment: Buffer,
+  valueCommit: Buffer,
+  assetCommit: Buffer,
   proof: Buffer,
   script?: Buffer,
 ): Promise<boolean> {
   const { generator, pedersen, rangeproof } = await secp256k1Promise;
-  const gen = generator.parse(assetCommitment);
-  const commit = pedersen.commitParse(valueCommitment);
+  const gen = generator.parse(assetCommit);
+  const commit = pedersen.commitParse(valueCommit);
   return rangeproof.verify(commit, proof, gen, script);
 }
 
@@ -254,15 +254,15 @@ export async function surjectionProofVerify(
 
 export async function blindValueProof(
   value: string,
-  valueCommitment: Buffer,
-  assetCommitment: Buffer,
+  valueCommit: Buffer,
+  assetCommit: Buffer,
   valueBlinder: Buffer,
   opts?: RngOpts,
 ): Promise<Buffer> {
   const { generator, pedersen, rangeproof } = await secp256k1Promise;
 
-  const gen = generator.parse(assetCommitment);
-  const commit = pedersen.commitParse(valueCommitment);
+  const gen = generator.parse(assetCommit);
+  const commit = pedersen.commitParse(valueCommit);
   const nonce = randomBytes(opts);
 
   return rangeproof.sign(commit, valueBlinder, nonce, value, gen, value, -1);
@@ -270,7 +270,7 @@ export async function blindValueProof(
 
 export async function blindAssetProof(
   asset: Buffer,
-  assetCommitment: Buffer,
+  assetCommit: Buffer,
   assetBlinder: Buffer,
 ): Promise<Buffer> {
   const { generator, surjectionproof } = await secp256k1Promise;
@@ -287,7 +287,7 @@ export async function blindAssetProof(
   );
 
   const gen = generator.generate(asset);
-  const assetGen = generator.parse(assetCommitment);
+  const assetGen = generator.parse(assetCommit);
 
   const proof = surjectionproof.generate(
     init.proof,
@@ -303,12 +303,12 @@ export async function blindAssetProof(
 
 export async function assetBlindProofVerify(
   asset: Buffer,
-  assetCommitment: Buffer,
+  assetCommit: Buffer,
   proof: Buffer,
 ): Promise<boolean> {
   const { generator, surjectionproof } = await secp256k1Promise;
   const inGenerators = [generator.generate(asset)];
-  const outGenerator = generator.parse(assetCommitment);
+  const outGenerator = generator.parse(assetCommit);
   const sProof = surjectionproof.parse(proof);
   return surjectionproof.verify(sProof, inGenerators, outGenerator);
 }
@@ -323,18 +323,13 @@ export type KeysGenerator = (
 
 export class ZKPValidator implements PsetBlindingValidator {
   async verifyValueRangeProof(
-    valueCommitment: Buffer,
-    assetCommitment: Buffer,
+    valueCommit: Buffer,
+    assetCommit: Buffer,
     proof: Buffer,
     script: Buffer,
   ): Promise<boolean> {
     try {
-      return await rangeProofVerify(
-        valueCommitment,
-        assetCommitment,
-        proof,
-        script,
-      );
+      return await rangeProofVerify(valueCommit, assetCommit, proof, script);
     } catch (ignore) {
       return false;
     }
@@ -361,12 +356,12 @@ export class ZKPValidator implements PsetBlindingValidator {
   }
 
   async verifyBlindValueProof(
-    valueCommitment: Buffer,
-    assetCommitment: Buffer,
+    valueCommit: Buffer,
+    assetCommit: Buffer,
     proof: Buffer,
   ): Promise<boolean> {
     try {
-      return await rangeProofVerify(valueCommitment, assetCommitment, proof);
+      return await rangeProofVerify(valueCommit, assetCommit, proof);
     } catch (ignore) {
       return false;
     }
@@ -374,11 +369,11 @@ export class ZKPValidator implements PsetBlindingValidator {
 
   async verifyBlindAssetProof(
     asset: Buffer,
-    assetCommitment: Buffer,
+    assetCommit: Buffer,
     proof: Buffer,
   ): Promise<boolean> {
     try {
-      return await assetBlindProofVerify(asset, assetCommitment, proof);
+      return await assetBlindProofVerify(asset, assetCommit, proof);
     } catch (ignore) {
       return false;
     }
@@ -404,10 +399,10 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     return bg;
   }
 
-  static ECCKeysGenerator(ecc: TinySecp256k1Interface): KeysGenerator {
+  static ECCKeysGenerator(ec: TinySecp256k1Interface): KeysGenerator {
     return (opts?: RngOpts) => {
       const privateKey = randomBytes(opts);
-      const publicKey = ECPairFactory(ecc).fromPrivateKey(privateKey).publicKey;
+      const publicKey = ECPairFactory(ec).fromPrivateKey(privateKey).publicKey;
       return {
         privateKey,
         publicKey,
@@ -479,17 +474,17 @@ export class ZKPGenerator implements PsetBlindingGenerator {
 
   async lastBlindValueProof(
     value: string,
-    valueCommitment: Buffer,
-    assetCommitment: Buffer,
+    valueCommit: Buffer,
+    assetCommit: Buffer,
     blinder: Buffer,
   ): Promise<Buffer> {
-    return blindValueProof(value, valueCommitment, assetCommitment, blinder);
+    return blindValueProof(value, valueCommit, assetCommit, blinder);
   }
 
   async lastValueRangeProof(
     value: string,
     asset: Buffer,
-    valueCommitment: Buffer,
+    valueCommit: Buffer,
     valueBlinder: Buffer,
     assetBlinder: Buffer,
     script: Buffer,
@@ -501,7 +496,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       asset,
       assetBlinder,
       valueBlinder,
-      valueCommitment,
+      valueCommit,
       script,
     );
   }
@@ -540,7 +535,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
 
     return Promise.all(
       Object.entries(blindingKeysByIndex).map(async ([i, key]) => {
-        const input = pset.inputs[parseInt(i)];
+        const input = pset.inputs[parseInt(i, 10)];
 
         let blindingArgs = {} as IssuanceBlindingArgs;
         if (input.issuanceValue! > 0) {
@@ -571,7 +566,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
 
           blindingArgs = {
             ...blindingArgs,
-            index: parseInt(i),
+            index: parseInt(i, 10),
             issuanceAsset: asset,
             issuanceValueCommitment: valueCommit,
             issuanceValueRangeProof: rangeproof,
@@ -726,7 +721,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     }
 
     const { ec } = await secp256k1Promise;
-    let val = Buffer.alloc(32, 0);
+    const val = Buffer.alloc(32, 0);
     val.writeBigUint64BE(BigInt(value), 24);
     const result = ec.prvkeyTweakMul(assetBlinder, val);
     if (valueBlinder.length === 0) {
@@ -763,9 +758,9 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       ? this.inBlindingKeys
       : [this.masterBlindingKey!.derive(out.script).privateKey!];
 
-    for (let i = 0; i < keys.length; i++) {
+    for (const key of keys) {
       try {
-        const revealed = await unblindOutputWithKey(out, keys[i]);
+        const revealed = await unblindOutputWithKey(out, key);
         return {
           index: 0,
           value: revealed.value,
@@ -786,7 +781,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     assets: Buffer[];
     assetBlinders: Buffer[];
   }> {
-    let unblindedIns = await this.maybeUnblindInUtxos(pset);
+    const unblindedIns = await this.maybeUnblindInUtxos(pset);
     pset.inputs.forEach((input, i) => {
       if (input.hasIssuance()) {
         unblindedIns.push({
@@ -809,8 +804,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       }
     });
 
-    let assets = [] as Buffer[];
-    let assetBlinders = [] as Buffer[];
+    const assets = [] as Buffer[];
+    const assetBlinders = [] as Buffer[];
 
     unblindedIns.forEach(({ asset, assetBlindingFactor }) => {
       assets.push(asset);
@@ -873,7 +868,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
   }
 }
 
-function validatePset(pset: Pset) {
+function validatePset(pset: Pset): void {
   pset.sanityCheck();
 
   pset.inputs.forEach((input, i) => {
@@ -883,7 +878,7 @@ function validatePset(pset: Pset) {
   });
 }
 
-function validateInIndexes(pset: Pset, inIndexes: number[]) {
+function validateInIndexes(pset: Pset, inIndexes: number[]): void {
   if (inIndexes.length > 0) {
     inIndexes.forEach(i => {
       if (i < 0 || i >= pset.globals.inputCount) {
@@ -893,7 +888,7 @@ function validateInIndexes(pset: Pset, inIndexes: number[]) {
   }
 }
 
-function validateOutIndexes(pset: Pset, outIndexes: number[]) {
+function validateOutIndexes(pset: Pset, outIndexes: number[]): void {
   if (outIndexes.length > 0) {
     outIndexes.forEach(i => {
       if (i < 0 || i >= pset.globals.outputCount) {
@@ -903,9 +898,12 @@ function validateOutIndexes(pset: Pset, outIndexes: number[]) {
   }
 }
 
-function validateBlindingKeysByIndex(pset: Pset, keys: Record<number, Buffer>) {
+function validateBlindingKeysByIndex(
+  pset: Pset,
+  keys: Record<number, Buffer>,
+): void {
   Object.entries(keys).forEach(([k, v]) => {
-    const i = parseInt(k);
+    const i = parseInt(k, 10);
     if (i < 0 || i >= pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
@@ -921,7 +919,7 @@ function validateBlindingKeysByIndex(pset: Pset, keys: Record<number, Buffer>) {
 function validateBlindedIssuances(
   pset: Pset,
   blindedIssuances: IssuanceBlindingArgs[],
-) {
+): void {
   if (blindedIssuances.length > 0) {
     blindedIssuances.forEach(issuance => {
       if (issuance.index < 0 || issuance.index >= pset.globals.inputCount) {

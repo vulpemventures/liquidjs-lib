@@ -81,7 +81,7 @@ class Pset {
   }
   static fromBuffer(buf) {
     const r = new bufferutils_1.BufferReader(buf);
-    let magic = r.readSlice(exports.magicPrefixWithSeparator.length);
+    const magic = r.readSlice(exports.magicPrefixWithSeparator.length);
     if (!magic.equals(exports.magicPrefixWithSeparator)) {
       throw new Error('invalid magic prefix');
     }
@@ -211,8 +211,8 @@ class Pset {
             input.issuanceInflationKeys,
           ).bytes;
         }
-        let assetEntropy = input.issuanceAssetEntropy;
-        let assetBlindingNonce = input.issuanceBlindingNonce;
+        const assetEntropy = input.issuanceAssetEntropy;
+        const assetBlindingNonce = input.issuanceBlindingNonce;
         issuance = {
           assetEntropy,
           assetAmount,
@@ -265,7 +265,7 @@ class Pset {
       newInput.requiredHeightLocktime > 0 ||
       newInput.requiredTimeLocktime > 0
     ) {
-      let oldLocktime = this.locktime();
+      const oldLocktime = this.locktime();
       let timeLocktime = newInput.requiredTimeLocktime;
       let heightLocktime = newInput.requiredHeightLocktime;
       let hasSigs = false;
@@ -302,7 +302,7 @@ class Pset {
       if (heightLocktime > 0) {
         newLocktime = heightLocktime;
       }
-      if (hasSigs && oldLocktime != newLocktime) {
+      if (hasSigs && oldLocktime !== newLocktime) {
         throw new Error('invalid input locktime');
       }
     }

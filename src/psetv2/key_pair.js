@@ -10,7 +10,7 @@ class Key {
   }
   static fromBuffer(r) {
     const value = r.readVarSlice();
-    if (value.length == 0) {
+    if (value.length === 0) {
       throw new Error('no more key pairs');
     }
     if (value.length > 10000) {

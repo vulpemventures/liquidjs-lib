@@ -15,7 +15,7 @@ class Output {
   }
   static fromBuffer(r) {
     let kp;
-    let output = new Output();
+    const output = new Output();
     while (true) {
       try {
         kp = key_pair_1.KeyPair.fromBuffer(r);
@@ -40,7 +40,7 @@ class Output {
           output.witnessScript = kp.value;
           break;
         case fields_1.OutputTypes.BIP32_DERIVATION:
-          let pubkey = kp.key.keyData;
+          const pubkey = kp.key.keyData;
           if (pubkey.length !== 33) {
             throw new Error('invalid output bip32 pubkey length');
           }
@@ -50,9 +50,8 @@ class Output {
           if (output.bip32Derivation.find(d => d.pubkey.equals(pubkey))) {
             throw new Error('duplicated output bip32 derivation');
           }
-          let { masterFingerprint, path } = (0, bip32_1.decodeBip32Derivation)(
-            kp.value,
-          );
+          const { masterFingerprint, path } = (0,
+          bip32_1.decodeBip32Derivation)(kp.value);
           output.bip32Derivation.push({ pubkey, masterFingerprint, path });
           break;
         case fields_1.OutputTypes.AMOUNT:
@@ -71,7 +70,7 @@ class Output {
           output.script = kp.value;
           break;
         case fields_1.OutputTypes.PROPRIETARY:
-          let data = proprietary_data_1.ProprietaryData.fromKeyPair(kp);
+          const data = proprietary_data_1.ProprietaryData.fromKeyPair(kp);
           if (Buffer.compare(data.identifier, pset_1.magicPrefix) === 0) {
             switch (data.subType) {
               case fields_1.OutputProprietaryTypes.VALUE_COMMITMENT:
@@ -261,114 +260,123 @@ class Output {
     return w.buffer;
   }
   getKeyPairs() {
-    var keyPairs = [];
+    const keyPairs = [];
     if (this.redeemScript && this.redeemScript.length > 0) {
-      let key = new key_pair_1.Key(fields_1.OutputTypes.REDEEM_SCRIPT);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.REDEEM_SCRIPT);
       keyPairs.push(new key_pair_1.KeyPair(key, this.redeemScript));
     }
     if (this.witnessScript && this.witnessScript.length > 0) {
-      let key = new key_pair_1.Key(fields_1.OutputTypes.WITNESS_SCRIPT);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.WITNESS_SCRIPT);
       keyPairs.push(new key_pair_1.KeyPair(key, this.witnessScript));
     }
     if (this.bip32Derivation && this.bip32Derivation.length > 0) {
       this.bip32Derivation.forEach(({ pubkey, masterFingerprint, path }) => {
-        let key = new key_pair_1.Key(
+        const key = new key_pair_1.Key(
           fields_1.OutputTypes.BIP32_DERIVATION,
           pubkey,
         );
-        let value = (0, bip32_1.encodeBIP32Derivation)(masterFingerprint, path);
+        const value = (0, bip32_1.encodeBIP32Derivation)(
+          masterFingerprint,
+          path,
+        );
         keyPairs.push(new key_pair_1.KeyPair(key, value));
       });
     }
     if (this.script) {
-      let key = new key_pair_1.Key(fields_1.OutputTypes.SCRIPT);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.SCRIPT);
       keyPairs.push(new key_pair_1.KeyPair(key, this.script));
     }
     if (this.valueCommitment && this.valueCommitment.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.VALUE_COMMITMENT,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.valueCommitment));
     }
-    let key = new key_pair_1.Key(fields_1.OutputTypes.AMOUNT);
-    let value = Buffer.allocUnsafe(8);
-    (0, bufferutils_1.writeUInt64LE)(value, this.value, 0);
-    keyPairs.push(new key_pair_1.KeyPair(key, value));
+    const amountKey = new key_pair_1.Key(fields_1.OutputTypes.AMOUNT);
+    const amount = Buffer.allocUnsafe(8);
+    (0, bufferutils_1.writeUInt64LE)(amount, this.value, 0);
+    keyPairs.push(new key_pair_1.KeyPair(amountKey, amount));
     if (this.assetCommitment && this.assetCommitment.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.ASSET_COMMITMENT,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.assetCommitment));
     }
     if (this.asset.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.ASSET,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.asset));
     }
     if (this.valueRangeproof && this.valueRangeproof.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.VALUE_RANGEPROOF,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.valueRangeproof));
     }
     if (this.assetSurjectionProof && this.assetSurjectionProof.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.ASSET_SURJECTION_PROOF,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.assetSurjectionProof));
     }
     if (this.blindingPubkey && this.blindingPubkey.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.BLINDING_PUBKEY,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.blindingPubkey));
     }
     if (this.ecdhPubkey && this.ecdhPubkey.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.ECDH_PUBKEY,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.ecdhPubkey));
     }
-    let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+    const proprietaryKeyData = proprietary_data_1.ProprietaryData.proprietaryKey(
       fields_1.OutputProprietaryTypes.BLINDER_INDEX,
     );
-    key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
-    value = Buffer.allocUnsafe(4);
+    const blinderIndexKey = new key_pair_1.Key(
+      fields_1.OutputTypes.PROPRIETARY,
+      proprietaryKeyData,
+    );
+    const blinderIndex = Buffer.allocUnsafe(4);
     let bi = 0;
     if (this.blinderIndex > 0) {
       bi = this.blinderIndex;
     }
-    value.writeUInt32LE(bi);
-    keyPairs.push(new key_pair_1.KeyPair(key, value));
+    blinderIndex.writeUInt32LE(bi);
+    keyPairs.push(new key_pair_1.KeyPair(blinderIndexKey, blinderIndex));
     if (this.blindValueProof && this.blindValueProof.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.BLIND_VALUE_PROOF,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.blindValueProof));
     }
     if (this.blindAssetProof && this.blindAssetProof.length > 0) {
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.BLIND_ASSET_PROOF,
       );
-      let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+      const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.blindAssetProof));
     }
     if (this.proprietaryData && this.proprietaryData.length > 0) {
       this.proprietaryData.forEach(data => {
-        let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+        const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,
         );
-        let key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
+        const key = new key_pair_1.Key(
+          fields_1.OutputTypes.PROPRIETARY,
+          keyData,
+        );
         keyPairs.push(new key_pair_1.KeyPair(key, data.value));
       });
     }

@@ -7,7 +7,7 @@ class AssetHash {
     this.value = value;
   }
   static fromHex(hex) {
-    let bytes = Buffer.from(hex, 'hex');
+    const bytes = Buffer.from(hex, 'hex');
     if (bytes.length === 32) {
       return this.fromBytes(bytes.reverse());
     }

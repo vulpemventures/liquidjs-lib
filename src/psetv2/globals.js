@@ -24,8 +24,8 @@ class Global {
     this.fallbackLocktime = fallbackLocktime || 0;
   }
   static fromBuffer(r) {
-    var kp;
-    let global = new Global();
+    let kp;
+    const global = new Global();
     while (true) {
       try {
         kp = key_pair_1.KeyPair.fromBuffer(r);
@@ -39,13 +39,13 @@ class Global {
       switch (kp.key.keyType) {
         case fields_1.GlobalTypes.XPUB:
           if (
-            kp.key.keyData.length != pubKeyLength + 1 &&
+            kp.key.keyData.length !== pubKeyLength + 1 &&
             ![2, 3].includes(kp.key.keyData[46])
           ) {
             throw new Error('invalid xpub length');
           }
-          let extendedKey = kp.key.keyData.slice(1);
-          let { masterFingerprint, path: derivationPath } = (0,
+          const extendedKey = kp.key.keyData.slice(1);
+          const { masterFingerprint, path: derivationPath } = (0,
           bip32_1.decodeBip32Derivation)(kp.value);
           global.xpub.push({ extendedKey, masterFingerprint, derivationPath });
           break;
@@ -98,7 +98,7 @@ class Global {
           global.version = kp.value.readUInt32LE();
           break;
         case fields_1.GlobalTypes.PROPRIETARY:
-          let data = proprietary_data_1.ProprietaryData.fromKeyPair(kp);
+          const data = proprietary_data_1.ProprietaryData.fromKeyPair(kp);
           if (Buffer.compare(data.identifier, pset_1.magicPrefix) === 0) {
             switch (data.subType) {
               case fields_1.GlobalProprietaryTypes.SCALAR:
@@ -157,16 +157,16 @@ class Global {
     return w.buffer;
   }
   getKeyPairs() {
-    var keyPairs = [];
+    const keyPairs = [];
     if (this.xpub && this.xpub.length > 0) {
       this.xpub.forEach(
         ({ extendedKey, masterFingerprint, derivationPath }) => {
-          let keyData = Buffer.concat([
+          const keyData = Buffer.concat([
             Buffer.of(extendedKey.length),
             extendedKey,
           ]);
-          let key = new key_pair_1.Key(fields_1.GlobalTypes.XPUB, keyData);
-          let value = (0, bip32_1.encodeBIP32Derivation)(
+          const key = new key_pair_1.Key(fields_1.GlobalTypes.XPUB, keyData);
+          const value = (0, bip32_1.encodeBIP32Derivation)(
             masterFingerprint,
             derivationPath,
           );
@@ -174,49 +174,51 @@ class Global {
         },
       );
     }
-    let txVersion = Buffer.allocUnsafe(4);
+    const txVersion = Buffer.allocUnsafe(4);
     txVersion.writeUInt32LE(this.txVersion, 0);
-    let txVersionKey = new key_pair_1.Key(fields_1.GlobalTypes.TX_VERSION);
+    const txVersionKey = new key_pair_1.Key(fields_1.GlobalTypes.TX_VERSION);
     keyPairs.push(new key_pair_1.KeyPair(txVersionKey, txVersion));
-    let fallbackLocktime = Buffer.allocUnsafe(4);
+    const fallbackLocktime = Buffer.allocUnsafe(4);
     fallbackLocktime.writeUInt32LE(this.fallbackLocktime || 0, 0);
-    let fallbackLocktimeKey = new key_pair_1.Key(
+    const fallbackLocktimeKey = new key_pair_1.Key(
       fields_1.GlobalTypes.FALLBACK_LOCKTIME,
     );
     keyPairs.push(
       new key_pair_1.KeyPair(fallbackLocktimeKey, fallbackLocktime),
     );
-    let inputCount = Buffer.allocUnsafe(
+    const inputCount = Buffer.allocUnsafe(
       varuint_bitcoin_1.default.encodingLength(this.inputCount),
     );
     varuint_bitcoin_1.default.encode(this.inputCount, inputCount, 0);
-    let inputCountKey = new key_pair_1.Key(fields_1.GlobalTypes.INPUT_COUNT);
+    const inputCountKey = new key_pair_1.Key(fields_1.GlobalTypes.INPUT_COUNT);
     keyPairs.push(new key_pair_1.KeyPair(inputCountKey, inputCount));
-    let outputCount = Buffer.allocUnsafe(
+    const outputCount = Buffer.allocUnsafe(
       varuint_bitcoin_1.default.encodingLength(this.outputCount),
     );
     varuint_bitcoin_1.default.encode(this.outputCount, outputCount, 0);
-    let outputCountKey = new key_pair_1.Key(fields_1.GlobalTypes.OUTPUT_COUNT);
+    const outputCountKey = new key_pair_1.Key(
+      fields_1.GlobalTypes.OUTPUT_COUNT,
+    );
     keyPairs.push(new key_pair_1.KeyPair(outputCountKey, outputCount));
     if (this.txModifiable) {
-      let txModifiable = Buffer.allocUnsafe(1);
+      const txModifiable = Buffer.allocUnsafe(1);
       txModifiable.writeUInt8(Number(this.txModifiable.toString(2)), 0);
-      let txModifiableKey = new key_pair_1.Key(
+      const txModifiableKey = new key_pair_1.Key(
         fields_1.GlobalTypes.TX_MODIFIABLE,
       );
       keyPairs.push(new key_pair_1.KeyPair(txModifiableKey, txModifiable));
     }
-    let version = Buffer.allocUnsafe(4);
+    const version = Buffer.allocUnsafe(4);
     version.writeUInt32LE(this.version, 0);
-    let versionKey = new key_pair_1.Key(fields_1.GlobalTypes.VERSION);
+    const versionKey = new key_pair_1.Key(fields_1.GlobalTypes.VERSION);
     keyPairs.push(new key_pair_1.KeyPair(versionKey, version));
     if (this.scalars && this.scalars.length > 0) {
       this.scalars.forEach(scalar => {
-        let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+        const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
           fields_1.GlobalProprietaryTypes.SCALAR,
           scalar,
         );
-        let scalarKey = new key_pair_1.Key(
+        const scalarKey = new key_pair_1.Key(
           fields_1.GlobalTypes.PROPRIETARY,
           keyData,
         );
@@ -224,12 +226,12 @@ class Global {
       });
     }
     if (this.modifiable) {
-      let modifiable = Buffer.allocUnsafe(1);
+      const modifiable = Buffer.allocUnsafe(1);
       modifiable.writeUInt8(Number(this.modifiable.toString(2)), 0);
-      let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+      const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.GlobalProprietaryTypes.TX_MODIFIABLE,
       );
-      let modifiableKey = new key_pair_1.Key(
+      const modifiableKey = new key_pair_1.Key(
         fields_1.GlobalTypes.PROPRIETARY,
         keyData,
       );
@@ -237,11 +239,14 @@ class Global {
     }
     if (this.proprietaryData && this.proprietaryData.length > 0) {
       this.proprietaryData.forEach(data => {
-        let keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
+        const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,
         );
-        let key = new key_pair_1.Key(fields_1.GlobalTypes.PROPRIETARY, keyData);
+        const key = new key_pair_1.Key(
+          fields_1.GlobalTypes.PROPRIETARY,
+          keyData,
+        );
         keyPairs.push(new key_pair_1.KeyPair(key, data.value));
       });
     }

@@ -12,8 +12,8 @@ const pubKeyLength = 78;
 
 export class Global {
   static fromBuffer(r: BufferReader): Global {
-    var kp: KeyPair;
-    let global = new Global();
+    let kp: KeyPair;
+    const global = new Global();
     while (true) {
       try {
         kp = KeyPair.fromBuffer(r);
@@ -28,13 +28,13 @@ export class Global {
       switch (kp.key.keyType) {
         case GlobalTypes.XPUB:
           if (
-            kp.key.keyData.length != pubKeyLength + 1 &&
+            kp.key.keyData.length !== pubKeyLength + 1 &&
             ![2, 3].includes(kp.key.keyData[46])
           ) {
             throw new Error('invalid xpub length');
           }
-          let extendedKey = kp.key.keyData.slice(1);
-          let {
+          const extendedKey = kp.key.keyData.slice(1);
+          const {
             masterFingerprint,
             path: derivationPath,
           } = decodeBip32Derivation(kp.value);
@@ -89,7 +89,7 @@ export class Global {
           global.version = kp.value.readUInt32LE();
           break;
         case GlobalTypes.PROPRIETARY:
-          let data = ProprietaryData.fromKeyPair(kp);
+          const data = ProprietaryData.fromKeyPair(kp);
           if (Buffer.compare(data.identifier, magicPrefix) === 0) {
             switch (data.subType) {
               case GlobalProprietaryTypes.SCALAR:
@@ -177,86 +177,89 @@ export class Global {
   }
 
   private getKeyPairs(): KeyPair[] {
-    var keyPairs = [] as KeyPair[];
+    const keyPairs = [] as KeyPair[];
 
     if (this.xpub! && this.xpub.length > 0) {
       this.xpub!.forEach(
         ({ extendedKey, masterFingerprint, derivationPath }) => {
-          let keyData = Buffer.concat([
+          const keyData = Buffer.concat([
             Buffer.of(extendedKey.length),
             extendedKey,
           ]);
-          let key = new Key(GlobalTypes.XPUB, keyData);
-          let value = encodeBIP32Derivation(masterFingerprint, derivationPath);
+          const key = new Key(GlobalTypes.XPUB, keyData);
+          const value = encodeBIP32Derivation(
+            masterFingerprint,
+            derivationPath,
+          );
           keyPairs.push(new KeyPair(key, value));
         },
       );
     }
 
-    let txVersion = Buffer.allocUnsafe(4);
+    const txVersion = Buffer.allocUnsafe(4);
     txVersion.writeUInt32LE(this.txVersion, 0);
-    let txVersionKey = new Key(GlobalTypes.TX_VERSION);
+    const txVersionKey = new Key(GlobalTypes.TX_VERSION);
     keyPairs.push(new KeyPair(txVersionKey, txVersion));
 
-    let fallbackLocktime = Buffer.allocUnsafe(4);
+    const fallbackLocktime = Buffer.allocUnsafe(4);
     fallbackLocktime.writeUInt32LE(this.fallbackLocktime || 0, 0);
-    let fallbackLocktimeKey = new Key(GlobalTypes.FALLBACK_LOCKTIME);
+    const fallbackLocktimeKey = new Key(GlobalTypes.FALLBACK_LOCKTIME);
     keyPairs.push(new KeyPair(fallbackLocktimeKey, fallbackLocktime));
 
-    let inputCount = Buffer.allocUnsafe(
+    const inputCount = Buffer.allocUnsafe(
       varuint.encodingLength(this.inputCount),
     );
     varuint.encode(this.inputCount, inputCount, 0);
-    let inputCountKey = new Key(GlobalTypes.INPUT_COUNT);
+    const inputCountKey = new Key(GlobalTypes.INPUT_COUNT);
     keyPairs.push(new KeyPair(inputCountKey, inputCount));
 
-    let outputCount = Buffer.allocUnsafe(
+    const outputCount = Buffer.allocUnsafe(
       varuint.encodingLength(this.outputCount),
     );
     varuint.encode(this.outputCount, outputCount, 0);
-    let outputCountKey = new Key(GlobalTypes.OUTPUT_COUNT);
+    const outputCountKey = new Key(GlobalTypes.OUTPUT_COUNT);
     keyPairs.push(new KeyPair(outputCountKey, outputCount));
 
     if (this.txModifiable!) {
-      let txModifiable = Buffer.allocUnsafe(1);
+      const txModifiable = Buffer.allocUnsafe(1);
       txModifiable.writeUInt8(Number(this.txModifiable!.toString(2)), 0);
-      let txModifiableKey = new Key(GlobalTypes.TX_MODIFIABLE);
+      const txModifiableKey = new Key(GlobalTypes.TX_MODIFIABLE);
       keyPairs.push(new KeyPair(txModifiableKey, txModifiable));
     }
 
-    let version = Buffer.allocUnsafe(4);
+    const version = Buffer.allocUnsafe(4);
     version.writeUInt32LE(this.version, 0);
-    let versionKey = new Key(GlobalTypes.VERSION);
+    const versionKey = new Key(GlobalTypes.VERSION);
     keyPairs.push(new KeyPair(versionKey, version));
 
     if (this.scalars! && this.scalars!.length > 0) {
       this.scalars.forEach(scalar => {
-        let keyData = ProprietaryData.proprietaryKey(
+        const keyData = ProprietaryData.proprietaryKey(
           GlobalProprietaryTypes.SCALAR,
           scalar,
         );
-        let scalarKey = new Key(GlobalTypes.PROPRIETARY, keyData);
+        const scalarKey = new Key(GlobalTypes.PROPRIETARY, keyData);
         keyPairs.push(new KeyPair(scalarKey));
       });
     }
 
     if (this.modifiable!) {
-      let modifiable = Buffer.allocUnsafe(1);
+      const modifiable = Buffer.allocUnsafe(1);
       modifiable.writeUInt8(Number(this.modifiable!.toString(2)), 0);
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         GlobalProprietaryTypes.TX_MODIFIABLE,
       );
-      let modifiableKey = new Key(GlobalTypes.PROPRIETARY, keyData);
+      const modifiableKey = new Key(GlobalTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(modifiableKey, modifiable));
     }
 
     if (this.proprietaryData! && this.proprietaryData!.length > 0) {
       this.proprietaryData.forEach(data => {
-        let keyData = ProprietaryData.proprietaryKey(
+        const keyData = ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,
         );
-        let key = new Key(GlobalTypes.PROPRIETARY, keyData);
+        const key = new Key(GlobalTypes.PROPRIETARY, keyData);
         keyPairs.push(new KeyPair(key, data.value));
       });
     }

@@ -11,7 +11,7 @@ export class AssetHash {
   }
 
   static fromHex(hex: string): AssetHash {
-    let bytes = Buffer.from(hex, 'hex');
+    const bytes = Buffer.from(hex, 'hex');
     if (bytes.length === 32) {
       return this.fromBytes(bytes.reverse());
     }

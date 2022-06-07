@@ -33,7 +33,7 @@ export class Finalizer {
     this.pset = pset;
   }
 
-  finalize() {
+  finalize(): void {
     const pset = this.pset.copy();
 
     pset.inputs.forEach((_, i) => {
@@ -50,7 +50,7 @@ export class Finalizer {
   finalizeInput(
     inputIndex: number,
     finalScriptsFunc?: FinalScriptsFunc | FinalTaprootScriptsFunc,
-  ) {
+  ): void {
     // TODO: finalize taproot input
     return this._finalizeInput(
       inputIndex,
@@ -61,7 +61,7 @@ export class Finalizer {
   private _finalizeInput(
     inIndex: number,
     finalScriptsFunc: FinalScriptsFunc = getFinalScripts,
-  ) {
+  ): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }

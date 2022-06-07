@@ -30,7 +30,7 @@ export class Input {
     this.timeLocktime = timeLocktime || 0;
   }
 
-  validate() {
+  validate(): void {
     if (this.txid.length === 0) {
       throw new Error('missing prevout txid');
     }
@@ -69,7 +69,7 @@ export class Output {
     this.blinderIndex = blinderIndex;
   }
 
-  validate() {
+  validate(): void {
     if (this.asset.length === 0) {
       throw new Error('missing asset');
     }

@@ -40,7 +40,7 @@ export class Updater {
     this.pset = pset;
   }
 
-  addInputs(ins: Input[]) {
+  addInputs(ins: Input[]): void {
     const pset = this.pset.copy();
 
     ins.forEach(input => {
@@ -55,7 +55,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addOutputs(outs: Output[]) {
+  addOutputs(outs: Output[]): void {
     const pset = this.pset.copy();
 
     outs.forEach(output => {
@@ -70,7 +70,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addInNonWitnessUtxo(inIndex: number, nonWitnessUtxo: Transaction) {
+  addInNonWitnessUtxo(inIndex: number, nonWitnessUtxo: Transaction): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -87,7 +87,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addInWitnessUtxo(inIndex: number, witnessUtxo: TxOutput) {
+  addInWitnessUtxo(inIndex: number, witnessUtxo: TxOutput): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -100,7 +100,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addInRedeemScript(inIndex: number, redeemScript: Buffer) {
+  addInRedeemScript(inIndex: number, redeemScript: Buffer): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -113,7 +113,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addInWitnessScript(inIndex: number, witnessScript: Buffer) {
+  addInWitnessScript(inIndex: number, witnessScript: Buffer): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -126,12 +126,12 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addInBIP32Derivation(inIndex: number, d: Bip32Derivation) {
+  addInBIP32Derivation(inIndex: number, d: Bip32Derivation): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
 
-    if (d.pubkey.length != 33) {
+    if (d.pubkey.length !== 33) {
       throw new Error('invalid pubkey length');
     }
 
@@ -154,7 +154,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addInSighashType(inIndex: number, sighashType: number) {
+  addInSighashType(inIndex: number, sighashType: number): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -171,7 +171,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addInIssuance(inIndex: number, args: AddInIssuanceArgs) {
+  addInIssuance(inIndex: number, args: AddInIssuanceArgs): void {
     this.validateIssuanceInput(inIndex);
     validateAddInIssuanceArgs(args);
 
@@ -231,7 +231,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addInReissuance(inIndex: number, args: AddInReissuanceArgs) {
+  addInReissuance(inIndex: number, args: AddInReissuanceArgs): void {
     this.validateReissuanceInput(inIndex);
     validateAddInReissuanceArgs(args);
 
@@ -281,7 +281,7 @@ export class Updater {
     inIndex: number,
     ps: PartialSig,
     validator: ValidateSigFunction,
-  ) {
+  ): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -320,12 +320,12 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addOutBIP32Derivation(outIndex: number, d: Bip32Derivation) {
+  addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): void {
     if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
       throw new Error('output index out of range');
     }
 
-    if (d.pubkey.length != 33) {
+    if (d.pubkey.length !== 33) {
       throw new Error('invalid pubkey length');
     }
 
@@ -348,7 +348,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addOutRedeemScript(outIndex: number, redeemScript: Buffer) {
+  addOutRedeemScript(outIndex: number, redeemScript: Buffer): void {
     if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
       throw new Error('output index out of range');
     }
@@ -361,7 +361,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  addOutWitnessScript(outIndex: number, witnessScript: Buffer) {
+  addOutWitnessScript(outIndex: number, witnessScript: Buffer): void {
     if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
       throw new Error('output index out of range');
     }
@@ -374,7 +374,7 @@ export class Updater {
     this.pset.outputs = pset.outputs;
   }
 
-  private validateIssuanceInput(inIndex: number) {
+  private validateIssuanceInput(inIndex: number): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -385,7 +385,7 @@ export class Updater {
     }
   }
 
-  private validateReissuanceInput(inIndex: number) {
+  private validateReissuanceInput(inIndex: number): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -404,7 +404,7 @@ export class Updater {
   }
 }
 
-function validateAddInIssuanceArgs(args: AddInIssuanceArgs) {
+function validateAddInIssuanceArgs(args: AddInIssuanceArgs): void {
   const assetAmount = args.assetAmount || 0;
   const tokenAmount = args.tokenAmount || 0;
   if (assetAmount <= 0 && tokenAmount <= 0) {
@@ -433,7 +433,7 @@ function validateAddInIssuanceArgs(args: AddInIssuanceArgs) {
   }
 }
 
-function validateAddInReissuanceArgs(args: AddInReissuanceArgs) {
+function validateAddInReissuanceArgs(args: AddInReissuanceArgs): void {
   const entropy =
     typeof args.entropy === 'string'
       ? Buffer.from(args.entropy, 'hex').reverse()
@@ -491,7 +491,7 @@ function matchAddressesType(addrA?: string, addrB?: string): boolean {
   return true;
 }
 
-function validatePartialSignature(psig: PartialSig) {
+function validatePartialSignature(psig: PartialSig): void {
   if (psig.pubkey.length !== 33) {
     throw new Error('invalid pubkey length');
   }

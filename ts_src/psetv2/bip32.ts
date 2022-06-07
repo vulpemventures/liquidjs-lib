@@ -3,12 +3,12 @@ export const hardenedKeyStart = 0x80000000;
 export function decodeBip32Derivation(
   buf: Buffer,
 ): { masterFingerprint: Buffer; path: string } {
-  if (buf.length % 4 != 0 || buf.length / 4 - 1 < 1) {
+  if (buf.length % 4 !== 0 || buf.length / 4 - 1 < 1) {
     throw new Error('invalid BIP32 derivation format');
   }
 
   const masterFingerprint = buf.slice(0, 4);
-  var steps: number[] = [];
+  const steps: number[] = [];
 
   for (let i = 4; i < buf.length; i += 4) {
     steps.push(buf.slice(i, i + 4).readUInt32LE());
@@ -23,7 +23,7 @@ export function encodeBIP32Derivation(
   path: string,
 ): Buffer {
   const steps = path.split('/');
-  var buf = Buffer.allocUnsafe(4 + 4 * steps.length);
+  const buf = Buffer.allocUnsafe(4 + 4 * steps.length);
   masterFingerprint.copy(buf, 0);
 
   let offset = 4;

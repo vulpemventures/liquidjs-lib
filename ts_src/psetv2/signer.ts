@@ -18,7 +18,7 @@ export class Signer {
     validator: ValidateSigFunction,
     redeemScript?: Buffer,
     witnessScript?: Buffer,
-  ) {
+  ): void {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }

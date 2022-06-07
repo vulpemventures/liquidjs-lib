@@ -11,19 +11,19 @@ class ProprietaryData {
     this.value = value;
   }
   static fromKeyPair(keyPair) {
-    if (keyPair.key.keyType != 0xfc) {
+    if (keyPair.key.keyType !== 0xfc) {
       throw new Error('invalid proprietary data key type');
     }
     const r = new bufferutils_1.BufferReader(keyPair.key.keyData);
-    let kpSize = keyPair.key.keyData.length;
+    const kpSize = keyPair.key.keyData.length;
     let readBytes = r.offset;
     const identifier = r.readVarSlice();
-    if (identifier.length == 0) {
+    if (identifier.length === 0) {
       throw new Error('invalid proprietary data identifier');
     }
     const subType = r.readUInt8();
     readBytes = r.offset - readBytes;
-    let remainingBytes = kpSize - readBytes;
+    const remainingBytes = kpSize - readBytes;
     let keyData = Buffer.from([]);
     if (remainingBytes > 0) {
       keyData = r.readSlice(remainingBytes);
@@ -32,7 +32,7 @@ class ProprietaryData {
   }
   static proprietaryKey(subType, keyData) {
     const size = keySize(keyData);
-    var buf = Buffer.allocUnsafe(size);
+    const buf = Buffer.allocUnsafe(size);
     const w = new bufferutils_1.BufferWriter(buf);
     w.writeVarSlice(pset_1.magicPrefix);
     w.writeSlice(Buffer.from([subType]));

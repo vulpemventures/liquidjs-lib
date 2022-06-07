@@ -28,17 +28,17 @@ class Blinder {
       throw new Error('missing outputs blinding args');
     }
     if (issuanceBlindingArgs && issuanceBlindingArgs.length > 0) {
-      issuanceBlindingArgs.forEach(args =>
-        this.validateIssuanceBlindingArgs(args),
+      issuanceBlindingArgs.forEach(arg =>
+        this.validateIssuanceBlindingArgs(arg),
       );
     }
     const sortedOutputBlindingArgs = outputBlindingArgs.sort(
       (a, b) => a.index - b.index,
     );
-    sortedOutputBlindingArgs.forEach((args, i) => {
+    sortedOutputBlindingArgs.forEach((arg, i) => {
       const isLastBlinder =
         lastBlinder && i === sortedOutputBlindingArgs.length - 1;
-      this.validateOutputBlindingArgs(args, isLastBlinder);
+      this.validateOutputBlindingArgs(arg, isLastBlinder);
     });
     await this.validateBlindingData(
       lastBlinder,
@@ -51,36 +51,47 @@ class Blinder {
     );
     const pset = this.pset.copy();
     if (issuanceBlindingArgs) {
-      issuanceBlindingArgs.forEach(args => {
-        pset.inputs[args.index].issuanceValueCommitment =
-          args.issuanceValueCommitment;
-        pset.inputs[args.index].issuanceValueRangeproof =
-          args.issuanceValueRangeProof;
-        pset.inputs[args.index].issuanceBlindValueProof =
-          args.issuanceValueBlindProof;
-        pset.inputs[args.index].issuanceInflationKeysCommitment =
-          args.issuanceTokenCommitment;
-        pset.inputs[args.index].issuanceInflationKeysRangeproof =
-          args.issuanceTokenRangeProof;
-        pset.inputs[args.index].issuanceBlindInflationKeysProof =
-          args.issuanceTokenBlindProof;
-      });
+      issuanceBlindingArgs.forEach(
+        ({
+          index,
+          issuanceValueCommitment,
+          issuanceValueRangeProof,
+          issuanceValueBlindProof,
+          issuanceTokenCommitment,
+          issuanceTokenRangeProof,
+          issuanceTokenBlindProof,
+        }) => {
+          pset.inputs[index].issuanceValueCommitment = issuanceValueCommitment;
+          pset.inputs[index].issuanceValueRangeproof = issuanceValueRangeProof;
+          pset.inputs[index].issuanceBlindValueProof = issuanceValueBlindProof;
+          pset.inputs[
+            index
+          ].issuanceInflationKeysCommitment = issuanceTokenCommitment;
+          pset.inputs[
+            index
+          ].issuanceInflationKeysRangeproof = issuanceTokenRangeProof;
+          pset.inputs[
+            index
+          ].issuanceBlindInflationKeysProof = issuanceTokenBlindProof;
+        },
+      );
     }
     for (let i = 0; i < sortedOutputBlindingArgs.length; i++) {
-      const args = sortedOutputBlindingArgs[i];
-      let {
+      const {
         index,
         assetBlinder,
         assetCommitment,
         assetSurjectionProof,
         assetBlindProof,
         valueBlinder,
+        nonceCommitment,
+        nonce,
+      } = sortedOutputBlindingArgs[i];
+      let {
         valueCommitment,
         valueRangeProof,
         valueBlindProof,
-        nonceCommitment,
-        nonce,
-      } = args;
+      } = sortedOutputBlindingArgs[i];
       const targetOutput = pset.outputs[index];
       const value = targetOutput.value.toString(10);
       if (lastBlinder && i === sortedOutputBlindingArgs.length - 1) {
@@ -135,8 +146,7 @@ class Blinder {
   }
   async calculateInputScalar(issuanceBlindingArgs) {
     let scalar = Buffer.from(transaction_1.ZERO);
-    for (let i = 0; i < this.ownedInputs.length; i++) {
-      const input = this.ownedInputs[i];
+    for (const input of this.ownedInputs) {
       scalar = await this.blindingGenerator.computeAndAddToScalarOffset(
         scalar,
         input.value,
@@ -180,8 +190,7 @@ class Blinder {
   }
   async calculateOutputScalar(outputBlindingArgs) {
     let scalar = Buffer.from(transaction_1.ZERO);
-    for (let i = 0; i < outputBlindingArgs.length; i++) {
-      const args = outputBlindingArgs[i];
+    for (const args of outputBlindingArgs) {
       const output = this.pset.outputs[args.index];
       scalar = await this.blindingGenerator.computeAndAddToScalarOffset(
         scalar,
@@ -202,10 +211,10 @@ class Blinder {
       offset,
     );
     if (this.pset.globals.scalars) {
-      for (let i = 0; i < this.pset.globals.scalars.length; i++) {
+      for (const scalar of this.pset.globals.scalars) {
         lastValueBlinder = await this.blindingGenerator.subtractScalars(
           lastValueBlinder,
-          this.pset.globals.scalars[i],
+          scalar,
         );
       }
     }
@@ -370,7 +379,7 @@ class Blinder {
     outputBlindingArgs,
     issuanceBlindingArgs,
   ) {
-    let inAssetsAndBlinders = this.pset.inputs.map((input, i) => {
+    const inAssetsAndBlinders = this.pset.inputs.map((input, i) => {
       const ownedInput = this.ownedInputs.find(({ index }) => index === i);
       return ownedInput
         ? {

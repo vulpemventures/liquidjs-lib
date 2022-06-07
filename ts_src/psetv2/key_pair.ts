@@ -4,7 +4,7 @@ import { BufferReader, BufferWriter, varuint } from '../bufferutils';
 export class Key {
   static fromBuffer(r: BufferReader): Key {
     const value = r.readVarSlice();
-    if (value.length == 0) {
+    if (value.length === 0) {
       throw new Error('no more key pairs');
     }
     if (value.length > 10000) {

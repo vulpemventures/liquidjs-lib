@@ -22,7 +22,7 @@ import * as bscript from '../script';
 export class Input {
   static fromBuffer(r: BufferReader): Input {
     let kp: KeyPair;
-    let input = new Input();
+    const input = new Input();
     while (true) {
       try {
         kp = KeyPair.fromBuffer(r);
@@ -51,16 +51,16 @@ export class Input {
           if (!input.partialSigs) {
             input.partialSigs = [];
           }
-          var pubkey = kp.key.keyData;
-          if (pubkey.length !== 33) {
+          const pk = kp.key.keyData;
+          if (pk.length !== 33) {
             throw new Error("invalid partial sig's pubkey length");
           }
           if (input.partialSigs!.find(ps => ps.pubkey.equals(pubkey))) {
             throw new Error('duplicated input signature');
           }
-          let signature = kp.value;
+          const signature = kp.value;
           bscript.signature.decode(signature);
-          input.partialSigs!.push({ pubkey, signature });
+          input.partialSigs!.push({ pubkey: pk, signature });
           break;
         case InputTypes.SIGHASH_TYPE:
           if (input.sighashType! > 0) {
@@ -84,7 +84,7 @@ export class Input {
           input.witnessScript = kp.value;
           break;
         case InputTypes.BIP32_DERIVATION:
-          var pubkey = kp.key.keyData;
+          const pubkey = kp.key.keyData;
           if (pubkey!.length !== 33) {
             throw new Error('invalid input bip32 derivation pubkey length');
           }
@@ -94,7 +94,7 @@ export class Input {
           if (input.bip32Derivation!.find(d => d.pubkey.equals(pubkey))) {
             throw new Error('duplicated input bip32 derivation');
           }
-          let { masterFingerprint, path } = decodeBip32Derivation(kp.value);
+          const { masterFingerprint, path } = decodeBip32Derivation(kp.value);
           input.bip32Derivation!.push({ pubkey, masterFingerprint, path });
           break;
         case InputTypes.FINAL_SCRIPTSIG:
@@ -110,44 +110,44 @@ export class Input {
           input.finalScriptWitness = kp.value;
           break;
         case InputTypes.RIPEMD_160:
-          var key = kp.key.keyData.toString('hex');
-          if (key.length !== 20) {
+          const ripemd160Key = kp.key.keyData.toString('hex');
+          if (ripemd160Key.length !== 20) {
             throw new Error('invalid length for key of ripemd160 preimages');
           }
           if (!input.ripemd160Preimages) {
             input.ripemd160Preimages = {};
           }
-          input.ripemd160Preimages[key] = kp.value;
+          input.ripemd160Preimages[ripemd160Key] = kp.value;
           break;
         case InputTypes.SHA_256:
-          var key = kp.key.keyData.toString('hex');
-          if (key.length !== 32) {
+          const sha256Key = kp.key.keyData.toString('hex');
+          if (sha256Key.length !== 32) {
             throw new Error('invalid length for key of sha256 preimages');
           }
           if (!input.sha256Preimages) {
             input.sha256Preimages = {};
           }
-          input.sha256Preimages[key] = kp.value;
+          input.sha256Preimages[sha256Key] = kp.value;
           break;
         case InputTypes.HASH_160:
-          var key = kp.key.keyData.toString('hex');
-          if (key.length !== 20) {
+          const hash160Key = kp.key.keyData.toString('hex');
+          if (hash160Key.length !== 20) {
             throw new Error('invalid length for key of hash160 preimages');
           }
           if (!input.hash160Preimages) {
             input.hash160Preimages = {};
           }
-          input.hash160Preimages[key] = kp.value;
+          input.hash160Preimages[hash160Key] = kp.value;
           break;
         case InputTypes.HASH_256:
-          var key = kp.key.keyData.toString('hex');
-          if (key.length !== 32) {
+          const hash256Key = kp.key.keyData.toString('hex');
+          if (hash256Key.length !== 32) {
             throw new Error('invalid length for key of hash256 preimages');
           }
           if (!input.hash256Preimages) {
             input.hash256Preimages = {};
           }
-          input.hash256Preimages[key] = kp.value;
+          input.hash256Preimages[hash256Key] = kp.value;
           break;
         case InputTypes.PREVIOUS_TXID:
           if (input.previousTxid!.length > 0) {
@@ -195,7 +195,7 @@ export class Input {
           input.requiredHeightLocktime = kp.value.readUInt32LE();
           break;
         case InputTypes.PROPRIETARY:
-          let data = ProprietaryData.fromKeyPair(kp);
+          const data = ProprietaryData.fromKeyPair(kp);
           if (Buffer.compare(data.identifier, magicPrefix) === 0) {
             switch (data.subType) {
               case InputProprietaryTypes.ISSUANCE_VALUE:
@@ -460,23 +460,23 @@ export class Input {
         'input final script witness cannot be set if witness utxo is unset',
       );
     }
-    let issuanceValueCommitmentSet =
+    const issuanceValueCommitmentSet =
       this.issuanceValueCommitment! && this.issuanceValueCommitment!.length > 0;
-    let issuanceValueRangeproofSet =
+    const issuanceValueRangeproofSet =
       this.issuanceValueRangeproof! && this.issuanceValueRangeproof!.length > 0;
-    if (issuanceValueCommitmentSet != issuanceValueRangeproofSet) {
+    if (issuanceValueCommitmentSet !== issuanceValueRangeproofSet) {
       throw new Error(
         'input issuance value commitment and range proof must be both either set or unset',
       );
     }
-    let issuanceInflationKeysCommitmentSet =
+    const issuanceInflationKeysCommitmentSet =
       this.issuanceInflationKeysCommitment! &&
       this.issuanceInflationKeysCommitment!.length > 0;
-    let issuanceInflationKeysRangeproofSet =
+    const issuanceInflationKeysRangeproofSet =
       this.issuanceInflationKeysRangeproof! &&
       this.issuanceInflationKeysRangeproof!.length > 0;
     if (
-      issuanceInflationKeysCommitmentSet != issuanceInflationKeysRangeproofSet
+      issuanceInflationKeysCommitmentSet !== issuanceInflationKeysRangeproofSet
     ) {
       throw new Error(
         'input issuance inflation keys commitment and range proof must be both either set or unset',
@@ -568,59 +568,59 @@ export class Input {
   }
 
   private getKeyPairs(): KeyPair[] {
-    var keyPairs = [] as KeyPair[];
+    const keyPairs = [] as KeyPair[];
 
     if (this.nonWitnessUtxo!) {
-      let key = new Key(InputTypes.NON_WITNESS_UTXO);
-      let value = this.nonWitnessUtxo!.toBuffer();
+      const key = new Key(InputTypes.NON_WITNESS_UTXO);
+      const value = this.nonWitnessUtxo!.toBuffer();
       keyPairs.push(new KeyPair(key, value));
     }
 
     if (this.witnessUtxo!) {
-      let key = new Key(InputTypes.WITNESS_UTXO);
-      let value = serializeOutput(this.witnessUtxo!);
+      const key = new Key(InputTypes.WITNESS_UTXO);
+      const value = serializeOutput(this.witnessUtxo!);
       keyPairs.push(new KeyPair(key, value));
     }
 
     if (this.partialSigs! && this.partialSigs!.length > 0) {
       this.partialSigs!.forEach(({ pubkey, signature }) => {
-        let key = new Key(InputTypes.PARTIAL_SIG, pubkey);
+        const key = new Key(InputTypes.PARTIAL_SIG, pubkey);
         keyPairs.push(new KeyPair(key, signature));
       });
     }
 
     if (this.sighashType! > 0) {
-      let key = new Key(InputTypes.SIGHASH_TYPE);
-      let value = Buffer.allocUnsafe(4);
+      const key = new Key(InputTypes.SIGHASH_TYPE);
+      const value = Buffer.allocUnsafe(4);
       value.writeUInt32LE(this.sighashType!);
       keyPairs.push(new KeyPair(key, value));
     }
 
     if (this.redeemScript! && this.redeemScript!.length > 0) {
-      let key = new Key(InputTypes.REDEEM_SCRIPT);
+      const key = new Key(InputTypes.REDEEM_SCRIPT);
       keyPairs.push(new KeyPair(key, this.redeemScript!));
     }
 
     if (this.witnessScript! && this.witnessScript!.length > 0) {
-      let key = new Key(InputTypes.WITNESS_SCRIPT);
+      const key = new Key(InputTypes.WITNESS_SCRIPT);
       keyPairs.push(new KeyPair(key, this.witnessScript!));
     }
 
     if (this.bip32Derivation! && this.bip32Derivation!.length > 0) {
       this.bip32Derivation!.forEach(({ pubkey, masterFingerprint, path }) => {
-        let key = new Key(InputTypes.BIP32_DERIVATION, pubkey);
-        let value = encodeBIP32Derivation(masterFingerprint, path);
+        const key = new Key(InputTypes.BIP32_DERIVATION, pubkey);
+        const value = encodeBIP32Derivation(masterFingerprint, path);
         keyPairs.push(new KeyPair(key, value));
       });
     }
 
     if (this.finalScriptSig! && this.finalScriptSig!.length > 0) {
-      let key = new Key(InputTypes.FINAL_SCRIPTSIG);
+      const key = new Key(InputTypes.FINAL_SCRIPTSIG);
       keyPairs.push(new KeyPair(key, this.finalScriptSig!));
     }
 
     if (this.finalScriptWitness! && this.finalScriptWitness!.length > 0) {
-      let key = new Key(InputTypes.FINAL_SCRIPTWITNESS);
+      const key = new Key(InputTypes.FINAL_SCRIPTWITNESS);
       keyPairs.push(new KeyPair(key, this.finalScriptWitness!));
     }
 
@@ -629,7 +629,7 @@ export class Input {
       Object.keys(this.ripemd160Preimages!).length > 0
     ) {
       Object.entries(this.ripemd160Preimages!).forEach(([k, v]) => {
-        let key = new Key(InputTypes.RIPEMD_160, Buffer.from(k, 'hex'));
+        const key = new Key(InputTypes.RIPEMD_160, Buffer.from(k, 'hex'));
         keyPairs.push(new KeyPair(key, v));
       });
     }
@@ -639,7 +639,7 @@ export class Input {
       Object.keys(this.sha256Preimages!).length > 0
     ) {
       Object.entries(this.sha256Preimages!).forEach(([k, v]) => {
-        let key = new Key(InputTypes.SHA_256, Buffer.from(k, 'hex'));
+        const key = new Key(InputTypes.SHA_256, Buffer.from(k, 'hex'));
         keyPairs.push(new KeyPair(key, v));
       });
     }
@@ -649,7 +649,7 @@ export class Input {
       Object.keys(this.hash160Preimages!).length > 0
     ) {
       Object.entries(this.hash160Preimages!).forEach(([k, v]) => {
-        let key = new Key(InputTypes.HASH_160, Buffer.from(k, 'hex'));
+        const key = new Key(InputTypes.HASH_160, Buffer.from(k, 'hex'));
         keyPairs.push(new KeyPair(key, v));
       });
     }
@@ -659,44 +659,44 @@ export class Input {
       Object.keys(this.hash256Preimages!).length > 0
     ) {
       Object.entries(this.hash256Preimages!).forEach(([k, v]) => {
-        let key = new Key(InputTypes.HASH_256, Buffer.from(k, 'hex'));
+        const key = new Key(InputTypes.HASH_256, Buffer.from(k, 'hex'));
         keyPairs.push(new KeyPair(key, v));
       });
     }
 
-    let preivousTxidKey = new Key(InputTypes.PREVIOUS_TXID);
+    const preivousTxidKey = new Key(InputTypes.PREVIOUS_TXID);
     keyPairs.push(new KeyPair(preivousTxidKey, this.previousTxid));
 
-    let prevTxIndexKey = new Key(InputTypes.PREVIOUS_TXINDEX);
-    let prevTxIndex = Buffer.allocUnsafe(4);
+    const prevTxIndexKey = new Key(InputTypes.PREVIOUS_TXINDEX);
+    const prevTxIndex = Buffer.allocUnsafe(4);
     prevTxIndex.writeUInt32LE(this.previousTxIndex);
     keyPairs.push(new KeyPair(prevTxIndexKey, prevTxIndex));
 
-    let sequenceKey = new Key(InputTypes.SEQUENCE);
-    let sequence = Buffer.allocUnsafe(4);
+    const sequenceKey = new Key(InputTypes.SEQUENCE);
+    const sequence = Buffer.allocUnsafe(4);
     sequence.writeUInt32LE(this.sequence);
     keyPairs.push(new KeyPair(sequenceKey, sequence));
 
     if (this.requiredTimeLocktime! > 0) {
-      let key = new Key(InputTypes.REQUIRED_TIME_LOCKTIME);
-      let value = Buffer.allocUnsafe(4);
+      const key = new Key(InputTypes.REQUIRED_TIME_LOCKTIME);
+      const value = Buffer.allocUnsafe(4);
       value.writeUInt32LE(this.requiredTimeLocktime!);
       keyPairs.push(new KeyPair(key, value));
     }
 
     if (this.requiredHeightLocktime! > 0) {
-      let key = new Key(InputTypes.REQUIRED_HEIGHT_LOCKTIME);
-      let value = Buffer.allocUnsafe(4);
+      const key = new Key(InputTypes.REQUIRED_HEIGHT_LOCKTIME);
+      const value = Buffer.allocUnsafe(4);
       value.writeUInt32LE(this.requiredHeightLocktime!);
       keyPairs.push(new KeyPair(key, value));
     }
 
     if (this.issuanceValue! > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_VALUE,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
-      let value = Buffer.allocUnsafe(8);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
+      const value = Buffer.allocUnsafe(8);
       writeUInt64LE(value, this.issuanceValue!, 0);
       keyPairs.push(new KeyPair(key, value));
     }
@@ -705,10 +705,10 @@ export class Input {
       this.issuanceValueCommitment! &&
       this.issuanceValueCommitment!.length > 0
     ) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_VALUE_COMMITMENT,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceValueCommitment!));
     }
 
@@ -716,10 +716,10 @@ export class Input {
       this.issuanceValueRangeproof! &&
       this.issuanceValueRangeproof!.length > 0
     ) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_VALUE_RANGEPROOF,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceValueRangeproof!));
     }
 
@@ -727,69 +727,69 @@ export class Input {
       this.issuanceInflationKeysRangeproof! &&
       this.issuanceInflationKeysRangeproof!.length > 0
     ) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_INFLATION_KEYS_RANGEPROOF,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceInflationKeysRangeproof!));
     }
 
     if (this.peginTx!) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.PEGIN_TX,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.peginTx!.toBuffer()));
     }
 
     if (this.peginTxoutProof! && this.peginTxoutProof!.length > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.PEGIN_TXOUT_PROOF,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.peginTxoutProof!));
     }
 
     if (this.peginGenesisHash! && this.peginGenesisHash!.length > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.PEGIN_GENESIS_HASH,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.peginGenesisHash!));
     }
 
     if (this.peginClaimScript! && this.peginClaimScript!.length > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.PEGIN_CLAIM_SCRIPT,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.peginClaimScript!));
     }
 
     if (this.peginValue! > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.PEGIN_VALUE,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
-      let value = Buffer.allocUnsafe(8);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
+      const value = Buffer.allocUnsafe(8);
       writeUInt64LE(value, this.peginValue!, 0);
       keyPairs.push(new KeyPair(key, value!));
     }
 
     if (this.peginWitness! && this.peginWitness!.length > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.PEGIN_WITNESS,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.peginWitness!));
     }
 
     if (this.issuanceInflationKeys! > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_INFLATION_KEYS,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
-      let value = Buffer.allocUnsafe(8);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
+      const value = Buffer.allocUnsafe(8);
       writeUInt64LE(value, this.issuanceInflationKeys!, 0);
       keyPairs.push(new KeyPair(key, value!));
     }
@@ -798,34 +798,34 @@ export class Input {
       this.issuanceInflationKeysCommitment! &&
       this.issuanceInflationKeysCommitment!.length > 0
     ) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_INFLATION_KEYS_COMMITMENT,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceInflationKeysCommitment!));
     }
 
     if (this.issuanceBlindingNonce! && this.issuanceBlindingNonce!.length > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_BLINDING_NONCE,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceBlindingNonce!));
     }
 
     if (this.issuanceAssetEntropy! && this.issuanceAssetEntropy!.length > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_ASSET_ENTROPY,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceAssetEntropy!));
     }
 
     if (this.utxoRangeProof! && this.utxoRangeProof!.length > 0) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.UTXO_RANGEPROOF,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.utxoRangeProof!));
     }
 
@@ -833,10 +833,10 @@ export class Input {
       this.issuanceBlindValueProof! &&
       this.issuanceBlindValueProof!.length > 0
     ) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_BLIND_VALUE_PROOF,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceBlindValueProof!));
     }
 
@@ -844,20 +844,20 @@ export class Input {
       this.issuanceBlindInflationKeysProof! &&
       this.issuanceBlindInflationKeysProof!.length > 0
     ) {
-      let keyData = ProprietaryData.proprietaryKey(
+      const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.ISSUANCE_BLIND_INFLATION_KEYS_PROOF,
       );
-      let key = new Key(InputTypes.PROPRIETARY, keyData);
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceBlindInflationKeysProof!));
     }
 
     if (this.proprietaryData! && this.proprietaryData!.length > 0) {
       this.proprietaryData.forEach(data => {
-        let keyData = ProprietaryData.proprietaryKey(
+        const keyData = ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,
         );
-        let key = new Key(InputTypes.PROPRIETARY, keyData);
+        const key = new Key(InputTypes.PROPRIETARY, keyData);
         keyPairs.push(new KeyPair(key, data.value));
       });
     }
@@ -882,8 +882,8 @@ function serializeOutput(out: Output): Buffer {
     size +=
       out.rangeProof!.length + varuint.encodingLength(out.rangeProof!.length);
   }
-  let buf = Buffer.allocUnsafe(size);
-  let w = new BufferWriter(buf, 0);
+  const buf = Buffer.allocUnsafe(size);
+  const w = new BufferWriter(buf, 0);
 
   w.writeSlice(out.asset);
   w.writeSlice(out.value);
@@ -901,11 +901,11 @@ function deserializeOutput(buf: Buffer): Output {
     throw new Error('invalid input witness utxo length');
   }
 
-  let r = new BufferReader(buf);
-  let asset = r.readSlice(33);
-  let value = r.readConfidentialValue();
-  let nonce = r.readConfidentialNonce();
-  let script = r.readVarSlice();
+  const r = new BufferReader(buf);
+  const asset = r.readSlice(33);
+  const value = r.readConfidentialValue();
+  const nonce = r.readConfidentialNonce();
+  const script = r.readVarSlice();
   let surjectionProof: Buffer | undefined;
   let rangeProof: Buffer | undefined;
   if (nonce.length > 1) {

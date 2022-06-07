@@ -159,15 +159,10 @@ async function rangeProofWithNonceHash(
   );
 }
 exports.rangeProofWithNonceHash = rangeProofWithNonceHash;
-async function rangeProofVerify(
-  valueCommitment,
-  assetCommitment,
-  proof,
-  script,
-) {
+async function rangeProofVerify(valueCommit, assetCommit, proof, script) {
   const { generator, pedersen, rangeproof } = await secp256k1Promise;
-  const gen = generator.parse(assetCommitment);
-  const commit = pedersen.commitParse(valueCommitment);
+  const gen = generator.parse(assetCommit);
+  const commit = pedersen.commitParse(valueCommit);
   return rangeproof.verify(commit, proof, gen, script);
 }
 exports.rangeProofVerify = rangeProofVerify;
@@ -260,19 +255,19 @@ async function surjectionProofVerify(
 exports.surjectionProofVerify = surjectionProofVerify;
 async function blindValueProof(
   value,
-  valueCommitment,
-  assetCommitment,
+  valueCommit,
+  assetCommit,
   valueBlinder,
   opts,
 ) {
   const { generator, pedersen, rangeproof } = await secp256k1Promise;
-  const gen = generator.parse(assetCommitment);
-  const commit = pedersen.commitParse(valueCommitment);
+  const gen = generator.parse(assetCommit);
+  const commit = pedersen.commitParse(valueCommit);
   const nonce = randomBytes(opts);
   return rangeproof.sign(commit, valueBlinder, nonce, value, gen, value, -1);
 }
 exports.blindValueProof = blindValueProof;
-async function blindAssetProof(asset, assetCommitment, assetBlinder) {
+async function blindAssetProof(asset, assetCommit, assetBlinder) {
   const { generator, surjectionproof } = await secp256k1Promise;
   const nInputsToUse = 1;
   const maxIterations = 100;
@@ -284,7 +279,7 @@ async function blindAssetProof(asset, assetCommitment, assetBlinder) {
     transaction_1.ZERO,
   );
   const gen = generator.generate(asset);
-  const assetGen = generator.parse(assetCommitment);
+  const assetGen = generator.parse(assetCommit);
   const proof = surjectionproof.generate(
     init.proof,
     [gen],
@@ -296,23 +291,18 @@ async function blindAssetProof(asset, assetCommitment, assetBlinder) {
   return surjectionproof.serialize(proof);
 }
 exports.blindAssetProof = blindAssetProof;
-async function assetBlindProofVerify(asset, assetCommitment, proof) {
+async function assetBlindProofVerify(asset, assetCommit, proof) {
   const { generator, surjectionproof } = await secp256k1Promise;
   const inGenerators = [generator.generate(asset)];
-  const outGenerator = generator.parse(assetCommitment);
+  const outGenerator = generator.parse(assetCommit);
   const sProof = surjectionproof.parse(proof);
   return surjectionproof.verify(sProof, inGenerators, outGenerator);
 }
 exports.assetBlindProofVerify = assetBlindProofVerify;
 class ZKPValidator {
-  async verifyValueRangeProof(valueCommitment, assetCommitment, proof, script) {
+  async verifyValueRangeProof(valueCommit, assetCommit, proof, script) {
     try {
-      return await rangeProofVerify(
-        valueCommitment,
-        assetCommitment,
-        proof,
-        script,
-      );
+      return await rangeProofVerify(valueCommit, assetCommit, proof, script);
     } catch (ignore) {
       return false;
     }
@@ -336,16 +326,16 @@ class ZKPValidator {
       return false;
     }
   }
-  async verifyBlindValueProof(valueCommitment, assetCommitment, proof) {
+  async verifyBlindValueProof(valueCommit, assetCommit, proof) {
     try {
-      return await rangeProofVerify(valueCommitment, assetCommitment, proof);
+      return await rangeProofVerify(valueCommit, assetCommit, proof);
     } catch (ignore) {
       return false;
     }
   }
-  async verifyBlindAssetProof(asset, assetCommitment, proof) {
+  async verifyBlindAssetProof(asset, assetCommit, proof) {
     try {
-      return await assetBlindProofVerify(asset, assetCommitment, proof);
+      return await assetBlindProofVerify(asset, assetCommit, proof);
     } catch (ignore) {
       return false;
     }
@@ -371,10 +361,10 @@ class ZKPGenerator {
     ).fromMasterBlindingKey(masterKey);
     return bg;
   }
-  static ECCKeysGenerator(ecc) {
+  static ECCKeysGenerator(ec) {
     return opts => {
       const privateKey = randomBytes(opts);
-      const publicKey = (0, ecpair_1.default)(ecc).fromPrivateKey(privateKey)
+      const publicKey = (0, ecpair_1.default)(ec).fromPrivateKey(privateKey)
         .publicKey;
       return {
         privateKey,
@@ -420,13 +410,13 @@ class ZKPGenerator {
   async lastValueCommitment(value, asset, blinder) {
     return valueCommitment(value, asset, blinder);
   }
-  async lastBlindValueProof(value, valueCommitment, assetCommitment, blinder) {
-    return blindValueProof(value, valueCommitment, assetCommitment, blinder);
+  async lastBlindValueProof(value, valueCommit, assetCommit, blinder) {
+    return blindValueProof(value, valueCommit, assetCommit, blinder);
   }
   async lastValueRangeProof(
     value,
     asset,
-    valueCommitment,
+    valueCommit,
     valueBlinder,
     assetBlinder,
     script,
@@ -438,7 +428,7 @@ class ZKPGenerator {
       asset,
       assetBlinder,
       valueBlinder,
-      valueCommitment,
+      valueCommit,
       script,
     );
   }
@@ -468,7 +458,7 @@ class ZKPGenerator {
     validateBlindingKeysByIndex(pset, blindingKeysByIndex);
     return Promise.all(
       Object.entries(blindingKeysByIndex).map(async ([i, key]) => {
-        const input = pset.inputs[parseInt(i)];
+        const input = pset.inputs[parseInt(i, 10)];
         let blindingArgs = {};
         if (input.issuanceValue > 0) {
           const value = input.issuanceValue.toString(10);
@@ -497,7 +487,7 @@ class ZKPGenerator {
           );
           blindingArgs = {
             ...blindingArgs,
-            index: parseInt(i),
+            index: parseInt(i, 10),
             issuanceAsset: asset,
             issuanceValueCommitment: valueCommit,
             issuanceValueRangeProof: rangeproof,
@@ -633,7 +623,7 @@ class ZKPGenerator {
       return valueBlinder.slice();
     }
     const { ec } = await secp256k1Promise;
-    let val = Buffer.alloc(32, 0);
+    const val = Buffer.alloc(32, 0);
     val.writeBigUint64BE(BigInt(value), 24);
     const result = ec.prvkeyTweakMul(assetBlinder, val);
     if (valueBlinder.length === 0) {
@@ -663,9 +653,9 @@ class ZKPGenerator {
     const keys = this.inBlindingKeys
       ? this.inBlindingKeys
       : [this.masterBlindingKey.derive(out.script).privateKey];
-    for (let i = 0; i < keys.length; i++) {
+    for (const key of keys) {
       try {
-        const revealed = await unblindOutputWithKey(out, keys[i]);
+        const revealed = await unblindOutputWithKey(out, key);
         return {
           index: 0,
           value: revealed.value,
@@ -678,7 +668,7 @@ class ZKPGenerator {
     throw new Error('Could not unblind output with any blinding key');
   }
   async getInputAssetsAndBlinders(pset, issuanceBlindingArgs) {
-    let unblindedIns = await this.maybeUnblindInUtxos(pset);
+    const unblindedIns = await this.maybeUnblindInUtxos(pset);
     pset.inputs.forEach((input, i) => {
       if (input.hasIssuance()) {
         unblindedIns.push({
@@ -700,8 +690,8 @@ class ZKPGenerator {
         }
       }
     });
-    let assets = [];
-    let assetBlinders = [];
+    const assets = [];
+    const assetBlinders = [];
     unblindedIns.forEach(({ asset, assetBlindingFactor }) => {
       assets.push(asset);
       assetBlinders.push(assetBlindingFactor);
@@ -785,7 +775,7 @@ function validateOutIndexes(pset, outIndexes) {
 }
 function validateBlindingKeysByIndex(pset, keys) {
   Object.entries(keys).forEach(([k, v]) => {
-    const i = parseInt(k);
+    const i = parseInt(k, 10);
     if (i < 0 || i >= pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }

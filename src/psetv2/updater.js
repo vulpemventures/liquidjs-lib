@@ -129,7 +129,7 @@ class Updater {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
-    if (d.pubkey.length != 33) {
+    if (d.pubkey.length !== 33) {
       throw new Error('invalid pubkey length');
     }
     const pset = this.pset.copy();
@@ -296,7 +296,7 @@ class Updater {
     if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
       throw new Error('output index out of range');
     }
-    if (d.pubkey.length != 33) {
+    if (d.pubkey.length !== 33) {
       throw new Error('invalid pubkey length');
     }
     const pset = this.pset.copy();

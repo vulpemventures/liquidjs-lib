@@ -395,14 +395,14 @@ function decodeBase58(address, network) {
       // ripem160 hash size
       throw new Error('decoded address is of unknown size');
     }
-    const prefix = payload.readUInt8(1);
-    switch (prefix) {
+    const addrPrefix = payload.readUInt8(1);
+    switch (addrPrefix) {
       case network.pubKeyHash:
         return AddressType.ConfidentialP2Pkh;
       case network.scriptHash:
         return AddressType.ConfidentialP2Sh;
       default:
-        throw UnkownPrefixError(prefix, network);
+        throw UnkownPrefixError(addrPrefix, network);
     }
   }
   // unconf case
@@ -445,7 +445,7 @@ exports.isConfidential = isConfidential;
 function getScriptType(script) {
   switch (script[0]) {
     case ops_1.OPS.OP_0:
-      if (script.slice(2).length == 20) {
+      if (script.slice(2).length === 20) {
         return ScriptType.P2Wpkh;
       }
       return ScriptType.P2Wsh;
