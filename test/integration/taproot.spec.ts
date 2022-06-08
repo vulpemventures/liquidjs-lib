@@ -500,7 +500,7 @@ function createSigned(
     );
     const signature = bip341.taprootSignKey(sighash, key.privateKey!);
     // witness stack for keypath spend is just the signature.
-    // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
+    // If sighash is not SIGHASH_DEFAULT then you must add 1 byte with sighash value
     tx.ins[0].witness = [serializeSchnnorrSig(signature, hashType)];
     return tx;
   } catch (e) {

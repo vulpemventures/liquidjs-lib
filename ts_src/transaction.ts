@@ -489,7 +489,7 @@ export class Transaction {
     const isNone = outputType === Transaction.SIGHASH_NONE;
     const isSingle = outputType === Transaction.SIGHASH_SINGLE;
 
-    let hashOutpoints = EMPTY_BUFFER;
+    let hashPrevouts = EMPTY_BUFFER;
     let hashSequences = EMPTY_BUFFER;
     let hashOutputs = EMPTY_BUFFER;
     let hashIssuances = EMPTY_BUFFER;
@@ -501,7 +501,7 @@ export class Transaction {
     let hashSpentAssetsAmounts = EMPTY_BUFFER;
 
     if (!isAnyoneCanPay) {
-      hashOutpoints = getOutpointsSHA256(this.ins);
+      hashPrevouts = getPrevoutsSHA256(this.ins);
       hashOutpointsFlags = getOutpointFlagsSHA256(this.ins);
       hashSpentAssetsAmounts = getSpentAssetsAmountsSHA256(prevoutAssetsValues);
       hashIssuancesProofs = getIssuanceProofsSHA256(this.ins);
@@ -556,7 +556,7 @@ export class Transaction {
     sigMsgWriter.writeUInt32(this.locktime);
     if (!isAnyoneCanPay) {
       sigMsgWriter.writeSlice(hashOutpointsFlags);
-      sigMsgWriter.writeSlice(hashOutpoints);
+      sigMsgWriter.writeSlice(hashPrevouts);
       sigMsgWriter.writeSlice(hashSpentAssetsAmounts);
       sigMsgWriter.writeSlice(hashScriptPubKeys);
       sigMsgWriter.writeSlice(hashSequences);
@@ -1053,7 +1053,7 @@ function getIssuanceSize(txIn: Input): number {
   return 0;
 }
 
-function getOutpointsSHA256(inputs: Transaction['ins']): Buffer {
+function getPrevoutsSHA256(inputs: Transaction['ins']): Buffer {
   const bufferWriter = BufferWriter.withCapacity(inputs.length * (32 + 4));
   for (const i of inputs) {
     bufferWriter.writeSlice(i.hash);
