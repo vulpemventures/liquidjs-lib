@@ -1,6 +1,5 @@
 import { BufferReader, BufferWriter, varuint } from '../bufferutils';
 
-// louis: XONly pubkey
 export class Key {
   static fromBuffer(r: BufferReader): Key {
     const value = r.readVarSlice();
