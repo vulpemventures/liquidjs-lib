@@ -426,7 +426,7 @@ class Transaction {
     let hashOutputs = EMPTY_BUFFER;
     let hashIssuances = EMPTY_BUFFER;
     let hashScriptPubKeys = EMPTY_BUFFER;
-    // elements
+    // elements new hashes for witness  v1
     let hashOutpointsFlags = EMPTY_BUFFER;
     let hashIssuancesProofs = EMPTY_BUFFER;
     let hashOutputsWitnesses = EMPTY_BUFFER;
@@ -448,6 +448,7 @@ class Transaction {
       hashOutputs = getOutputsSHA256([output]);
       hashOutputsWitnesses = getOutputWitnessesSHA256([output]);
     }
+    // key-path spent or a tapscript (annex is for future update)
     const spendType = (leafHash ? 2 : 0) + (annex ? 1 : 0);
     // Length calculation from:
     // https://github.com/ElementsProject/elements/blob/84b3f7b0045b50a585d60e56e77e8914b6cf6040/doc/taproot-sighash.mediawiki
