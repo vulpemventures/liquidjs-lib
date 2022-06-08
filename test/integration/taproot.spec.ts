@@ -512,5 +512,5 @@ function createSigned(
 const serializeSchnnorrSig = (sig: Buffer, hashtype: number) =>
   Buffer.concat([
     sig,
-    hashtype != 0x00 ? Buffer.of(hashtype) : Buffer.alloc(0),
+    hashtype !== 0x00 ? Buffer.of(hashtype) : Buffer.alloc(0),
   ]);
