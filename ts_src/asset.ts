@@ -38,5 +38,5 @@ export class AssetHash {
 }
 
 function reverseWithoutMutate(buf: Buffer): Buffer {
-  return buf.slice().reverse();
+  return Buffer.from(buf).reverse();
 }

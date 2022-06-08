@@ -75,7 +75,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     assert.ok(scriptFromConfidential.equals(output));
   });
 
-  it.only('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
+  it('can create (and broadcast via 3PBP) a taproot keyspend Transaction', async () => {
     const changeAddress = payments.p2pkh({
       pubkey: alice.publicKey,
       network: net,
@@ -100,10 +100,10 @@ describe('liquidjs-lib (transaction with taproot)', () => {
         },
       ],
       changeAddress!,
+      Transaction.SIGHASH_SINGLE,
     );
 
     const hex = tx.toHex();
-    console.log(hex);
     await broadcast(hex, true);
   });
 
@@ -159,6 +159,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
           value: satoshiToConfidentialValue(utxo.value),
         },
       ],
+      Transaction.SIGHASH_NONE | Transaction.SIGHASH_ANYONECANPAY,
       leafHash,
     );
 
@@ -237,6 +238,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
           value: satoshiToConfidentialValue(utxo.value),
         },
       ],
+      Transaction.SIGHASH_DEFAULT,
       leafHash,
     );
 
@@ -253,7 +255,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     await broadcast(hex, true);
   });
 
-  it('can create (and broadcast via 3PBP) a confidential taproot scriptspend Pset (v0)', async () => {
+  it.only('can create (and broadcast via 3PBP) a confidential taproot scriptspend Pset (v0)', async () => {
     const BOB = ECPair.makeRandom({ network: net });
     const blindingKeys = ECPair.makeRandom({ network: net });
 
@@ -354,6 +356,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
           value: prevoutTx.outs[utxo.vout].value,
         },
       ],
+      Transaction.SIGHASH_DEFAULT,
       leafHash,
     );
 
@@ -382,16 +385,18 @@ function makeStackCheckSig(
   inputIndex: number,
   prevoutScripts: Buffer[],
   values: { asset: Buffer; value: Buffer }[],
+  type: number,
   leafHash: Buffer,
 ): Buffer[] {
   const hash = transaction.hashForWitnessV1(
     inputIndex,
     prevoutScripts,
     values,
-    Transaction.SIGHASH_DEFAULT,
+    type,
     net.genesisBlockHash,
     leafHash,
   );
+
   const sig = ecc.signSchnorr(hash, keyPair.privateKey!, Buffer.alloc(32));
 
   const ok = ecc.verifySchnorr(hash, keyPair.publicKey.slice(1), sig);
@@ -399,7 +404,7 @@ function makeStackCheckSig(
     throw new Error('Signature is not valid');
   }
 
-  return [Buffer.from(sig)];
+  return [serializeSchnnorrSig(Buffer.from(sig), type)];
 }
 
 function makeTransaction(
@@ -450,6 +455,7 @@ function createSigned(
   scriptPubkeys: Buffer[],
   values: { asset: Buffer; value: Buffer }[],
   changeAddress: string,
+  hashType: number,
 ): Transaction {
   const changeAmount =
     values.reduce(
@@ -459,8 +465,6 @@ function createSigned(
     amountToSend -
     FEES;
 
-  console.log(scriptPubkeys);
-  // console.log(values.map(data => ({ asset: data.asset.slice().reverse().toString('hex'), value: data.value.toString('hex') })));
   const tx = new Transaction();
   tx.version = 2;
   // Add input
@@ -491,17 +495,22 @@ function createSigned(
       0, // which input
       scriptPubkeys, // scriptPubkey
       values, // All previous values of all inputs
-      Transaction.SIGHASH_SINGLE, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
+      hashType, // sighash flag, DEFAULT is schnorr-only (DEFAULT == ALL)
       net.genesisBlockHash, // block hash
     );
-    console.log(sighash.toString('hex'));
     const signature = bip341.taprootSignKey(sighash, key.privateKey!);
     // witness stack for keypath spend is just the signature.
     // If sighash is not SIGHASH_DEFAULT (ALL) then you must add 1 byte with sighash value
-    tx.ins[0].witness = [Buffer.concat([signature, Buffer.of(Transaction.SIGHASH_SINGLE)])];
+    tx.ins[0].witness = [serializeSchnnorrSig(signature, hashType)];
     return tx;
   } catch (e) {
     console.error(e);
     throw e;
   }
 }
+
+const serializeSchnnorrSig = (sig: Buffer, hashtype: number) =>
+  Buffer.concat([
+    sig,
+    hashtype != 0x00 ? Buffer.of(hashtype) : Buffer.alloc(0),
+  ]);
