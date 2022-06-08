@@ -32,5 +32,5 @@ exports.AssetHash = AssetHash;
 AssetHash.CONFIDENTIAL_ASSET_PREFIX = Buffer.of(0x0a);
 AssetHash.UNCONFIDENTIAL_ASSET_PREFIX = Buffer.of(0x01);
 function reverseWithoutMutate(buf) {
-  return buf.slice().reverse();
+  return Buffer.from(buf).reverse();
 }
