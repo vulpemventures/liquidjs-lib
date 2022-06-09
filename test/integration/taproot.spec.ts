@@ -255,7 +255,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     await broadcast(hex, true);
   });
 
-  it.only('can create (and broadcast via 3PBP) a confidential taproot scriptspend Pset (v0)', async () => {
+  it('can create (and broadcast via 3PBP) a confidential taproot scriptspend Pset (v0)', async () => {
     const BOB = ECPair.makeRandom({ network: net });
     const blindingKeys = ECPair.makeRandom({ network: net });
 
