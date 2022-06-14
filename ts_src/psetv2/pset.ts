@@ -85,7 +85,7 @@ export class Pset {
     this.globals = globals || new Global();
   }
 
-  sanityCheck(): void {
+  sanityCheck(): this {
     this.globals.sanityCheck();
     let hasFullyBlindedOutput = false;
     this.inputs.forEach(input => input.sanityCheck());
@@ -105,6 +105,8 @@ export class Pset {
         'global modifiable flag must be unset for fully blinded pset',
       );
     }
+
+    return this;
   }
 
   copy(): Pset {
@@ -241,7 +243,7 @@ export class Pset {
     );
   }
 
-  addInput(newInput: Input): void {
+  addInput(newInput: Input): this {
     newInput.sanityCheck();
 
     if (this.isDuplicatedInput(newInput)) {
@@ -301,9 +303,11 @@ export class Pset {
 
     this.inputs.push(newInput);
     this.globals.inputCount++;
+
+    return this;
   }
 
-  addOutput(newOutput: Output): void {
+  addOutput(newOutput: Output): this {
     newOutput.sanityCheck();
 
     if (!this.outputsModifiable()) {
@@ -318,6 +322,8 @@ export class Pset {
       }
       this.globals.modifiable!.set(0);
     }
+
+    return this;
   }
 
   validateInputSignatures(

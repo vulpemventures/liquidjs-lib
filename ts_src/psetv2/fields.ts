@@ -12,18 +12,6 @@ export enum GlobalTypes {
   PROPRIETARY = 0xfc,
 }
 
-export const GLOBAL_TYPE_NAMES = [
-  'xpub',
-  'txVersion',
-  'fallbackLocktime',
-  'inputCount',
-  'outputCount',
-  'txModifiable',
-  'sighashSingleInputs',
-  'version',
-  'proprietary',
-];
-
 export enum GlobalProprietaryTypes {
   SCALAR,
   TX_MODIFIABLE,
@@ -53,41 +41,12 @@ export enum InputTypes {
   REQUIRED_HEIGHT_LOCKTIME,
   TAP_KEY_SIG,
   TAP_SCRIPT_SIG,
-  TAP_LEAF_SIG,
+  TAP_LEAF_SCRIPT,
   TAP_BIP32_DERIVATION,
   TAP_INTERNAL_KEY,
   TAP_MERKLE_ROOT,
   PROPRIETARY = 0xfc,
 }
-
-export const INPUT_TYPE_NAMES = [
-  'nonWitnessUtxo',
-  'witnessUtxo',
-  'partialSig',
-  'sighashType',
-  'redeemScript',
-  'witnessScript',
-  'bip32Derivation',
-  'finalScriptSig',
-  'finalScriptWitness',
-  'porCommitment',
-  'ripemd160',
-  'sha256',
-  'hash160',
-  'hash256',
-  'previousTxid',
-  'outputIndex',
-  'sequence',
-  'requiredTimeLocktime',
-  'requiredHeightLocktime',
-  'tapKeySig',
-  'tapScriptSig',
-  'tapLeafSig',
-  'tapBip32Derivation',
-  'tapInternalKey',
-  'tapMerkleRoot',
-  'proprietary',
-];
 
 export enum InputProprietaryTypes {
   ISSUANCE_VALUE,
@@ -109,26 +68,6 @@ export enum InputProprietaryTypes {
   ISSUANCE_BLIND_INFLATION_KEYS_PROOF,
 }
 
-export const INPUT_PROPRIETARY_TYPE_NAMES = [
-  'issuanceValue',
-  'issuanceValueCommitment',
-  'issuanceValueRangeproof',
-  'issuanceKeysRangeproof',
-  'pegInTx',
-  'pegInTxoutProof',
-  'pegInGenesis',
-  'pegInClaimScript',
-  'pegInValue',
-  'pegInWitness',
-  'issuanceInflationKeys',
-  'issuanceInflationKeysCommitment',
-  'issuanceBlindingNonce',
-  'issuanceAssetEntropy',
-  'utxoRangeproof',
-  'issuanceBlindValueProof',
-  'issuanceBlindInflationKeysProof',
-];
-
 export enum OutputTypes {
   REDEEM_SCRIPT,
   WITNESS_SCRIPT,
@@ -140,18 +79,6 @@ export enum OutputTypes {
   TAP_BIP32_DERIVATION,
   PROPRIETARY = 0xfc,
 }
-
-export const OUTPUT_TYPE_NAMES = [
-  'redeemScript',
-  'witnessScript',
-  'bip32Derivation',
-  'amount',
-  'script',
-  'tapInternalKey',
-  'tapTree',
-  'tapBip32Derivation',
-  'proprietary',
-];
 
 export enum OutputProprietaryTypes {
   VALUE_COMMITMENT = 1,
@@ -165,16 +92,3 @@ export enum OutputProprietaryTypes {
   BLIND_VALUE_PROOF,
   BLIND_ASSET_PROOF,
 }
-
-export const OUTPUT_PROPRIETARY_TYPE_NAMES = [
-  'valueCommitment',
-  'asset',
-  'assetCommitment',
-  'valueRangeproof',
-  'assetSurjectionProof',
-  'blindingPubkey',
-  'ecdhPubkey',
-  'blinderIndex',
-  'blindValueProof',
-  'blindAssetProof',
-];

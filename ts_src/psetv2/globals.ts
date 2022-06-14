@@ -1,5 +1,5 @@
 import { GlobalProprietaryTypes, GlobalTypes } from './fields';
-import { Key, KeyPair } from './key_pair';
+import { ErrEmptyKey, Key, KeyPair } from './key_pair';
 import { ProprietaryData } from './proprietary_data';
 import varuint from 'varuint-bitcoin';
 import BitSet from 'bitset';
@@ -18,7 +18,7 @@ export class Global {
       try {
         kp = KeyPair.fromBuffer(r);
       } catch (e) {
-        if ((e as Error).message === 'no more key pairs') {
+        if (e instanceof Error && e === ErrEmptyKey) {
           global.sanityCheck();
           return global;
         }
@@ -155,13 +155,14 @@ export class Global {
     this.fallbackLocktime = fallbackLocktime || 0;
   }
 
-  sanityCheck(): void {
+  sanityCheck(): this {
     if (this.txVersion < 2) {
       throw new Error('Global tx version must be at least 2');
     }
     if (this.txVersion !== 2) {
       throw new Error('Global version must be exactly 2');
     }
+    return this;
   }
 
   toBuffer(): Buffer {
