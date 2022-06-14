@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { BufferReader } from '../bufferutils';
+export declare const ErrEmptyKey: Error;
 export declare class Key {
     static fromBuffer(r: BufferReader): Key;
     keyType: number;

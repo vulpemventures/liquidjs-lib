@@ -1,40 +1,82 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        var desc = Object.getOwnPropertyDescriptor(m, k);
+        if (
+          !desc ||
+          ('get' in desc ? !m.__esModule : desc.writable || desc.configurable)
+        ) {
+          desc = {
+            enumerable: true,
+            get: function() {
+              return m[k];
+            },
+          };
+        }
+        Object.defineProperty(o, k2, desc);
+      }
+    : function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function(o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function(o, v) {
+        o['default'] = v;
+      });
+var __importStar =
+  (this && this.__importStar) ||
+  function(mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null)
+      for (var k in mod)
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.isP2SH = exports.isP2WSH = exports.isP2WPKH = exports.isP2PKH = exports.isP2PK = exports.isP2MS = exports.classifyScript = exports.scriptWitnessToWitnessStack = exports.witnessStackToScriptWitness = exports.hasSigs = exports.getPayment = void 0;
+exports.pubkeyPositionInScript = exports.isP2TR = exports.isP2SH = exports.isP2WSH = exports.isP2WPKH = exports.isP2PKH = exports.isP2PK = exports.isP2MS = exports.classifyScript = exports.scriptWitnessToWitnessStack = exports.witnessStackToScriptWitness = exports.hasSigs = exports.getPayment = void 0;
 const __1 = require('..');
 const bufferutils_1 = require('../bufferutils');
+const crypto_1 = require('../crypto');
+const bscript = __importStar(require('../script'));
 function getPayment(script, scriptType, partialSig) {
-  let payment;
   switch (scriptType) {
     case 'multisig':
       const sigs = getSortedSigs(script, partialSig);
-      payment = __1.payments.p2ms({
+      return __1.payments.p2ms({
         output: script,
         signatures: sigs,
       });
-      break;
     case 'pubkey':
-      payment = __1.payments.p2pk({
+      return __1.payments.p2pk({
         output: script,
         signature: partialSig[0].signature,
       });
-      break;
     case 'pubkeyhash':
-      payment = __1.payments.p2pkh({
+      return __1.payments.p2pkh({
         output: script,
         pubkey: partialSig[0].pubkey,
         signature: partialSig[0].signature,
       });
-      break;
     case 'witnesspubkeyhash':
-      payment = __1.payments.p2wpkh({
+      return __1.payments.p2wpkh({
         output: script,
         pubkey: partialSig[0].pubkey,
         signature: partialSig[0].signature,
       });
-      break;
+    default:
+      throw new Error('unknown script');
   }
-  return payment;
 }
 exports.getPayment = getPayment;
 function hasSigs(neededSigs, partialSig, pubkeys) {
@@ -126,10 +168,12 @@ function compressPubkey(pubkey) {
   return pubkey.slice();
 }
 function classifyScript(script) {
-  if ((0, exports.isP2WPKH)(script)) return 'witnesspubkeyhash';
-  if ((0, exports.isP2PKH)(script)) return 'pubkeyhash';
-  if ((0, exports.isP2MS)(script)) return 'multisig';
-  if ((0, exports.isP2PK)(script)) return 'pubkey';
+  if ((0, exports.isP2PK)(script)) return 'p2pk';
+  if ((0, exports.isP2PKH)(script)) return 'p2pkh';
+  if ((0, exports.isP2MS)(script)) return 'p2ms';
+  if ((0, exports.isP2SH)(script)) return 'p2sh';
+  if ((0, exports.isP2WPKH)(script)) return 'p2wpkh';
+  if ((0, exports.isP2WSH)(script)) return 'p2wsh';
   return 'nonstandard';
 }
 exports.classifyScript = classifyScript;
@@ -149,3 +193,22 @@ exports.isP2PKH = isPaymentFactory(__1.payments.p2pkh);
 exports.isP2WPKH = isPaymentFactory(__1.payments.p2wpkh);
 exports.isP2WSH = isPaymentFactory(__1.payments.p2wsh);
 exports.isP2SH = isPaymentFactory(__1.payments.p2sh);
+// TODO: use payment factory once in place. For now, let's check
+// if the script starts with OP_1.
+const isP2TR = script => script[0] === 0x01;
+exports.isP2TR = isP2TR;
+function pubkeyPositionInScript(pubkey, script) {
+  const pubkeyHash = (0, crypto_1.hash160)(pubkey);
+  const pubkeyXOnly = pubkey.slice(1, 33); // slice before calling?
+  const decompiled = bscript.decompile(script);
+  if (decompiled === null) throw new Error('Unknown script error');
+  return decompiled.findIndex(element => {
+    if (typeof element === 'number') return false;
+    return (
+      element.equals(pubkey) ||
+      element.equals(pubkeyHash) ||
+      element.equals(pubkeyXOnly)
+    );
+  });
+}
+exports.pubkeyPositionInScript = pubkeyPositionInScript;

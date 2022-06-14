@@ -18,7 +18,7 @@ export declare class Global {
     proprietaryData?: ProprietaryData[];
     unknowns?: KeyPair[];
     constructor(txVersion?: number, inputCount?: number, outputCount?: number, version?: number, fallbackLocktime?: number);
-    sanityCheck(): void;
+    sanityCheck(): this;
     toBuffer(): Buffer;
     private getKeyPairs;
 }

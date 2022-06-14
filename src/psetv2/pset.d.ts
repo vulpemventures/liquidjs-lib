@@ -17,7 +17,7 @@ export declare class Pset {
     outputs: Output[];
     globals: Global;
     constructor(globals?: Global, inputs?: Input[], outputs?: Output[]);
-    sanityCheck(): void;
+    sanityCheck(): this;
     copy(): Pset;
     inputsModifiable(): boolean;
     outputsModifiable(): boolean;
@@ -28,11 +28,11 @@ export declare class Pset {
     locktime(): number;
     unsignedTx(): Transaction;
     validateAllSignatures(validator: ValidateSigFunction): boolean;
-    addInput(newInput: Input): void;
-    addOutput(newOutput: Output): void;
+    addInput(newInput: Input): this;
+    addOutput(newOutput: Output): this;
     validateInputSignatures(index: number, validator: ValidateSigFunction): boolean;
     validatePartialSignature(index: number, validator: ValidateSigFunction, ps: PartialSig): boolean;
-    getInputPreimage(index: number, sighashType: number): Buffer;
+    getInputPreimage(index: number, sighashType: number, genesisBlockHash?: Buffer, leafHash?: Buffer): Buffer;
     toBase64(): string;
     toBuffer(): Buffer;
     private isDuplicatedInput;

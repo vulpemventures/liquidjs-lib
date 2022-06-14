@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { BufferReader } from '../bufferutils';
 import { Output, Transaction } from '../transaction';
-import { Bip32Derivation, PartialSig } from './interfaces';
+import { Bip32Derivation, PartialSig, TapBip32Derivation, TapInternalKey, TapKeySig, TapLeafScript, TapMerkleRoot, TapScriptSig } from './interfaces';
 import { KeyPair } from './key_pair';
 import { ProprietaryData } from './proprietary_data';
 export declare class Input {
@@ -24,6 +24,12 @@ export declare class Input {
     sequence: number;
     requiredTimeLocktime?: number;
     requiredHeightLocktime?: number;
+    tapKeySig?: TapKeySig;
+    tapScriptSig?: TapScriptSig[];
+    tapLeafScript?: TapLeafScript[];
+    tapBip32Derivation?: TapBip32Derivation[];
+    tapInternalKey?: TapInternalKey;
+    tapMerkleRoot?: TapMerkleRoot;
     issuanceValue?: number;
     issuanceValueCommitment?: Buffer;
     issuanceValueRangeproof?: Buffer;
@@ -44,11 +50,12 @@ export declare class Input {
     proprietaryData?: ProprietaryData[];
     unknowns?: KeyPair[];
     constructor(previousTxid?: Buffer, previousTxIndex?: number, sequence?: number);
-    sanityCheck(): void;
+    sanityCheck(): this;
     hasIssuance(): boolean;
     hasIssuanceBlinded(): boolean;
     hasReissuance(): boolean;
     isFinalized(): boolean;
+    isTaproot(): boolean;
     getIssuanceAssetHash(): Buffer | undefined;
     getIssuanceInflationKeysHash(blindedIssuance: boolean): Buffer | undefined;
     getUtxo(): Output | undefined;

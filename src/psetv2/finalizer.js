@@ -3,6 +3,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 exports.Finalizer = void 0;
 const __1 = require('..');
 const psbt_1 = require('../psbt');
+const bip371_1 = require('./bip371');
 const utils_1 = require('./utils');
 class Finalizer {
   constructor(pset) {
@@ -19,17 +20,13 @@ class Finalizer {
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
   }
-  finalizeInput(inputIndex, finalScriptsFunc) {
-    // TODO: finalize taproot input
-    return this._finalizeInput(inputIndex, finalScriptsFunc);
-  }
-  _finalizeInput(inIndex, finalScriptsFunc = getFinalScripts) {
+  finalizeInput(inIndex, finalizeFunc = defaultFinalizer) {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
     const input = this.pset.inputs[inIndex];
     if (input.isFinalized()) {
-      return;
+      return this;
     }
     if (input.sighashType <= 0) {
       throw new Error('Missing input sighash type');
@@ -37,31 +34,15 @@ class Finalizer {
     if (!input.getUtxo()) {
       throw new Error('Missing input (non-)witness utxo');
     }
-    if (!input.partialSigs || input.partialSigs.length === 0) {
+    if (
+      (!input.partialSigs || input.partialSigs.length === 0) &&
+      (!input.tapKeySig || input.tapKeySig.length === 0) &&
+      (!input.tapScriptSig || input.tapScriptSig.length === 0)
+    ) {
       throw new Error('Missing input partial signatures');
     }
     const pset = this.pset.copy();
-    const { script, isP2SH, isP2WSH, isSegwit } = getScriptFromInput(input);
-    if (!script) {
-      throw new Error(`No script found for input #${inIndex}`);
-    }
-    if (
-      input.partialSigs.some(
-        ({ signature }) => signature.slice(-1)[0] !== input.sighashType,
-      )
-    ) {
-      throw new Error(
-        'input #${inIndex} and signature sighash types do not match',
-      );
-    }
-    const { finalScriptSig, finalScriptWitness } = finalScriptsFunc(
-      inIndex,
-      input,
-      script,
-      isSegwit,
-      isP2SH,
-      isP2WSH,
-    );
+    const { finalScriptSig, finalScriptWitness } = finalizeFunc(inIndex, pset);
     if (finalScriptSig) {
       pset.inputs[inIndex].finalScriptSig = finalScriptSig;
     }
@@ -75,6 +56,7 @@ class Finalizer {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+    return this;
   }
 }
 exports.Finalizer = Finalizer;
@@ -103,6 +85,34 @@ function getScriptFromInput(input) {
   }
   return res;
 }
+const defaultFinalizer = (inIndex, pset) => {
+  const input = pset.inputs[inIndex];
+  if (input.isTaproot()) return finalizeTaprootInput(inIndex, pset);
+  return finalizeInput(inIndex, pset);
+};
+const finalizeInput = (inIndex, pset) => {
+  const input = pset.inputs[inIndex];
+  const { script, isP2SH, isP2WSH, isSegwit } = getScriptFromInput(input);
+  if (!script) throw new Error(`No script found for input #${inIndex}`);
+  return getFinalScripts(inIndex, input, script, isSegwit, isP2SH, isP2WSH);
+};
+const finalizeTaprootInput = (inIndex, pset) => {
+  const input = pset.inputs[inIndex];
+  if (!input.witnessUtxo)
+    throw new Error(
+      `Cannot finalize input #${inIndex}. Missing withness utxo.`,
+    );
+  // Check key spend first. Increased privacy and reduced block space.
+  if (input.tapKeySig) {
+    return {
+      finalScriptWitness: (0, psbt_1.witnessStackToScriptWitness)([
+        input.tapKeySig,
+      ]),
+    };
+  } else {
+    return getTaprootFinalScripts(inIndex, input);
+  }
+};
 function getFinalScripts(inputIndex, input, script, isSegwit, isP2SH, isP2WSH) {
   const scriptType = (0, utils_1.classifyScript)(script);
   if (!canFinalize(input, script, scriptType))
@@ -169,9 +179,23 @@ function canFinalize(input, script, scriptType) {
     case 'multisig':
       const p2ms = __1.payments.p2ms({ output: script });
       return (0, utils_1.hasSigs)(p2ms.m, input.partialSigs, p2ms.pubkeys);
-    case 'nonstandard':
-      if (script[0] === 81) return true;
     default:
       return false;
+  }
+}
+function getTaprootFinalScripts(inputIndex, input, tapLeafHashToFinalize) {
+  const tapLeaf = (0, bip371_1.findTapLeafToFinalize)(
+    input,
+    inputIndex,
+    tapLeafHashToFinalize,
+  );
+  try {
+    const sigs = (0, bip371_1.sortSignatures)(input, tapLeaf);
+    const witness = sigs.concat(tapLeaf.script).concat(tapLeaf.controlBlock);
+    return {
+      finalScriptWitness: (0, psbt_1.witnessStackToScriptWitness)(witness),
+    };
+  } catch (err) {
+    throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);
   }
 }

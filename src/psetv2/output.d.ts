@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { BufferReader } from '../bufferutils';
-import { Bip32Derivation } from './interfaces';
+import { Bip32Derivation, TapBip32Derivation, TapInternalKey, TapTree } from './interfaces';
 import { KeyPair } from './key_pair';
 import { ProprietaryData } from './proprietary_data';
 export declare class Output {
@@ -10,6 +10,9 @@ export declare class Output {
     bip32Derivation?: Bip32Derivation[];
     value: number;
     script?: Buffer;
+    tapBip32Derivation?: TapBip32Derivation[];
+    tapTree?: TapTree;
+    tapInternalKey?: TapInternalKey;
     valueCommitment?: Buffer;
     asset: Buffer;
     assetCommitment?: Buffer;
@@ -23,10 +26,11 @@ export declare class Output {
     proprietaryData?: ProprietaryData[];
     unknowns?: KeyPair[];
     constructor(value?: number, asset?: Buffer, script?: Buffer);
-    sanityCheck(): void;
+    sanityCheck(): this;
     isBlinded(): boolean;
     isPartiallyBlinded(): boolean;
     isFullyBlinded(): boolean;
+    isTaproot(): boolean;
     toBuffer(): Buffer;
     private getKeyPairs;
 }

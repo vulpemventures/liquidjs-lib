@@ -7,6 +7,7 @@ const fields_1 = require('./fields');
 const key_pair_1 = require('./key_pair');
 const proprietary_data_1 = require('./proprietary_data');
 const pset_1 = require('./pset');
+const utils_1 = require('./utils');
 class Output {
   constructor(value, asset, script) {
     this.value = value || 0;
@@ -20,7 +21,7 @@ class Output {
       try {
         kp = key_pair_1.KeyPair.fromBuffer(r);
       } catch (e) {
-        if (e.message === 'no more key pairs') {
+        if (e instanceof Error && e === key_pair_1.ErrEmptyKey) {
           output.sanityCheck();
           return output;
         }
@@ -68,6 +69,65 @@ class Output {
             throw new Error('duplicated output key SCRIPT');
           }
           output.script = kp.value;
+          break;
+        case fields_1.OutputTypes.TAP_BIP32_DERIVATION:
+          const tapKey = kp.key.keyData;
+          if (tapKey.length !== 33) {
+            throw new Error('invalid output bip32 derivation pubkey length');
+          }
+          if (!output.tapBip32Derivation) {
+            output.tapBip32Derivation = [];
+          }
+          const tapBip32Pubkey = kp.key.keyData;
+          if (
+            output.tapBip32Derivation.find(d => d.pubkey.equals(tapBip32Pubkey))
+          ) {
+            throw new Error('duplicated output taproot bip32 derivation');
+          }
+          const nHashes = bufferutils_1.varuint.decode(kp.value);
+          const nHashesLen = bufferutils_1.varuint.encodingLength(nHashes);
+          const bip32Deriv = (0, bip32_1.decodeBip32Derivation)(
+            kp.value.slice(nHashesLen + nHashes * 32),
+          );
+          const leafHashes = new Array(nHashes);
+          for (let i = 0, _ofs = nHashesLen; i < nHashes; i++, _ofs += 32) {
+            leafHashes[i] = kp.value.slice(_ofs, _ofs + 32);
+          }
+          output.tapBip32Derivation.push({
+            pubkey: tapBip32Pubkey,
+            masterFingerprint: bip32Deriv.masterFingerprint,
+            path: bip32Deriv.path,
+            leafHashes,
+          });
+          break;
+        case fields_1.OutputTypes.TAP_TREE:
+          if (output.tapTree) {
+            throw new Error('duplicated output key TAP_TREE');
+          }
+          let _offset = 0;
+          const leaves = [];
+          while (_offset < kp.value.length) {
+            const depth = kp.value[_offset++];
+            const leafVersion = kp.value[_offset++];
+            const scriptLen = bufferutils_1.varuint.decode(kp.value, _offset);
+            _offset += bufferutils_1.varuint.encodingLength(scriptLen);
+            leaves.push({
+              depth,
+              leafVersion,
+              script: kp.value.slice(_offset, _offset + scriptLen),
+            });
+            _offset += scriptLen;
+          }
+          output.tapTree = { leaves };
+          break;
+        case fields_1.OutputTypes.TAP_INTERNAL_KEY:
+          if (output.tapInternalKey && output.tapInternalKey.length > 0) {
+            throw new Error('duplicated output key TAP_INTERNAL_KEY');
+          }
+          if (kp.value.length !== 32) {
+            throw new Error('invalid output taproot internal key length');
+          }
+          output.tapInternalKey = kp.value;
           break;
         case fields_1.OutputTypes.PROPRIETARY:
           const data = proprietary_data_1.ProprietaryData.fromKeyPair(kp);
@@ -223,6 +283,7 @@ class Output {
     if (this.isFullyBlinded() && this.blinderIndex > 0) {
       throw new Error('blinder index must be unset for fully blinded output');
     }
+    return this;
   }
   isBlinded() {
     return this.blindingPubkey && this.blindingPubkey.length > 0;
@@ -246,6 +307,14 @@ class Output {
         (this.valueRangeproof && this.valueRangeproof.length > 0) &&
         (this.assetSurjectionProof && this.assetSurjectionProof.length) > 0 &&
         (this.ecdhPubkey && this.ecdhPubkey.length > 0))
+    );
+  }
+  isTaproot() {
+    return !!(
+      this.tapInternalKey ||
+      this.tapTree ||
+      (this.tapBip32Derivation && this.tapBip32Derivation.length) ||
+      (this.script && (0, utils_1.isP2TR)(this.script))
     );
   }
   toBuffer() {
@@ -285,6 +354,43 @@ class Output {
     if (this.script) {
       const key = new key_pair_1.Key(fields_1.OutputTypes.SCRIPT);
       keyPairs.push(new key_pair_1.KeyPair(key, this.script));
+    }
+    if (this.tapBip32Derivation && this.tapBip32Derivation.length > 0) {
+      this.tapBip32Derivation.forEach(
+        ({ pubkey, masterFingerprint, path, leafHashes }) => {
+          const key = new key_pair_1.Key(
+            fields_1.OutputTypes.TAP_BIP32_DERIVATION,
+            pubkey,
+          );
+          const nHashesLen = bufferutils_1.varuint.encodingLength(
+            leafHashes.length,
+          );
+          const nHashesBuf = Buffer.allocUnsafe(nHashesLen);
+          bufferutils_1.varuint.encode(leafHashes.length, nHashesBuf);
+          const value = Buffer.concat([
+            nHashesBuf,
+            ...leafHashes,
+            (0, bip32_1.encodeBIP32Derivation)(masterFingerprint, path),
+          ]);
+          keyPairs.push(new key_pair_1.KeyPair(key, value));
+        },
+      );
+    }
+    if (this.tapTree) {
+      const key = new key_pair_1.Key(fields_1.OutputTypes.TAP_TREE);
+      const bufs = [].concat(
+        ...this.tapTree.leaves.map(tapLeaf => [
+          Buffer.of(tapLeaf.depth, tapLeaf.leafVersion),
+          bufferutils_1.varuint.encode(tapLeaf.script.length),
+          tapLeaf.script,
+        ]),
+      );
+      const value = Buffer.concat(bufs);
+      keyPairs.push(new key_pair_1.KeyPair(key, value));
+    }
+    if (this.tapInternalKey && this.tapInternalKey.length > 0) {
+      const key = new key_pair_1.Key(fields_1.OutputTypes.TAP_INTERNAL_KEY);
+      keyPairs.push(new key_pair_1.KeyPair(key, this.tapInternalKey));
     }
     if (this.valueCommitment && this.valueCommitment.length > 0) {
       const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(

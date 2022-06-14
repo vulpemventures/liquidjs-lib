@@ -30,7 +30,7 @@ class Global {
       try {
         kp = key_pair_1.KeyPair.fromBuffer(r);
       } catch (e) {
-        if (e.message === 'no more key pairs') {
+        if (e instanceof Error && e === key_pair_1.ErrEmptyKey) {
           global.sanityCheck();
           return global;
         }
@@ -144,6 +144,7 @@ class Global {
     if (this.txVersion !== 2) {
       throw new Error('Global version must be exactly 2');
     }
+    return this;
   }
   toBuffer() {
     const keyPairs = this.getKeyPairs();

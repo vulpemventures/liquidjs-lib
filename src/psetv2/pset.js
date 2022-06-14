@@ -133,6 +133,7 @@ class Pset {
         'global modifiable flag must be unset for fully blinded pset',
       );
     }
+    return this;
   }
   copy() {
     return new Pset(this.globals, this.inputs, this.outputs);
@@ -308,6 +309,7 @@ class Pset {
     }
     this.inputs.push(newInput);
     this.globals.inputCount++;
+    return this;
   }
   addOutput(newOutput) {
     newOutput.sanityCheck();
@@ -322,6 +324,7 @@ class Pset {
       }
       this.globals.modifiable.set(0);
     }
+    return this;
   }
   validateInputSignatures(index, validator) {
     if (index < 0 || index >= this.globals.inputCount) {
@@ -352,7 +355,7 @@ class Pset {
     checkScriptForPubkey(ps.pubkey, prevout.script, 'verify');
     return validator(ps.pubkey, preimage, ps.signature);
   }
-  getInputPreimage(index, sighashType) {
+  getInputPreimage(index, sighashType, genesisBlockHash, leafHash) {
     if (index < 0 || index >= this.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -362,6 +365,30 @@ class Pset {
       throw new Error('missing input (non-)witness utxo');
     }
     const unsignedTx = this.unsignedTx();
+    if (input.isTaproot()) {
+      if (!genesisBlockHash || genesisBlockHash.length !== 32) {
+        throw new Error('Missing or invalid genesis block hash');
+      }
+      const prevoutScripts = [];
+      const prevoutAssetsValues = [];
+      this.inputs.forEach((v, i) => {
+        const u = v.getUtxo();
+        if (!u) throw new Error(`Missing input ${i} (non-)witness utxo`);
+        prevoutScripts.push(u.script);
+        prevoutAssetsValues.push({
+          asset: u.asset,
+          value: u.value,
+        });
+      });
+      return unsignedTx.hashForWitnessV1(
+        index,
+        prevoutScripts,
+        prevoutAssetsValues,
+        sighashType,
+        genesisBlockHash,
+        leafHash,
+      );
+    }
     const script = input.redeemScript || prevout.script;
     const scriptType = (0, address_1.getScriptType)(script);
     switch (scriptType) {

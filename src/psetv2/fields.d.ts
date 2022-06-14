@@ -10,7 +10,6 @@ export declare enum GlobalTypes {
     VERSION = 251,
     PROPRIETARY = 252
 }
-export declare const GLOBAL_TYPE_NAMES: string[];
 export declare enum GlobalProprietaryTypes {
     SCALAR = 0,
     TX_MODIFIABLE = 1
@@ -38,13 +37,12 @@ export declare enum InputTypes {
     REQUIRED_HEIGHT_LOCKTIME = 18,
     TAP_KEY_SIG = 19,
     TAP_SCRIPT_SIG = 20,
-    TAP_LEAF_SIG = 21,
+    TAP_LEAF_SCRIPT = 21,
     TAP_BIP32_DERIVATION = 22,
     TAP_INTERNAL_KEY = 23,
     TAP_MERKLE_ROOT = 24,
     PROPRIETARY = 252
 }
-export declare const INPUT_TYPE_NAMES: string[];
 export declare enum InputProprietaryTypes {
     ISSUANCE_VALUE = 0,
     ISSUANCE_VALUE_COMMITMENT = 1,
@@ -64,7 +62,6 @@ export declare enum InputProprietaryTypes {
     ISSUANCE_BLIND_VALUE_PROOF = 15,
     ISSUANCE_BLIND_INFLATION_KEYS_PROOF = 16
 }
-export declare const INPUT_PROPRIETARY_TYPE_NAMES: string[];
 export declare enum OutputTypes {
     REDEEM_SCRIPT = 0,
     WITNESS_SCRIPT = 1,
@@ -76,7 +73,6 @@ export declare enum OutputTypes {
     TAP_BIP32_DERIVATION = 7,
     PROPRIETARY = 252
 }
-export declare const OUTPUT_TYPE_NAMES: string[];
 export declare enum OutputProprietaryTypes {
     VALUE_COMMITMENT = 1,
     ASSET = 2,
@@ -89,4 +85,3 @@ export declare enum OutputProprietaryTypes {
     BLIND_VALUE_PROOF = 9,
     BLIND_ASSET_PROOF = 10
 }
-export declare const OUTPUT_PROPRIETARY_TYPE_NAMES: string[];

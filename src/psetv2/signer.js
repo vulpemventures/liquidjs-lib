@@ -9,26 +9,39 @@ class Signer {
     pset.sanityCheck();
     this.pset = pset;
   }
-  signInput(inIndex, psig, validator, redeemScript, witnessScript) {
+  signInput(inIndex, data, validator) {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
     const input = this.pset.inputs[inIndex];
     if (input.isFinalized()) {
-      return;
+      return this;
     }
-    if (!input.sighashType) {
+    if (input.sighashType === undefined) {
       throw new Error('missing input sighash type');
     }
-    const pset = this.pset.copy();
-    const sighashType = input.sighashType;
-    if (psig.signature.slice(-1)[0] !== sighashType) {
-      throw new Error('input and signature sighash types must match');
-    }
-    if ((sighashType & 0x1f) === transaction_1.Transaction.SIGHASH_ALL) {
-      if (pset.outputs.some(out => out.isBlinded() && !out.isFullyBlinded())) {
+    if ((input.sighashType & 0x1f) === transaction_1.Transaction.SIGHASH_ALL) {
+      if (
+        this.pset.outputs.some(out => out.isBlinded() && !out.isFullyBlinded())
+      ) {
         throw new Error('pset must be fully blinded');
       }
+    }
+    if (input.isTaproot()) {
+      return this._signTaprootInput(inIndex, data, validator);
+    }
+    return this._signInput(inIndex, data, validator);
+  }
+  _signInput(inIndex, data, validator) {
+    const input = this.pset.inputs[inIndex];
+    const pset = this.pset.copy();
+    const sighashType = input.sighashType;
+    const { psig, witnessScript, redeemScript } = data;
+    if (!psig) {
+      throw new Error('missing partial signature for input');
+    }
+    if (psig.signature.slice(-1)[0] !== sighashType) {
+      throw new Error('input and signature sighash types must match');
     }
     // in case a witness script is passed, we make sure that the input witness
     // utxo is set and we eventually unset the non-witness one if necessary.
@@ -77,6 +90,28 @@ class Signer {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+    return this;
+  }
+  _signTaprootInput(inIndex, data, validator) {
+    const pset = this.pset.copy();
+    const { tapKeySig, tapScriptSigs, genesisBlockHash } = data;
+    if (!tapKeySig && (!tapScriptSigs || !tapScriptSigs.length)) {
+      throw new Error('missing taproot signature');
+    }
+    const u = new updater_1.Updater(pset);
+    if (!!tapKeySig) {
+      u.addInTapKeySig(inIndex, tapKeySig, genesisBlockHash, validator);
+    }
+    if (!!tapScriptSigs) {
+      tapScriptSigs.forEach(tapScriptSig => {
+        u.addInTapScriptSig(inIndex, tapScriptSig, genesisBlockHash, validator);
+      });
+    }
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+    return this;
   }
 }
 exports.Signer = Signer;

@@ -1,6 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.OUTPUT_PROPRIETARY_TYPE_NAMES = exports.OutputProprietaryTypes = exports.OUTPUT_TYPE_NAMES = exports.OutputTypes = exports.INPUT_PROPRIETARY_TYPE_NAMES = exports.InputProprietaryTypes = exports.INPUT_TYPE_NAMES = exports.InputTypes = exports.GLOBAL_PROPRIETARY_TYPE_NAMES = exports.GlobalProprietaryTypes = exports.GLOBAL_TYPE_NAMES = exports.GlobalTypes = exports.separator = void 0;
+exports.OutputProprietaryTypes = exports.OutputTypes = exports.InputProprietaryTypes = exports.InputTypes = exports.GLOBAL_PROPRIETARY_TYPE_NAMES = exports.GlobalProprietaryTypes = exports.GlobalTypes = exports.separator = void 0;
 exports.separator = 0x00;
 var GlobalTypes;
 (function(GlobalTypes) {
@@ -15,17 +15,6 @@ var GlobalTypes;
   GlobalTypes[(GlobalTypes['VERSION'] = 251)] = 'VERSION';
   GlobalTypes[(GlobalTypes['PROPRIETARY'] = 252)] = 'PROPRIETARY';
 })((GlobalTypes = exports.GlobalTypes || (exports.GlobalTypes = {})));
-exports.GLOBAL_TYPE_NAMES = [
-  'xpub',
-  'txVersion',
-  'fallbackLocktime',
-  'inputCount',
-  'outputCount',
-  'txModifiable',
-  'sighashSingleInputs',
-  'version',
-  'proprietary',
-];
 var GlobalProprietaryTypes;
 (function(GlobalProprietaryTypes) {
   GlobalProprietaryTypes[(GlobalProprietaryTypes['SCALAR'] = 0)] = 'SCALAR';
@@ -61,41 +50,13 @@ var InputTypes;
     'REQUIRED_HEIGHT_LOCKTIME';
   InputTypes[(InputTypes['TAP_KEY_SIG'] = 19)] = 'TAP_KEY_SIG';
   InputTypes[(InputTypes['TAP_SCRIPT_SIG'] = 20)] = 'TAP_SCRIPT_SIG';
-  InputTypes[(InputTypes['TAP_LEAF_SIG'] = 21)] = 'TAP_LEAF_SIG';
+  InputTypes[(InputTypes['TAP_LEAF_SCRIPT'] = 21)] = 'TAP_LEAF_SCRIPT';
   InputTypes[(InputTypes['TAP_BIP32_DERIVATION'] = 22)] =
     'TAP_BIP32_DERIVATION';
   InputTypes[(InputTypes['TAP_INTERNAL_KEY'] = 23)] = 'TAP_INTERNAL_KEY';
   InputTypes[(InputTypes['TAP_MERKLE_ROOT'] = 24)] = 'TAP_MERKLE_ROOT';
   InputTypes[(InputTypes['PROPRIETARY'] = 252)] = 'PROPRIETARY';
 })((InputTypes = exports.InputTypes || (exports.InputTypes = {})));
-exports.INPUT_TYPE_NAMES = [
-  'nonWitnessUtxo',
-  'witnessUtxo',
-  'partialSig',
-  'sighashType',
-  'redeemScript',
-  'witnessScript',
-  'bip32Derivation',
-  'finalScriptSig',
-  'finalScriptWitness',
-  'porCommitment',
-  'ripemd160',
-  'sha256',
-  'hash160',
-  'hash256',
-  'previousTxid',
-  'outputIndex',
-  'sequence',
-  'requiredTimeLocktime',
-  'requiredHeightLocktime',
-  'tapKeySig',
-  'tapScriptSig',
-  'tapLeafSig',
-  'tapBip32Derivation',
-  'tapInternalKey',
-  'tapMerkleRoot',
-  'proprietary',
-];
 var InputProprietaryTypes;
 (function(InputProprietaryTypes) {
   InputProprietaryTypes[(InputProprietaryTypes['ISSUANCE_VALUE'] = 0)] =
@@ -144,25 +105,6 @@ var InputProprietaryTypes;
   (InputProprietaryTypes =
     exports.InputProprietaryTypes || (exports.InputProprietaryTypes = {})),
 );
-exports.INPUT_PROPRIETARY_TYPE_NAMES = [
-  'issuanceValue',
-  'issuanceValueCommitment',
-  'issuanceValueRangeproof',
-  'issuanceKeysRangeproof',
-  'pegInTx',
-  'pegInTxoutProof',
-  'pegInGenesis',
-  'pegInClaimScript',
-  'pegInValue',
-  'pegInWitness',
-  'issuanceInflationKeys',
-  'issuanceInflationKeysCommitment',
-  'issuanceBlindingNonce',
-  'issuanceAssetEntropy',
-  'utxoRangeproof',
-  'issuanceBlindValueProof',
-  'issuanceBlindInflationKeysProof',
-];
 var OutputTypes;
 (function(OutputTypes) {
   OutputTypes[(OutputTypes['REDEEM_SCRIPT'] = 0)] = 'REDEEM_SCRIPT';
@@ -176,17 +118,6 @@ var OutputTypes;
     'TAP_BIP32_DERIVATION';
   OutputTypes[(OutputTypes['PROPRIETARY'] = 252)] = 'PROPRIETARY';
 })((OutputTypes = exports.OutputTypes || (exports.OutputTypes = {})));
-exports.OUTPUT_TYPE_NAMES = [
-  'redeemScript',
-  'witnessScript',
-  'bip32Derivation',
-  'amount',
-  'script',
-  'tapInternalKey',
-  'tapTree',
-  'tapBip32Derivation',
-  'proprietary',
-];
 var OutputProprietaryTypes;
 (function(OutputProprietaryTypes) {
   OutputProprietaryTypes[(OutputProprietaryTypes['VALUE_COMMITMENT'] = 1)] =
@@ -213,15 +144,3 @@ var OutputProprietaryTypes;
   (OutputProprietaryTypes =
     exports.OutputProprietaryTypes || (exports.OutputProprietaryTypes = {})),
 );
-exports.OUTPUT_PROPRIETARY_TYPE_NAMES = [
-  'valueCommitment',
-  'asset',
-  'assetCommitment',
-  'valueRangeproof',
-  'assetSurjectionProof',
-  'blindingPubkey',
-  'ecdhPubkey',
-  'blinderIndex',
-  'blindValueProof',
-  'blindAssetProof',
-];

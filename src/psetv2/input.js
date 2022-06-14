@@ -54,6 +54,7 @@ const key_pair_1 = require('./key_pair');
 const proprietary_data_1 = require('./proprietary_data');
 const pset_1 = require('./pset');
 const bscript = __importStar(require('../script'));
+const utils_1 = require('./utils');
 class Input {
   constructor(previousTxid, previousTxIndex, sequence) {
     this.previousTxid = previousTxid || Buffer.from([]);
@@ -67,7 +68,7 @@ class Input {
       try {
         kp = key_pair_1.KeyPair.fromBuffer(r);
       } catch (e) {
-        if (e.message === 'no more key pairs') {
+        if (e instanceof Error && e === key_pair_1.ErrEmptyKey) {
           input.sanityCheck();
           return input;
         }
@@ -233,6 +234,106 @@ class Input {
             throw new Error('invalid input height-based locktime length');
           }
           input.requiredHeightLocktime = kp.value.readUInt32LE();
+          break;
+        case fields_1.InputTypes.TAP_KEY_SIG:
+          if (input.tapKeySig && input.tapKeySig.length > 0) {
+            throw new Error('duplicated input key TAP_KEY_SIG');
+          }
+          if (kp.value.length !== 64 && kp.value.length !== 65) {
+            throw new Error('invalid input taproot key signature length');
+          }
+          input.tapKeySig = kp.value;
+          break;
+        case fields_1.InputTypes.TAP_SCRIPT_SIG:
+          if (!input.tapScriptSig) {
+            input.tapScriptSig = [];
+          }
+          if (kp.key.keyData.length !== 64) {
+            throw new Error('invalid input TAP_SCRIPT_SIG key data length');
+          }
+          const tapPubkey = kp.key.keyData.slice(0, 32);
+          const leafHash = kp.key.keyData.slice(32);
+          if (input.tapScriptSig.find(ps => ps.pubkey.equals(tapPubkey))) {
+            throw new Error('duplicated input key TAP_SCRIPT_SIG');
+          }
+          if (kp.value.length !== 64 && kp.value.length !== 65) {
+            throw new Error('invalid input taproot key signature length');
+          }
+          input.tapScriptSig.push({
+            pubkey: tapPubkey,
+            leafHash,
+            signature: kp.value,
+          });
+          break;
+        case fields_1.InputTypes.TAP_LEAF_SCRIPT:
+          if (!input.tapLeafScript) {
+            input.tapLeafScript = [];
+          }
+          if ((kp.key.keyData.length - 1) % 32 !== 0) {
+            throw new Error('invalid input TAP_LEAF_SCRIPT key data length');
+          }
+          const controlBlock = kp.key.keyData;
+          const leafVersion = kp.value.slice(-1)[0];
+          if ((controlBlock[0] & 0xfe) !== leafVersion) {
+            throw new Error('invalid input taproot leaf script version');
+          }
+          input.tapLeafScript.push({
+            controlBlock,
+            leafVersion,
+            script: kp.value,
+          });
+          break;
+        case fields_1.InputTypes.TAP_BIP32_DERIVATION:
+          const tapKey = kp.key.keyData;
+          if (tapKey.length !== 33) {
+            throw new Error('invalid input bip32 derivation pubkey length');
+          }
+          if (!input.tapBip32Derivation) {
+            input.tapBip32Derivation = [];
+          }
+          const tapBip32Pubkey = kp.key.keyData;
+          if (
+            input.tapBip32Derivation.find(d => d.pubkey.equals(tapBip32Pubkey))
+          ) {
+            throw new Error('duplicated input taproot bip32 derivation');
+          }
+          const nHashes = bufferutils_1.varuint.decode(kp.value);
+          const nHashesLen = bufferutils_1.varuint.encodingLength(nHashes);
+          const bip32Deriv = (0, bip32_1.decodeBip32Derivation)(
+            kp.value.slice(nHashesLen + nHashes * 32),
+          );
+          const leafHashes = new Array(nHashes);
+          for (
+            let i = 0, _offset = nHashesLen;
+            i < nHashes;
+            i++, _offset += 32
+          ) {
+            leafHashes[i] = kp.value.slice(_offset, _offset + 32);
+          }
+          input.tapBip32Derivation.push({
+            pubkey: tapBip32Pubkey,
+            masterFingerprint: bip32Deriv.masterFingerprint,
+            path: bip32Deriv.path,
+            leafHashes,
+          });
+          break;
+        case fields_1.InputTypes.TAP_INTERNAL_KEY:
+          if (input.tapInternalKey && input.tapInternalKey.length > 0) {
+            throw new Error('duplicated input key TAP_INTERNAL_KEY');
+          }
+          if (kp.value.length !== 32) {
+            throw new Error('invalid input taproot internal key length');
+          }
+          input.tapInternalKey = kp.value;
+          break;
+        case fields_1.InputTypes.TAP_MERKLE_ROOT:
+          if (input.tapMerkleRoot && input.tapMerkleRoot.length > 0) {
+            throw new Error('duplicated input key TAP_MERKLE_ROOT');
+          }
+          if (kp.value.length !== 32) {
+            throw new Error('invalid input taproot merkle root length');
+          }
+          input.tapMerkleRoot = kp.value;
           break;
         case fields_1.InputTypes.PROPRIETARY:
           const data = proprietary_data_1.ProprietaryData.fromKeyPair(kp);
@@ -481,6 +582,7 @@ class Input {
         'input issuance inflation keys commitment and range proof must be both either set or unset',
       );
     }
+    return this;
   }
   hasIssuance() {
     return this.issuanceValue > 0 || this.issuanceInflationKeys > 0;
@@ -498,6 +600,15 @@ class Input {
     return (
       (this.finalScriptSig && this.finalScriptSig.length > 0) ||
       (this.finalScriptWitness && this.finalScriptWitness.length > 0)
+    );
+  }
+  isTaproot() {
+    return (
+      (this.tapInternalKey && this.tapInternalKey.length > 0) ||
+      (this.tapMerkleRoot && this.tapMerkleRoot.length > 0) ||
+      (this.tapLeafScript && this.tapLeafScript.length > 0) ||
+      (this.tapBip32Derivation && this.tapBip32Derivation.length > 0) ||
+      (this.witnessUtxo && (0, utils_1.isP2TR)(this.witnessUtxo.script))
     );
   }
   getIssuanceAssetHash() {
@@ -679,6 +790,59 @@ class Input {
       const value = Buffer.allocUnsafe(4);
       value.writeUInt32LE(this.requiredHeightLocktime);
       keyPairs.push(new key_pair_1.KeyPair(key, value));
+    }
+    if (this.tapKeySig && this.tapKeySig.length > 0) {
+      const key = new key_pair_1.Key(fields_1.InputTypes.TAP_KEY_SIG);
+      keyPairs.push(new key_pair_1.KeyPair(key, this.tapKeySig));
+    }
+    if (this.tapScriptSig && this.tapScriptSig.length > 0) {
+      this.tapScriptSig.forEach(({ pubkey, signature, leafHash }) => {
+        const keyData = Buffer.concat([pubkey, leafHash]);
+        const key = new key_pair_1.Key(
+          fields_1.InputTypes.TAP_SCRIPT_SIG,
+          keyData,
+        );
+        keyPairs.push(new key_pair_1.KeyPair(key, signature));
+      });
+    }
+    if (this.tapLeafScript && this.tapLeafScript.length > 0) {
+      this.tapLeafScript.forEach(({ leafVersion, script, controlBlock }) => {
+        const key = new key_pair_1.Key(
+          fields_1.InputTypes.TAP_LEAF_SCRIPT,
+          controlBlock,
+        );
+        const value = Buffer.concat([script, Buffer.of(leafVersion)]);
+        keyPairs.push(new key_pair_1.KeyPair(key, value));
+      });
+    }
+    if (this.tapBip32Derivation && this.tapBip32Derivation.length > 0) {
+      this.tapBip32Derivation.forEach(
+        ({ pubkey, masterFingerprint, path, leafHashes }) => {
+          const key = new key_pair_1.Key(
+            fields_1.InputTypes.TAP_BIP32_DERIVATION,
+            pubkey,
+          );
+          const nHashesLen = bufferutils_1.varuint.encodingLength(
+            leafHashes.length,
+          );
+          const nHashesBuf = Buffer.allocUnsafe(nHashesLen);
+          bufferutils_1.varuint.encode(leafHashes.length, nHashesBuf);
+          const value = Buffer.concat([
+            nHashesBuf,
+            ...leafHashes,
+            (0, bip32_1.encodeBIP32Derivation)(masterFingerprint, path),
+          ]);
+          keyPairs.push(new key_pair_1.KeyPair(key, value));
+        },
+      );
+    }
+    if (this.tapInternalKey && this.tapInternalKey.length > 0) {
+      const key = new key_pair_1.Key(fields_1.InputTypes.TAP_INTERNAL_KEY);
+      keyPairs.push(new key_pair_1.KeyPair(key, this.tapInternalKey));
+    }
+    if (this.tapMerkleRoot && this.tapMerkleRoot.length > 0) {
+      const key = new key_pair_1.Key(fields_1.InputTypes.TAP_MERKLE_ROOT);
+      keyPairs.push(new key_pair_1.KeyPair(key, this.tapMerkleRoot));
     }
     if (this.issuanceValue > 0) {
       const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
