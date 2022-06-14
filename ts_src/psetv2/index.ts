@@ -12,7 +12,7 @@ import {
   OutputBlindingArgs,
   OwnedInput,
 } from './blinder';
-import { Signer } from './signer';
+import { Signer, BIP174SigningData, BIP371SigningData } from './signer';
 import { Finalizer, FinalizeFunc } from './finalizer';
 import { Extractor } from './extractor';
 
@@ -22,6 +22,8 @@ export {
   Blinder,
   BlindingGenerator,
   BlindingValidator,
+  BIP174SigningData,
+  BIP371SigningData,
   Creator,
   Extractor,
   Finalizer,

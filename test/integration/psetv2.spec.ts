@@ -9,6 +9,7 @@ import {
   Finalizer as PsetFinalizer,
   Extractor as PsetExtractor,
   Blinder as PsetBlinder,
+  BIP174SigningData,
 } from '../../ts_src/psetv2';
 import { AssetHash } from '../../ts_src/asset';
 import { ZKPGenerator, ZKPValidator } from '../../ts_src/confidential';
@@ -467,9 +468,11 @@ function signTransaction(
   signers.forEach((keyPairs, i) => {
     const preimage = pset.getInputPreimage(i, sighashType);
     keyPairs.forEach((kp: any) => {
-      const partialSig = {
-        pubkey: kp.publicKey,
-        signature: bscript.signature.encode(kp.sign(preimage), sighashType),
+      const partialSig: BIP174SigningData = {
+        psig: {
+          pubkey: kp.publicKey,
+          signature: bscript.signature.encode(kp.sign(preimage), sighashType),
+        },
       };
       signer.signInput(i, partialSig, Pset.ECDSASigValidator(ecc));
     });
