@@ -13,7 +13,7 @@ import {
   OwnedInput,
 } from './blinder';
 import { Signer } from './signer';
-import { Finalizer, FinalScriptsFunc } from './finalizer';
+import { Finalizer, FinalizeFunc } from './finalizer';
 import { Extractor } from './extractor';
 
 export {
@@ -25,7 +25,7 @@ export {
   Creator,
   Extractor,
   Finalizer,
-  FinalScriptsFunc,
+  FinalizeFunc,
   Input,
   IssuanceBlindingArgs,
   Output,

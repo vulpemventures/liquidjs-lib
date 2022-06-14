@@ -1,5 +1,7 @@
 import { payments } from '..';
 import { varuint } from '../bufferutils';
+import { hash160 } from '../crypto';
+import * as bscript from '../script';
 import { PartialSig } from './interfaces';
 
 export function getPayment(
@@ -32,7 +34,7 @@ export function getPayment(
         signature: partialSig[0].signature,
       });
     default:
-      throw new Error('unknown script')
+      throw new Error('unknown script');
   }
 }
 
@@ -143,17 +145,22 @@ function compressPubkey(pubkey: Buffer): Buffer {
 }
 
 type ScriptType =
-  | 'witnesspubkeyhash'
-  | 'pubkeyhash'
-  | 'multisig'
-  | 'pubkey'
+  | 'p2pk'
+  | 'p2pkh'
+  | 'p2ms'
+  | 'p2sh'
+  | 'p2wpkh'
+  | 'p2wsh'
+  | 'p2tr'
   | 'nonstandard';
 
 export function classifyScript(script: Buffer): ScriptType {
-  if (isP2WPKH(script)) return 'witnesspubkeyhash';
-  if (isP2PKH(script)) return 'pubkeyhash';
-  if (isP2MS(script)) return 'multisig';
-  if (isP2PK(script)) return 'pubkey';
+  if (isP2PK(script)) return 'p2pk';
+  if (isP2PKH(script)) return 'p2pkh';
+  if (isP2MS(script)) return 'p2ms';
+  if (isP2SH(script)) return 'p2sh';
+  if (isP2WPKH(script)) return 'p2wpkh';
+  if (isP2WSH(script)) return 'p2wsh';
   return 'nonstandard';
 }
 
@@ -174,3 +181,23 @@ export const isP2PKH = isPaymentFactory(payments.p2pkh);
 export const isP2WPKH = isPaymentFactory(payments.p2wpkh);
 export const isP2WSH = isPaymentFactory(payments.p2wsh);
 export const isP2SH = isPaymentFactory(payments.p2sh);
+// TODO: use payment factory once in place. For now, let's check
+// if the script starts with OP_1.
+export const isP2TR = (script: Buffer): boolean => script[0] === 0x01;
+
+export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
+  const pubkeyHash = hash160(pubkey);
+  const pubkeyXOnly = pubkey.slice(1, 33); // slice before calling?
+
+  const decompiled = bscript.decompile(script);
+  if (decompiled === null) throw new Error('Unknown script error');
+
+  return decompiled.findIndex(element => {
+    if (typeof element === 'number') return false;
+    return (
+      element.equals(pubkey) ||
+      element.equals(pubkeyHash) ||
+      element.equals(pubkeyXOnly)
+    );
+  });
+}

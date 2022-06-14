@@ -366,7 +366,12 @@ export class Pset {
     return validator(ps.pubkey, preimage, ps.signature);
   }
 
-  getInputPreimage(index: number, sighashType: number): Buffer {
+  getInputPreimage(
+    index: number,
+    sighashType: number,
+    genesisBlockHash?: Buffer,
+    leafHash?: Buffer,
+  ): Buffer {
     if (index < 0 || index >= this.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -376,6 +381,32 @@ export class Pset {
       throw new Error('missing input (non-)witness utxo');
     }
     const unsignedTx = this.unsignedTx();
+
+    if (input.isTaproot()) {
+      if (!genesisBlockHash || genesisBlockHash.length !== 32) {
+        throw new Error('Missing or invalid genesis block hash');
+      }
+      const prevoutScripts: Buffer[] = [];
+      const prevoutAssetsValues: { asset: Buffer; value: Buffer }[] = [];
+      this.inputs.forEach((v, i) => {
+        const u = v.getUtxo();
+        if (!u) throw new Error(`Missing input ${i} (non-)witness utxo`);
+        prevoutScripts.push(u.script);
+        prevoutAssetsValues.push({
+          asset: u.asset,
+          value: u.value,
+        });
+      });
+
+      return unsignedTx.hashForWitnessV1(
+        index,
+        prevoutScripts,
+        prevoutAssetsValues,
+        sighashType,
+        genesisBlockHash!,
+        leafHash,
+      );
+    }
     const script = input.redeemScript || prevout!.script;
     const scriptType = getScriptType(script);
 

@@ -1,8 +1,20 @@
 import { Transaction } from '../transaction';
-import { PartialSig } from './interfaces';
+import { PartialSig, TapKeySig, TapScriptSig } from './interfaces';
 import { Pset, ValidateSigFunction } from './pset';
 import { Updater } from './updater';
 import { isP2WPKH, isP2WSH } from './utils';
+
+export interface BIP174SigningData {
+  psig: PartialSig;
+  redeemScript?: Buffer;
+  witnessScript?: Buffer;
+}
+
+export interface BIP371SigningData {
+  tapKeySig?: TapKeySig;
+  tapScriptSigs?: TapScriptSig[];
+  genesisBlockHash: Buffer;
+}
 
 export class Signer {
   pset: Pset;
@@ -14,31 +26,49 @@ export class Signer {
 
   signInput(
     inIndex: number,
-    psig: PartialSig,
+    data: BIP174SigningData | BIP371SigningData,
     validator: ValidateSigFunction,
-    redeemScript?: Buffer,
-    witnessScript?: Buffer,
-  ): void {
+  ): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
     const input = this.pset.inputs[inIndex];
     if (input.isFinalized()) {
-      return;
+      return this;
     }
-    if (!input.sighashType) {
+    if (input.sighashType === undefined) {
       throw new Error('missing input sighash type');
     }
-
-    const pset = this.pset.copy();
-    const sighashType = input.sighashType!;
-    if (psig.signature.slice(-1)[0] !== sighashType) {
-      throw new Error('input and signature sighash types must match');
-    }
-    if ((sighashType & 0x1f) === Transaction.SIGHASH_ALL) {
-      if (pset.outputs.some(out => out.isBlinded() && !out.isFullyBlinded())) {
+    if ((input.sighashType & 0x1f) === Transaction.SIGHASH_ALL) {
+      if (
+        this.pset.outputs.some(out => out.isBlinded() && !out.isFullyBlinded())
+      ) {
         throw new Error('pset must be fully blinded');
       }
+    }
+
+    if (input.isTaproot()) {
+      return this._signTaprootInput(inIndex, data, validator);
+    }
+
+    return this._signInput(inIndex, data, validator);
+  }
+
+  private _signInput(
+    inIndex: number,
+    data: BIP174SigningData | BIP371SigningData,
+    validator: ValidateSigFunction,
+  ): this {
+    const input = this.pset.inputs[inIndex];
+    const pset = this.pset.copy();
+    const sighashType = input.sighashType!;
+
+    const { psig, witnessScript, redeemScript } = data as BIP174SigningData;
+    if (!psig) {
+      throw new Error('missing partial signature for input');
+    }
+    if (psig.signature.slice(-1)[0] !== sighashType) {
+      throw new Error('input and signature sighash types must match');
     }
 
     // in case a witness script is passed, we make sure that the input witness
@@ -89,5 +119,42 @@ export class Signer {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  private _signTaprootInput(
+    inIndex: number,
+    data: BIP174SigningData | BIP371SigningData,
+    validator: ValidateSigFunction,
+  ): this {
+    const pset = this.pset.copy();
+
+    const {
+      tapKeySig,
+      tapScriptSigs,
+      genesisBlockHash,
+    } = data as BIP371SigningData;
+    if (!tapKeySig && (!tapScriptSigs || !tapScriptSigs.length)) {
+      throw new Error('missing taproot signature');
+    }
+
+    const u = new Updater(pset);
+    if (!!tapKeySig) {
+      u.addInTapKeySig(inIndex, tapKeySig, genesisBlockHash, validator);
+    }
+    if (!!tapScriptSigs) {
+      tapScriptSigs.forEach(tapScriptSig => {
+        u.addInTapScriptSig(inIndex, tapScriptSig, genesisBlockHash, validator);
+      });
+    }
+
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
   }
 }

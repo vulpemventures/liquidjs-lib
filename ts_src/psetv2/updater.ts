@@ -10,7 +10,16 @@ import {
 } from '../issuance';
 import { Transaction } from '../transaction';
 import { Input, Output } from './creator';
-import { Bip32Derivation, PartialSig } from './interfaces';
+import {
+  Bip32Derivation,
+  PartialSig,
+  TapBip32Derivation,
+  TapInternalKey,
+  TapLeafScript,
+  TapMerkleRoot,
+  TapScriptSig,
+  TapTree,
+} from './interfaces';
 import { Pset, ValidateSigFunction } from './pset';
 import * as bscript from '../script';
 
@@ -40,7 +49,7 @@ export class Updater {
     this.pset = pset;
   }
 
-  addInputs(ins: Input[]): void {
+  addInputs(ins: Input[]): this {
     const pset = this.pset.copy();
 
     ins.forEach(input => {
@@ -53,9 +62,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addOutputs(outs: Output[]): void {
+  addOutputs(outs: Output[]): this {
     const pset = this.pset.copy();
 
     outs.forEach(output => {
@@ -68,9 +79,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addInNonWitnessUtxo(inIndex: number, nonWitnessUtxo: Transaction): void {
+  addInNonWitnessUtxo(inIndex: number, nonWitnessUtxo: Transaction): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -85,9 +98,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addInWitnessUtxo(inIndex: number, witnessUtxo: TxOutput): void {
+  addInWitnessUtxo(inIndex: number, witnessUtxo: TxOutput): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -98,9 +113,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addInRedeemScript(inIndex: number, redeemScript: Buffer): void {
+  addInRedeemScript(inIndex: number, redeemScript: Buffer): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -111,9 +128,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addInWitnessScript(inIndex: number, witnessScript: Buffer): void {
+  addInWitnessScript(inIndex: number, witnessScript: Buffer): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -124,9 +143,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addInBIP32Derivation(inIndex: number, d: Bip32Derivation): void {
+  addInBIP32Derivation(inIndex: number, d: Bip32Derivation): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -152,9 +173,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addInSighashType(inIndex: number, sighashType: number): void {
+  addInSighashType(inIndex: number, sighashType: number): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -169,9 +192,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addInIssuance(inIndex: number, args: AddInIssuanceArgs): void {
+  addInIssuance(inIndex: number, args: AddInIssuanceArgs): this {
     this.validateIssuanceInput(inIndex);
     validateAddInIssuanceArgs(args);
 
@@ -229,9 +254,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addInReissuance(inIndex: number, args: AddInReissuanceArgs): void {
+  addInReissuance(inIndex: number, args: AddInReissuanceArgs): this {
     this.validateReissuanceInput(inIndex);
     validateAddInReissuanceArgs(args);
 
@@ -275,13 +302,15 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
   addInPartialSignature(
     inIndex: number,
     ps: PartialSig,
     validator: ValidateSigFunction,
-  ): void {
+  ): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -318,9 +347,209 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): void {
+  addInTapKeySig(
+    inIndex: number,
+    sig: Buffer,
+    genesisBlockHash: Buffer,
+    validator: ValidateSigFunction,
+  ): this {
+    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
+    }
+    if (sig.length !== 64 && sig.length !== 65) {
+      throw new Error('Invalid taproot key signature length');
+    }
+    if (genesisBlockHash.length !== 32) {
+      throw new Error('Invalid genesis block hash length');
+    }
+
+    const pset = this.pset.copy();
+    const input = pset.inputs[inIndex];
+
+    if (!input.getUtxo()) {
+      throw new Error('Missing input witness utxo');
+    }
+    if (input.sighashType === undefined) {
+      throw new Error('Missing input sighash type');
+    }
+
+    const tweakedKey = input.getUtxo()!.script.slice(2);
+    const sighash = pset.getInputPreimage(
+      inIndex,
+      input.sighashType!,
+      genesisBlockHash,
+    );
+    if (!validator(tweakedKey, sighash, sig)) {
+      throw new Error(`Invalid taproot key signature for input ${inIndex}`);
+    }
+
+    pset.inputs[inIndex].tapKeySig = sig;
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addInTapScriptSig(
+    inIndex: number,
+    sig: TapScriptSig,
+    genesisBlockHash: Buffer,
+    validator: ValidateSigFunction,
+  ): this {
+    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
+    }
+    if (sig.pubkey.length !== 32) {
+      throw new Error('Invalid xonly pubkey length');
+    }
+    if (sig.leafHash.length !== 32) {
+      throw new Error('Invalid leaf hash length');
+    }
+    if (sig.signature.length !== 64 && sig.signature.length !== 65) {
+      throw new Error('Invalid signarure length');
+    }
+    if (genesisBlockHash.length !== 32) {
+      throw new Error('Invalid genesis block hash length');
+    }
+
+    const pset = this.pset.copy();
+    const input = pset.inputs[inIndex];
+
+    if (input.sighashType === undefined) {
+      throw new Error('Missing input sighash type');
+    }
+
+    const sighash = pset.getInputPreimage(
+      inIndex,
+      input.sighashType!,
+      genesisBlockHash,
+      sig.leafHash,
+    );
+
+    if (!validator(sig.pubkey, sighash, sig.signature)) {
+      throw new Error(`Invalid taproot script signature for input ${inIndex}`);
+    }
+
+    if (!pset.inputs[inIndex].tapScriptSig) {
+      pset.inputs[inIndex].tapScriptSig = [];
+    }
+    pset.inputs[inIndex].tapScriptSig!.push(sig);
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addInTapLeafScript(inIndex: number, leafScript: TapLeafScript): this {
+    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
+      throw new Error('input index out of range');
+    }
+
+    const pset = this.pset.copy();
+    if (!pset.inputs[inIndex].tapLeafScript) {
+      pset.inputs[inIndex].tapLeafScript = [];
+    }
+    pset.inputs[inIndex].tapLeafScript!.push(leafScript);
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addInTapBIP32Derivation(inIndex: number, d: TapBip32Derivation): this {
+    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
+      throw new Error('input index out of range');
+    }
+
+    if (d.pubkey.length !== 33) {
+      throw new Error('invalid input taproot pubkey length');
+    }
+
+    const pset = this.pset.copy();
+    if (!pset.inputs[inIndex].tapBip32Derivation) {
+      pset.inputs[inIndex].tapBip32Derivation = [];
+    }
+    if (
+      pset.inputs[inIndex].bip32Derivation!.some(({ pubkey }) =>
+        pubkey.equals(d.pubkey),
+      )
+    ) {
+      throw new Error('duplicated taproot bip32 derivation pubkey');
+    }
+    pset.inputs[inIndex].tapBip32Derivation!.push(d);
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addInTapInternalKey(inIndex: number, tapInternalKey: TapInternalKey): this {
+    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
+      throw new Error('input index out of range');
+    }
+    if (tapInternalKey.length !== 32) {
+      throw new Error('invalid taproot internal key length');
+    }
+    if (
+      this.pset.inputs[inIndex].tapInternalKey &&
+      this.pset.inputs[inIndex].tapInternalKey!.length > 0
+    ) {
+      throw new Error('duplicated taproot internal key');
+    }
+
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].tapInternalKey = tapInternalKey;
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addInTapMerkleRoot(inIndex: number, tapMerkleRoot: TapMerkleRoot): this {
+    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
+      throw new Error('input index out of range');
+    }
+    if (tapMerkleRoot.length !== 32) {
+      throw new Error('invalid taproot merkle root length');
+    }
+    if (
+      this.pset.inputs[inIndex].tapMerkleRoot &&
+      this.pset.inputs[inIndex].tapMerkleRoot!.length > 0
+    ) {
+      throw new Error('duplicated taproot merkle root');
+    }
+
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].tapMerkleRoot = tapMerkleRoot;
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): this {
     if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
       throw new Error('output index out of range');
     }
@@ -346,9 +575,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addOutRedeemScript(outIndex: number, redeemScript: Buffer): void {
+  addOutRedeemScript(outIndex: number, redeemScript: Buffer): this {
     if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
       throw new Error('output index out of range');
     }
@@ -359,9 +590,11 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
-  addOutWitnessScript(outIndex: number, witnessScript: Buffer): void {
+  addOutWitnessScript(outIndex: number, witnessScript: Buffer): this {
     if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
       throw new Error('output index out of range');
     }
@@ -372,6 +605,82 @@ export class Updater {
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addOutTapInternalKey(outIndex: number, tapInternalKey: TapInternalKey): this {
+    if (outIndex < 0 || outIndex > this.pset.globals.outputCount) {
+      throw new Error('output index out of range');
+    }
+    if (tapInternalKey.length !== 32) {
+      throw new Error('invalid taproot internal key length');
+    }
+    if (
+      this.pset.outputs[outIndex].tapInternalKey &&
+      this.pset.outputs[outIndex].tapInternalKey!.length > 0
+    ) {
+      throw new Error('duplicated taproot internal key');
+    }
+
+    const pset = this.pset.copy();
+    pset.outputs[outIndex].tapInternalKey = tapInternalKey;
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addOutTapTree(outIndex: number, tapTree: TapTree): this {
+    if (outIndex < 0 || outIndex > this.pset.globals.outputCount) {
+      throw new Error('output index out of range');
+    }
+    if (this.pset.outputs[outIndex].tapTree) {
+      throw new Error('duplicated taproot tree');
+    }
+
+    const pset = this.pset.copy();
+    pset.outputs[outIndex].tapTree = tapTree;
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addOutTapBIP32Derivation(outIndex: number, d: TapBip32Derivation): this {
+    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
+      throw new Error('output index out of range');
+    }
+
+    if (d.pubkey.length !== 33) {
+      throw new Error('invalid output taproot pubkey length');
+    }
+
+    const pset = this.pset.copy();
+    if (!pset.outputs[outIndex].tapBip32Derivation) {
+      pset.outputs[outIndex].tapBip32Derivation = [];
+    }
+    if (
+      pset.outputs[outIndex].bip32Derivation!.some(({ pubkey }) =>
+        pubkey.equals(d.pubkey),
+      )
+    ) {
+      throw new Error('duplicated taproot bip32 derivation pubkey');
+    }
+    pset.outputs[outIndex].tapBip32Derivation!.push(d);
+    pset.sanityCheck();
+
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
   }
 
   private validateIssuanceInput(inIndex: number): void {
