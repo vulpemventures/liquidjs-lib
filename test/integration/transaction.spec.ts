@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import * as bip32 from 'bip32';
+import { BIP32Factory } from 'bip32';
 import * as regtestUtils from './_regtest';
 import { describe, it } from 'mocha';
 import { createPayment, getInputData, nonWitnessUtxoBuffer } from './utils';
@@ -1531,7 +1531,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
   );
 
   it('can create (and broadcast via 3PBP) a Transaction, w/ a P2WPKH input using HD', async () => {
-    const hdRoot = bip32.fromSeed(rng(64));
+    const hdRoot = BIP32Factory(ecc).fromSeed(rng(64));
     const masterFingerprint = hdRoot.fingerprint;
     const path = "m/84'/0'/0'/0/0";
     const childNode = hdRoot.derivePath(path);
@@ -1607,7 +1607,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
   });
 
   it('can create (and broadcast via 3PBP) a confidential Transaction, w/ a P2WPKH input using HD', async () => {
-    const hdRoot = bip32.fromSeed(rng(64));
+    const hdRoot = BIP32Factory(ecc).fromSeed(rng(64));
     const masterFingerprint = hdRoot.fingerprint;
     const path = "m/84'/0'/0'/0/0";
     const childNode = hdRoot.derivePath(path);
