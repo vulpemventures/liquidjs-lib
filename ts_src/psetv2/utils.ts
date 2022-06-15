@@ -145,24 +145,19 @@ function compressPubkey(pubkey: Buffer): Buffer {
 }
 
 type ScriptType =
-  | 'p2pk'
-  | 'p2pkh'
-  | 'p2ms'
-  | 'p2sh'
-  | 'p2wpkh'
-  | 'p2wsh'
-  | 'p2tr'
+  | 'witnesspubkeyhash'
+  | 'pubkeyhash'
+  | 'multisig'
+  | 'pubkey'
   | 'nonstandard';
 
 export function classifyScript(script: Buffer): ScriptType {
-  if (isP2PK(script)) return 'p2pk';
-  if (isP2PKH(script)) return 'p2pkh';
-  if (isP2MS(script)) return 'p2ms';
-  if (isP2SH(script)) return 'p2sh';
-  if (isP2WPKH(script)) return 'p2wpkh';
-  if (isP2WSH(script)) return 'p2wsh';
-  return 'nonstandard';
-}
+    if (isP2WPKH(script)) return 'witnesspubkeyhash';
+    if (isP2PKH(script)) return 'pubkeyhash';
+    if (isP2MS(script)) return 'multisig';
+    if (isP2PK(script)) return 'pubkey';
+    return 'nonstandard';
+  }
 
 function isPaymentFactory(payment: any): (script: Buffer) => boolean {
   return (script: Buffer): boolean => {
