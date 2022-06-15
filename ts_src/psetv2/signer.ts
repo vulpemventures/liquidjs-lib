@@ -36,7 +36,7 @@ export class Signer {
     if (input.isFinalized()) {
       return this;
     }
-    if (!input.sighashType) {
+    if (input.sighashType === undefined) {
       throw new Error('missing input sighash type');
     }
     if ((input.sighashType & 0x1f) === Transaction.SIGHASH_ALL) {

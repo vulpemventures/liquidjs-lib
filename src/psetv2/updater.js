@@ -318,7 +318,7 @@ class Updater {
     if (!input.getUtxo()) {
       throw new Error('Missing input witness utxo');
     }
-    if (!input.sighashType) {
+    if (input.sighashType === undefined) {
       throw new Error('Missing input sighash type');
     }
     const tweakedKey = input.getUtxo().script.slice(2);
@@ -355,7 +355,7 @@ class Updater {
     }
     const pset = this.pset.copy();
     const input = pset.inputs[inIndex];
-    if (!input.sighashType) {
+    if (input.sighashType === undefined) {
       throw new Error('Missing input sighash type');
     }
     const sighash = pset.getInputPreimage(

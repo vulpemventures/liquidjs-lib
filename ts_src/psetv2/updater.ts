@@ -373,7 +373,7 @@ export class Updater {
     if (!input.getUtxo()) {
       throw new Error('Missing input witness utxo');
     }
-    if (!input.sighashType) {
+    if (input.sighashType === undefined) {
       throw new Error('Missing input sighash type');
     }
 
@@ -422,7 +422,7 @@ export class Updater {
     const pset = this.pset.copy();
     const input = pset.inputs[inIndex];
 
-    if (!input.sighashType) {
+    if (input.sighashType === undefined) {
       throw new Error('Missing input sighash type');
     }
 
