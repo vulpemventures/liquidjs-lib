@@ -30,20 +30,20 @@ export class Signer {
     validator: ValidateSigFunction,
   ): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('input index out of range');
+      throw new Error('Input index out of range');
     }
     const input = this.pset.inputs[inIndex];
     if (input.isFinalized()) {
-      return this;
+      throw new Error('Input is already finalized');
     }
     if (input.sighashType === undefined) {
-      throw new Error('missing input sighash type');
+      throw new Error('Missing input sighash type');
     }
     if ((input.sighashType & 0x1f) === Transaction.SIGHASH_ALL) {
       if (
         this.pset.outputs.some(out => out.isBlinded() && !out.isFullyBlinded())
       ) {
-        throw new Error('pset must be fully blinded');
+        throw new Error('Pset must be fully blinded');
       }
     }
 
@@ -65,10 +65,10 @@ export class Signer {
 
     const { psig, witnessScript, redeemScript } = data as BIP174SigningData;
     if (!psig) {
-      throw new Error('missing partial signature for input');
+      throw new Error('Missing partial signature for input');
     }
     if (psig.signature.slice(-1)[0] !== sighashType) {
-      throw new Error('input and signature sighash types must match');
+      throw new Error('Input and signature sighash types must match');
     }
 
     // in case a witness script is passed, we make sure that the input witness
@@ -136,7 +136,7 @@ export class Signer {
       genesisBlockHash,
     } = data as BIP371SigningData;
     if (!tapKeySig && (!tapScriptSigs || !tapScriptSigs.length)) {
-      throw new Error('missing taproot signature');
+      throw new Error('Missing taproot signature');
     }
 
     const u = new Updater(pset);

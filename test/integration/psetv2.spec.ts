@@ -459,7 +459,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
-  it('can create (and broadcast via 3PBP) an uconfidential taproot scriptspend Pset input with a confidential p2wpkh input', async () => {
+  it('can create (and broadcast via 3PBP) a transaction w/ unconfidential taproot scriptspend input', async () => {
     const bobPay = createPayment('p2wpkh', undefined, undefined, true);
     const BOB = bobPay.keys[0];
     const alice = ECPair.makeRandom({ network: regtest });
