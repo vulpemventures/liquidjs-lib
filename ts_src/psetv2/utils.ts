@@ -10,24 +10,24 @@ export function getPayment(
   partialSig: PartialSig[],
 ): payments.Payment {
   switch (scriptType) {
-    case 'p2ms':
+    case 'multisig':
       const sigs = getSortedSigs(script, partialSig);
       return payments.p2ms({
         output: script,
         signatures: sigs,
       });
-    case 'p2pk':
+    case 'pubkey':
       return payments.p2pk({
         output: script,
         signature: partialSig[0].signature,
       });
-    case 'p2pkh':
+    case 'pubkeyhash':
       return payments.p2pkh({
         output: script,
         pubkey: partialSig[0].pubkey,
         signature: partialSig[0].signature,
       });
-    case 'p2wpkh':
+    case 'witnesspubkeyhash':
       return payments.p2wpkh({
         output: script,
         pubkey: partialSig[0].pubkey,
@@ -152,12 +152,12 @@ type ScriptType =
   | 'nonstandard';
 
 export function classifyScript(script: Buffer): ScriptType {
-    if (isP2WPKH(script)) return 'witnesspubkeyhash';
-    if (isP2PKH(script)) return 'pubkeyhash';
-    if (isP2MS(script)) return 'multisig';
-    if (isP2PK(script)) return 'pubkey';
-    return 'nonstandard';
-  }
+  if (isP2WPKH(script)) return 'witnesspubkeyhash';
+  if (isP2PKH(script)) return 'pubkeyhash';
+  if (isP2MS(script)) return 'multisig';
+  if (isP2PK(script)) return 'pubkey';
+  return 'nonstandard';
+}
 
 function isPaymentFactory(payment: any): (script: Buffer) => boolean {
   return (script: Buffer): boolean => {

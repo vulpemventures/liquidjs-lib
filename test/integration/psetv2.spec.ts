@@ -16,10 +16,13 @@ import { ZKPGenerator, ZKPValidator } from '../../ts_src/confidential';
 import { Transaction, ZERO } from '../../ts_src/transaction';
 import * as bscript from '../../ts_src/script';
 import * as NETWORKS from '../../ts_src/networks';
-import { ecc } from '../ecc';
+import { ecc, ECPair } from '../ecc';
 import { createPayment, getInputData } from './utils';
 import * as regtestUtils from './_regtest';
+import { address, bip341 } from '../../ts_src';
 
+const OPS = bscript.OPS;
+const { BIP341Factory } = bip341;
 const { regtest } = NETWORKS;
 const lbtc = regtest.assetHash;
 
@@ -455,6 +458,155 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     );
     await regtestUtils.broadcast(rawTx.toHex());
   });
+
+  it('can create (and broadcast via 3PBP) an uconfidential taproot scriptspend Pset input with a confidential p2wpkh input', async () => {
+    const bobPay = createPayment('p2wpkh', undefined, undefined, true);
+    const BOB = bobPay.keys[0];
+    const alice = ECPair.makeRandom({ network: regtest });
+    const bobScript = bscript.compile([
+      BOB.publicKey.slice(1),
+      OPS.OP_CHECKSIG,
+    ]);
+
+    // in this exemple, alice is the internal key (can spend via keypath spend)
+    // however, the script tree allows bob to spend the coin with a simple p2pkh
+    const leaves: bip341.TaprootLeaf[] = [
+      {
+        scriptHex: bobScript.toString('hex'),
+      },
+      {
+        scriptHex:
+          '20b617298552a72ade070667e86ca63b8f5789a9fe8731ef91202a91c9f3459007ac',
+      },
+    ];
+
+    const hashTree = bip341.toHashTree(leaves);
+    const output = BIP341Factory(ecc).taprootOutputScript(
+      alice.publicKey,
+      hashTree,
+    );
+    const taprootAddress = address.fromOutputScript(output, regtest); // UNCONFIDENTIAL
+
+    const confUtxo = await regtestUtils.faucet(
+      bobPay.payment.confidentialAddress!,
+    );
+    const utxo = await regtestUtils.faucet(taprootAddress);
+    const txhex = await regtestUtils.fetchTx(utxo.txid);
+    const confTxHex = await regtestUtils.fetchTx(confUtxo.txid);
+    const prevoutTx = Transaction.fromHex(txhex);
+    const prevoutConfTx = Transaction.fromHex(confTxHex);
+
+    const FEES = 1000;
+    const sendAmount = 10_000;
+    const change = 2_0000_0000 - sendAmount - FEES;
+
+    // bob spends the coin with the script path of the leaf
+    // he gets the change and send the other one to the same taproot address
+    const lbtc = AssetHash.fromHex(regtest.assetHash);
+
+    const inputs = [
+      new Input(confUtxo.txid, confUtxo.vout),
+      new Input(utxo.txid, utxo.vout),
+    ];
+
+    const outputs = [
+      new Output(lbtc.hex, sendAmount, bobPay.payment.confidentialAddress!, 0),
+      new Output(lbtc.hex, change, taprootAddress, 0),
+      new Output(lbtc.hex, FEES),
+    ];
+
+    const pset = PsetCreator.newPset({
+      inputs,
+      outputs,
+    });
+
+    const updater = new PsetUpdater(pset);
+    updater.addInWitnessUtxo(0, prevoutConfTx.outs[confUtxo.vout]);
+    updater.addInWitnessUtxo(1, prevoutTx.outs[utxo.vout]);
+    updater.addInSighashType(0, Transaction.SIGHASH_ALL);
+    updater.addInSighashType(1, Transaction.SIGHASH_ALL);
+
+    const leafHash = bip341.tapLeafHash(leaves[0]);
+    const pathToBobLeaf = bip341.findScriptPath(hashTree, leafHash);
+    const [script, controlBlock] = BIP341Factory(ecc).taprootSignScriptStack(
+      alice.publicKey,
+      leaves[0],
+      hashTree.hash,
+      pathToBobLeaf,
+    );
+
+    updater.addInTapLeafScript(1, {
+      controlBlock,
+      leafVersion: bip341.LEAF_VERSION_TAPSCRIPT,
+      script,
+    });
+
+    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(bobPay.blindingKeys);
+    const ownedInputs = await zkpGenerator.unblindInputs(pset);
+    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+      pset,
+      ZKPGenerator.ECCKeysGenerator(ecc),
+    );
+    const zkpValidator = new ZKPValidator();
+
+    const blinder = new PsetBlinder(
+      pset,
+      ownedInputs,
+      zkpValidator,
+      zkpGenerator,
+    );
+
+    await blinder.blindLast({ outputBlindingArgs });
+
+    const signer = new PsetSigner(pset);
+    // segwit v0 input
+    const preimage = pset.getInputPreimage(
+      0,
+      pset.inputs[0].sighashType || Transaction.SIGHASH_ALL,
+    );
+
+    const partialSig: BIP174SigningData = {
+      psig: {
+        pubkey: BOB.publicKey,
+        signature: bscript.signature.encode(
+          BOB.sign(preimage),
+          pset.inputs[0].sighashType || Transaction.SIGHASH_ALL,
+        ),
+      },
+    };
+    signer.signInput(0, partialSig, Pset.ECDSASigValidator(ecc));
+
+    // taproot input
+    const hashType = pset.inputs[1].sighashType || Transaction.SIGHASH_ALL;
+    const sighashmsg = pset.getInputPreimage(
+      1,
+      hashType,
+      regtest.genesisBlockHash,
+      leafHash,
+    );
+
+    const sig = ecc.signSchnorr(sighashmsg, BOB.privateKey!, Buffer.alloc(32));
+
+    const taprootData = {
+      tapScriptSigs: [
+        {
+          signature: serializeSchnnorrSig(Buffer.from(sig), hashType),
+          pubkey: BOB.publicKey.slice(1),
+          leafHash,
+        },
+      ],
+      genesisBlockHash: regtest.genesisBlockHash,
+    };
+
+    signer.signInput(1, taprootData, Pset.SchnorrSigValidator(ecc));
+
+    const finalizer = new PsetFinalizer(pset);
+    finalizer.finalize();
+    const tx = PsetExtractor.extract(pset);
+    const hex = tx.toHex();
+
+    await regtestUtils.broadcast(hex);
+  });
 });
 
 function signTransaction(
@@ -481,3 +633,9 @@ function signTransaction(
   finalizer.finalize();
   return PsetExtractor.extract(pset);
 }
+
+const serializeSchnnorrSig = (sig: Buffer, hashtype: number) =>
+  Buffer.concat([
+    sig,
+    hashtype !== 0x00 ? Buffer.of(hashtype) : Buffer.alloc(0),
+  ]);

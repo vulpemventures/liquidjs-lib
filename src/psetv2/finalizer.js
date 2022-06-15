@@ -115,7 +115,6 @@ const finalizeTaprootInput = (inIndex, pset) => {
 };
 function getFinalScripts(inputIndex, input, script, isSegwit, isP2SH, isP2WSH) {
   const scriptType = (0, utils_1.classifyScript)(script);
-  console.log('SCRIPT TYPE', scriptType);
   if (!canFinalize(input, script, scriptType))
     throw new Error(`Can not finalize input #${inputIndex}`);
   return prepareFinalScripts(
@@ -173,11 +172,11 @@ function prepareFinalScripts(
 }
 function canFinalize(input, script, scriptType) {
   switch (scriptType) {
-    case 'p2pk':
-    case 'p2pkh':
-    case 'p2wpkh':
+    case 'pubkey':
+    case 'pubkeyhash':
+    case 'witnesspubkeyhash':
       return (0, utils_1.hasSigs)(1, input.partialSigs);
-    case 'p2ms':
+    case 'multisig':
       const p2ms = __1.payments.p2ms({ output: script });
       return (0, utils_1.hasSigs)(p2ms.m, input.partialSigs, p2ms.pubkeys);
     default:
