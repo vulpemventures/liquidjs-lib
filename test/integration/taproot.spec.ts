@@ -309,7 +309,7 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     ];
 
     const outputs = [
-      new Output(lbtc.hex, sendAmount, taprootAddress, 0),
+      new Output(lbtc.hex, sendAmount, bobPay.payment.confidentialAddress!, 0),
       new Output(lbtc.hex, change, taprootAddress, 0),
       new Output(lbtc.hex, FEES),
     ];
