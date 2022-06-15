@@ -6,28 +6,28 @@ import { PartialSig } from './interfaces';
 
 export function getPayment(
   script: Buffer,
-  scriptType: string,
+  scriptType: ScriptType,
   partialSig: PartialSig[],
 ): payments.Payment {
   switch (scriptType) {
-    case 'multisig':
+    case 'p2ms':
       const sigs = getSortedSigs(script, partialSig);
       return payments.p2ms({
         output: script,
         signatures: sigs,
       });
-    case 'pubkey':
+    case 'p2pk':
       return payments.p2pk({
         output: script,
         signature: partialSig[0].signature,
       });
-    case 'pubkeyhash':
+    case 'p2pkh':
       return payments.p2pkh({
         output: script,
         pubkey: partialSig[0].pubkey,
         signature: partialSig[0].signature,
       });
-    case 'witnesspubkeyhash':
+    case 'p2wpkh':
       return payments.p2wpkh({
         output: script,
         pubkey: partialSig[0].pubkey,

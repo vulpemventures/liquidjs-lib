@@ -14,6 +14,7 @@ import { p2pkh } from '../payments';
 import { ElementsValue } from '../value';
 import { AssetHash } from '../asset';
 import BitSet from 'bitset';
+import { bip341 } from '..';
 
 export const magicPrefix = Buffer.from([0x70, 0x73, 0x65, 0x74]);
 export const magicPrefixWithSeparator = Buffer.concat([
@@ -67,12 +68,11 @@ export class Pset {
     };
   }
 
-  static SchnorrSigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction {
-    return (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-      return ECPairFactory(ecc)
-        .fromPublicKey(pubkey)
-        .verifySchnorr(msghash, signature);
-    };
+  static SchnorrSigValidator(
+    ecc: bip341.TinySecp256k1Interface,
+  ): ValidateSigFunction {
+    return (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+      ecc.verifySchnorr(msghash, pubkey, signature.slice(0, 64));
   }
 
   inputs: Input[];

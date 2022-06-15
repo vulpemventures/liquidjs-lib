@@ -5,7 +5,7 @@ import {
 } from 'ecpair';
 import { BufferWriter, varSliceSize } from './bufferutils';
 
-const LEAF_VERSION_TAPSCRIPT = 0xc4;
+export const LEAF_VERSION_TAPSCRIPT = 0xc4;
 
 export interface XOnlyPointAddTweakResult {
   parity: 1 | 0;

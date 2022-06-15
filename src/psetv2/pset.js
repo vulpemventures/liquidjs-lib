@@ -108,11 +108,8 @@ class Pset {
     };
   }
   static SchnorrSigValidator(ecc) {
-    return (pubkey, msghash, signature) => {
-      return (0, ecpair_1.default)(ecc)
-        .fromPublicKey(pubkey)
-        .verifySchnorr(msghash, signature);
-    };
+    return (pubkey, msghash, signature) =>
+      ecc.verifySchnorr(msghash, pubkey, signature.slice(0, 64));
   }
   sanityCheck() {
     this.globals.sanityCheck();

@@ -394,8 +394,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
     const usdt = bobInputData.asset;
     const aliceInputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
+      const txid = Buffer.from(hash)
         .reverse()
         .toString('hex');
       return new Input(txid, index);

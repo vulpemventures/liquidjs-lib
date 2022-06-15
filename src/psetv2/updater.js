@@ -318,7 +318,7 @@ class Updater {
     if (!input.getUtxo()) {
       throw new Error('Missing input witness utxo');
     }
-    if (input.sighashType === undefined) {
+    if (!input.sighashType) {
       throw new Error('Missing input sighash type');
     }
     const tweakedKey = input.getUtxo().script.slice(2);
@@ -348,14 +348,14 @@ class Updater {
       throw new Error('Invalid leaf hash length');
     }
     if (sig.signature.length !== 64 && sig.signature.length !== 65) {
-      throw new Error('Invalid signarure length');
+      throw new Error('Invalid signature length');
     }
     if (genesisBlockHash.length !== 32) {
       throw new Error('Invalid genesis block hash length');
     }
     const pset = this.pset.copy();
     const input = pset.inputs[inIndex];
-    if (input.sighashType === undefined) {
+    if (!input.sighashType) {
       throw new Error('Missing input sighash type');
     }
     const sighash = pset.getInputPreimage(

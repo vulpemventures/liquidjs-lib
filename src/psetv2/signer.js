@@ -17,7 +17,7 @@ class Signer {
     if (input.isFinalized()) {
       return this;
     }
-    if (input.sighashType === undefined) {
+    if (!input.sighashType) {
       throw new Error('missing input sighash type');
     }
     if ((input.sighashType & 0x1f) === transaction_1.Transaction.SIGHASH_ALL) {

@@ -172,6 +172,7 @@ function getFinalScripts(
   finalScriptWitness?: Buffer;
 } {
   const scriptType = classifyScript(script);
+  console.log('SCRIPT TYPE', scriptType);
   if (!canFinalize(input, script, scriptType))
     throw new Error(`Can not finalize input #${inputIndex}`);
   return prepareFinalScripts(
@@ -186,7 +187,7 @@ function getFinalScripts(
 
 function prepareFinalScripts(
   script: Buffer,
-  scriptType: string,
+  scriptType: ReturnType<typeof classifyScript>,
   partialSig: PartialSig[],
   isSegwit: boolean,
   isP2SH: boolean,
@@ -234,14 +235,14 @@ function prepareFinalScripts(
 function canFinalize(
   input: Input,
   script: Buffer,
-  scriptType: string,
+  scriptType: ReturnType<typeof classifyScript>,
 ): boolean {
   switch (scriptType) {
-    case 'pubkey':
-    case 'pubkeyhash':
-    case 'witnesspubkeyhash':
+    case 'p2pk':
+    case 'p2pkh':
+    case 'p2wpkh':
       return hasSigs(1, input.partialSigs);
-    case 'multisig':
+    case 'p2ms':
       const p2ms = payments.p2ms({ output: script });
       return hasSigs(p2ms.m!, input.partialSigs, p2ms.pubkeys);
     default:

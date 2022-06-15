@@ -51,24 +51,24 @@ const crypto_1 = require('../crypto');
 const bscript = __importStar(require('../script'));
 function getPayment(script, scriptType, partialSig) {
   switch (scriptType) {
-    case 'multisig':
+    case 'p2ms':
       const sigs = getSortedSigs(script, partialSig);
       return __1.payments.p2ms({
         output: script,
         signatures: sigs,
       });
-    case 'pubkey':
+    case 'p2pk':
       return __1.payments.p2pk({
         output: script,
         signature: partialSig[0].signature,
       });
-    case 'pubkeyhash':
+    case 'p2pkh':
       return __1.payments.p2pkh({
         output: script,
         pubkey: partialSig[0].pubkey,
         signature: partialSig[0].signature,
       });
-    case 'witnesspubkeyhash':
+    case 'p2wpkh':
       return __1.payments.p2wpkh({
         output: script,
         pubkey: partialSig[0].pubkey,

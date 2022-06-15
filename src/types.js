@@ -1,6 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.oneOf = exports.Null = exports.BufferN = exports.Function = exports.UInt32 = exports.UInt8 = exports.tuple = exports.maybe = exports.Object = exports.Hex = exports.Buffer = exports.String = exports.Boolean = exports.Array = exports.Number = exports.BufferOne = exports.ConfidentialValue = exports.AssetBuffer = exports.AssetBufferWithFlag = exports.ConfidentialCommitment = exports.Hash256bit = exports.Hash160bit = exports.Buffer256bit = exports.isTaptree = exports.isTapleaf = exports.TAPLEAF_VERSION_MASK = exports.Network = exports.ECPoint = exports.Satoshi = exports.Signer = exports.BIP32Path = exports.UInt31 = exports.isPoint = exports.typeforce = void 0;
+exports.oneOf = exports.Null = exports.BufferN = exports.Function = exports.UInt32 = exports.UInt8 = exports.tuple = exports.maybe = exports.Object = exports.Hex = exports.Buffer = exports.String = exports.Boolean = exports.Array = exports.Number = exports.BufferOne = exports.ConfidentialValue = exports.AssetBuffer = exports.AssetBufferWithFlag = exports.ConfidentialCommitment = exports.Hash256bit = exports.Hash160bit = exports.Buffer256bit = exports.isTaptree = exports.isTapleaf = exports.TAPLEAF_VERSION_MASK = exports.Network = exports.ECPoint = exports.Satoshi = exports.BIP32Path = exports.UInt31 = exports.isPoint = exports.typeforce = void 0;
 const buffer_1 = require('buffer');
 exports.typeforce = require('typeforce');
 const ZERO32 = buffer_1.Buffer.alloc(32, 0);
@@ -39,14 +39,6 @@ exports.BIP32Path = BIP32Path;
 BIP32Path.toJSON = () => {
   return 'BIP32 derivation path';
 };
-function Signer(obj) {
-  return (
-    (exports.typeforce.Buffer(obj.publicKey) ||
-      typeof obj.getPublicKey === 'function') &&
-    typeof obj.sign === 'function'
-  );
-}
-exports.Signer = Signer;
 const SATOSHI_MAX = 21 * 1e14;
 function Satoshi(value) {
   return exports.typeforce.UInt53(value) && value <= SATOSHI_MAX;

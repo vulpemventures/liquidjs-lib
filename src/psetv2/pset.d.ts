@@ -5,6 +5,7 @@ import { Global } from './globals';
 import { Input } from './input';
 import { PartialSig } from './interfaces';
 import { Output } from './output';
+import { bip341 } from '..';
 export declare const magicPrefix: Buffer;
 export declare const magicPrefixWithSeparator: Buffer;
 export declare type ValidateSigFunction = (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
@@ -12,7 +13,7 @@ export declare class Pset {
     static fromBase64(data: string): Pset;
     static fromBuffer(buf: Buffer): Pset;
     static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction;
-    static SchnorrSigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction;
+    static SchnorrSigValidator(ecc: bip341.TinySecp256k1Interface): ValidateSigFunction;
     inputs: Input[];
     outputs: Output[];
     globals: Global;

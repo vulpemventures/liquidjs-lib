@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { payments } from '..';
 import { PartialSig } from './interfaces';
-export declare function getPayment(script: Buffer, scriptType: string, partialSig: PartialSig[]): payments.Payment;
+export declare function getPayment(script: Buffer, scriptType: ScriptType, partialSig: PartialSig[]): payments.Payment;
 export declare function hasSigs(neededSigs: number, partialSig?: any[], pubkeys?: Buffer[]): boolean;
 export declare function witnessStackToScriptWitness(witness: Buffer[]): Buffer;
 export declare function scriptWitnessToWitnessStack(buffer: Buffer): Buffer[];
