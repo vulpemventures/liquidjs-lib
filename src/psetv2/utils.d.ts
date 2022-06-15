@@ -5,7 +5,7 @@ export declare function getPayment(script: Buffer, scriptType: string, partialSi
 export declare function hasSigs(neededSigs: number, partialSig?: any[], pubkeys?: Buffer[]): boolean;
 export declare function witnessStackToScriptWitness(witness: Buffer[]): Buffer;
 export declare function scriptWitnessToWitnessStack(buffer: Buffer): Buffer[];
-declare type ScriptType = 'p2pk' | 'p2pkh' | 'p2ms' | 'p2sh' | 'p2wpkh' | 'p2wsh' | 'p2tr' | 'nonstandard';
+declare type ScriptType = 'witnesspubkeyhash' | 'pubkeyhash' | 'multisig' | 'pubkey' | 'nonstandard';
 export declare function classifyScript(script: Buffer): ScriptType;
 export declare const isP2MS: (script: Buffer) => boolean;
 export declare const isP2PK: (script: Buffer) => boolean;

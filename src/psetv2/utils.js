@@ -168,12 +168,10 @@ function compressPubkey(pubkey) {
   return pubkey.slice();
 }
 function classifyScript(script) {
-  if ((0, exports.isP2PK)(script)) return 'p2pk';
-  if ((0, exports.isP2PKH)(script)) return 'p2pkh';
-  if ((0, exports.isP2MS)(script)) return 'p2ms';
-  if ((0, exports.isP2SH)(script)) return 'p2sh';
-  if ((0, exports.isP2WPKH)(script)) return 'p2wpkh';
-  if ((0, exports.isP2WSH)(script)) return 'p2wsh';
+  if ((0, exports.isP2WPKH)(script)) return 'witnesspubkeyhash';
+  if ((0, exports.isP2PKH)(script)) return 'pubkeyhash';
+  if ((0, exports.isP2MS)(script)) return 'multisig';
+  if ((0, exports.isP2PK)(script)) return 'pubkey';
   return 'nonstandard';
 }
 exports.classifyScript = classifyScript;

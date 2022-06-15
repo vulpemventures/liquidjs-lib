@@ -152,12 +152,12 @@ type ScriptType =
   | 'nonstandard';
 
 export function classifyScript(script: Buffer): ScriptType {
-    if (isP2WPKH(script)) return 'witnesspubkeyhash';
-    if (isP2PKH(script)) return 'pubkeyhash';
-    if (isP2MS(script)) return 'multisig';
-    if (isP2PK(script)) return 'pubkey';
-    return 'nonstandard';
-  }
+  if (isP2WPKH(script)) return 'witnesspubkeyhash';
+  if (isP2PKH(script)) return 'pubkeyhash';
+  if (isP2MS(script)) return 'multisig';
+  if (isP2PK(script)) return 'pubkey';
+  return 'nonstandard';
+}
 
 function isPaymentFactory(payment: any): (script: Buffer) => boolean {
   return (script: Buffer): boolean => {
