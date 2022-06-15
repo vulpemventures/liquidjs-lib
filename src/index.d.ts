@@ -11,7 +11,7 @@ export * from './value';
 export * from './psetv2';
 export { address, crypto, networks, payments, script, confidential, issuance, bip341, };
 export { TaggedHashPrefix } from './crypto';
-export { Psbt, PsbtTxInput, PsbtTxOutput, PsbtSigner, PsbtSignerAsync, HDSigner, HDSignerAsync, witnessStackToScriptWitness, BlindingDataLike, } from './psbt';
+export { Psbt, PsbtTxInput, PsbtTxOutput, Signer, SignerAsync, HDSigner, HDSignerAsync, witnessStackToScriptWitness, BlindingDataLike, } from './psbt';
 export { OPS as opcodes } from './ops';
 export { Input as TxInput, Output as TxOutput, Transaction, } from './transaction';
 export { Network as NetworkExtended } from './networks';

@@ -123,10 +123,10 @@ export declare class Psbt {
     signAllInputsHDAsync(hdKeyPair: HDSigner | HDSignerAsync, sighashTypes?: number[]): Promise<void>;
     signInputHD(inputIndex: number, hdKeyPair: HDSigner, sighashTypes?: number[]): this;
     signInputHDAsync(inputIndex: number, hdKeyPair: HDSigner | HDSignerAsync, sighashTypes?: number[]): Promise<void>;
-    signAllInputs(keyPair: PsbtSigner, sighashTypes?: number[]): this;
-    signAllInputsAsync(keyPair: PsbtSigner | PsbtSignerAsync, sighashTypes?: number[]): Promise<void>;
-    signInput(inputIndex: number, keyPair: PsbtSigner, sighashTypes?: number[]): this;
-    signInputAsync(inputIndex: number, keyPair: PsbtSigner | PsbtSignerAsync, sighashTypes?: number[]): Promise<void>;
+    signAllInputs(keyPair: Signer, sighashTypes?: number[]): this;
+    signAllInputsAsync(keyPair: Signer | SignerAsync, sighashTypes?: number[]): Promise<void>;
+    signInput(inputIndex: number, keyPair: Signer, sighashTypes?: number[]): this;
+    signInputAsync(inputIndex: number, keyPair: Signer | SignerAsync, sighashTypes?: number[]): Promise<void>;
     toBuffer(): Buffer;
     toHex(): string;
     toBase64(): string;
@@ -179,13 +179,13 @@ export interface HDSignerAsync extends HDSignerBase {
     derivePath(path: string): HDSignerAsync;
     sign(hash: Buffer): Promise<Buffer>;
 }
-export interface PsbtSigner {
+export interface Signer {
     publicKey: Buffer;
     network?: any;
     sign(hash: Buffer, lowR?: boolean): Buffer;
     getPublicKey?(): Buffer;
 }
-export interface PsbtSignerAsync {
+export interface SignerAsync {
     publicKey: Buffer;
     network?: any;
     sign(hash: Buffer, lowR?: boolean): Promise<Buffer>;

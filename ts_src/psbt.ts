@@ -727,7 +727,7 @@ export class Psbt {
       inputIndex,
       this.data.inputs,
       hdKeyPair,
-    ) as PsbtSigner[];
+    ) as Signer[];
     signers.forEach(signer => this.signInput(inputIndex, signer, sighashTypes));
     return this;
   }
@@ -760,7 +760,7 @@ export class Psbt {
   }
 
   signAllInputs(
-    keyPair: PsbtSigner,
+    keyPair: Signer,
     sighashTypes: number[] = [Transaction.SIGHASH_ALL],
   ): this {
     if (!keyPair || !keyPair.publicKey)
@@ -785,7 +785,7 @@ export class Psbt {
   }
 
   signAllInputsAsync(
-    keyPair: PsbtSigner | PsbtSignerAsync,
+    keyPair: Signer | SignerAsync,
     sighashTypes: number[] = [Transaction.SIGHASH_ALL],
   ): Promise<void> {
     return new Promise(
@@ -822,7 +822,7 @@ export class Psbt {
 
   signInput(
     inputIndex: number,
-    keyPair: PsbtSigner,
+    keyPair: Signer,
     sighashTypes: number[] = [Transaction.SIGHASH_ALL],
   ): this {
     if (!keyPair || !keyPair.publicKey)
@@ -848,7 +848,7 @@ export class Psbt {
 
   signInputAsync(
     inputIndex: number,
-    keyPair: PsbtSigner | PsbtSignerAsync,
+    keyPair: Signer | SignerAsync,
     sighashTypes: number[] = [Transaction.SIGHASH_ALL],
   ): Promise<void> {
     return Promise.resolve().then(() => {
@@ -1456,14 +1456,14 @@ export interface HDSignerAsync extends HDSignerBase {
   sign(hash: Buffer): Promise<Buffer>;
 }
 
-export interface PsbtSigner {
+export interface Signer {
   publicKey: Buffer;
   network?: any;
   sign(hash: Buffer, lowR?: boolean): Buffer;
   getPublicKey?(): Buffer;
 }
 
-export interface PsbtSignerAsync {
+export interface SignerAsync {
   publicKey: Buffer;
   network?: any;
   sign(hash: Buffer, lowR?: boolean): Promise<Buffer>;
@@ -2129,7 +2129,7 @@ function getSignersFromHD(
   inputIndex: number,
   inputs: PsbtInput[],
   hdKeyPair: HDSigner | HDSignerAsync,
-): Array<PsbtSigner | PsbtSignerAsync> {
+): Array<Signer | SignerAsync> {
   const input = checkForInput(inputs, inputIndex);
   if (!input.bip32Derivation || input.bip32Derivation.length === 0) {
     throw new Error('Need bip32Derivation to sign with HD');
@@ -2148,15 +2148,13 @@ function getSignersFromHD(
       'Need one bip32Derivation masterFingerprint to match the HDSigner fingerprint',
     );
   }
-  const signers: Array<PsbtSigner | PsbtSignerAsync> = myDerivations.map(
-    bipDv => {
-      const node = hdKeyPair.derivePath(bipDv!.path);
-      if (!bipDv!.pubkey.equals(node.publicKey)) {
-        throw new Error('pubkey did not match bip32Derivation');
-      }
-      return node;
-    },
-  );
+  const signers: Array<Signer | SignerAsync> = myDerivations.map(bipDv => {
+    const node = hdKeyPair.derivePath(bipDv!.path);
+    if (!bipDv!.pubkey.equals(node.publicKey)) {
+      throw new Error('pubkey did not match bip32Derivation');
+    }
+    return node;
+  });
   return signers;
 }
 
