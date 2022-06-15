@@ -1706,7 +1706,7 @@ function checkInputsForPartialSig(inputs: PsbtInput[], action: string): void {
 }
 
 function checkPartialSigSighashes(input: PsbtInput): void {
-  if (!input.sighashType || !input.partialSig) return;
+  if (input.sighashType === undefined || !input.partialSig) return;
   const { partialSig, sighashType } = input;
   partialSig.forEach(pSig => {
     const { hashType } = bscript.signature.decode(pSig.signature);

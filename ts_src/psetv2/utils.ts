@@ -6,7 +6,7 @@ import { PartialSig } from './interfaces';
 
 export function getPayment(
   script: Buffer,
-  scriptType: string,
+  scriptType: ScriptType,
   partialSig: PartialSig[],
 ): payments.Payment {
   switch (scriptType) {

@@ -1,10 +1,10 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.findScriptPath = exports.toHashTree = exports.tapLeafHash = exports.BIP341Factory = void 0;
+exports.findScriptPath = exports.toHashTree = exports.tapLeafHash = exports.BIP341Factory = exports.LEAF_VERSION_TAPSCRIPT = void 0;
 const crypto_1 = require('./crypto');
 const ecpair_1 = require('ecpair');
 const bufferutils_1 = require('./bufferutils');
-const LEAF_VERSION_TAPSCRIPT = 0xc4;
+exports.LEAF_VERSION_TAPSCRIPT = 0xc4;
 function BIP341Factory(ecc) {
   return {
     taprootSignKey: taprootSignKey(ecc),
@@ -15,7 +15,7 @@ function BIP341Factory(ecc) {
 exports.BIP341Factory = BIP341Factory;
 // hash TaprootLeaf object, could be use to identify a leaf in a MAST tree
 function tapLeafHash(leaf) {
-  const leafVersion = leaf.version || LEAF_VERSION_TAPSCRIPT;
+  const leafVersion = leaf.version || exports.LEAF_VERSION_TAPSCRIPT;
   const script = Buffer.from(leaf.scriptHex, 'hex');
   const bufferWriter = bufferutils_1.BufferWriter.withCapacity(
     1 + (0, bufferutils_1.varSliceSize)(script),
@@ -32,7 +32,7 @@ function toHashTree(leaves, withScriptHex = false) {
       return { hash: Buffer.alloc(32) };
     case 1:
       const leaf = leaves[0];
-      const version = leaf.version || LEAF_VERSION_TAPSCRIPT;
+      const version = leaf.version || exports.LEAF_VERSION_TAPSCRIPT;
       if ((version & 1) !== 0) {
         throw new Error('Invalid leaf version');
       }
@@ -115,7 +115,7 @@ function taprootSignScriptStack(ecc) {
   return (internalPublicKey, leaf, treeRootHash, path) => {
     const { parity } = tweakPublicKey(internalPublicKey, treeRootHash, ecc);
     const parityBit = Buffer.of(
-      leaf.version || LEAF_VERSION_TAPSCRIPT + parity,
+      leaf.version || exports.LEAF_VERSION_TAPSCRIPT + parity,
     );
     const control = Buffer.concat([
       parityBit,

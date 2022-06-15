@@ -413,7 +413,7 @@ export class Updater {
       throw new Error('Invalid leaf hash length');
     }
     if (sig.signature.length !== 64 && sig.signature.length !== 65) {
-      throw new Error('Invalid signarure length');
+      throw new Error('Invalid signature length');
     }
     if (genesisBlockHash.length !== 32) {
       throw new Error('Invalid genesis block hash length');

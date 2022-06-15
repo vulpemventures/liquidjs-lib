@@ -186,7 +186,7 @@ function getFinalScripts(
 
 function prepareFinalScripts(
   script: Buffer,
-  scriptType: string,
+  scriptType: ReturnType<typeof classifyScript>,
   partialSig: PartialSig[],
   isSegwit: boolean,
   isP2SH: boolean,
@@ -234,7 +234,7 @@ function prepareFinalScripts(
 function canFinalize(
   input: Input,
   script: Buffer,
-  scriptType: string,
+  scriptType: ReturnType<typeof classifyScript>,
 ): boolean {
   switch (scriptType) {
     case 'pubkey':
