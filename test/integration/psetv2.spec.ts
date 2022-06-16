@@ -502,7 +502,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
     // bob spends the coin with the script path of the leaf
     // he gets the change and send the other one to the same taproot address
-    const lbtc = AssetHash.fromHex(regtest.assetHash);
 
     const inputs = [
       new Input(confUtxo.txid, confUtxo.vout),
@@ -510,9 +509,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     ];
 
     const outputs = [
-      new Output(lbtc.hex, sendAmount, bobPay.payment.confidentialAddress!, 0),
-      new Output(lbtc.hex, change, taprootAddress, 0),
-      new Output(lbtc.hex, FEES),
+      new Output(lbtc, sendAmount, bobPay.payment.confidentialAddress!, 0),
+      new Output(lbtc, change, taprootAddress, 0),
+      new Output(lbtc, FEES),
     ];
 
     const pset = PsetCreator.newPset({
