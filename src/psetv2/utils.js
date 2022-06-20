@@ -48,6 +48,7 @@ exports.pubkeyPositionInScript = exports.isP2TR = exports.isP2SH = exports.isP2W
 const __1 = require('..');
 const bufferutils_1 = require('../bufferutils');
 const crypto_1 = require('../crypto');
+const ops_1 = require('../ops');
 const bscript = __importStar(require('../script'));
 function getPayment(script, scriptType, partialSig) {
   switch (scriptType) {
@@ -193,7 +194,7 @@ exports.isP2WSH = isPaymentFactory(__1.payments.p2wsh);
 exports.isP2SH = isPaymentFactory(__1.payments.p2sh);
 // TODO: use payment factory once in place. For now, let's check
 // if the script starts with OP_1.
-const isP2TR = script => script[0] === 0x01;
+const isP2TR = script => script[0] === ops_1.OPS.OP_1;
 exports.isP2TR = isP2TR;
 function pubkeyPositionInScript(pubkey, script) {
   const pubkeyHash = (0, crypto_1.hash160)(pubkey);

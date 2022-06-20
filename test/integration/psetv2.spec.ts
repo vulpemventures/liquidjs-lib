@@ -20,6 +20,8 @@ import { ecc, ECPair } from '../ecc';
 import { createPayment, getInputData } from './utils';
 import * as regtestUtils from './_regtest';
 import { address, bip341 } from '../../ts_src';
+import { BIP371SigningData } from '../../ts_src/psetv2';
+import { toXOnly } from '../../ts_src/psetv2/bip371';
 
 const OPS = bscript.OPS;
 const { BIP341Factory } = bip341;
@@ -457,6 +459,69 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       Transaction.SIGHASH_ALL,
     );
     await regtestUtils.broadcast(rawTx.toHex());
+  });
+
+  it('can create (and broadcast via 3PBP) a transaction w/ unconfidential taproot keyspend input', async () => {
+    const alice = ECPair.makeRandom({ network: regtest });
+
+    const output = BIP341Factory(ecc).taprootOutputScript(alice.publicKey);
+    const taprootAddress = address.fromOutputScript(output, regtest); // UNCONFIDENTIAL
+
+    const utxo = await regtestUtils.faucet(taprootAddress);
+    const txhex = await regtestUtils.fetchTx(utxo.txid);
+    const prevoutTx = Transaction.fromHex(txhex);
+
+    const FEES = 1000;
+    const sendAmount = 10_000;
+    const change = 1_0000_0000 - sendAmount - FEES;
+
+    const inputs = [new Input(utxo.txid, utxo.vout)];
+
+    const outputs = [
+      new Output(
+        lbtc,
+        sendAmount,
+        'ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq',
+      ),
+      new Output(lbtc, change, taprootAddress),
+      new Output(lbtc, FEES),
+    ];
+
+    const pset = PsetCreator.newPset({
+      inputs,
+      outputs,
+    });
+
+    const updater = new PsetUpdater(pset);
+    updater.addInWitnessUtxo(0, prevoutTx.outs[utxo.vout]);
+    updater.addInSighashType(0, Transaction.SIGHASH_ALL);
+    // Allthough not needed, let's add the tap internal key for completeness.
+    updater.addInTapInternalKey(0, toXOnly(alice.publicKey));
+
+    const preimage = pset.getInputPreimage(
+      0,
+      Transaction.SIGHASH_ALL,
+      regtest.genesisBlockHash,
+    );
+    const signature = BIP341Factory(ecc).taprootSignKey(
+      preimage,
+      alice.privateKey!,
+    );
+
+    const signer = new PsetSigner(pset);
+
+    const partialSig: BIP371SigningData = {
+      tapKeySig: serializeSchnnorrSig(signature, Transaction.SIGHASH_ALL),
+      genesisBlockHash: regtest.genesisBlockHash,
+    };
+    signer.signInput(0, partialSig, Pset.SchnorrSigValidator(ecc));
+
+    const finalizer = new PsetFinalizer(pset);
+    finalizer.finalize();
+    const tx = PsetExtractor.extract(pset);
+    const hex = tx.toHex();
+
+    await regtestUtils.broadcast(hex);
   });
 
   it('can create (and broadcast via 3PBP) a transaction w/ unconfidential taproot scriptspend input', async () => {

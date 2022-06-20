@@ -1,6 +1,7 @@
 import { payments } from '..';
 import { varuint } from '../bufferutils';
 import { hash160 } from '../crypto';
+import { OPS } from '../ops';
 import * as bscript from '../script';
 import { PartialSig } from './interfaces';
 
@@ -178,7 +179,7 @@ export const isP2WSH = isPaymentFactory(payments.p2wsh);
 export const isP2SH = isPaymentFactory(payments.p2sh);
 // TODO: use payment factory once in place. For now, let's check
 // if the script starts with OP_1.
-export const isP2TR = (script: Buffer): boolean => script[0] === 0x01;
+export const isP2TR = (script: Buffer): boolean => script[0] === OPS.OP_1;
 
 export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
   const pubkeyHash = hash160(pubkey);
