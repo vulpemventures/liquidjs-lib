@@ -3,7 +3,16 @@ Object.defineProperty(exports, '__esModule', { value: true });
 exports.findTapLeafToFinalize = exports.sortSignatures = exports.serializeTaprootSignature = exports.toXOnly = void 0;
 const bip341_1 = require('../bip341');
 const utils_1 = require('./utils');
-const toXOnly = pubKey => (pubKey.length === 32 ? pubKey : pubKey.slice(1, 33));
+const toXOnly = pubkey => {
+  switch (pubkey.length) {
+    case 32:
+      return pubkey;
+    case 33:
+      return Buffer.from(pubkey.slice(1));
+    default:
+      throw new Error('Invalid pubkey length');
+  }
+};
 exports.toXOnly = toXOnly;
 function serializeTaprootSignature(sig, sighashType) {
   const sighashTypeByte = sighashType

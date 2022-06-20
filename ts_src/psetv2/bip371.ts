@@ -3,8 +3,16 @@ import { Input } from './input';
 import { tapLeafHash } from '../bip341';
 import { pubkeyPositionInScript } from './utils';
 
-export const toXOnly = (pubKey: Buffer) =>
-  pubKey.length === 32 ? pubKey : pubKey.slice(1, 33);
+export const toXOnly = (pubkey: Buffer) => {
+  switch (pubkey.length) {
+    case 32:
+      return pubkey;
+    case 33:
+      return Buffer.from(pubkey.slice(1));
+    default:
+      throw new Error('Invalid pubkey length');
+  }
+};
 
 export function serializeTaprootSignature(
   sig: Buffer,

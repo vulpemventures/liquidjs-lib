@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { TapLeafScript } from './interfaces';
 import { Input } from './input';
-export declare const toXOnly: (pubKey: Buffer) => Buffer;
+export declare const toXOnly: (pubkey: Buffer) => Buffer;
 export declare function serializeTaprootSignature(sig: Buffer, sighashType?: number): Buffer;
 export declare function sortSignatures(input: Input, tapLeaf: TapLeafScript): Buffer[];
 /**
