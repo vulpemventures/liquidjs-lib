@@ -5,7 +5,7 @@ import { Updater } from './updater';
 import { isP2WPKH, isP2WSH } from './utils';
 
 export interface BIP174SigningData {
-  psig: PartialSig;
+  partialSig: PartialSig;
   redeemScript?: Buffer;
   witnessScript?: Buffer;
 }
@@ -24,9 +24,9 @@ export class Signer {
     this.pset = pset;
   }
 
-  signInput(
+  addSignature(
     inIndex: number,
-    data: BIP174SigningData | BIP371SigningData,
+    sigData: BIP174SigningData | BIP371SigningData,
     validator: ValidateSigFunction,
   ): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
@@ -48,10 +48,10 @@ export class Signer {
     }
 
     if (input.isTaproot()) {
-      return this._signTaprootInput(inIndex, data, validator);
+      return this._signTaprootInput(inIndex, sigData, validator);
     }
 
-    return this._signInput(inIndex, data, validator);
+    return this._signInput(inIndex, sigData, validator);
   }
 
   private _signInput(
@@ -63,11 +63,15 @@ export class Signer {
     const pset = this.pset.copy();
     const sighashType = input.sighashType!;
 
-    const { psig, witnessScript, redeemScript } = data as BIP174SigningData;
-    if (!psig) {
+    const {
+      partialSig,
+      witnessScript,
+      redeemScript,
+    } = data as BIP174SigningData;
+    if (!partialSig) {
       throw new Error('Missing partial signature for input');
     }
-    if (psig.signature.slice(-1)[0] !== sighashType) {
+    if (partialSig.signature.slice(-1)[0] !== sighashType) {
       throw new Error('Input and signature sighash types must match');
     }
 
@@ -112,7 +116,7 @@ export class Signer {
       }
     }
 
-    u.addInPartialSignature(inIndex, psig, validator);
+    u.addInPartialSignature(inIndex, partialSig, validator);
 
     pset.sanityCheck();
 

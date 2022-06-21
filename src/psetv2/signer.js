@@ -9,7 +9,7 @@ class Signer {
     pset.sanityCheck();
     this.pset = pset;
   }
-  signInput(inIndex, data, validator) {
+  addSignature(inIndex, sigData, validator) {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
@@ -28,19 +28,19 @@ class Signer {
       }
     }
     if (input.isTaproot()) {
-      return this._signTaprootInput(inIndex, data, validator);
+      return this._signTaprootInput(inIndex, sigData, validator);
     }
-    return this._signInput(inIndex, data, validator);
+    return this._signInput(inIndex, sigData, validator);
   }
   _signInput(inIndex, data, validator) {
     const input = this.pset.inputs[inIndex];
     const pset = this.pset.copy();
     const sighashType = input.sighashType;
-    const { psig, witnessScript, redeemScript } = data;
-    if (!psig) {
+    const { partialSig, witnessScript, redeemScript } = data;
+    if (!partialSig) {
       throw new Error('Missing partial signature for input');
     }
-    if (psig.signature.slice(-1)[0] !== sighashType) {
+    if (partialSig.signature.slice(-1)[0] !== sighashType) {
       throw new Error('Input and signature sighash types must match');
     }
     // in case a witness script is passed, we make sure that the input witness
@@ -85,7 +85,7 @@ class Signer {
         pset.inputs[inIndex].nonWitnessUtxo = undefined;
       }
     }
-    u.addInPartialSignature(inIndex, psig, validator);
+    u.addInPartialSignature(inIndex, partialSig, validator);
     pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;

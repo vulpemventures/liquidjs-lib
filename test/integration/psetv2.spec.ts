@@ -514,7 +514,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       tapKeySig: serializeSchnnorrSig(signature, Transaction.SIGHASH_ALL),
       genesisBlockHash: regtest.genesisBlockHash,
     };
-    signer.signInput(0, partialSig, Pset.SchnorrSigValidator(ecc));
+    signer.addSignature(0, partialSig, Pset.SchnorrSigValidator(ecc));
 
     const finalizer = new PsetFinalizer(pset);
     finalizer.finalize();
@@ -630,7 +630,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     );
 
     const partialSig: BIP174SigningData = {
-      psig: {
+      partialSig: {
         pubkey: BOB.publicKey,
         signature: bscript.signature.encode(
           BOB.sign(preimage),
@@ -638,7 +638,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         ),
       },
     };
-    signer.signInput(0, partialSig, Pset.ECDSASigValidator(ecc));
+    signer.addSignature(0, partialSig, Pset.ECDSASigValidator(ecc));
 
     // taproot input
     const hashType = pset.inputs[1].sighashType || Transaction.SIGHASH_ALL;
@@ -662,7 +662,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       genesisBlockHash: regtest.genesisBlockHash,
     };
 
-    signer.signInput(1, taprootData, Pset.SchnorrSigValidator(ecc));
+    signer.addSignature(1, taprootData, Pset.SchnorrSigValidator(ecc));
 
     const finalizer = new PsetFinalizer(pset);
     finalizer.finalize();
@@ -684,12 +684,12 @@ function signTransaction(
     const preimage = pset.getInputPreimage(i, sighashType);
     keyPairs.forEach((kp: any) => {
       const partialSig: BIP174SigningData = {
-        psig: {
+        partialSig: {
           pubkey: kp.publicKey,
           signature: bscript.signature.encode(kp.sign(preimage), sighashType),
         },
       };
-      signer.signInput(i, partialSig, Pset.ECDSASigValidator(ecc));
+      signer.addSignature(i, partialSig, Pset.ECDSASigValidator(ecc));
     });
   });
 
