@@ -28,11 +28,11 @@ class Signer {
       }
     }
     if (input.isTaproot()) {
-      return this._signTaprootInput(inIndex, sigData, validator);
+      return this._addTaprootSignature(inIndex, sigData, validator);
     }
-    return this._signInput(inIndex, sigData, validator);
+    return this._addSignature(inIndex, sigData, validator);
   }
-  _signInput(inIndex, data, validator) {
+  _addSignature(inIndex, data, validator) {
     const input = this.pset.inputs[inIndex];
     const pset = this.pset.copy();
     const sighashType = input.sighashType;
@@ -92,7 +92,7 @@ class Signer {
     this.pset.outputs = pset.outputs;
     return this;
   }
-  _signTaprootInput(inIndex, data, validator) {
+  _addTaprootSignature(inIndex, data, validator) {
     const pset = this.pset.copy();
     const { tapKeySig, tapScriptSigs, genesisBlockHash } = data;
     if (!tapKeySig && (!tapScriptSigs || !tapScriptSigs.length)) {

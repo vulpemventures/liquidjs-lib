@@ -48,13 +48,13 @@ export class Signer {
     }
 
     if (input.isTaproot()) {
-      return this._signTaprootInput(inIndex, sigData, validator);
+      return this._addTaprootSignature(inIndex, sigData, validator);
     }
 
-    return this._signInput(inIndex, sigData, validator);
+    return this._addSignature(inIndex, sigData, validator);
   }
 
-  private _signInput(
+  private _addSignature(
     inIndex: number,
     data: BIP174SigningData | BIP371SigningData,
     validator: ValidateSigFunction,
@@ -127,7 +127,7 @@ export class Signer {
     return this;
   }
 
-  private _signTaprootInput(
+  private _addTaprootSignature(
     inIndex: number,
     data: BIP174SigningData | BIP371SigningData,
     validator: ValidateSigFunction,

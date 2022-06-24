@@ -15,6 +15,6 @@ export declare class Signer {
     pset: Pset;
     constructor(pset: Pset);
     addSignature(inIndex: number, sigData: BIP174SigningData | BIP371SigningData, validator: ValidateSigFunction): this;
-    private _signInput;
-    private _signTaprootInput;
+    private _addSignature;
+    private _addTaprootSignature;
 }
