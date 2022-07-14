@@ -396,7 +396,7 @@ export class Output {
     }
 
     const scriptKey = new Key(OutputTypes.SCRIPT);
-    keyPairs.push(new KeyPair(scriptKey, this.script  || Buffer.alloc(0)));
+    keyPairs.push(new KeyPair(scriptKey, this.script || Buffer.alloc(0)));
 
     if (this.tapBip32Derivation! && this.tapBip32Derivation!.length > 0) {
       this.tapBip32Derivation!.forEach(
