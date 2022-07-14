@@ -395,10 +395,8 @@ export class Output {
       });
     }
 
-    if (this.script!) {
-      const key = new Key(OutputTypes.SCRIPT);
-      keyPairs.push(new KeyPair(key, this.script!));
-    }
+    const scriptKey = new Key(OutputTypes.SCRIPT);
+    keyPairs.push(new KeyPair(scriptKey, this.script  || Buffer.alloc(0)));
 
     if (this.tapBip32Derivation! && this.tapBip32Derivation!.length > 0) {
       this.tapBip32Derivation!.forEach(

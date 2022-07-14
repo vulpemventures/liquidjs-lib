@@ -1,4 +1,3 @@
-import BitSet from 'bitset';
 import { Global } from './globals';
 import { Pset } from './pset';
 import { Input as PsetInput } from './input';
@@ -114,13 +113,7 @@ export class Creator {
     outputs?: Output[];
     locktime?: number;
   }): Pset {
-    const modifiable = new BitSet(0);
-    const txModifiable = new BitSet(0);
-    txModifiable.set(0);
-    txModifiable.set(1);
     const globals = new Global(2, 0, 0, 2);
-    globals.modifiable = modifiable;
-    globals.txModifiable = txModifiable;
     globals.xpub = [];
     globals.scalars = [];
     globals.proprietaryData = [];
