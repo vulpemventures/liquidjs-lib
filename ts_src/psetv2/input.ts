@@ -323,7 +323,10 @@ export class Input {
                 input.issuanceValue = readUInt64LE(kp.value, 0);
                 break;
               case InputProprietaryTypes.ISSUANCE_VALUE_COMMITMENT:
-                if (input.issuanceValueCommitment && input.issuanceValueCommitment!.length > 0) {
+                if (
+                  input.issuanceValueCommitment &&
+                  input.issuanceValueCommitment!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key ISSUANCE_VALUE_COMMITMENT',
                   );
@@ -336,7 +339,10 @@ export class Input {
                 input.issuanceValueCommitment = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_VALUE_RANGEPROOF:
-                if (input.issuanceValueRangeproof && input.issuanceValueRangeproof!.length > 0) {
+                if (
+                  input.issuanceValueRangeproof &&
+                  input.issuanceValueRangeproof!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key ISSUANCE_VALUE_RANGEPROOF',
                   );
@@ -344,7 +350,10 @@ export class Input {
                 input.issuanceValueRangeproof = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_INFLATION_KEYS_RANGEPROOF:
-                if (input.issuanceInflationKeysRangeproof && input.issuanceInflationKeysRangeproof!.length > 0) {
+                if (
+                  input.issuanceInflationKeysRangeproof &&
+                  input.issuanceInflationKeysRangeproof!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key ISSUANCE_INFLATION_KEYS_RANGEPROOF',
                   );
@@ -357,12 +366,15 @@ export class Input {
                 }
                 try {
                   input.peginTx = BitcoinTransaction.fromBuffer(kp.value);
-                } catch(ignore) {
+                } catch (ignore) {
                   throw new Error('Invalid input pegin tx');
                 }
                 break;
               case InputProprietaryTypes.PEGIN_TXOUT_PROOF:
-                if (input.peginTxoutProof && input.peginTxoutProof!.length > 0) {
+                if (
+                  input.peginTxoutProof &&
+                  input.peginTxoutProof!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key PEGIN_TXOUT_PROOF',
                   );
@@ -370,7 +382,10 @@ export class Input {
                 input.peginTxoutProof = kp.value;
                 break;
               case InputProprietaryTypes.PEGIN_GENESIS_HASH:
-                if (input.peginGenesisHash && input.peginGenesisHash!.length > 0) {
+                if (
+                  input.peginGenesisHash &&
+                  input.peginGenesisHash!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key PEGIN_GENESIS_HASH',
                   );
@@ -381,7 +396,10 @@ export class Input {
                 input.peginGenesisHash = kp.value;
                 break;
               case InputProprietaryTypes.PEGIN_CLAIM_SCRIPT:
-                if (input.peginClaimScript && input.peginClaimScript!.length > 0) {
+                if (
+                  input.peginClaimScript &&
+                  input.peginClaimScript!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key PEGIN_CLAIM_SCRIPT',
                   );
@@ -405,10 +423,10 @@ export class Input {
                     'Duplicated input proprietary key PEGIN_WITNESS',
                   );
                 }
-                const pwr = new BufferReader(kp.value)
+                const pwr = new BufferReader(kp.value);
                 try {
                   input.peginWitness = pwr.readVector();
-                }catch(ignore) {
+                } catch (ignore) {
                   throw new Error('Invalid input pegin witness');
                 }
                 break;
@@ -426,7 +444,10 @@ export class Input {
                 input.issuanceInflationKeys = readUInt64LE(kp.value, 0);
                 break;
               case InputProprietaryTypes.ISSUANCE_INFLATION_KEYS_COMMITMENT:
-                if (input.issuanceInflationKeysCommitment && input.issuanceInflationKeysCommitment!.length > 0) {
+                if (
+                  input.issuanceInflationKeysCommitment &&
+                  input.issuanceInflationKeysCommitment!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key ISSUANCE_INFLATION_KEYS_COMMITMENT',
                   );
@@ -439,7 +460,10 @@ export class Input {
                 input.issuanceInflationKeysCommitment = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_BLINDING_NONCE:
-                if (input.issuanceBlindingNonce && input.issuanceBlindingNonce!.length > 0) {
+                if (
+                  input.issuanceBlindingNonce &&
+                  input.issuanceBlindingNonce!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key ISSUANCE_BLINDING_NONCE',
                   );
@@ -452,7 +476,10 @@ export class Input {
                 input.issuanceBlindingNonce = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_ASSET_ENTROPY:
-                if (input.issuanceAssetEntropy && input.issuanceAssetEntropy!.length > 0) {
+                if (
+                  input.issuanceAssetEntropy &&
+                  input.issuanceAssetEntropy!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key ISSUANCE_ASSET_ENTROPY',
                   );
@@ -473,7 +500,10 @@ export class Input {
                 input.utxoRangeProof = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_BLIND_VALUE_PROOF:
-                if (input.issuanceBlindValueProof && input.issuanceBlindValueProof!.length > 0) {
+                if (
+                  input.issuanceBlindValueProof &&
+                  input.issuanceBlindValueProof!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key ISSUANCE_BLIND_VALUE_PROOF',
                   );
@@ -481,7 +511,10 @@ export class Input {
                 input.issuanceBlindValueProof = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_BLIND_INFLATION_KEYS_PROOF:
-                if (input.issuanceBlindInflationKeysProof && input.issuanceBlindInflationKeysProof!.length > 0) {
+                if (
+                  input.issuanceBlindInflationKeysProof &&
+                  input.issuanceBlindInflationKeysProof!.length > 0
+                ) {
                   throw new Error(
                     'Duplicated input proprietary key ISSUANCE_BLIND_INFLATION_KEYS_PROOF',
                   );
@@ -587,21 +620,19 @@ export class Input {
     }
     if (
       this.issuanceValue! &&
-      this.issuanceValueCommitment! && this.issuanceValueCommitment.length > 0
-      && !this.issuanceBlindValueProof
+      this.issuanceValueCommitment! &&
+      this.issuanceValueCommitment.length > 0 &&
+      !this.issuanceBlindValueProof
     ) {
-      throw new Error(
-        'Missing input issuance value blind proof',
-      );
+      throw new Error('Missing input issuance value blind proof');
     }
     if (
       this.issuanceInflationKeys! &&
-      this.issuanceInflationKeysCommitment! && this.issuanceInflationKeysCommitment.length > 0
-      && !this.issuanceBlindInflationKeysProof
+      this.issuanceInflationKeysCommitment! &&
+      this.issuanceInflationKeysCommitment.length > 0 &&
+      !this.issuanceBlindInflationKeysProof
     ) {
-      throw new Error(
-        'Missing input issuance inflation keys blind proof',
-      );
+      throw new Error('Missing input issuance inflation keys blind proof');
     }
 
     return this;
@@ -963,8 +994,8 @@ export class Input {
       const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.PEGIN_WITNESS,
       );
-      const w = new BufferWriter(Buffer.allocUnsafe(0))
-      w.writeVector(this.peginWitness!)
+      const w = new BufferWriter(Buffer.allocUnsafe(0));
+      w.writeVector(this.peginWitness!);
       const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, w.buffer));
     }

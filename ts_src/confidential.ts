@@ -634,7 +634,9 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       outIndexes! && outIndexes.length > 0
         ? outIndexes
         : pset.outputs.reduce(
-            (arr: number[], out, i) => (out.needsBlinding() && arr.push(i), arr),
+            (arr: number[], out, i) => (
+              out.needsBlinding() && arr.push(i), arr
+            ),
             [],
           );
 

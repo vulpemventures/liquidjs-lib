@@ -174,22 +174,30 @@ export class Global {
     if (this.modifiable && parseInt(this.modifiable.toString(), 2) !== 0) {
       throw new Error('Global pset modifiable flag value is invalid');
     }
-    if (this.xpubs && this.xpubs.some((xpub, i) => {
-      if (i === this.xpubs!.length -1) {
-        return false;
-      }
-      const next = this.xpubs!.slice(i+1);
-      return next.some(nextXpub => xpub.extendedKey.compare(nextXpub.extendedKey) === 0)
-    })) {
+    if (
+      this.xpubs &&
+      this.xpubs.some((xpub, i) => {
+        if (i === this.xpubs!.length - 1) {
+          return false;
+        }
+        const next = this.xpubs!.slice(i + 1);
+        return next.some(
+          nextXpub => xpub.extendedKey.compare(nextXpub.extendedKey) === 0,
+        );
+      })
+    ) {
       throw new Error('Global xpubs has duplicated values');
     }
-    if (this.scalars && this.scalars.some((scalar, i) => {
-      if (i === this.scalars!.length -1) {
-        return false;
-      }
-      const next = this.scalars!.slice(i+1);
-      return next.some(nextScalar => scalar.compare(nextScalar) === 0)
-    })) {
+    if (
+      this.scalars &&
+      this.scalars.some((scalar, i) => {
+        if (i === this.scalars!.length - 1) {
+          return false;
+        }
+        const next = this.scalars!.slice(i + 1);
+        return next.some(nextScalar => scalar.compare(nextScalar) === 0);
+      })
+    ) {
       throw new Error('Global scalars has duplicated values');
     }
     return this;

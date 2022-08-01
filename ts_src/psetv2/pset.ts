@@ -90,11 +90,11 @@ export class Pset {
     this.outputs.forEach(output => output.sanityCheck());
 
     if (
-      this.isFullyBlinded() && this.globals.scalars && this.globals.scalars.length > 0
+      this.isFullyBlinded() &&
+      this.globals.scalars &&
+      this.globals.scalars.length > 0
     ) {
-      throw new Error(
-        'global scalars must be empty for fully blinded pset',
-      );
+      throw new Error('global scalars must be empty for fully blinded pset');
     }
 
     return this;
@@ -129,14 +129,16 @@ export class Pset {
   }
 
   needsBlinding(): boolean {
-    return this.outputs.some(out => out.needsBlinding())
+    return this.outputs.some(out => out.needsBlinding());
   }
 
   isFullyBlinded(): boolean {
     if (!this.needsBlinding()) {
       return false;
     }
-    return !this.outputs.some(out => out.needsBlinding() && !out.isFullyBlinded());
+    return !this.outputs.some(
+      out => out.needsBlinding() && !out.isFullyBlinded(),
+    );
   }
 
   isComplete(): boolean {

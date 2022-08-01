@@ -14,16 +14,19 @@ describe('PSETv2', () => {
       fixtures.roundtrip.valid.forEach(f => {
         it(f.name, () => {
           const pset = Pset.fromBase64(f.base64);
-          assert.strictEqual(pset.toBuffer().toString('hex'), Buffer.from(f.base64, 'base64').toString('hex'));
+          assert.strictEqual(
+            pset.toBuffer().toString('hex'),
+            Buffer.from(f.base64, 'base64').toString('hex'),
+          );
         });
       });
-    })
+    });
     describe('invalid', () => {
       fixtures.roundtrip.invalid.forEach(f => {
         it(f.name, () => {
           assert.throws(() => Pset.fromBase64(f.base64));
         });
       });
-    })
+    });
   });
 });

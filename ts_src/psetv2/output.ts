@@ -306,22 +306,22 @@ export class Output {
   sanityCheck(): this {
     if (
       this.value > 0 &&
-      this.valueCommitment && this.valueCommitment.length > 0
-      && !this.blindValueProof
+      this.valueCommitment &&
+      this.valueCommitment.length > 0 &&
+      !this.blindValueProof
     ) {
       throw new Error('Missing output value blind proof');
     }
     if (
-      this.asset && this.asset.length  > 0 &&
-      this.assetCommitment && this.assetCommitment.length > 0
-      && !this.blindAssetProof
+      this.asset &&
+      this.asset.length > 0 &&
+      this.assetCommitment &&
+      this.assetCommitment.length > 0 &&
+      !this.blindAssetProof
     ) {
       throw new Error('Missing output asset blind proof');
     }
-    if (
-      this.isPartiallyBlinded() &&
-      !this.isFullyBlinded()
-    ) {
+    if (this.isPartiallyBlinded() && !this.isFullyBlinded()) {
       throw new Error(
         'Output is partially blinded while it must be either unblinded or fully blinded',
       );
@@ -340,21 +340,21 @@ export class Output {
   isPartiallyBlinded(): boolean {
     return (
       (this.valueCommitment! && this.valueCommitment!.length > 0) ||
-        (this.assetCommitment! && this.assetCommitment!.length > 0) ||
-        (this.valueRangeproof! && this.valueRangeproof!.length > 0) ||
-        (this.assetSurjectionProof! && this.assetSurjectionProof!.length > 0) ||
-        (this.ecdhPubkey! && this.ecdhPubkey!.length > 0)
+      (this.assetCommitment! && this.assetCommitment!.length > 0) ||
+      (this.valueRangeproof! && this.valueRangeproof!.length > 0) ||
+      (this.assetSurjectionProof! && this.assetSurjectionProof!.length > 0) ||
+      (this.ecdhPubkey! && this.ecdhPubkey!.length > 0)
     );
   }
 
   isFullyBlinded(): boolean {
     return (
       this.valueCommitment! &&
-        this.valueCommitment!.length > 0 &&
-        (this.assetCommitment! && this.assetCommitment!.length > 0) &&
-        (this.valueRangeproof! && this.valueRangeproof!.length > 0) &&
-        (this.assetSurjectionProof! && this.assetSurjectionProof!.length) > 0 &&
-        (this.ecdhPubkey! && this.ecdhPubkey!.length > 0)
+      this.valueCommitment!.length > 0 &&
+      (this.assetCommitment! && this.assetCommitment!.length > 0) &&
+      (this.valueRangeproof! && this.valueRangeproof!.length > 0) &&
+      (this.assetSurjectionProof! && this.assetSurjectionProof!.length) > 0 &&
+      (this.ecdhPubkey! && this.ecdhPubkey!.length > 0)
     );
   }
 
