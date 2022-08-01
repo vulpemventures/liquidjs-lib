@@ -27,8 +27,8 @@ describe('PSETv2', () => {
           let errMsg = '';
           try {
             Pset.fromBase64(f.base64);
-          } catch (e: any) {
-            errMsg = e.message;
+          } catch (e) {
+            errMsg = (e as Error).message;
           }
           assert.strictEqual(errMsg, f.expectedError);
         });
