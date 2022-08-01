@@ -10,6 +10,15 @@ import { Xpub } from './interfaces';
 
 const pubKeyLength = 78;
 
+export class GlobalDuplicateFieldError extends Error {
+  constructor(message?: string) {
+    if (message) {
+      message = 'Duplicated global ' + message;
+    }
+    super(message);
+  }
+}
+
 export class Global {
   static fromBuffer(r: BufferReader): Global {
     let kp: KeyPair;
@@ -45,7 +54,7 @@ export class Global {
           break;
         case GlobalTypes.TX_VERSION:
           if (global.txVersion > 0) {
-            throw new Error('Duplicated global key TX_VERSION');
+            throw new GlobalDuplicateFieldError('tx version');
           }
           if (kp.value.length !== 4) {
             throw new Error('Invalid global tx version length');
@@ -54,7 +63,7 @@ export class Global {
           break;
         case GlobalTypes.FALLBACK_LOCKTIME:
           if (global.fallbackLocktime! > 0) {
-            throw new Error('Duplicated global key FALLBACK_LOCKTIME');
+            throw new GlobalDuplicateFieldError('fallback locktime');
           }
           if (kp.value.length !== 4) {
             throw new Error('Invalid global fallback locktime length');
@@ -63,19 +72,19 @@ export class Global {
           break;
         case GlobalTypes.INPUT_COUNT:
           if (global.inputCount > 0) {
-            throw new Error('Duplicated global key INPUT_COUNT');
+            throw new GlobalDuplicateFieldError('input count');
           }
           global.inputCount = varuint.decode(kp.value);
           break;
         case GlobalTypes.OUTPUT_COUNT:
           if (global.outputCount > 0) {
-            throw new Error('Duplicated global key OUTPUT_COUNT');
+            throw new GlobalDuplicateFieldError('output count');
           }
           global.outputCount = varuint.decode(kp.value);
           break;
         case GlobalTypes.TX_MODIFIABLE:
           if (global.txModifiable!) {
-            throw new Error('Duplicated global key TX_MODIFIABLE');
+            throw new GlobalDuplicateFieldError('tx modifiable');
           }
           if (kp.value.length !== 1) {
             throw new Error('Invalid global tx modifiable length');
@@ -84,7 +93,7 @@ export class Global {
           break;
         case GlobalTypes.VERSION:
           if (global.version > 0) {
-            throw new Error('Duplicated global key VERSION');
+            throw new GlobalDuplicateFieldError('version');
           }
           if (kp.value.length !== 4) {
             throw new Error('Invalid global version length');
@@ -106,14 +115,10 @@ export class Global {
                 break;
               case GlobalProprietaryTypes.TX_MODIFIABLE:
                 if (global.modifiable!) {
-                  throw new Error(
-                    'Duplicated global proprietary key TX_MODIFIABLE',
-                  );
+                  throw new GlobalDuplicateFieldError('pset modifiable');
                 }
                 if (kp.value.length !== 1) {
-                  throw new Error(
-                    'Invalid global proprietary tx modifiable length',
-                  );
+                  throw new Error('Invalid global pset modifiable length');
                 }
                 global.modifiable = new BitSet(kp.value[0]);
                 break;
@@ -169,10 +174,10 @@ export class Global {
       throw new Error('Global version must be exactly 2');
     }
     if (this.txModifiable && parseInt(this.txModifiable.toString(), 2) > 7) {
-      throw new Error('Global tx modifiable flag value is invalid');
+      throw new Error('Invalid global tx modifiable value');
     }
     if (this.modifiable && parseInt(this.modifiable.toString(), 2) !== 0) {
-      throw new Error('Global pset modifiable flag value is invalid');
+      throw new Error('Invalid global pset modifiable value');
     }
     if (
       this.xpubs &&
@@ -186,7 +191,7 @@ export class Global {
         );
       })
     ) {
-      throw new Error('Global xpubs has duplicated values');
+      throw new GlobalDuplicateFieldError('xpub');
     }
     if (
       this.scalars &&
@@ -198,7 +203,7 @@ export class Global {
         return next.some(nextScalar => scalar.compare(nextScalar) === 0);
       })
     ) {
-      throw new Error('Global scalars has duplicated values');
+      throw new GlobalDuplicateFieldError('scalar');
     }
     return this;
   }

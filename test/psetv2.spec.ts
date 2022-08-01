@@ -24,7 +24,13 @@ describe('PSETv2', () => {
     describe('invalid', () => {
       fixtures.roundtrip.invalid.forEach(f => {
         it(f.name, () => {
-          assert.throws(() => Pset.fromBase64(f.base64));
+          let errMsg = '';
+          try {
+            Pset.fromBase64(f.base64);
+          } catch (e: any) {
+            errMsg = e.message;
+          }
+          assert.strictEqual(errMsg, f.expectedError);
         });
       });
     });

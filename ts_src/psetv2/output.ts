@@ -19,6 +19,15 @@ import { ProprietaryData } from './proprietary_data';
 import { magicPrefix } from './pset';
 import { isP2TR } from './utils';
 
+export class OutputDuplicateFieldError extends Error {
+  constructor(message?: string) {
+    if (message) {
+      message = 'Duplicated output ' + message;
+    }
+    super(message);
+  }
+}
+
 export class Output {
   static fromBuffer(r: BufferReader): Output {
     let kp: KeyPair;
@@ -37,13 +46,13 @@ export class Output {
       switch (kp.key.keyType) {
         case OutputTypes.REDEEM_SCRIPT:
           if (output.redeemScript!.length > 0) {
-            throw new Error('Duplicated output key REDEEM_SCRIPT');
+            throw new OutputDuplicateFieldError('redeem script');
           }
           output.redeemScript = kp.value;
           break;
         case OutputTypes.WITNESS_SCRIPT:
           if (output.witnessScript!.length > 0) {
-            throw new Error('Duplicated output key WITNESS_SCRIPT');
+            throw new OutputDuplicateFieldError('witness script');
           }
           output.witnessScript = kp.value;
           break;
@@ -56,14 +65,14 @@ export class Output {
             output.bip32Derivation = [];
           }
           if (output.bip32Derivation!.find(d => d.pubkey.equals(pubkey))) {
-            throw new Error('Duplicated output bip32 derivation');
+            throw new OutputDuplicateFieldError('bip32 derivation');
           }
           const { masterFingerprint, path } = decodeBip32Derivation(kp.value);
           output.bip32Derivation!.push({ pubkey, masterFingerprint, path });
           break;
         case OutputTypes.AMOUNT:
           if (output.value > 0) {
-            throw new Error('Duplicated output key AMOUNT');
+            throw new OutputDuplicateFieldError('value');
           }
           if (kp.value.length !== 8) {
             throw new Error('Invalid output amount length');
@@ -72,7 +81,7 @@ export class Output {
           break;
         case OutputTypes.SCRIPT:
           if (output.script! && output.script!.length > 0) {
-            throw new Error('Duplicated output key SCRIPT');
+            throw new OutputDuplicateFieldError('script');
           }
           output.script = kp.value;
           break;
@@ -90,7 +99,7 @@ export class Output {
               d.pubkey.equals(tapBip32Pubkey),
             )
           ) {
-            throw new Error('Duplicated output taproot bip32 derivation');
+            throw new OutputDuplicateFieldError('taproot bip32 derivation');
           }
           const nHashes = varuint.decode(kp.value);
           const nHashesLen = varuint.encodingLength(nHashes);
@@ -110,7 +119,7 @@ export class Output {
           break;
         case OutputTypes.TAP_TREE:
           if (output.tapTree!) {
-            throw new Error('Duplicated output key TAP_TREE');
+            throw new OutputDuplicateFieldError('taproot tree');
           }
           let _offset = 0;
           const leaves: TapLeaf[] = [];
@@ -130,7 +139,7 @@ export class Output {
           break;
         case OutputTypes.TAP_INTERNAL_KEY:
           if (output.tapInternalKey! && output.tapInternalKey!.length > 0) {
-            throw new Error('Duplicated output key TAP_INTERNAL_KEY');
+            throw new OutputDuplicateFieldError('taproot internal key');
           }
           if (kp.value.length !== 32) {
             throw new Error('Invalid output taproot internal key length');
@@ -146,9 +155,7 @@ export class Output {
                   output.valueCommitment! &&
                   output.valueCommitment!.length > 0
                 ) {
-                  throw new Error(
-                    'Duplicated output proprietary key VALUE_COMMITMENT',
-                  );
+                  throw new OutputDuplicateFieldError('value commitment');
                 }
                 if (kp.value.length !== 33) {
                   throw new Error('Invalid output value commitment length');
@@ -157,7 +164,7 @@ export class Output {
                 break;
               case OutputProprietaryTypes.ASSET:
                 if (output.asset && output.asset.length > 0) {
-                  throw new Error('Duplicated output proprietary key ASSET');
+                  throw new OutputDuplicateFieldError('asset');
                 }
                 if (kp.value.length !== 32) {
                   throw new Error('Invalid output asset length');
@@ -169,9 +176,7 @@ export class Output {
                   output.assetCommitment! &&
                   output.assetCommitment!.length > 0
                 ) {
-                  throw new Error(
-                    'Duplicated output proprietary key ASSET_COMMITMENT',
-                  );
+                  throw new OutputDuplicateFieldError('asset commitment');
                 }
                 if (kp.value.length !== 33) {
                   throw new Error('Invalid output asset commitment length');
@@ -183,9 +188,7 @@ export class Output {
                   output.valueRangeproof! &&
                   output.valueRangeproof!.length > 0
                 ) {
-                  throw new Error(
-                    'Duplicated output proprietary key VALUE_RANGEPROOF',
-                  );
+                  throw new OutputDuplicateFieldError('value range proof');
                 }
                 output.valueRangeproof = kp.value;
                 break;
@@ -194,9 +197,7 @@ export class Output {
                   output.assetSurjectionProof! &&
                   output.assetSurjectionProof!.length > 0
                 ) {
-                  throw new Error(
-                    'Duplicated output proprietary key ASSET_SURJECTION_PROOF',
-                  );
+                  throw new OutputDuplicateFieldError('asset surjection proof');
                 }
                 output.assetSurjectionProof = kp.value;
                 break;
@@ -205,9 +206,7 @@ export class Output {
                   output.blindingPubkey! &&
                   output.blindingPubkey!.length > 0
                 ) {
-                  throw new Error(
-                    'Duplicated output proprietary key BLINDING_PUBKEY',
-                  );
+                  throw new OutputDuplicateFieldError('blinding pubkey');
                 }
                 if (kp.value.length !== 33) {
                   throw new Error('Invalid output blinding pubkey length');
@@ -216,9 +215,7 @@ export class Output {
                 break;
               case OutputProprietaryTypes.ECDH_PUBKEY:
                 if (output.ecdhPubkey! && output.ecdhPubkey!.length > 0) {
-                  throw new Error(
-                    'Duplicated output proprietary key ECDH_PUBKEY',
-                  );
+                  throw new OutputDuplicateFieldError('ecdh pubkey');
                 }
                 if (kp.value.length !== 33) {
                   throw new Error('Invalid output ecdh pubkey length');
@@ -227,9 +224,7 @@ export class Output {
                 break;
               case OutputProprietaryTypes.BLINDER_INDEX:
                 if (output.blinderIndex !== undefined) {
-                  throw new Error(
-                    'Duplicated output proprietary key BLINDER_INDEX',
-                  );
+                  throw new OutputDuplicateFieldError('blinder index');
                 }
                 if (kp.value.length !== 4) {
                   throw new Error('Invalid output blinder index length');
@@ -241,9 +236,7 @@ export class Output {
                   output.blindValueProof! &&
                   output.blindValueProof!.length > 0
                 ) {
-                  throw new Error(
-                    'Duplicated output proprietary key BLIND_VALUE_PROOF',
-                  );
+                  throw new OutputDuplicateFieldError('blind value proof');
                 }
                 output.blindValueProof = kp.value;
                 break;
@@ -252,9 +245,7 @@ export class Output {
                   output.blindAssetProof! &&
                   output.blindAssetProof!.length > 0
                 ) {
-                  throw new Error(
-                    'Duplicated output proprietary key BLIND_ASSET_PROOF',
-                  );
+                  throw new OutputDuplicateFieldError('blind asset proof');
                 }
                 output.blindAssetProof = kp.value;
                 break;
@@ -304,17 +295,23 @@ export class Output {
   }
 
   sanityCheck(): this {
-    const valueCommitSet = this.valueCommitment && this.valueCommitment.length > 0;
-    const blindValueProofSet = this.blindValueProof && this.blindValueProof.length> 0;
-    if (
-      this.value > 0 && valueCommitSet !== blindValueProofSet
-    ) {
+    const valueCommitSet =
+      this.valueCommitment && this.valueCommitment.length > 0;
+    const blindValueProofSet =
+      this.blindValueProof && this.blindValueProof.length > 0;
+    if (this.value > 0 && valueCommitSet !== blindValueProofSet) {
       throw new Error('Missing output value commitment or blind proof');
     }
-    const assetCommitSet = this.assetCommitment && this.assetCommitment.length > 0;
-    const blindAssetProofSet = this.blindAssetProof && this.blindAssetProof.length > 0;
+    const assetCommitSet =
+      this.assetCommitment && this.assetCommitment.length > 0;
+    const blindAssetProofSet =
+      this.blindAssetProof && this.blindAssetProof.length > 0;
+    if (!assetCommitSet && (!this.asset || this.asset.length === 0)) {
+      throw new Error('Missing output asset');
+    }
     if (
-      this.asset && this.asset.length > 0 &&
+      this.asset &&
+      this.asset.length > 0 &&
       assetCommitSet !== blindAssetProofSet
     ) {
       throw new Error('Missing output asset commitment or blind proof');
