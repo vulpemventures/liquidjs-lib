@@ -56,6 +56,7 @@
     "bip174-liquid": "^1.0.3",
     "bip66": "^1.1.0",
     "bitcoin-ops": "^1.4.0",
+    "bitcoinjs-lib": "^6.0.2",
     "bitset": "^5.1.1",
     "blech32": "^1.0.1",
     "bs58check": "^2.0.0",

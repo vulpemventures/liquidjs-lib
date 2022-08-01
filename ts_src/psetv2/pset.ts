@@ -13,7 +13,6 @@ import { getScriptType, ScriptType } from '../address';
 import { p2pkh } from '../payments';
 import { ElementsValue } from '../value';
 import { AssetHash } from '../asset';
-import BitSet from 'bitset';
 import { bip341 } from '..';
 
 export const magicPrefix = Buffer.from([0x70, 0x73, 0x65, 0x74]);
@@ -87,22 +86,14 @@ export class Pset {
 
   sanityCheck(): this {
     this.globals.sanityCheck();
-    let hasFullyBlindedOutput = false;
     this.inputs.forEach(input => input.sanityCheck());
-    this.outputs.forEach(output => {
-      output.sanityCheck();
-      if (output.isFullyBlinded()) {
-        hasFullyBlindedOutput = true;
-      }
-    });
+    this.outputs.forEach(output => output.sanityCheck());
 
     if (
-      hasFullyBlindedOutput &&
-      (!this.globals.scalars || this.globals.scalars!.length === 0) &&
-      this.globals.modifiable!
+      this.isFullyBlinded() && this.globals.scalars && this.globals.scalars.length > 0
     ) {
       throw new Error(
-        'global modifiable flag must be unset for fully blinded pset',
+        'global scalars must be empty for fully blinded pset',
       );
     }
 
@@ -138,17 +129,14 @@ export class Pset {
   }
 
   needsBlinding(): boolean {
-    if (!this.globals.modifiable) {
-      return false;
-    }
-    return this.globals.modifiable!.get(0) === 1;
+    return this.outputs.some(out => out.needsBlinding())
   }
 
   isFullyBlinded(): boolean {
-    if (!this.globals.modifiable) {
+    if (!this.needsBlinding()) {
       return false;
     }
-    return this.globals.modifiable!.get(0) === 0;
+    return !this.outputs.some(out => out.needsBlinding() && !out.isFullyBlinded());
   }
 
   isComplete(): boolean {
@@ -220,7 +208,7 @@ export class Pset {
       const value =
         output.valueCommitment || ElementsValue.fromNumber(output.value).bytes;
       const asset =
-        output.assetCommitment || AssetHash.fromBytes(output.asset).bytes;
+        output.assetCommitment || AssetHash.fromBytes(output.asset!).bytes;
       const script = output.script || Buffer.from([]);
       const nonce = output.ecdhPubkey || Buffer.of(0x00);
 
@@ -316,12 +304,6 @@ export class Pset {
 
     this.outputs.push(newOutput);
     this.globals.outputCount++;
-    if (newOutput.isBlinded()) {
-      if (!this.globals.modifiable) {
-        this.globals.modifiable = new BitSet(0);
-      }
-      this.globals.modifiable!.set(0);
-    }
 
     return this;
   }

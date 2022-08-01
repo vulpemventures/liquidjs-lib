@@ -634,7 +634,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       outIndexes! && outIndexes.length > 0
         ? outIndexes
         : pset.outputs.reduce(
-            (arr: number[], out, i) => (out.isBlinded() && arr.push(i), arr),
+            (arr: number[], out, i) => (out.needsBlinding() && arr.push(i), arr),
             [],
           );
 
@@ -650,7 +650,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
         const valueBlinder = randomBytes(this.opts);
         const seed = randomBytes(this.opts);
         const value = output.value!.toString(10);
-        const assetCommit = await assetCommitment(output.asset, assetBlinder);
+        const assetCommit = await assetCommitment(output.asset!, assetBlinder);
         const valueCommit = await valueCommitment(
           value,
           assetCommit,
@@ -666,14 +666,14 @@ export class ZKPGenerator implements PsetBlindingGenerator {
         const rangeproof = await rangeProof(
           value,
           ecdhNonce,
-          output.asset,
+          output.asset!,
           assetBlinder,
           valueBlinder,
           valueCommit,
           script,
         );
         const surjectionproof = await surjectionProof(
-          output.asset,
+          output.asset!,
           assetBlinder,
           assets,
           assetBlinders,
@@ -686,7 +686,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
           valueBlinder,
         );
         const assetBlindProof = await blindAssetProof(
-          output.asset,
+          output.asset!,
           assetCommit,
           assetBlinder,
         );

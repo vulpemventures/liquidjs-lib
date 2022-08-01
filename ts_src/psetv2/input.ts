@@ -1,3 +1,4 @@
+import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import {
   BufferReader,
   BufferWriter,
@@ -47,13 +48,13 @@ export class Input {
       switch (kp.key.keyType) {
         case InputTypes.NON_WITNESS_UTXO:
           if (input.nonWitnessUtxo!) {
-            throw new Error('duplicated input key NON_WITNESS_UTXO');
+            throw new Error('Duplicated input key NON_WITNESS_UTXO');
           }
           input.nonWitnessUtxo = Transaction.fromBuffer(kp.value);
           break;
         case InputTypes.WITNESS_UTXO:
           if (input.witnessUtxo!) {
-            throw new Error('duplicated input key WITNESS_UTXO');
+            throw new Error('Duplicated input key WITNESS_UTXO');
           }
           input.witnessUtxo = deserializeOutput(kp.value);
           break;
@@ -63,10 +64,10 @@ export class Input {
           }
           const pk = kp.key.keyData;
           if (pk.length !== 33) {
-            throw new Error("invalid partial sig's pubkey length");
+            throw new Error(`Invalid partial sig's pubkey length`);
           }
           if (input.partialSigs!.find(ps => ps.pubkey.equals(pubkey))) {
-            throw new Error('duplicated input signature');
+            throw new Error('Duplicated input signature');
           }
           const signature = kp.value;
           bscript.signature.decode(signature);
@@ -74,55 +75,55 @@ export class Input {
           break;
         case InputTypes.SIGHASH_TYPE:
           if (input.sighashType! > 0) {
-            throw new Error('duplicated input key SIGHASH_TYPE');
+            throw new Error('Duplicated input key SIGHASH_TYPE');
           }
           if (kp.value.length !== 4) {
-            throw new Error('invalid input sighash type length');
+            throw new Error('Invalid input sighash type length');
           }
           input.sighashType = kp.value.readUInt32LE();
           break;
         case InputTypes.REDEEM_SCRIPT:
           if (input.redeemScript!.length > 0) {
-            throw new Error('duplicated input key REDEEM_SCRIPT');
+            throw new Error('Duplicated input key REDEEM_SCRIPT');
           }
           input.redeemScript = kp.value;
           break;
         case InputTypes.WITNESS_SCRIPT:
           if (input.witnessScript!.length > 0) {
-            throw new Error('duplicated input key WITNESS_SCRIPT');
+            throw new Error('Duplicated input key WITNESS_SCRIPT');
           }
           input.witnessScript = kp.value;
           break;
         case InputTypes.BIP32_DERIVATION:
           const pubkey = kp.key.keyData;
           if (pubkey!.length !== 33) {
-            throw new Error('invalid input bip32 derivation pubkey length');
+            throw new Error('Invalid input bip32 derivation pubkey length');
           }
           if (!input.bip32Derivation) {
             input.bip32Derivation = [];
           }
           if (input.bip32Derivation!.find(d => d.pubkey.equals(pubkey))) {
-            throw new Error('duplicated input bip32 derivation');
+            throw new Error('Duplicated input bip32 derivation');
           }
           const { masterFingerprint, path } = decodeBip32Derivation(kp.value);
           input.bip32Derivation!.push({ pubkey, masterFingerprint, path });
           break;
         case InputTypes.FINAL_SCRIPTSIG:
           if (input.finalScriptSig!.length > 0) {
-            throw new Error('duplicated input key FINAL_SCRIPTSIG');
+            throw new Error('Duplicated input key FINAL_SCRIPTSIG');
           }
           input.finalScriptSig = kp.value;
           break;
         case InputTypes.FINAL_SCRIPTWITNESS:
           if (input.finalScriptWitness!.length > 0) {
-            throw new Error('duplicated input key FINAL_SCRIPTWITNESS');
+            throw new Error('Duplicated input key FINAL_SCRIPTWITNESS');
           }
           input.finalScriptWitness = kp.value;
           break;
         case InputTypes.RIPEMD_160:
           const ripemd160Key = kp.key.keyData.toString('hex');
           if (ripemd160Key.length !== 20) {
-            throw new Error('invalid length for key of ripemd160 preimages');
+            throw new Error('Invalid length for key of ripemd160 preimages');
           }
           if (!input.ripemd160Preimages) {
             input.ripemd160Preimages = {};
@@ -132,7 +133,7 @@ export class Input {
         case InputTypes.SHA_256:
           const sha256Key = kp.key.keyData.toString('hex');
           if (sha256Key.length !== 32) {
-            throw new Error('invalid length for key of sha256 preimages');
+            throw new Error('Invalid length for key of sha256 preimages');
           }
           if (!input.sha256Preimages) {
             input.sha256Preimages = {};
@@ -142,7 +143,7 @@ export class Input {
         case InputTypes.HASH_160:
           const hash160Key = kp.key.keyData.toString('hex');
           if (hash160Key.length !== 20) {
-            throw new Error('invalid length for key of hash160 preimages');
+            throw new Error('Invalid length for key of hash160 preimages');
           }
           if (!input.hash160Preimages) {
             input.hash160Preimages = {};
@@ -152,7 +153,7 @@ export class Input {
         case InputTypes.HASH_256:
           const hash256Key = kp.key.keyData.toString('hex');
           if (hash256Key.length !== 32) {
-            throw new Error('invalid length for key of hash256 preimages');
+            throw new Error('Invalid length for key of hash256 preimages');
           }
           if (!input.hash256Preimages) {
             input.hash256Preimages = {};
@@ -161,55 +162,55 @@ export class Input {
           break;
         case InputTypes.PREVIOUS_TXID:
           if (input.previousTxid!.length > 0) {
-            throw new Error('duplicated input key PREVIOUS_TXID');
+            throw new Error('Duplicated input key PREVIOUS_TXID');
           }
           if (kp.value.length !== 32) {
-            throw new Error('invalid input previous txid length');
+            throw new Error('Invalid input previous txid length');
           }
           input.previousTxid = kp.value;
           break;
         case InputTypes.PREVIOUS_TXINDEX:
           if (input.previousTxIndex! > 0) {
-            throw new Error('duplicated input key PREVIOUS_TXINDEX');
+            throw new Error('Duplicated input key PREVIOUS_TXINDEX');
           }
           if (kp.value.length !== 4) {
-            throw new Error('invalid input previous tx index length');
+            throw new Error('Invalid input previous tx index length');
           }
           input.previousTxIndex = kp.value.readUInt32LE();
           break;
         case InputTypes.SEQUENCE:
-          if (input.sequence! > 0) {
-            throw new Error('duplicated input key SEQUENCE');
+          if (input.sequence !== undefined) {
+            throw new Error('Duplicated input key SEQUENCE');
           }
           if (kp.value.length !== 4) {
-            throw new Error('invalid input sequence length');
+            throw new Error('Invalid input sequence length');
           }
           input.sequence = kp.value.readUInt32LE();
           break;
         case InputTypes.REQUIRED_TIME_LOCKTIME:
           if (input.requiredTimeLocktime! > 0) {
-            throw new Error('duplicated input key REQUIRED_TIME_LOCKTIME');
+            throw new Error('Duplicated input key REQUIRED_TIME_LOCKTIME');
           }
           if (kp.value.length !== 4) {
-            throw new Error('invalid input time-based locktime length');
+            throw new Error('Invalid input time-based locktime length');
           }
           input.requiredTimeLocktime = kp.value.readUInt32LE();
           break;
         case InputTypes.REQUIRED_HEIGHT_LOCKTIME:
           if (input.requiredHeightLocktime! > 0) {
-            throw new Error('duplicated input key REQUIRED_HEIGHT_LOCKTIME');
+            throw new Error('Duplicated input key REQUIRED_HEIGHT_LOCKTIME');
           }
           if (kp.value.length !== 4) {
-            throw new Error('invalid input height-based locktime length');
+            throw new Error('Invalid input height-based locktime length');
           }
           input.requiredHeightLocktime = kp.value.readUInt32LE();
           break;
         case InputTypes.TAP_KEY_SIG:
           if (input.tapKeySig! && input.tapKeySig!.length > 0) {
-            throw new Error('duplicated input key TAP_KEY_SIG');
+            throw new Error('Duplicated input key TAP_KEY_SIG');
           }
           if (kp.value.length !== 64 && kp.value.length !== 65) {
-            throw new Error('invalid input taproot key signature length');
+            throw new Error('Invalid input taproot key signature length');
           }
           input.tapKeySig = kp.value;
           break;
@@ -218,16 +219,16 @@ export class Input {
             input.tapScriptSig = [];
           }
           if (kp.key.keyData.length !== 64) {
-            throw new Error('invalid input TAP_SCRIPT_SIG key data length');
+            throw new Error('Invalid input TAP_SCRIPT_SIG key data length');
           }
           const tapPubkey = kp.key.keyData.slice(0, 32);
           const leafHash = kp.key.keyData.slice(32);
 
           if (input.tapScriptSig.find(ps => ps.pubkey.equals(tapPubkey))!) {
-            throw new Error('duplicated input key TAP_SCRIPT_SIG');
+            throw new Error('Duplicated input key TAP_SCRIPT_SIG');
           }
           if (kp.value.length !== 64 && kp.value.length !== 65) {
-            throw new Error('invalid input taproot key signature length');
+            throw new Error('Invalid input taproot key signature length');
           }
           input.tapScriptSig!.push({
             pubkey: tapPubkey,
@@ -240,13 +241,13 @@ export class Input {
             input.tapLeafScript = [];
           }
           if ((kp.key.keyData.length - 1) % 32 !== 0) {
-            throw new Error('invalid input TAP_LEAF_SCRIPT key data length');
+            throw new Error('Invalid input TAP_LEAF_SCRIPT key data length');
           }
 
           const controlBlock = kp.key.keyData;
           const leafVersion = kp.value.slice(-1)[0];
           if ((controlBlock[0] & 0xfe) !== leafVersion) {
-            throw new Error('invalid input taproot leaf script version');
+            throw new Error('Invalid input taproot leaf script version');
           }
           input.tapLeafScript!.push({
             controlBlock,
@@ -257,7 +258,7 @@ export class Input {
         case InputTypes.TAP_BIP32_DERIVATION:
           const tapKey = kp.key.keyData;
           if (tapKey!.length !== 33) {
-            throw new Error('invalid input bip32 derivation pubkey length');
+            throw new Error('Invalid input bip32 derivation pubkey length');
           }
           if (!input.tapBip32Derivation) {
             input.tapBip32Derivation = [];
@@ -266,7 +267,7 @@ export class Input {
           if (
             input.tapBip32Derivation!.find(d => d.pubkey.equals(tapBip32Pubkey))
           ) {
-            throw new Error('duplicated input taproot bip32 derivation');
+            throw new Error('Duplicated input taproot bip32 derivation');
           }
           const nHashes = varuint.decode(kp.value);
           const nHashesLen = varuint.encodingLength(nHashes);
@@ -290,19 +291,19 @@ export class Input {
           break;
         case InputTypes.TAP_INTERNAL_KEY:
           if (input.tapInternalKey! && input.tapInternalKey!.length > 0) {
-            throw new Error('duplicated input key TAP_INTERNAL_KEY');
+            throw new Error('Duplicated input key TAP_INTERNAL_KEY');
           }
           if (kp.value.length !== 32) {
-            throw new Error('invalid input taproot internal key length');
+            throw new Error('Invalid input taproot internal key length');
           }
           input.tapInternalKey = kp.value;
           break;
         case InputTypes.TAP_MERKLE_ROOT:
           if (input.tapMerkleRoot! && input.tapMerkleRoot!.length > 0) {
-            throw new Error('duplicated input key TAP_MERKLE_ROOT');
+            throw new Error('Duplicated input key TAP_MERKLE_ROOT');
           }
           if (kp.value.length !== 32) {
-            throw new Error('invalid input taproot merkle root length');
+            throw new Error('Invalid input taproot merkle root length');
           }
           input.tapMerkleRoot = kp.value;
           break;
@@ -313,72 +314,76 @@ export class Input {
               case InputProprietaryTypes.ISSUANCE_VALUE:
                 if (input.issuanceValue! > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_VALUE',
+                    'Duplicated input proprietary key ISSUANCE_VALUE',
                   );
                 }
                 if (kp.value.length !== 8) {
-                  throw new Error('invalid input issuance value length');
+                  throw new Error('Invalid input issuance value length');
                 }
                 input.issuanceValue = readUInt64LE(kp.value, 0);
                 break;
               case InputProprietaryTypes.ISSUANCE_VALUE_COMMITMENT:
-                if (input.issuanceValueCommitment!.length > 0) {
+                if (input.issuanceValueCommitment && input.issuanceValueCommitment!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_VALUE_COMMITMENT',
+                    'Duplicated input proprietary key ISSUANCE_VALUE_COMMITMENT',
                   );
                 }
                 if (kp.value.length !== 33) {
                   throw new Error(
-                    'invalid input issuance value commitment length',
+                    'Invalid input issuance value commitment length',
                   );
                 }
                 input.issuanceValueCommitment = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_VALUE_RANGEPROOF:
-                if (input.issuanceValueRangeproof!.length > 0) {
+                if (input.issuanceValueRangeproof && input.issuanceValueRangeproof!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_VALUE_RANGEPROOF',
+                    'Duplicated input proprietary key ISSUANCE_VALUE_RANGEPROOF',
                   );
                 }
                 input.issuanceValueRangeproof = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_INFLATION_KEYS_RANGEPROOF:
-                if (input.issuanceInflationKeysRangeproof!.length > 0) {
+                if (input.issuanceInflationKeysRangeproof && input.issuanceInflationKeysRangeproof!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_INFLATION_KEYS_RANGEPROOF',
+                    'Duplicated input proprietary key ISSUANCE_INFLATION_KEYS_RANGEPROOF',
                   );
                 }
                 input.issuanceInflationKeysRangeproof = kp.value;
                 break;
               case InputProprietaryTypes.PEGIN_TX:
-                if (input.peginTx!) {
-                  throw new Error('duplicated input proprietary key PEGIN_TX');
+                if (input.peginTx !== undefined) {
+                  throw new Error('Duplicated input proprietary key PEGIN_TX');
                 }
-                input.peginTx = Transaction.fromBuffer(kp.value);
+                try {
+                  input.peginTx = BitcoinTransaction.fromBuffer(kp.value);
+                } catch(ignore) {
+                  throw new Error('Invalid input pegin tx');
+                }
                 break;
               case InputProprietaryTypes.PEGIN_TXOUT_PROOF:
-                if (input.peginTxoutProof!.length > 0) {
+                if (input.peginTxoutProof && input.peginTxoutProof!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key PEGIN_TXOUT_PROOF',
+                    'Duplicated input proprietary key PEGIN_TXOUT_PROOF',
                   );
                 }
                 input.peginTxoutProof = kp.value;
                 break;
               case InputProprietaryTypes.PEGIN_GENESIS_HASH:
-                if (input.peginGenesisHash!.length > 0) {
+                if (input.peginGenesisHash && input.peginGenesisHash!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key PEGIN_GENESIS_HASH',
+                    'Duplicated input proprietary key PEGIN_GENESIS_HASH',
                   );
                 }
                 if (kp.value.length !== 32) {
-                  throw new Error('invalid input pegin genesis hash length');
+                  throw new Error('Invalid input pegin genesis hash length');
                 }
                 input.peginGenesisHash = kp.value;
                 break;
               case InputProprietaryTypes.PEGIN_CLAIM_SCRIPT:
-                if (input.peginClaimScript!.length > 0) {
+                if (input.peginClaimScript && input.peginClaimScript!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key PEGIN_CLAIM_SCRIPT',
+                    'Duplicated input proprietary key PEGIN_CLAIM_SCRIPT',
                   );
                 }
                 input.peginClaimScript = kp.value;
@@ -386,94 +391,99 @@ export class Input {
               case InputProprietaryTypes.PEGIN_VALUE:
                 if (input.peginValue! > 0) {
                   throw new Error(
-                    'duplicated input proprietary key PEGIN_VALUE',
+                    'Duplicated input proprietary key PEGIN_VALUE',
                   );
                 }
                 if (kp.value.length !== 8) {
-                  throw new Error('invalid input pegin value length');
+                  throw new Error('Invalid input pegin value length');
                 }
                 input.peginValue = readUInt64LE(kp.value, 0);
                 break;
               case InputProprietaryTypes.PEGIN_WITNESS:
-                if (input.peginWitness!.length > 0) {
+                if (input.peginWitness && input.peginWitness!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key PEGIN_WITNESS',
+                    'Duplicated input proprietary key PEGIN_WITNESS',
                   );
                 }
-                input.peginWitness = kp.value;
+                const pwr = new BufferReader(kp.value)
+                try {
+                  input.peginWitness = pwr.readVector();
+                }catch(ignore) {
+                  throw new Error('Invalid input pegin witness');
+                }
                 break;
               case InputProprietaryTypes.ISSUANCE_INFLATION_KEYS:
                 if (input.issuanceInflationKeys! > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_INFLATION_KEYS',
+                    'Duplicated input proprietary key ISSUANCE_INFLATION_KEYS',
                   );
                 }
                 if (kp.value.length !== 8) {
                   throw new Error(
-                    'invalid input issuance inflation keys length',
+                    'Invalid input issuance inflation keys length',
                   );
                 }
                 input.issuanceInflationKeys = readUInt64LE(kp.value, 0);
                 break;
               case InputProprietaryTypes.ISSUANCE_INFLATION_KEYS_COMMITMENT:
-                if (input.issuanceInflationKeysCommitment!.length > 0) {
+                if (input.issuanceInflationKeysCommitment && input.issuanceInflationKeysCommitment!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_INFLATION_KEYS_COMMITMENT',
+                    'Duplicated input proprietary key ISSUANCE_INFLATION_KEYS_COMMITMENT',
                   );
                 }
                 if (kp.value.length !== 33) {
                   throw new Error(
-                    'invalid input issuance inflation keys commitment length',
+                    'Invalid input issuance inflation keys commitment length',
                   );
                 }
                 input.issuanceInflationKeysCommitment = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_BLINDING_NONCE:
-                if (input.issuanceBlindingNonce!.length > 0) {
+                if (input.issuanceBlindingNonce && input.issuanceBlindingNonce!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_BLINDING_NONCE',
+                    'Duplicated input proprietary key ISSUANCE_BLINDING_NONCE',
                   );
                 }
                 if (kp.value.length !== 32) {
                   throw new Error(
-                    'invalid input issuance blinding nonce length',
+                    'Invalid input issuance blinding nonce length',
                   );
                 }
                 input.issuanceBlindingNonce = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_ASSET_ENTROPY:
-                if (input.issuanceAssetEntropy!.length > 0) {
+                if (input.issuanceAssetEntropy && input.issuanceAssetEntropy!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_ASSET_ENTROPY',
+                    'Duplicated input proprietary key ISSUANCE_ASSET_ENTROPY',
                   );
                 }
                 if (kp.value.length !== 32) {
                   throw new Error(
-                    'invalid input issuance asset entropy length',
+                    'Invalid input issuance asset entropy length',
                   );
                 }
                 input.issuanceAssetEntropy = kp.value;
                 break;
               case InputProprietaryTypes.UTXO_RANGEPROOF:
-                if (input.utxoRangeProof!.length > 0) {
+                if (input.utxoRangeProof && input.utxoRangeProof!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key UTXO_RANGEPROOF',
+                    'Duplicated input proprietary key UTXO_RANGEPROOF',
                   );
                 }
                 input.utxoRangeProof = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_BLIND_VALUE_PROOF:
-                if (input.issuanceBlindValueProof!.length > 0) {
+                if (input.issuanceBlindValueProof && input.issuanceBlindValueProof!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_BLIND_VALUE_PROOF',
+                    'Duplicated input proprietary key ISSUANCE_BLIND_VALUE_PROOF',
                   );
                 }
                 input.issuanceBlindValueProof = kp.value;
                 break;
               case InputProprietaryTypes.ISSUANCE_BLIND_INFLATION_KEYS_PROOF:
-                if (input.issuanceBlindInflationKeysProof!.length > 0) {
+                if (input.issuanceBlindInflationKeysProof && input.issuanceBlindInflationKeysProof!.length > 0) {
                   throw new Error(
-                    'duplicated input proprietary key ISSUANCE_BLIND_INFLATION_KEYS_PROOF',
+                    'Duplicated input proprietary key ISSUANCE_BLIND_INFLATION_KEYS_PROOF',
                   );
                 }
                 input.issuanceBlindInflationKeysProof = kp.value;
@@ -510,7 +520,7 @@ export class Input {
   hash256Preimages?: Record<string, Buffer>;
   previousTxid: Buffer;
   previousTxIndex: number;
-  sequence: number;
+  sequence?: number;
   requiredTimeLocktime?: number;
   requiredHeightLocktime?: number;
   tapKeySig?: TapKeySig;
@@ -523,12 +533,12 @@ export class Input {
   issuanceValueCommitment?: Buffer;
   issuanceValueRangeproof?: Buffer;
   issuanceInflationKeysRangeproof?: Buffer;
-  peginTx?: Transaction;
+  peginTx?: BitcoinTransaction;
   peginTxoutProof?: Buffer;
   peginGenesisHash?: Buffer;
   peginClaimScript?: Buffer;
   peginValue?: number;
-  peginWitness?: Buffer;
+  peginWitness?: Buffer[];
   issuanceInflationKeys?: number;
   issuanceInflationKeysCommitment?: Buffer;
   issuanceBlindingNonce?: Buffer;
@@ -545,19 +555,16 @@ export class Input {
     sequence?: number,
   ) {
     this.previousTxid = previousTxid || Buffer.from([]);
-    this.previousTxIndex = previousTxIndex! >= 0 ? previousTxIndex! : -1;
-    this.sequence = sequence || -1;
+    this.previousTxIndex = previousTxIndex || 0;
+    this.sequence = sequence;
   }
 
   sanityCheck(): this {
     if (this.previousTxid.length !== 32) {
-      throw new Error('input previous txid is missing or has invalid length');
+      throw new Error('Input previous txid is missing or has invalid length');
     }
     if (this.previousTxIndex < 0) {
       throw new Error('Missing input previous tx index');
-    }
-    if (this.sequence < 0) {
-      throw new Error('missing input sequence');
     }
 
     if (
@@ -566,7 +573,7 @@ export class Input {
       this.witnessScript!.length > 0
     ) {
       throw new Error(
-        'input witness script cannot be set if witness utxo is unset',
+        'Input witness script cannot be set if witness utxo is unset',
       );
     }
     if (
@@ -575,29 +582,25 @@ export class Input {
       this.finalScriptWitness!.length > 0
     ) {
       throw new Error(
-        'input final script witness cannot be set if witness utxo is unset',
+        'Input final script witness cannot be set if witness utxo is unset',
       );
     }
-    const issuanceValueCommitmentSet =
-      this.issuanceValueCommitment! && this.issuanceValueCommitment!.length > 0;
-    const issuanceValueRangeproofSet =
-      this.issuanceValueRangeproof! && this.issuanceValueRangeproof!.length > 0;
-    if (issuanceValueCommitmentSet !== issuanceValueRangeproofSet) {
-      throw new Error(
-        'input issuance value commitment and range proof must be both either set or unset',
-      );
-    }
-    const issuanceInflationKeysCommitmentSet =
-      this.issuanceInflationKeysCommitment! &&
-      this.issuanceInflationKeysCommitment!.length > 0;
-    const issuanceInflationKeysRangeproofSet =
-      this.issuanceInflationKeysRangeproof! &&
-      this.issuanceInflationKeysRangeproof!.length > 0;
     if (
-      issuanceInflationKeysCommitmentSet !== issuanceInflationKeysRangeproofSet
+      this.issuanceValue! &&
+      this.issuanceValueCommitment! && this.issuanceValueCommitment.length > 0
+      && !this.issuanceBlindValueProof
     ) {
       throw new Error(
-        'input issuance inflation keys commitment and range proof must be both either set or unset',
+        'Missing input issuance value blind proof',
+      );
+    }
+    if (
+      this.issuanceInflationKeys! &&
+      this.issuanceInflationKeysCommitment! && this.issuanceInflationKeysCommitment.length > 0
+      && !this.issuanceBlindInflationKeysProof
+    ) {
+      throw new Error(
+        'Missing input issuance inflation keys blind proof',
       );
     }
 
@@ -802,10 +805,12 @@ export class Input {
     prevTxIndex.writeUInt32LE(this.previousTxIndex);
     keyPairs.push(new KeyPair(prevTxIndexKey, prevTxIndex));
 
-    const sequenceKey = new Key(InputTypes.SEQUENCE);
-    const sequence = Buffer.allocUnsafe(4);
-    sequence.writeUInt32LE(this.sequence);
-    keyPairs.push(new KeyPair(sequenceKey, sequence));
+    if (this.sequence! > 0) {
+      const sequenceKey = new Key(InputTypes.SEQUENCE);
+      const sequence = Buffer.allocUnsafe(4);
+      sequence.writeUInt32LE(this.sequence!);
+      keyPairs.push(new KeyPair(sequenceKey, sequence));
+    }
 
     if (this.requiredTimeLocktime! > 0) {
       const key = new Key(InputTypes.REQUIRED_TIME_LOCKTIME);
@@ -958,8 +963,10 @@ export class Input {
       const keyData = ProprietaryData.proprietaryKey(
         InputProprietaryTypes.PEGIN_WITNESS,
       );
+      const w = new BufferWriter(Buffer.allocUnsafe(0))
+      w.writeVector(this.peginWitness!)
       const key = new Key(InputTypes.PROPRIETARY, keyData);
-      keyPairs.push(new KeyPair(key, this.peginWitness!));
+      keyPairs.push(new KeyPair(key, w.buffer));
     }
 
     if (this.issuanceInflationKeys! > 0) {
@@ -1047,19 +1054,12 @@ export class Input {
 }
 
 function serializeOutput(out: Output): Buffer {
-  let size =
+  const size =
     out.asset.length +
     out.value.length +
     varuint.encodingLength(out.script.length) +
     out.script.length +
     out.nonce.length;
-  if (out.nonce.length > 1) {
-    size +=
-      out.surjectionProof!.length +
-      varuint.encodingLength(out.surjectionProof!.length);
-    size +=
-      out.rangeProof!.length + varuint.encodingLength(out.rangeProof!.length);
-  }
   const buf = Buffer.allocUnsafe(size);
   const w = new BufferWriter(buf, 0);
 
@@ -1067,16 +1067,12 @@ function serializeOutput(out: Output): Buffer {
   w.writeSlice(out.value);
   w.writeSlice(out.nonce);
   w.writeVarSlice(out.script);
-  if (out.nonce.length > 1) {
-    w.writeVarSlice(out.surjectionProof!);
-    w.writeVarSlice(out.rangeProof!);
-  }
   return buf;
 }
 
 function deserializeOutput(buf: Buffer): Output {
   if (buf.length < 45) {
-    throw new Error('invalid input witness utxo length');
+    throw new Error('Invalid input witness utxo length');
   }
 
   const r = new BufferReader(buf);
@@ -1084,11 +1080,5 @@ function deserializeOutput(buf: Buffer): Output {
   const value = r.readConfidentialValue();
   const nonce = r.readConfidentialNonce();
   const script = r.readVarSlice();
-  let surjectionProof: Buffer | undefined;
-  let rangeProof: Buffer | undefined;
-  if (nonce.length > 1) {
-    surjectionProof = r.readVarSlice();
-    rangeProof = r.readVarSlice();
-  }
-  return { asset, value, nonce, script, surjectionProof, rangeProof };
+  return { asset, value, nonce, script };
 }

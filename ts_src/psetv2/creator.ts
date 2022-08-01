@@ -7,6 +7,7 @@ import { fromConfidential, isConfidential, toOutputScript } from '../address';
 import { AssetHash } from '../asset';
 import { Transaction } from '../transaction';
 import { OPS } from '../ops';
+import BitSet from 'bitset';
 
 export class Input {
   txid: string;
@@ -113,8 +114,13 @@ export class Creator {
     outputs?: Output[];
     locktime?: number;
   }): Pset {
+    const txModifiable = new BitSet(0);
+    txModifiable.set(0);
+    txModifiable.set(1);
+
     const globals = new Global(2, 0, 0, 2);
-    globals.xpub = [];
+    globals.txModifiable = txModifiable;
+    globals.xpubs = [];
     globals.scalars = [];
     globals.proprietaryData = [];
     globals.unknowns = [];

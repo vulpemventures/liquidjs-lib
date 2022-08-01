@@ -31,82 +31,88 @@ export class Global {
             kp.key.keyData.length !== pubKeyLength + 1 &&
             ![2, 3].includes(kp.key.keyData[46])
           ) {
-            throw new Error('invalid xpub length');
+            throw new Error('Invalid xpub length');
           }
           const extendedKey = kp.key.keyData.slice(1);
           const {
             masterFingerprint,
             path: derivationPath,
           } = decodeBip32Derivation(kp.value);
-          global.xpub!.push({ extendedKey, masterFingerprint, derivationPath });
+          if (!global.xpubs) {
+            global.xpubs = [];
+          }
+          global.xpubs.push({ extendedKey, masterFingerprint, derivationPath });
           break;
         case GlobalTypes.TX_VERSION:
           if (global.txVersion > 0) {
-            throw new Error('duplicated global key TX_VERSION');
+            throw new Error('Duplicated global key TX_VERSION');
           }
           if (kp.value.length !== 4) {
-            throw new Error('invalid global tx version length');
+            throw new Error('Invalid global tx version length');
           }
           global.txVersion = kp.value.readUInt32LE();
           break;
         case GlobalTypes.FALLBACK_LOCKTIME:
           if (global.fallbackLocktime! > 0) {
-            throw new Error('duplicated global key FALLBACK_LOCKTIME');
+            throw new Error('Duplicated global key FALLBACK_LOCKTIME');
           }
           if (kp.value.length !== 4) {
-            throw new Error('invalid global fallback locktime length');
+            throw new Error('Invalid global fallback locktime length');
           }
           global.fallbackLocktime = kp.value.readUInt32LE();
           break;
         case GlobalTypes.INPUT_COUNT:
           if (global.inputCount > 0) {
-            throw new Error('duplicated global key INPUT_COUNT');
+            throw new Error('Duplicated global key INPUT_COUNT');
           }
           global.inputCount = varuint.decode(kp.value);
           break;
         case GlobalTypes.OUTPUT_COUNT:
           if (global.outputCount > 0) {
-            throw new Error('duplicated global key OUTPUT_COUNT');
+            throw new Error('Duplicated global key OUTPUT_COUNT');
           }
           global.outputCount = varuint.decode(kp.value);
           break;
         case GlobalTypes.TX_MODIFIABLE:
           if (global.txModifiable!) {
-            throw new Error('duplicated global key TX_MODIFIABLE');
+            throw new Error('Duplicated global key TX_MODIFIABLE');
           }
           if (kp.value.length !== 1) {
-            throw new Error('invalid global tx modifiable length');
+            throw new Error('Invalid global tx modifiable length');
           }
           global.txModifiable = new BitSet(kp.value[0]);
           break;
         case GlobalTypes.VERSION:
           if (global.version > 0) {
-            throw new Error('duplicated global key VERSION');
+            throw new Error('Duplicated global key VERSION');
           }
           if (kp.value.length !== 4) {
-            throw new Error('invalid global version length');
+            throw new Error('Invalid global version length');
           }
           global.version = kp.value.readUInt32LE();
           break;
         case GlobalTypes.PROPRIETARY:
           const data = ProprietaryData.fromKeyPair(kp);
-          if (Buffer.compare(data.identifier, magicPrefix) === 0) {
+          if (magicPrefix.compare(data.identifier) === 0) {
             switch (data.subType) {
               case GlobalProprietaryTypes.SCALAR:
                 if (data.keyData.length !== 32) {
-                  throw new Error('invalid global scalar length');
+                  throw new Error('Invalid global scalar length');
+                }
+                if (!global.scalars) {
+                  global.scalars = [];
                 }
                 global.scalars!.push(data.keyData);
                 break;
               case GlobalProprietaryTypes.TX_MODIFIABLE:
                 if (global.modifiable!) {
                   throw new Error(
-                    'duplicated global proprietary key TX_MODIFIABLE',
+                    'Duplicated global proprietary key TX_MODIFIABLE',
                   );
                 }
                 if (kp.value.length !== 1) {
                   throw new Error(
-                    'invalid global proprietary tx modifiable length',
+                    'Invalid global proprietary tx modifiable length',
                   );
                 }
                 global.modifiable = new BitSet(kp.value[0]);
@@ -129,13 +135,13 @@ export class Global {
     }
   }
 
-  xpub?: Xpub[];
+  xpubs?: Xpub[];
   txVersion: number;
-  fallbackLocktime: number;
   inputCount: number;
   outputCount: number;
   txModifiable?: BitSet;
   version: number;
+  fallbackLocktime?: number;
   scalars?: Buffer[];
   modifiable?: BitSet;
   proprietaryData?: ProprietaryData[];
@@ -152,7 +158,7 @@ export class Global {
     this.inputCount = inputCount || 0;
     this.outputCount = outputCount || 0;
     this.version = version || 0;
-    this.fallbackLocktime = fallbackLocktime || 0;
+    this.fallbackLocktime = fallbackLocktime;
   }
 
   sanityCheck(): this {
@@ -161,6 +167,30 @@ export class Global {
     }
     if (this.txVersion !== 2) {
       throw new Error('Global version must be exactly 2');
+    }
+    if (this.txModifiable && parseInt(this.txModifiable.toString(), 2) > 7) {
+      throw new Error('Global tx modifiable flag value is invalid');
+    }
+    if (this.modifiable && parseInt(this.modifiable.toString(), 2) !== 0) {
+      throw new Error('Global pset modifiable flag value is invalid');
+    }
+    if (this.xpubs && this.xpubs.some((xpub, i) => {
+      if (i === this.xpubs!.length -1) {
+        return false;
+      }
+      const next = this.xpubs!.slice(i+1);
+      return next.some(nextXpub => xpub.extendedKey.compare(nextXpub.extendedKey) === 0)
+    })) {
+      throw new Error('Global xpubs has duplicated values');
+    }
+    if (this.scalars && this.scalars.some((scalar, i) => {
+      if (i === this.scalars!.length -1) {
+        return false;
+      }
+      const next = this.scalars!.slice(i+1);
+      return next.some(nextScalar => scalar.compare(nextScalar) === 0)
+    })) {
+      throw new Error('Global scalars has duplicated values');
     }
     return this;
   }
@@ -180,8 +210,8 @@ export class Global {
   private getKeyPairs(): KeyPair[] {
     const keyPairs = [] as KeyPair[];
 
-    if (this.xpub! && this.xpub.length > 0) {
-      this.xpub!.forEach(
+    if (this.xpubs! && this.xpubs.length > 0) {
+      this.xpubs!.forEach(
         ({ extendedKey, masterFingerprint, derivationPath }) => {
           const keyData = Buffer.concat([
             Buffer.of(extendedKey.length),
@@ -202,10 +232,12 @@ export class Global {
     const txVersionKey = new Key(GlobalTypes.TX_VERSION);
     keyPairs.push(new KeyPair(txVersionKey, txVersion));
 
-    const fallbackLocktime = Buffer.allocUnsafe(4);
-    fallbackLocktime.writeUInt32LE(this.fallbackLocktime || 0, 0);
-    const fallbackLocktimeKey = new Key(GlobalTypes.FALLBACK_LOCKTIME);
-    keyPairs.push(new KeyPair(fallbackLocktimeKey, fallbackLocktime));
+    if (this.fallbackLocktime !== undefined) {
+      const fallbackLocktime = Buffer.allocUnsafe(4);
+      fallbackLocktime.writeUInt32LE(this.fallbackLocktime, 0);
+      const fallbackLocktimeKey = new Key(GlobalTypes.FALLBACK_LOCKTIME);
+      keyPairs.push(new KeyPair(fallbackLocktimeKey, fallbackLocktime));
+    }
 
     const inputCount = Buffer.allocUnsafe(
       varuint.encodingLength(this.inputCount),
@@ -228,11 +260,6 @@ export class Global {
       keyPairs.push(new KeyPair(txModifiableKey, txModifiable));
     }
 
-    const version = Buffer.allocUnsafe(4);
-    version.writeUInt32LE(this.version, 0);
-    const versionKey = new Key(GlobalTypes.VERSION);
-    keyPairs.push(new KeyPair(versionKey, version));
-
     if (this.scalars! && this.scalars!.length > 0) {
       this.scalars.forEach(scalar => {
         const keyData = ProprietaryData.proprietaryKey(
@@ -244,15 +271,20 @@ export class Global {
       });
     }
 
-    if (this.modifiable!) {
+    if (this.modifiable! && parseInt(this.modifiable.toString(), 2) > 0) {
       const modifiable = Buffer.allocUnsafe(1);
-      modifiable.writeUInt8(Number(this.modifiable!.toString(2)), 0);
+      modifiable.writeUInt8(Number(this.modifiable.toString(2)), 0);
       const keyData = ProprietaryData.proprietaryKey(
         GlobalProprietaryTypes.TX_MODIFIABLE,
       );
       const modifiableKey = new Key(GlobalTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(modifiableKey, modifiable));
     }
+
+    const version = Buffer.allocUnsafe(4);
+    version.writeUInt32LE(this.version, 0);
+    const versionKey = new Key(GlobalTypes.VERSION);
+    keyPairs.push(new KeyPair(versionKey, version));
 
     if (this.proprietaryData! && this.proprietaryData!.length > 0) {
       this.proprietaryData.forEach(data => {

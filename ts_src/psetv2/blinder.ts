@@ -232,7 +232,7 @@ export class Blinder {
         );
         valueRangeProof = await this.blindingGenerator.lastValueRangeProof(
           value,
-          targetOutput.asset,
+          targetOutput.asset!,
           valueCommitment,
           lastValueBlinder,
           assetBlinder,
@@ -264,7 +264,6 @@ export class Blinder {
       pset.globals.scalars!.push(outputScalar);
     } else {
       pset.globals.scalars = undefined;
-      pset.globals.modifiable = undefined;
     }
 
     pset.sanityCheck();
@@ -459,9 +458,9 @@ export class Blinder {
     }
 
     const targetOutput = this.pset.outputs[index];
-    if (!targetOutput.isBlinded()) {
+    if (!targetOutput.needsBlinding()) {
       throw new Error(
-        'Target output is not blinded (does not have a blinding pubkey set)',
+        'Target output does not need blinding (does not have a blinding pubkey set)',
       );
     }
     if (!this.ownOutput(targetOutput.blinderIndex!)) {
@@ -581,7 +580,7 @@ export class Blinder {
         !(await this.blindingValidator.verifyAssetSurjectionProof(
           inputAssets,
           inputAssetBlinders,
-          targetOutput.asset,
+          targetOutput.asset!,
           assetBlinder,
           assetSurjectionProof,
         ))
@@ -590,7 +589,7 @@ export class Blinder {
       }
       if (
         !(await this.blindingValidator.verifyBlindAssetProof(
-          targetOutput.asset,
+          targetOutput.asset!,
           assetCommitment,
           assetBlindProof,
         ))

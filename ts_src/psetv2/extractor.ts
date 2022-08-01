@@ -61,7 +61,7 @@ export class Extractor {
       tx.ins[inIndex].isPegin =
         input.peginWitness! && input.peginWitness!.length > 0;
       if (tx.ins[inIndex].isPegin) {
-        tx.ins[inIndex].peginWitness = [input.peginWitness!];
+        tx.ins[inIndex].peginWitness = input.peginWitness!;
       }
       if (input.finalScriptSig! && input.finalScriptSig!.length > 0) {
         tx.ins[inIndex].script = input.finalScriptSig!;
@@ -82,7 +82,7 @@ export class Extractor {
       const asset =
         output.assetCommitment! && output.assetCommitment!.length > 0
           ? output.assetCommitment!
-          : AssetHash.fromBytes(output.asset).bytes;
+          : AssetHash.fromBytes(output.asset!).bytes;
       const nonce =
         output.ecdhPubkey! && output.ecdhPubkey!.length > 0
           ? output.ecdhPubkey!
