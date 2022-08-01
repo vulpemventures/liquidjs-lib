@@ -304,22 +304,20 @@ export class Output {
   }
 
   sanityCheck(): this {
+    const valueCommitSet = this.valueCommitment && this.valueCommitment.length > 0;
+    const blindValueProofSet = this.blindValueProof && this.blindValueProof.length> 0;
     if (
-      this.value > 0 &&
-      this.valueCommitment &&
-      this.valueCommitment.length > 0 &&
-      !this.blindValueProof
+      this.value > 0 && valueCommitSet !== blindValueProofSet
     ) {
-      throw new Error('Missing output value blind proof');
+      throw new Error('Missing output value commitment or blind proof');
     }
+    const assetCommitSet = this.assetCommitment && this.assetCommitment.length > 0;
+    const blindAssetProofSet = this.blindAssetProof && this.blindAssetProof.length > 0;
     if (
-      this.asset &&
-      this.asset.length > 0 &&
-      this.assetCommitment &&
-      this.assetCommitment.length > 0 &&
-      !this.blindAssetProof
+      this.asset && this.asset.length > 0 &&
+      assetCommitSet !== blindAssetProofSet
     ) {
-      throw new Error('Missing output asset blind proof');
+      throw new Error('Missing output asset commitment or blind proof');
     }
     if (this.isPartiallyBlinded() && !this.isFullyBlinded()) {
       throw new Error(
