@@ -1,4 +1,4 @@
-import ECPairFactory, { TinySecp256k1Interface } from 'ecpair';
+import { ECPairFactory, TinySecp256k1Interface } from 'ecpair';
 import { BufferReader, BufferWriter } from '../bufferutils';
 import { hash160 } from '../crypto';
 import { Issuance } from '../issuance';
