@@ -3,8 +3,8 @@ import { describe, it } from 'mocha';
 import { networks as NETWORKS, Psbt, script as bscript } from '../ts_src';
 import { ECPair } from './ecc';
 import * as preFixtures from './fixtures/psbt.json';
-import * as ecc from 'tiny-secp256k1';
 import { ElementsValue } from '../ts_src/value';
+const ecc = require('tiny-secp256k1');
 
 const initBuffers = (object: any): typeof preFixtures =>
   JSON.parse(JSON.stringify(object), (_, value) => {

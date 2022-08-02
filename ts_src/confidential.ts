@@ -11,9 +11,9 @@ import {
 } from './psetv2';
 import { Slip77Interface, SLIP77Factory } from 'slip77';
 import { ElementsValue } from './value';
-import ecc from 'tiny-secp256k1';
 import { ECPairFactory, TinySecp256k1Interface } from 'ecpair';
 const _randomBytes = require('randombytes');
+const ecc = require('tiny-secp256k1');
 
 const secp256k1Promise = secp256k1();
 
