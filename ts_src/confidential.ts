@@ -724,7 +724,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
 
     const { ec } = await secp256k1Promise;
     const val = Buffer.alloc(32, 0);
-    val.writeBigUint64BE(BigInt(value), 24);
+    val.writeBigUInt64BE(BigInt(value), 24);
     const result = ec.prvkeyTweakMul(assetBlinder, val);
     if (valueBlinder.length === 0) {
       throw new Error('Missing value blinder');
