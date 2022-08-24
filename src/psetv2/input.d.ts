@@ -1,9 +1,13 @@
 /// <reference types="node" />
+import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import { BufferReader } from '../bufferutils';
 import { Output, Transaction } from '../transaction';
 import { Bip32Derivation, PartialSig, TapBip32Derivation, TapInternalKey, TapKeySig, TapLeafScript, TapMerkleRoot, TapScriptSig } from './interfaces';
 import { KeyPair } from './key_pair';
 import { ProprietaryData } from './proprietary_data';
+export declare class InputDuplicateFieldError extends Error {
+    constructor(message?: string);
+}
 export declare class Input {
     static fromBuffer(r: BufferReader): Input;
     nonWitnessUtxo?: Transaction;
@@ -21,7 +25,7 @@ export declare class Input {
     hash256Preimages?: Record<string, Buffer>;
     previousTxid: Buffer;
     previousTxIndex: number;
-    sequence: number;
+    sequence?: number;
     requiredTimeLocktime?: number;
     requiredHeightLocktime?: number;
     tapKeySig?: TapKeySig;
@@ -34,12 +38,12 @@ export declare class Input {
     issuanceValueCommitment?: Buffer;
     issuanceValueRangeproof?: Buffer;
     issuanceInflationKeysRangeproof?: Buffer;
-    peginTx?: Transaction;
+    peginTx?: BitcoinTransaction;
     peginTxoutProof?: Buffer;
     peginGenesisHash?: Buffer;
     peginClaimScript?: Buffer;
     peginValue?: number;
-    peginWitness?: Buffer;
+    peginWitness?: Buffer[];
     issuanceInflationKeys?: number;
     issuanceInflationKeysCommitment?: Buffer;
     issuanceBlindingNonce?: Buffer;

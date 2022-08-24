@@ -57,9 +57,9 @@ const secp256k1_zkp_1 = __importDefault(
 );
 const slip77_1 = require('slip77');
 const value_1 = require('./value');
-const tiny_secp256k1_1 = __importDefault(require('tiny-secp256k1'));
-const ecpair_1 = __importDefault(require('ecpair'));
+const ecpair_1 = require('ecpair');
 const _randomBytes = require('randombytes');
+const ecc = require('tiny-secp256k1');
 const secp256k1Promise = (0, secp256k1_zkp_1.default)();
 async function nonceHash(pubkey, privkey) {
   const { ecdh } = await secp256k1Promise;
@@ -357,15 +357,16 @@ class ZKPGenerator {
   static fromMasterBlindingKey(masterKey) {
     const bg = new ZKPGenerator();
     bg.masterBlindingKey = (0, slip77_1.SLIP77Factory)(
-      tiny_secp256k1_1.default,
+      ecc,
     ).fromMasterBlindingKey(masterKey);
     return bg;
   }
   static ECCKeysGenerator(ec) {
     return opts => {
       const privateKey = randomBytes(opts);
-      const publicKey = (0, ecpair_1.default)(ec).fromPrivateKey(privateKey)
-        .publicKey;
+      const publicKey = (0, ecpair_1.ECPairFactory)(ec).fromPrivateKey(
+        privateKey,
+      ).publicKey;
       return {
         privateKey,
         publicKey,
@@ -545,7 +546,7 @@ class ZKPGenerator {
       outIndexes && outIndexes.length > 0
         ? outIndexes
         : pset.outputs.reduce(
-            (arr, out, i) => (out.isBlinded() && arr.push(i), arr),
+            (arr, out, i) => (out.needsBlinding() && arr.push(i), arr),
             [],
           );
     const { assets, assetBlinders } = await this.getInputAssetsAndBlinders(
@@ -624,7 +625,7 @@ class ZKPGenerator {
     }
     const { ec } = await secp256k1Promise;
     const val = Buffer.alloc(32, 0);
-    val.writeBigUint64BE(BigInt(value), 24);
+    val.writeBigUInt64BE(BigInt(value), 24);
     const result = ec.prvkeyTweakMul(assetBlinder, val);
     if (valueBlinder.length === 0) {
       throw new Error('Missing value blinder');

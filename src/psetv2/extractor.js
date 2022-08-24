@@ -58,7 +58,7 @@ class Extractor {
       tx.ins[inIndex].isPegin =
         input.peginWitness && input.peginWitness.length > 0;
       if (tx.ins[inIndex].isPegin) {
-        tx.ins[inIndex].peginWitness = [input.peginWitness];
+        tx.ins[inIndex].peginWitness = input.peginWitness;
       }
       if (input.finalScriptSig && input.finalScriptSig.length > 0) {
         tx.ins[inIndex].script = input.finalScriptSig;

@@ -22,7 +22,9 @@ class Signer {
     }
     if ((input.sighashType & 0x1f) === transaction_1.Transaction.SIGHASH_ALL) {
       if (
-        this.pset.outputs.some(out => out.isBlinded() && !out.isFullyBlinded())
+        this.pset.outputs.some(
+          out => out.needsBlinding() && !out.isFullyBlinded(),
+        )
       ) {
         throw new Error('Pset must be fully blinded');
       }

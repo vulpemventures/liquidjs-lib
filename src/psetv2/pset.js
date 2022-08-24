@@ -43,14 +43,9 @@ var __importStar =
     __setModuleDefault(result, mod);
     return result;
   };
-var __importDefault =
-  (this && this.__importDefault) ||
-  function(mod) {
-    return mod && mod.__esModule ? mod : { default: mod };
-  };
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Pset = exports.magicPrefixWithSeparator = exports.magicPrefix = void 0;
-const ecpair_1 = __importDefault(require('ecpair'));
+const ecpair_1 = require('ecpair');
 const bufferutils_1 = require('../bufferutils');
 const crypto_1 = require('../crypto');
 const transaction_1 = require('../transaction');
@@ -63,7 +58,6 @@ const address_1 = require('../address');
 const payments_1 = require('../payments');
 const value_1 = require('../value');
 const asset_1 = require('../asset');
-const bitset_1 = __importDefault(require('bitset'));
 exports.magicPrefix = Buffer.from([0x70, 0x73, 0x65, 0x74]);
 exports.magicPrefixWithSeparator = Buffer.concat([
   exports.magicPrefix,
@@ -102,7 +96,7 @@ class Pset {
   }
   static ECDSASigValidator(ecc) {
     return (pubkey, msghash, signature) => {
-      return (0, ecpair_1.default)(ecc)
+      return (0, ecpair_1.ECPairFactory)(ecc)
         .fromPublicKey(pubkey)
         .verify(msghash, signature);
     };
@@ -113,22 +107,14 @@ class Pset {
   }
   sanityCheck() {
     this.globals.sanityCheck();
-    let hasFullyBlindedOutput = false;
     this.inputs.forEach(input => input.sanityCheck());
-    this.outputs.forEach(output => {
-      output.sanityCheck();
-      if (output.isFullyBlinded()) {
-        hasFullyBlindedOutput = true;
-      }
-    });
+    this.outputs.forEach(output => output.sanityCheck());
     if (
-      hasFullyBlindedOutput &&
-      (!this.globals.scalars || this.globals.scalars.length === 0) &&
-      this.globals.modifiable
+      this.isFullyBlinded() &&
+      this.globals.scalars &&
+      this.globals.scalars.length > 0
     ) {
-      throw new Error(
-        'global modifiable flag must be unset for fully blinded pset',
-      );
+      throw new Error('global scalars must be empty for fully blinded pset');
     }
     return this;
   }
@@ -154,16 +140,15 @@ class Pset {
     return this.globals.txModifiable.get(2) === 1;
   }
   needsBlinding() {
-    if (!this.globals.modifiable) {
-      return false;
-    }
-    return this.globals.modifiable.get(0) === 1;
+    return this.outputs.some(out => out.needsBlinding());
   }
   isFullyBlinded() {
-    if (!this.globals.modifiable) {
+    if (!this.needsBlinding()) {
       return false;
     }
-    return this.globals.modifiable.get(0) === 0;
+    return !this.outputs.some(
+      out => out.needsBlinding() && !out.isFullyBlinded(),
+    );
   }
   isComplete() {
     return this.inputs.every(input => input.isFinalized());
@@ -315,12 +300,6 @@ class Pset {
     }
     this.outputs.push(newOutput);
     this.globals.outputCount++;
-    if (newOutput.isBlinded()) {
-      if (!this.globals.modifiable) {
-        this.globals.modifiable = new bitset_1.default(0);
-      }
-      this.globals.modifiable.set(0);
-    }
     return this;
   }
   validateInputSignatures(index, validator) {

@@ -20,7 +20,7 @@ class Key {
   }
   toBuffer() {
     const buf = Buffer.concat([Buffer.of(this.keyType), this.keyData]);
-    const size = buf.length + 1;
+    const size = bufferutils_1.varuint.encodingLength(buf.length) + buf.length;
     const w = bufferutils_1.BufferWriter.withCapacity(size);
     w.writeVarSlice(buf);
     return w.buffer;

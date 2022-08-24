@@ -4,15 +4,18 @@ import { ProprietaryData } from './proprietary_data';
 import BitSet from 'bitset';
 import { BufferReader } from '../bufferutils';
 import { Xpub } from './interfaces';
+export declare class GlobalDuplicateFieldError extends Error {
+    constructor(message?: string);
+}
 export declare class Global {
     static fromBuffer(r: BufferReader): Global;
-    xpub?: Xpub[];
+    xpubs?: Xpub[];
     txVersion: number;
-    fallbackLocktime: number;
     inputCount: number;
     outputCount: number;
     txModifiable?: BitSet;
     version: number;
+    fallbackLocktime?: number;
     scalars?: Buffer[];
     modifiable?: BitSet;
     proprietaryData?: ProprietaryData[];

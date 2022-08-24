@@ -137,7 +137,6 @@ class Blinder {
       pset.globals.scalars.push(outputScalar);
     } else {
       pset.globals.scalars = undefined;
-      pset.globals.modifiable = undefined;
     }
     pset.sanityCheck();
     this.pset.globals = pset.globals;
@@ -310,9 +309,9 @@ class Blinder {
       throw new Error('Output index out of range');
     }
     const targetOutput = this.pset.outputs[index];
-    if (!targetOutput.isBlinded()) {
+    if (!targetOutput.needsBlinding()) {
       throw new Error(
-        'Target output is not blinded (does not have a blinding pubkey set)',
+        'Target output does not need blinding (does not have a blinding pubkey set)',
       );
     }
     if (!this.ownOutput(targetOutput.blinderIndex)) {

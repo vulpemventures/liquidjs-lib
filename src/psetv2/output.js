@@ -1,6 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Output = void 0;
+exports.Output = exports.OutputDuplicateFieldError = void 0;
 const bufferutils_1 = require('../bufferutils');
 const bip32_1 = require('./bip32');
 const fields_1 = require('./fields');
@@ -8,6 +8,15 @@ const key_pair_1 = require('./key_pair');
 const proprietary_data_1 = require('./proprietary_data');
 const pset_1 = require('./pset');
 const utils_1 = require('./utils');
+class OutputDuplicateFieldError extends Error {
+  constructor(message) {
+    if (message) {
+      message = 'Duplicated output ' + message;
+    }
+    super(message);
+  }
+}
+exports.OutputDuplicateFieldError = OutputDuplicateFieldError;
 class Output {
   constructor(value, asset, script) {
     this.value = value || 0;
@@ -30,26 +39,26 @@ class Output {
       switch (kp.key.keyType) {
         case fields_1.OutputTypes.REDEEM_SCRIPT:
           if (output.redeemScript.length > 0) {
-            throw new Error('duplicated output key REDEEM_SCRIPT');
+            throw new OutputDuplicateFieldError('redeem script');
           }
           output.redeemScript = kp.value;
           break;
         case fields_1.OutputTypes.WITNESS_SCRIPT:
           if (output.witnessScript.length > 0) {
-            throw new Error('duplicated output key WITNESS_SCRIPT');
+            throw new OutputDuplicateFieldError('witness script');
           }
           output.witnessScript = kp.value;
           break;
         case fields_1.OutputTypes.BIP32_DERIVATION:
           const pubkey = kp.key.keyData;
           if (pubkey.length !== 33) {
-            throw new Error('invalid output bip32 pubkey length');
+            throw new Error('Invalid output bip32 pubkey length');
           }
           if (!output.bip32Derivation) {
             output.bip32Derivation = [];
           }
           if (output.bip32Derivation.find(d => d.pubkey.equals(pubkey))) {
-            throw new Error('duplicated output bip32 derivation');
+            throw new OutputDuplicateFieldError('bip32 derivation');
           }
           const { masterFingerprint, path } = (0,
           bip32_1.decodeBip32Derivation)(kp.value);
@@ -57,23 +66,23 @@ class Output {
           break;
         case fields_1.OutputTypes.AMOUNT:
           if (output.value > 0) {
-            throw new Error('duplicated output key AMOUNT');
+            throw new OutputDuplicateFieldError('value');
           }
           if (kp.value.length !== 8) {
-            throw new Error('invalid output amount length');
+            throw new Error('Invalid output amount length');
           }
           output.value = (0, bufferutils_1.readUInt64LE)(kp.value, 0);
           break;
         case fields_1.OutputTypes.SCRIPT:
           if (output.script && output.script.length > 0) {
-            throw new Error('duplicated output key SCRIPT');
+            throw new OutputDuplicateFieldError('script');
           }
           output.script = kp.value;
           break;
         case fields_1.OutputTypes.TAP_BIP32_DERIVATION:
           const tapKey = kp.key.keyData;
           if (tapKey.length !== 33) {
-            throw new Error('invalid output bip32 derivation pubkey length');
+            throw new Error('Invalid output bip32 derivation pubkey length');
           }
           if (!output.tapBip32Derivation) {
             output.tapBip32Derivation = [];
@@ -82,7 +91,7 @@ class Output {
           if (
             output.tapBip32Derivation.find(d => d.pubkey.equals(tapBip32Pubkey))
           ) {
-            throw new Error('duplicated output taproot bip32 derivation');
+            throw new OutputDuplicateFieldError('taproot bip32 derivation');
           }
           const nHashes = bufferutils_1.varuint.decode(kp.value);
           const nHashesLen = bufferutils_1.varuint.encodingLength(nHashes);
@@ -102,7 +111,7 @@ class Output {
           break;
         case fields_1.OutputTypes.TAP_TREE:
           if (output.tapTree) {
-            throw new Error('duplicated output key TAP_TREE');
+            throw new OutputDuplicateFieldError('taproot tree');
           }
           let _offset = 0;
           const leaves = [];
@@ -122,10 +131,10 @@ class Output {
           break;
         case fields_1.OutputTypes.TAP_INTERNAL_KEY:
           if (output.tapInternalKey && output.tapInternalKey.length > 0) {
-            throw new Error('duplicated output key TAP_INTERNAL_KEY');
+            throw new OutputDuplicateFieldError('taproot internal key');
           }
           if (kp.value.length !== 32) {
-            throw new Error('invalid output taproot internal key length');
+            throw new Error('Invalid output taproot internal key length');
           }
           output.tapInternalKey = kp.value;
           break;
@@ -138,21 +147,19 @@ class Output {
                   output.valueCommitment &&
                   output.valueCommitment.length > 0
                 ) {
-                  throw new Error(
-                    'duplicated output proprietary key VALUE_COMMITMENT',
-                  );
+                  throw new OutputDuplicateFieldError('value commitment');
                 }
                 if (kp.value.length !== 33) {
-                  throw new Error('invalid output value commitment length');
+                  throw new Error('Invalid output value commitment length');
                 }
                 output.valueCommitment = kp.value;
                 break;
               case fields_1.OutputProprietaryTypes.ASSET:
-                if (output.asset.length > 0) {
-                  throw new Error('duplicated output proprietary key ASSET');
+                if (output.asset && output.asset.length > 0) {
+                  throw new OutputDuplicateFieldError('asset');
                 }
                 if (kp.value.length !== 32) {
-                  throw new Error('invalid output asset length');
+                  throw new Error('Invalid output asset length');
                 }
                 output.asset = kp.value;
                 break;
@@ -161,12 +168,10 @@ class Output {
                   output.assetCommitment &&
                   output.assetCommitment.length > 0
                 ) {
-                  throw new Error(
-                    'duplicated output proprietary key ASSET_COMMITMENT',
-                  );
+                  throw new OutputDuplicateFieldError('asset commitment');
                 }
                 if (kp.value.length !== 33) {
-                  throw new Error('invalid output asset length');
+                  throw new Error('Invalid output asset commitment length');
                 }
                 output.assetCommitment = kp.value;
                 break;
@@ -175,9 +180,7 @@ class Output {
                   output.valueRangeproof &&
                   output.valueRangeproof.length > 0
                 ) {
-                  throw new Error(
-                    'duplicated output proprietary key VALUE_RANGEPROOF',
-                  );
+                  throw new OutputDuplicateFieldError('value range proof');
                 }
                 output.valueRangeproof = kp.value;
                 break;
@@ -186,42 +189,34 @@ class Output {
                   output.assetSurjectionProof &&
                   output.assetSurjectionProof.length > 0
                 ) {
-                  throw new Error(
-                    'duplicated output proprietary key ASSET_SURJECTION_PROOF',
-                  );
+                  throw new OutputDuplicateFieldError('asset surjection proof');
                 }
                 output.assetSurjectionProof = kp.value;
                 break;
               case fields_1.OutputProprietaryTypes.BLINDING_PUBKEY:
                 if (output.blindingPubkey && output.blindingPubkey.length > 0) {
-                  throw new Error(
-                    'duplicated output proprietary key BLINDING_PUBKEY',
-                  );
+                  throw new OutputDuplicateFieldError('blinding pubkey');
                 }
                 if (kp.value.length !== 33) {
-                  throw new Error('invalid output blinding pubkey length');
+                  throw new Error('Invalid output blinding pubkey length');
                 }
                 output.blindingPubkey = kp.value;
                 break;
               case fields_1.OutputProprietaryTypes.ECDH_PUBKEY:
                 if (output.ecdhPubkey && output.ecdhPubkey.length > 0) {
-                  throw new Error(
-                    'duplicated ooutput proprietary key ECDH_PUBKEY',
-                  );
+                  throw new OutputDuplicateFieldError('ecdh pubkey');
                 }
                 if (kp.value.length !== 33) {
-                  throw new Error('invalid output ecdh pubkey length');
+                  throw new Error('Invalid output ecdh pubkey length');
                 }
                 output.ecdhPubkey = kp.value;
                 break;
               case fields_1.OutputProprietaryTypes.BLINDER_INDEX:
                 if (output.blinderIndex !== undefined) {
-                  throw new Error(
-                    'duplicated output proprietary key ECDH_PUBKEY',
-                  );
+                  throw new OutputDuplicateFieldError('blinder index');
                 }
                 if (kp.value.length !== 4) {
-                  throw new Error('invalid output blidner index length');
+                  throw new Error('Invalid output blinder index length');
                 }
                 output.blinderIndex = kp.value.readUInt32LE();
                 break;
@@ -230,9 +225,7 @@ class Output {
                   output.blindValueProof &&
                   output.blindValueProof.length > 0
                 ) {
-                  throw new Error(
-                    'duplicated output proprietary key BLIND_VALUE_PROOF',
-                  );
+                  throw new OutputDuplicateFieldError('blind value proof');
                 }
                 output.blindValueProof = kp.value;
                 break;
@@ -241,9 +234,7 @@ class Output {
                   output.blindAssetProof &&
                   output.blindAssetProof.length > 0
                 ) {
-                  throw new Error(
-                    'duplicated output proprietary key BLIND_ASSET_PROOF',
-                  );
+                  throw new OutputDuplicateFieldError('blind asset proof');
                 }
                 output.blindAssetProof = kp.value;
                 break;
@@ -265,48 +256,57 @@ class Output {
     }
   }
   sanityCheck() {
-    if (this.asset.length === 0) {
-      throw new Error('missing output asset');
+    const valueCommitSet =
+      this.valueCommitment && this.valueCommitment.length > 0;
+    const blindValueProofSet =
+      this.blindValueProof && this.blindValueProof.length > 0;
+    if (this.value > 0 && valueCommitSet !== blindValueProofSet) {
+      throw new Error('Missing output value commitment or blind proof');
     }
-    if (this.asset.length !== 32) {
-      throw new Error('invalid output asset length');
+    const assetCommitSet =
+      this.assetCommitment && this.assetCommitment.length > 0;
+    const blindAssetProofSet =
+      this.blindAssetProof && this.blindAssetProof.length > 0;
+    if (!assetCommitSet && (!this.asset || this.asset.length === 0)) {
+      throw new Error('Missing output asset');
     }
     if (
-      this.isBlinded() &&
-      this.isPartiallyBlinded() &&
-      !this.isFullyBlinded()
+      this.asset &&
+      this.asset.length > 0 &&
+      assetCommitSet !== blindAssetProofSet
     ) {
+      throw new Error('Missing output asset commitment or blind proof');
+    }
+    if (this.isPartiallyBlinded() && !this.isFullyBlinded()) {
       throw new Error(
-        'output is partially blinded while it must be either unblinded or fully blinded',
+        'Output is partially blinded while it must be either unblinded or fully blinded',
       );
     }
     if (this.isFullyBlinded() && this.blinderIndex > 0) {
-      throw new Error('blinder index must be unset for fully blinded output');
+      throw new Error('Blinder index must be unset for fully blinded output');
     }
     return this;
   }
-  isBlinded() {
+  needsBlinding() {
     return this.blindingPubkey && this.blindingPubkey.length > 0;
   }
   isPartiallyBlinded() {
     return (
-      this.isBlinded() &&
-      ((this.valueCommitment && this.valueCommitment.length > 0) ||
-        (this.assetCommitment && this.assetCommitment.length > 0) ||
-        (this.valueRangeproof && this.valueRangeproof.length > 0) ||
-        (this.assetSurjectionProof && this.assetSurjectionProof.length > 0) ||
-        (this.ecdhPubkey && this.ecdhPubkey.length > 0))
+      (this.valueCommitment && this.valueCommitment.length > 0) ||
+      (this.assetCommitment && this.assetCommitment.length > 0) ||
+      (this.valueRangeproof && this.valueRangeproof.length > 0) ||
+      (this.assetSurjectionProof && this.assetSurjectionProof.length > 0) ||
+      (this.ecdhPubkey && this.ecdhPubkey.length > 0)
     );
   }
   isFullyBlinded() {
     return (
-      this.isBlinded() &&
-      (this.valueCommitment &&
-        this.valueCommitment.length > 0 &&
-        (this.assetCommitment && this.assetCommitment.length > 0) &&
-        (this.valueRangeproof && this.valueRangeproof.length > 0) &&
-        (this.assetSurjectionProof && this.assetSurjectionProof.length) > 0 &&
-        (this.ecdhPubkey && this.ecdhPubkey.length > 0))
+      this.valueCommitment &&
+      this.valueCommitment.length > 0 &&
+      (this.assetCommitment && this.assetCommitment.length > 0) &&
+      (this.valueRangeproof && this.valueRangeproof.length > 0) &&
+      (this.assetSurjectionProof && this.assetSurjectionProof.length) > 0 &&
+      (this.ecdhPubkey && this.ecdhPubkey.length > 0)
     );
   }
   isTaproot() {
@@ -351,10 +351,6 @@ class Output {
         keyPairs.push(new key_pair_1.KeyPair(key, value));
       });
     }
-    if (this.script) {
-      const key = new key_pair_1.Key(fields_1.OutputTypes.SCRIPT);
-      keyPairs.push(new key_pair_1.KeyPair(key, this.script));
-    }
     if (this.tapBip32Derivation && this.tapBip32Derivation.length > 0) {
       this.tapBip32Derivation.forEach(
         ({ pubkey, masterFingerprint, path, leafHashes }) => {
@@ -392,6 +388,14 @@ class Output {
       const key = new key_pair_1.Key(fields_1.OutputTypes.TAP_INTERNAL_KEY);
       keyPairs.push(new key_pair_1.KeyPair(key, this.tapInternalKey));
     }
+    const amountKey = new key_pair_1.Key(fields_1.OutputTypes.AMOUNT);
+    const amount = Buffer.allocUnsafe(8);
+    (0, bufferutils_1.writeUInt64LE)(amount, this.value, 0);
+    keyPairs.push(new key_pair_1.KeyPair(amountKey, amount));
+    const scriptKey = new key_pair_1.Key(fields_1.OutputTypes.SCRIPT);
+    keyPairs.push(
+      new key_pair_1.KeyPair(scriptKey, this.script || Buffer.alloc(0)),
+    );
     if (this.valueCommitment && this.valueCommitment.length > 0) {
       const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.VALUE_COMMITMENT,
@@ -399,10 +403,6 @@ class Output {
       const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.valueCommitment));
     }
-    const amountKey = new key_pair_1.Key(fields_1.OutputTypes.AMOUNT);
-    const amount = Buffer.allocUnsafe(8);
-    (0, bufferutils_1.writeUInt64LE)(amount, this.value, 0);
-    keyPairs.push(new key_pair_1.KeyPair(amountKey, amount));
     if (this.assetCommitment && this.assetCommitment.length > 0) {
       const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.ASSET_COMMITMENT,
@@ -410,7 +410,7 @@ class Output {
       const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.assetCommitment));
     }
-    if (this.asset.length > 0) {
+    if (this.asset && this.asset.length > 0) {
       const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
         fields_1.OutputProprietaryTypes.ASSET,
       );

@@ -6,7 +6,6 @@ var __importDefault =
   };
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Creator = exports.Output = exports.Input = void 0;
-const bitset_1 = __importDefault(require('bitset'));
 const globals_1 = require('./globals');
 const pset_1 = require('./pset');
 const input_1 = require('./input');
@@ -16,6 +15,7 @@ const address_1 = require('../address');
 const asset_1 = require('../asset');
 const transaction_1 = require('../transaction');
 const ops_1 = require('../ops');
+const bitset_1 = __importDefault(require('bitset'));
 class Input {
   constructor(txid, txIndex, sequence, heightLocktime, timeLocktime) {
     this.txid = txid;
@@ -93,14 +93,12 @@ class Output {
 exports.Output = Output;
 class Creator {
   static newPset(args) {
-    const modifiable = new bitset_1.default(0);
     const txModifiable = new bitset_1.default(0);
     txModifiable.set(0);
     txModifiable.set(1);
     const globals = new globals_1.Global(2, 0, 0, 2);
-    globals.modifiable = modifiable;
     globals.txModifiable = txModifiable;
-    globals.xpub = [];
+    globals.xpubs = [];
     globals.scalars = [];
     globals.proprietaryData = [];
     globals.unknowns = [];

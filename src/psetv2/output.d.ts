@@ -3,6 +3,9 @@ import { BufferReader } from '../bufferutils';
 import { Bip32Derivation, TapBip32Derivation, TapInternalKey, TapTree } from './interfaces';
 import { KeyPair } from './key_pair';
 import { ProprietaryData } from './proprietary_data';
+export declare class OutputDuplicateFieldError extends Error {
+    constructor(message?: string);
+}
 export declare class Output {
     static fromBuffer(r: BufferReader): Output;
     redeemScript?: Buffer;
@@ -14,7 +17,7 @@ export declare class Output {
     tapTree?: TapTree;
     tapInternalKey?: TapInternalKey;
     valueCommitment?: Buffer;
-    asset: Buffer;
+    asset?: Buffer;
     assetCommitment?: Buffer;
     valueRangeproof?: Buffer;
     assetSurjectionProof?: Buffer;
@@ -27,7 +30,7 @@ export declare class Output {
     unknowns?: KeyPair[];
     constructor(value?: number, asset?: Buffer, script?: Buffer);
     sanityCheck(): this;
-    isBlinded(): boolean;
+    needsBlinding(): boolean;
     isPartiallyBlinded(): boolean;
     isFullyBlinded(): boolean;
     isTaproot(): boolean;
