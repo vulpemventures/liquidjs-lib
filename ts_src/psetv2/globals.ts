@@ -268,7 +268,7 @@ export class Global {
 
     if (this.txModifiable!) {
       const txModifiable = Buffer.allocUnsafe(1);
-      txModifiable.writeUInt8(Number(this.txModifiable!.toString(2)), 0);
+      txModifiable.writeUInt8(Number(this.txModifiable!.toString(10)), 0);
       const txModifiableKey = new Key(GlobalTypes.TX_MODIFIABLE);
       keyPairs.push(new KeyPair(txModifiableKey, txModifiable));
     }
