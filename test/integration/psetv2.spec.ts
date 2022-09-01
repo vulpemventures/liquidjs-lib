@@ -694,7 +694,7 @@ function signTransaction(
   });
 
   if (!pset.validateAllSignatures(Pset.ECDSASigValidator(ecc))) {
-    throw new Error('Failed to sign pset')
+    throw new Error('Failed to sign pset');
   }
 
   const finalizer = new PsetFinalizer(pset);

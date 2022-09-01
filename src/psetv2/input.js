@@ -122,13 +122,13 @@ class Input {
           input.sighashType = kp.value.readUInt32LE();
           break;
         case fields_1.InputTypes.REDEEM_SCRIPT:
-          if (input.redeemScript.length > 0) {
+          if (input.redeemScript && input.redeemScript.length > 0) {
             throw new InputDuplicateFieldError('redeem script');
           }
           input.redeemScript = kp.value;
           break;
         case fields_1.InputTypes.WITNESS_SCRIPT:
-          if (input.witnessScript.length > 0) {
+          if (input.witnessScript && input.witnessScript.length > 0) {
             throw new InputDuplicateFieldError('witness script');
           }
           input.witnessScript = kp.value;
@@ -149,13 +149,13 @@ class Input {
           input.bip32Derivation.push({ pubkey, masterFingerprint, path });
           break;
         case fields_1.InputTypes.FINAL_SCRIPTSIG:
-          if (input.finalScriptSig.length > 0) {
+          if (input.finalScriptSig && input.finalScriptSig.length > 0) {
             throw new InputDuplicateFieldError('final scriptsig');
           }
           input.finalScriptSig = kp.value;
           break;
         case fields_1.InputTypes.FINAL_SCRIPTWITNESS:
-          if (input.finalScriptWitness.length > 0) {
+          if (input.finalScriptWitness && input.finalScriptWitness.length > 0) {
             throw new InputDuplicateFieldError('final script witness');
           }
           input.finalScriptWitness = kp.value;
@@ -201,7 +201,7 @@ class Input {
           input.hash256Preimages[hash256Key] = kp.value;
           break;
         case fields_1.InputTypes.PREVIOUS_TXID:
-          if (input.previousTxid.length > 0) {
+          if (input.previousTxid && input.previousTxid.length > 0) {
             throw new InputDuplicateFieldError('previous txid');
           }
           if (kp.value.length !== 32) {

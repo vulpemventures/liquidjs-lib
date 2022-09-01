@@ -45,13 +45,13 @@ export class Output {
 
       switch (kp.key.keyType) {
         case OutputTypes.REDEEM_SCRIPT:
-          if (output.redeemScript!.length > 0) {
+          if (output.redeemScript && output.redeemScript.length > 0) {
             throw new OutputDuplicateFieldError('redeem script');
           }
           output.redeemScript = kp.value;
           break;
         case OutputTypes.WITNESS_SCRIPT:
-          if (output.witnessScript!.length > 0) {
+          if (output.witnessScript && output.witnessScript.length > 0) {
             throw new OutputDuplicateFieldError('witness script');
           }
           output.witnessScript = kp.value;
@@ -80,7 +80,7 @@ export class Output {
           output.value = readUInt64LE(kp.value, 0);
           break;
         case OutputTypes.SCRIPT:
-          if (output.script! && output.script!.length > 0) {
+          if (output.script && output.script.length > 0) {
             throw new OutputDuplicateFieldError('script');
           }
           output.script = kp.value;
@@ -138,7 +138,7 @@ export class Output {
           output.tapTree = { leaves };
           break;
         case OutputTypes.TAP_INTERNAL_KEY:
-          if (output.tapInternalKey! && output.tapInternalKey!.length > 0) {
+          if (output.tapInternalKey && output.tapInternalKey.length > 0) {
             throw new OutputDuplicateFieldError('taproot internal key');
           }
           if (kp.value.length !== 32) {
@@ -152,8 +152,8 @@ export class Output {
             switch (data.subType) {
               case OutputProprietaryTypes.VALUE_COMMITMENT:
                 if (
-                  output.valueCommitment! &&
-                  output.valueCommitment!.length > 0
+                  output.valueCommitment &&
+                  output.valueCommitment.length > 0
                 ) {
                   throw new OutputDuplicateFieldError('value commitment');
                 }
@@ -173,8 +173,8 @@ export class Output {
                 break;
               case OutputProprietaryTypes.ASSET_COMMITMENT:
                 if (
-                  output.assetCommitment! &&
-                  output.assetCommitment!.length > 0
+                  output.assetCommitment &&
+                  output.assetCommitment.length > 0
                 ) {
                   throw new OutputDuplicateFieldError('asset commitment');
                 }
@@ -185,8 +185,8 @@ export class Output {
                 break;
               case OutputProprietaryTypes.VALUE_RANGEPROOF:
                 if (
-                  output.valueRangeproof! &&
-                  output.valueRangeproof!.length > 0
+                  output.valueRangeproof &&
+                  output.valueRangeproof.length > 0
                 ) {
                   throw new OutputDuplicateFieldError('value range proof');
                 }
@@ -194,18 +194,15 @@ export class Output {
                 break;
               case OutputProprietaryTypes.ASSET_SURJECTION_PROOF:
                 if (
-                  output.assetSurjectionProof! &&
-                  output.assetSurjectionProof!.length > 0
+                  output.assetSurjectionProof &&
+                  output.assetSurjectionProof.length > 0
                 ) {
                   throw new OutputDuplicateFieldError('asset surjection proof');
                 }
                 output.assetSurjectionProof = kp.value;
                 break;
               case OutputProprietaryTypes.BLINDING_PUBKEY:
-                if (
-                  output.blindingPubkey! &&
-                  output.blindingPubkey!.length > 0
-                ) {
+                if (output.blindingPubkey && output.blindingPubkey.length > 0) {
                   throw new OutputDuplicateFieldError('blinding pubkey');
                 }
                 if (kp.value.length !== 33) {
@@ -214,7 +211,7 @@ export class Output {
                 output.blindingPubkey = kp.value;
                 break;
               case OutputProprietaryTypes.ECDH_PUBKEY:
-                if (output.ecdhPubkey! && output.ecdhPubkey!.length > 0) {
+                if (output.ecdhPubkey && output.ecdhPubkey.length > 0) {
                   throw new OutputDuplicateFieldError('ecdh pubkey');
                 }
                 if (kp.value.length !== 33) {
@@ -233,8 +230,8 @@ export class Output {
                 break;
               case OutputProprietaryTypes.BLIND_VALUE_PROOF:
                 if (
-                  output.blindValueProof! &&
-                  output.blindValueProof!.length > 0
+                  output.blindValueProof &&
+                  output.blindValueProof.length > 0
                 ) {
                   throw new OutputDuplicateFieldError('blind value proof');
                 }
@@ -242,8 +239,8 @@ export class Output {
                 break;
               case OutputProprietaryTypes.BLIND_ASSET_PROOF:
                 if (
-                  output.blindAssetProof! &&
-                  output.blindAssetProof!.length > 0
+                  output.blindAssetProof &&
+                  output.blindAssetProof.length > 0
                 ) {
                   throw new OutputDuplicateFieldError('blind asset proof');
                 }

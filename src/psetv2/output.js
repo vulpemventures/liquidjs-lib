@@ -38,13 +38,13 @@ class Output {
       }
       switch (kp.key.keyType) {
         case fields_1.OutputTypes.REDEEM_SCRIPT:
-          if (output.redeemScript.length > 0) {
+          if (output.redeemScript && output.redeemScript.length > 0) {
             throw new OutputDuplicateFieldError('redeem script');
           }
           output.redeemScript = kp.value;
           break;
         case fields_1.OutputTypes.WITNESS_SCRIPT:
-          if (output.witnessScript.length > 0) {
+          if (output.witnessScript && output.witnessScript.length > 0) {
             throw new OutputDuplicateFieldError('witness script');
           }
           output.witnessScript = kp.value;

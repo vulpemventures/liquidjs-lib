@@ -92,13 +92,13 @@ export class Input {
           input.sighashType = kp.value.readUInt32LE();
           break;
         case InputTypes.REDEEM_SCRIPT:
-          if (input.redeemScript!.length > 0) {
+          if (input.redeemScript && input.redeemScript.length > 0) {
             throw new InputDuplicateFieldError('redeem script');
           }
           input.redeemScript = kp.value;
           break;
         case InputTypes.WITNESS_SCRIPT:
-          if (input.witnessScript!.length > 0) {
+          if (input.witnessScript && input.witnessScript.length > 0) {
             throw new InputDuplicateFieldError('witness script');
           }
           input.witnessScript = kp.value;
@@ -118,13 +118,13 @@ export class Input {
           input.bip32Derivation!.push({ pubkey, masterFingerprint, path });
           break;
         case InputTypes.FINAL_SCRIPTSIG:
-          if (input.finalScriptSig!.length > 0) {
+          if (input.finalScriptSig && input.finalScriptSig.length > 0) {
             throw new InputDuplicateFieldError('final scriptsig');
           }
           input.finalScriptSig = kp.value;
           break;
         case InputTypes.FINAL_SCRIPTWITNESS:
-          if (input.finalScriptWitness!.length > 0) {
+          if (input.finalScriptWitness && input.finalScriptWitness.length > 0) {
             throw new InputDuplicateFieldError('final script witness');
           }
           input.finalScriptWitness = kp.value;
@@ -170,7 +170,7 @@ export class Input {
           input.hash256Preimages[hash256Key] = kp.value;
           break;
         case InputTypes.PREVIOUS_TXID:
-          if (input.previousTxid!.length > 0) {
+          if (input.previousTxid && input.previousTxid.length > 0) {
             throw new InputDuplicateFieldError('previous txid');
           }
           if (kp.value.length !== 32) {
@@ -299,7 +299,7 @@ export class Input {
           });
           break;
         case InputTypes.TAP_INTERNAL_KEY:
-          if (input.tapInternalKey! && input.tapInternalKey!.length > 0) {
+          if (input.tapInternalKey && input.tapInternalKey.length > 0) {
             throw new InputDuplicateFieldError('taproot internal key');
           }
           if (kp.value.length !== 32) {
@@ -308,7 +308,7 @@ export class Input {
           input.tapInternalKey = kp.value;
           break;
         case InputTypes.TAP_MERKLE_ROOT:
-          if (input.tapMerkleRoot! && input.tapMerkleRoot!.length > 0) {
+          if (input.tapMerkleRoot && input.tapMerkleRoot.length > 0) {
             throw new InputDuplicateFieldError('taproot merkle root');
           }
           if (kp.value.length !== 32) {
