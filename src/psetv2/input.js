@@ -105,7 +105,7 @@ class Input {
           if (pk.length !== 33) {
             throw new Error(`Invalid partial sig's pubkey length`);
           }
-          if (input.partialSigs.find(ps => ps.pubkey.equals(pubkey))) {
+          if (input.partialSigs.find(ps => ps.pubkey.equals(pk))) {
             throw new InputDuplicateFieldError('partial sig');
           }
           const signature = kp.value;
