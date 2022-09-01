@@ -32,6 +32,7 @@ export declare class Updater {
     addInWitnessScript(inIndex: number, witnessScript: Buffer): this;
     addInBIP32Derivation(inIndex: number, d: Bip32Derivation): this;
     addInSighashType(inIndex: number, sighashType: number): this;
+    addInUtxoRangeProof(inIndex: number, proof: Buffer): this;
     addInIssuance(inIndex: number, args: AddInIssuanceArgs): this;
     addInReissuance(inIndex: number, args: AddInReissuanceArgs): this;
     addInPartialSignature(inIndex: number, ps: PartialSig, validator: ValidateSigFunction): this;

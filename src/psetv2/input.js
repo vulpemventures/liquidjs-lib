@@ -678,7 +678,9 @@ class Input {
       return undefined;
     }
     if (!this.nonWitnessUtxo) {
-      return this.witnessUtxo;
+      const utxo = this.witnessUtxo;
+      utxo.rangeProof = this.utxoRangeProof;
+      return utxo;
     }
     return this.nonWitnessUtxo.outs[this.previousTxIndex];
   }

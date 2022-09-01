@@ -711,7 +711,9 @@ export class Input {
     }
 
     if (!this.nonWitnessUtxo) {
-      return this.witnessUtxo;
+      const utxo = this.witnessUtxo!;
+      utxo.rangeProof = this.utxoRangeProof;
+      return utxo;
     }
     return this.nonWitnessUtxo!.outs[this.previousTxIndex];
   }

@@ -171,6 +171,18 @@ class Updater {
     this.pset.outputs = pset.outputs;
     return this;
   }
+  addInUtxoRangeProof(inIndex, proof) {
+    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
+      throw new Error('input index out of range');
+    }
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].utxoRangeProof = proof;
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+    return this;
+  }
   addInIssuance(inIndex, args) {
     this.validateIssuanceInput(inIndex);
     validateAddInIssuanceArgs(args);
