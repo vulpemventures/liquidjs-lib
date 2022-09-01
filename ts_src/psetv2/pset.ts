@@ -347,7 +347,8 @@ export class Pset {
     const sighashType = ps.signature[ps.signature.length - 1];
     const preimage = this.getInputPreimage(index, sighashType);
     checkScriptForPubkey(ps.pubkey, prevout.script, 'verify');
-    return validator(ps.pubkey, preimage, ps.signature);
+    const { signature } = bscript.signature.decode(ps.signature);
+    return validator(ps.pubkey, preimage, signature);
   }
 
   getInputPreimage(

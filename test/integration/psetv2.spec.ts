@@ -693,6 +693,10 @@ function signTransaction(
     });
   });
 
+  if (!pset.validateAllSignatures(Pset.ECDSASigValidator(ecc))) {
+    throw new Error('Failed to sign pset')
+  }
+
   const finalizer = new PsetFinalizer(pset);
   finalizer.finalize();
   return PsetExtractor.extract(pset);
