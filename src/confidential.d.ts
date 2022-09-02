@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { Output } from './transaction';
-import { Pset, IssuanceBlindingArgs, OutputBlindingArgs, OwnedInput, BlindingGenerator as PsetBlindingGenerator, BlindingValidator as PsetBlindingValidator } from './psetv2';
+import { Pset, IssuanceBlindingArgs, OutputBlindingArgs, OwnedInput, PsetBlindingGenerator, PsetBlindingValidator } from './psetv2';
 import { Slip77Interface } from 'slip77';
 import { TinySecp256k1Interface } from 'ecpair';
 export declare function valueBlindingFactor(inValues: string[], outValues: string[], inGenerators: Buffer[], outGenerators: Buffer[], inFactors: Buffer[], outFactors: Buffer[]): Promise<Buffer>;

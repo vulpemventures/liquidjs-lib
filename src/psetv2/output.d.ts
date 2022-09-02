@@ -6,8 +6,8 @@ import { ProprietaryData } from './proprietary_data';
 export declare class OutputDuplicateFieldError extends Error {
     constructor(message?: string);
 }
-export declare class Output {
-    static fromBuffer(r: BufferReader): Output;
+export declare class PsetOutput {
+    static fromBuffer(r: BufferReader): PsetOutput;
     redeemScript?: Buffer;
     witnessScript?: Buffer;
     bip32Derivation?: Bip32Derivation[];

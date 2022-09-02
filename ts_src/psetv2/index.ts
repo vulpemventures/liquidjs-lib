@@ -1,13 +1,13 @@
-import { Global as PsetGlobal } from './globals';
-import { Input as PsetInput } from './input';
-import { Output as PsetOutput } from './output';
+import { PsetGlobal } from './globals';
+import { PsetInput } from './input';
+import { PsetOutput } from './output';
 import { Pset } from './pset';
-import { Creator, Input, Output } from './creator';
+import { Creator, CreatorInput, CreatorOutput } from './creator';
 import { Updater, AddInIssuanceArgs, AddInReissuanceArgs } from './updater';
 import {
   Blinder,
-  BlindingGenerator,
-  BlindingValidator,
+  PsetBlindingGenerator,
+  PsetBlindingValidator,
   IssuanceBlindingArgs,
   OutputBlindingArgs,
   OwnedInput,
@@ -20,17 +20,17 @@ export {
   AddInIssuanceArgs,
   AddInReissuanceArgs,
   Blinder,
-  BlindingGenerator,
-  BlindingValidator,
+  PsetBlindingGenerator,
+  PsetBlindingValidator,
   BIP174SigningData,
   BIP371SigningData,
   Creator,
   Extractor,
   Finalizer,
   FinalizeFunc,
-  Input,
+  CreatorInput,
   IssuanceBlindingArgs,
-  Output,
+  CreatorOutput,
   OutputBlindingArgs,
   OwnedInput,
   Pset,

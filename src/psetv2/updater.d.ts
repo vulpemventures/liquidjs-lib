@@ -2,7 +2,7 @@
 import { TxOutput } from '..';
 import { IssuanceContract } from '../issuance';
 import { Transaction } from '../transaction';
-import { Input, Output } from './creator';
+import { CreatorInput, CreatorOutput } from './creator';
 import { Bip32Derivation, PartialSig, TapBip32Derivation, TapInternalKey, TapLeafScript, TapMerkleRoot, TapScriptSig, TapTree } from './interfaces';
 import { Pset, ValidateSigFunction } from './pset';
 export interface AddInIssuanceArgs {
@@ -24,8 +24,8 @@ export interface AddInReissuanceArgs {
 export declare class Updater {
     pset: Pset;
     constructor(pset: Pset);
-    addInputs(ins: Input[]): this;
-    addOutputs(outs: Output[]): this;
+    addInputs(ins: CreatorInput[]): this;
+    addOutputs(outs: CreatorOutput[]): this;
     addInNonWitnessUtxo(inIndex: number, nonWitnessUtxo: Transaction): this;
     addInWitnessUtxo(inIndex: number, witnessUtxo: TxOutput): this;
     addInRedeemScript(inIndex: number, redeemScript: Buffer): this;

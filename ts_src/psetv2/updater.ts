@@ -9,7 +9,7 @@ import {
   newIssuance,
 } from '../issuance';
 import { Transaction } from '../transaction';
-import { Input, Output } from './creator';
+import { CreatorInput, CreatorOutput } from './creator';
 import {
   Bip32Derivation,
   PartialSig,
@@ -49,7 +49,7 @@ export class Updater {
     this.pset = pset;
   }
 
-  addInputs(ins: Input[]): this {
+  addInputs(ins: CreatorInput[]): this {
     const pset = this.pset.copy();
 
     ins.forEach(input => {
@@ -66,7 +66,7 @@ export class Updater {
     return this;
   }
 
-  addOutputs(outs: Output[]): this {
+  addOutputs(outs: CreatorOutput[]): this {
     const pset = this.pset.copy();
 
     outs.forEach(output => {
@@ -240,7 +240,7 @@ export class Updater {
       const blinderIndex = isConfidential(args.assetAddress!)
         ? inIndex
         : undefined;
-      const output = new Output(
+      const output = new CreatorOutput(
         issuedAsset,
         assetAmount,
         args.assetAddress,
@@ -256,7 +256,7 @@ export class Updater {
       const blinderIndex = isConfidential(args.tokenAddress!)
         ? inIndex
         : undefined;
-      const output = new Output(
+      const output = new CreatorOutput(
         reissuanceToken,
         tokenAmount,
         args.tokenAddress,
@@ -298,13 +298,13 @@ export class Updater {
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = args.tokenAmount;
 
-    const assetOutput = new Output(
+    const assetOutput = new CreatorOutput(
       asset,
       args.assetAmount,
       args.assetAddress,
       inIndex,
     );
-    const tokenOutput = new Output(
+    const tokenOutput = new CreatorOutput(
       reissuanceToken,
       args.tokenAmount,
       args.tokenAddress,

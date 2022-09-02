@@ -5,7 +5,7 @@ var __importDefault =
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Global = exports.GlobalDuplicateFieldError = void 0;
+exports.PsetGlobal = exports.GlobalDuplicateFieldError = void 0;
 const fields_1 = require('./fields');
 const key_pair_1 = require('./key_pair');
 const proprietary_data_1 = require('./proprietary_data');
@@ -24,7 +24,7 @@ class GlobalDuplicateFieldError extends Error {
   }
 }
 exports.GlobalDuplicateFieldError = GlobalDuplicateFieldError;
-class Global {
+class PsetGlobal {
   constructor(txVersion, inputCount, outputCount, version, fallbackLocktime) {
     this.txVersion = txVersion || 0;
     this.inputCount = inputCount || 0;
@@ -34,7 +34,7 @@ class Global {
   }
   static fromBuffer(r) {
     let kp;
-    const global = new Global();
+    const global = new PsetGlobal();
     while (true) {
       try {
         kp = key_pair_1.KeyPair.fromBuffer(r);
@@ -300,4 +300,4 @@ class Global {
     return keyPairs;
   }
 }
-exports.Global = Global;
+exports.PsetGlobal = PsetGlobal;

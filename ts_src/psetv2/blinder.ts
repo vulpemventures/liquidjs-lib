@@ -37,7 +37,7 @@ export interface OwnedInput {
   assetBlinder: Buffer;
 }
 
-export interface BlindingGenerator {
+export interface PsetBlindingGenerator {
   computeAndAddToScalarOffset(
     scalar: Buffer,
     value: string,
@@ -67,7 +67,7 @@ export interface BlindingGenerator {
   ): Promise<Buffer>;
 }
 
-export interface BlindingValidator {
+export interface PsetBlindingValidator {
   verifyValueRangeProof(
     valueCommitment: Buffer,
     assetCommitment: Buffer,
@@ -96,14 +96,14 @@ export interface BlindingValidator {
 export class Blinder {
   pset: Pset;
   ownedInputs: OwnedInput[];
-  blindingValidator: BlindingValidator;
-  blindingGenerator: BlindingGenerator;
+  blindingValidator: PsetBlindingValidator;
+  blindingGenerator: PsetBlindingGenerator;
 
   constructor(
     pset: Pset,
     ownedInputs: OwnedInput[],
-    validator: BlindingValidator,
-    generator: BlindingGenerator,
+    validator: PsetBlindingValidator,
+    generator: PsetBlindingGenerator,
   ) {
     if (ownedInputs.length === 0) {
       throw new Error('Missing owned inputs');

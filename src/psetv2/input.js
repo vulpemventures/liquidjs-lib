@@ -44,7 +44,7 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Input = exports.InputDuplicateFieldError = void 0;
+exports.PsetInput = exports.InputDuplicateFieldError = void 0;
 const bitcoinjs_lib_1 = require('bitcoinjs-lib');
 const bufferutils_1 = require('../bufferutils');
 const issuance_1 = require('../issuance');
@@ -65,7 +65,7 @@ class InputDuplicateFieldError extends Error {
   }
 }
 exports.InputDuplicateFieldError = InputDuplicateFieldError;
-class Input {
+class PsetInput {
   constructor(previousTxid, previousTxIndex, sequence) {
     this.previousTxid = previousTxid || Buffer.from([]);
     this.previousTxIndex = previousTxIndex || 0;
@@ -73,7 +73,7 @@ class Input {
   }
   static fromBuffer(r) {
     let kp;
-    const input = new Input();
+    const input = new PsetInput();
     while (true) {
       try {
         kp = key_pair_1.KeyPair.fromBuffer(r);
@@ -1046,7 +1046,7 @@ class Input {
     return keyPairs;
   }
 }
-exports.Input = Input;
+exports.PsetInput = PsetInput;
 function serializeOutput(out) {
   const size =
     out.asset.length +

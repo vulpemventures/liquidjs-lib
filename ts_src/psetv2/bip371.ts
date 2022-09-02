@@ -1,5 +1,5 @@
 import { TapLeafScript, TapScriptSig } from './interfaces';
-import { Input } from './input';
+import { PsetInput } from './input';
 import { tapLeafHash } from '../bip341';
 import { pubkeyPositionInScript } from './utils';
 
@@ -25,7 +25,10 @@ export function serializeTaprootSignature(
   return Buffer.concat([sig, sighashTypeByte]);
 }
 
-export function sortSignatures(input: Input, tapLeaf: TapLeafScript): Buffer[] {
+export function sortSignatures(
+  input: PsetInput,
+  tapLeaf: TapLeafScript,
+): Buffer[] {
   const leafHash = tapLeafHash({
     scriptHex: tapLeaf.script.toString('hex'),
     version: tapLeaf.leafVersion,
@@ -54,7 +57,7 @@ function addPubkeyPositionInScript(
  * Find tapleaf by hash, or get the signed tapleaf with the shortest path.
  */
 export function findTapLeafToFinalize(
-  input: Input,
+  input: PsetInput,
   inputIndex: number,
   leafHashToFinalize?: Buffer,
 ): TapLeafScript {

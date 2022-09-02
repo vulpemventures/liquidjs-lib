@@ -3,8 +3,8 @@ import {
   Pset,
   Creator as PsetCreator,
   Updater as PsetUpdater,
-  Input,
-  Output,
+  CreatorInput,
+  CreatorOutput,
   Signer as PsetSigner,
   Finalizer as PsetFinalizer,
   Extractor as PsetExtractor,
@@ -38,12 +38,16 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         .slice()
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const outputs = [
-      new Output(lbtc, 60000000, 'ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq'),
-      new Output(lbtc, 39999500, alice.payment.address!),
-      new Output(lbtc, 500),
+      new CreatorOutput(
+        lbtc,
+        60000000,
+        'ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq',
+      ),
+      new CreatorOutput(lbtc, 39999500, alice.payment.address!),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
@@ -64,12 +68,12 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         .slice()
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const outputs = [
-      new Output(lbtc, 60000000, bob.payment.confidentialAddress!, 0),
-      new Output(lbtc, 39999500, alice.payment.address!),
-      new Output(lbtc, 500),
+      new CreatorOutput(lbtc, 60000000, bob.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 39999500, alice.payment.address!),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
@@ -113,17 +117,18 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         .slice()
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const outputs = [
-      new Output(lbtc, 60000000, bob.payment.confidentialAddress!, 0),
-      new Output(lbtc, 39999500, alice.payment.confidentialAddress!, 0),
-      new Output(lbtc, 500),
+      new CreatorOutput(lbtc, 60000000, bob.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 39999500, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
     const updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
 
     const zkpGenerator = ZKPGenerator.fromInBlindingKeys(alice.blindingKeys);
@@ -154,22 +159,23 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         .slice()
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     // dummy confidential output (3rd) has confidential address and 0 amount:
     //  - the confidential address is used only for setting the pset output's blinding pubkey
     //  - 0 amount is used to set the pset output's script to OP_RETURN.
     //
     const outputs = [
-      new Output(lbtc, 60000000, bob.payment.address!, 0),
-      new Output(lbtc, 39999500, alice.payment.address!, 0),
-      new Output(lbtc, 0, alice.payment.confidentialAddress!, 0),
-      new Output(lbtc, 500),
+      new CreatorOutput(lbtc, 60000000, bob.payment.address!, 0),
+      new CreatorOutput(lbtc, 39999500, alice.payment.address!, 0),
+      new CreatorOutput(lbtc, 0, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
     const updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
 
     const zkpGenerator = ZKPGenerator.fromInBlindingKeys(alice.blindingKeys);
@@ -200,16 +206,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         .slice()
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const outputs = [
-      new Output(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
-      new Output(lbtc, 500),
+      new CreatorOutput(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
     const updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
     updater.addInIssuance(0, {
       assetAmount: 1000,
@@ -247,16 +254,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         .slice()
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const outputs = [
-      new Output(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
-      new Output(lbtc, 500),
+      new CreatorOutput(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
     const updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
     updater.addInIssuance(0, {
       assetAmount: 1000,
@@ -294,16 +302,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         .slice()
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const outputs = [
-      new Output(lbtc, 99999500, alice.payment.address!),
-      new Output(lbtc, 500),
+      new CreatorOutput(lbtc, 99999500, alice.payment.address!),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
     const updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
     updater.addInIssuance(0, {
       assetAmount: 1000,
@@ -346,16 +355,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         .slice()
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const outputs = [
-      new Output(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
-      new Output(lbtc, 500),
+      new CreatorOutput(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
     const updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
     updater.addInIssuance(0, {
       assetAmount: 1000,
@@ -402,12 +412,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       const txid = Buffer.from(hash)
         .reverse()
         .toString('hex');
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const aliceOutputs = [
-      new Output(usdt, 25000_00000000, alice.payment.confidentialAddress!, 0),
-      new Output(lbtc, 49999000, alice.payment.confidentialAddress!, 0),
-      new Output(lbtc, 1000),
+      new CreatorOutput(
+        usdt,
+        25000_00000000,
+        alice.payment.confidentialAddress!,
+        0,
+      ),
+      new CreatorOutput(lbtc, 49999000, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 1000),
     ];
 
     const pset = PsetCreator.newPset({
@@ -416,14 +431,20 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     });
     const updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
 
     const bobInputs = [bobInputData].map(({ txid, index }) => {
-      return new Input(txid, index);
+      return new CreatorInput(txid, index);
     });
     const bobOutputs = [
-      new Output(lbtc, 50000000, bob.payment.confidentialAddress!, 1),
-      new Output(usdt, 25000_00000000, bob.payment.confidentialAddress!, 1),
+      new CreatorOutput(lbtc, 50000000, bob.payment.confidentialAddress!, 1),
+      new CreatorOutput(
+        usdt,
+        25000_00000000,
+        bob.payment.confidentialAddress!,
+        1,
+      ),
     ];
 
     updater.addInputs(bobInputs);
@@ -434,6 +455,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     );
     const bobWitnessUtxo = bobPrevTx.outs[bobInputs[0].txIndex];
     updater.addInWitnessUtxo(1, bobWitnessUtxo);
+    updater.addInUtxoRangeProof(1, bobWitnessUtxo.rangeProof!);
     updater.addInSighashType(1, Transaction.SIGHASH_ALL);
 
     const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
@@ -475,16 +497,16 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const sendAmount = 10_000;
     const change = 1_0000_0000 - sendAmount - FEES;
 
-    const inputs = [new Input(utxo.txid, utxo.vout)];
+    const inputs = [new CreatorInput(utxo.txid, utxo.vout)];
 
     const outputs = [
-      new Output(
+      new CreatorOutput(
         lbtc,
         sendAmount,
         'ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq',
       ),
-      new Output(lbtc, change, taprootAddress),
-      new Output(lbtc, FEES),
+      new CreatorOutput(lbtc, change, taprootAddress),
+      new CreatorOutput(lbtc, FEES),
     ];
 
     const pset = PsetCreator.newPset({
@@ -569,14 +591,19 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     // he gets the change and send the other one to the same taproot address
 
     const inputs = [
-      new Input(confUtxo.txid, confUtxo.vout),
-      new Input(utxo.txid, utxo.vout),
+      new CreatorInput(confUtxo.txid, confUtxo.vout),
+      new CreatorInput(utxo.txid, utxo.vout),
     ];
 
     const outputs = [
-      new Output(lbtc, sendAmount, bobPay.payment.confidentialAddress!, 0),
-      new Output(lbtc, change, taprootAddress, 0),
-      new Output(lbtc, FEES),
+      new CreatorOutput(
+        lbtc,
+        sendAmount,
+        bobPay.payment.confidentialAddress!,
+        0,
+      ),
+      new CreatorOutput(lbtc, change, taprootAddress, 0),
+      new CreatorOutput(lbtc, FEES),
     ];
 
     const pset = PsetCreator.newPset({
@@ -586,6 +613,10 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
     const updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, prevoutConfTx.outs[confUtxo.vout]);
+    updater.addInUtxoRangeProof(
+      0,
+      prevoutConfTx.outs[confUtxo.vout].rangeProof!,
+    );
     updater.addInWitnessUtxo(1, prevoutTx.outs[utxo.vout]);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
     updater.addInSighashType(1, Transaction.SIGHASH_ALL);

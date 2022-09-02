@@ -19,10 +19,10 @@ export class GlobalDuplicateFieldError extends Error {
   }
 }
 
-export class Global {
-  static fromBuffer(r: BufferReader): Global {
+export class PsetGlobal {
+  static fromBuffer(r: BufferReader): PsetGlobal {
     let kp: KeyPair;
-    const global = new Global();
+    const global = new PsetGlobal();
     while (true) {
       try {
         kp = KeyPair.fromBuffer(r);

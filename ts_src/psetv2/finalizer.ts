@@ -1,7 +1,7 @@
 import { payments } from '..';
 import { witnessStackToScriptWitness } from '../psbt';
 import { findTapLeafToFinalize, sortSignatures } from './bip371';
-import { Input } from './input';
+import { PsetInput } from './input';
 import { PartialSig } from './interfaces';
 import { Pset } from './pset';
 import { classifyScript, getPayment, hasSigs, isP2WPKH } from './utils';
@@ -93,7 +93,7 @@ interface GetScriptReturn {
   isP2WSH: boolean;
 }
 
-function getScriptFromInput(input: Input): GetScriptReturn {
+function getScriptFromInput(input: PsetInput): GetScriptReturn {
   const res: GetScriptReturn = {
     script: null,
     isSegwit: false,
@@ -162,7 +162,7 @@ const finalizeTaprootInput = (
 
 function getFinalScripts(
   inputIndex: number,
-  input: Input,
+  input: PsetInput,
   script: Buffer,
   isSegwit: boolean,
   isP2SH: boolean,
@@ -232,7 +232,7 @@ function prepareFinalScripts(
 }
 
 function canFinalize(
-  input: Input,
+  input: PsetInput,
   script: Buffer,
   scriptType: ReturnType<typeof classifyScript>,
 ): boolean {
@@ -251,7 +251,7 @@ function canFinalize(
 
 function getTaprootFinalScripts(
   inputIndex: number,
-  input: Input,
+  input: PsetInput,
   tapLeafHashToFinalize?: Buffer,
 ): {
   finalScriptWitness?: Buffer;

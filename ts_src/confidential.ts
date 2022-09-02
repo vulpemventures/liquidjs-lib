@@ -6,8 +6,8 @@ import {
   IssuanceBlindingArgs,
   OutputBlindingArgs,
   OwnedInput,
-  BlindingGenerator as PsetBlindingGenerator,
-  BlindingValidator as PsetBlindingValidator,
+  PsetBlindingGenerator,
+  PsetBlindingValidator,
 } from './psetv2';
 import { Slip77Interface, SLIP77Factory } from 'slip77';
 import { ElementsValue } from './value';

@@ -7,8 +7,8 @@ import { Xpub } from './interfaces';
 export declare class GlobalDuplicateFieldError extends Error {
     constructor(message?: string);
 }
-export declare class Global {
-    static fromBuffer(r: BufferReader): Global;
+export declare class PsetGlobal {
+    static fromBuffer(r: BufferReader): PsetGlobal;
     xpubs?: Xpub[];
     txVersion: number;
     inputCount: number;

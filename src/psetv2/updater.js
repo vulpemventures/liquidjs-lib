@@ -212,7 +212,7 @@ class Updater {
       const blinderIndex = (0, address_1.isConfidential)(args.assetAddress)
         ? inIndex
         : undefined;
-      const output = new creator_1.Output(
+      const output = new creator_1.CreatorOutput(
         issuedAsset,
         assetAmount,
         args.assetAddress,
@@ -227,7 +227,7 @@ class Updater {
       const blinderIndex = (0, address_1.isConfidential)(args.tokenAddress)
         ? inIndex
         : undefined;
-      const output = new creator_1.Output(
+      const output = new creator_1.CreatorOutput(
         reissuanceToken,
         tokenAmount,
         args.tokenAddress,
@@ -263,13 +263,13 @@ class Updater {
     pset.inputs[inIndex].issuanceBlindingNonce = blindingNonce;
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = args.tokenAmount;
-    const assetOutput = new creator_1.Output(
+    const assetOutput = new creator_1.CreatorOutput(
       asset,
       args.assetAmount,
       args.assetAddress,
       inIndex,
     );
-    const tokenOutput = new creator_1.Output(
+    const tokenOutput = new creator_1.CreatorOutput(
       reissuanceToken,
       args.tokenAmount,
       args.tokenAddress,

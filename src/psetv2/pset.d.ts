@@ -1,10 +1,10 @@
 /// <reference types="node" />
 import { TinySecp256k1Interface } from 'ecpair';
 import { Transaction } from '../transaction';
-import { Global } from './globals';
-import { Input } from './input';
+import { PsetGlobal } from './globals';
+import { PsetInput } from './input';
 import { PartialSig } from './interfaces';
-import { Output } from './output';
+import { PsetOutput } from './output';
 import { bip341 } from '..';
 export declare const magicPrefix: Buffer;
 export declare const magicPrefixWithSeparator: Buffer;
@@ -14,10 +14,10 @@ export declare class Pset {
     static fromBuffer(buf: Buffer): Pset;
     static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction;
     static SchnorrSigValidator(ecc: bip341.TinySecp256k1Interface): ValidateSigFunction;
-    inputs: Input[];
-    outputs: Output[];
-    globals: Global;
-    constructor(globals?: Global, inputs?: Input[], outputs?: Output[]);
+    inputs: PsetInput[];
+    outputs: PsetOutput[];
+    globals: PsetGlobal;
+    constructor(globals?: PsetGlobal, inputs?: PsetInput[], outputs?: PsetOutput[]);
     sanityCheck(): this;
     copy(): Pset;
     inputsModifiable(): boolean;
@@ -29,8 +29,8 @@ export declare class Pset {
     locktime(): number;
     unsignedTx(): Transaction;
     validateAllSignatures(validator: ValidateSigFunction): boolean;
-    addInput(newInput: Input): this;
-    addOutput(newOutput: Output): this;
+    addInput(newInput: PsetInput): this;
+    addOutput(newOutput: PsetOutput): this;
     validateInputSignatures(index: number, validator: ValidateSigFunction): boolean;
     validatePartialSignature(index: number, validator: ValidateSigFunction, ps: PartialSig): boolean;
     getInputPreimage(index: number, sighashType: number, genesisBlockHash?: Buffer, leafHash?: Buffer): Buffer;

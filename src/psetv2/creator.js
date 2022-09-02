@@ -5,7 +5,7 @@ var __importDefault =
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Creator = exports.Output = exports.Input = void 0;
+exports.Creator = exports.CreatorOutput = exports.CreatorInput = void 0;
 const globals_1 = require('./globals');
 const pset_1 = require('./pset');
 const input_1 = require('./input');
@@ -16,7 +16,7 @@ const asset_1 = require('../asset');
 const transaction_1 = require('../transaction');
 const ops_1 = require('../ops');
 const bitset_1 = __importDefault(require('bitset'));
-class Input {
+class CreatorInput {
   constructor(txid, txIndex, sequence, heightLocktime, timeLocktime) {
     this.txid = txid;
     this.txIndex = txIndex;
@@ -39,14 +39,14 @@ class Input {
     const prevTxid = (0, bufferutils_1.reverseBuffer)(
       Buffer.from(this.txid, 'hex'),
     );
-    const input = new input_1.Input(prevTxid, this.txIndex, this.sequence);
+    const input = new input_1.PsetInput(prevTxid, this.txIndex, this.sequence);
     input.requiredHeightLocktime = this.heightLocktime;
     input.requiredTimeLocktime = this.timeLocktime;
     return input;
   }
 }
-exports.Input = Input;
-class Output {
+exports.CreatorInput = CreatorInput;
+class CreatorOutput {
   constructor(asset, amount, address, blinderIndex) {
     this.asset = asset;
     this.amount = amount;
@@ -77,7 +77,7 @@ class Output {
           : Buffer.of(ops_1.OPS.OP_RETURN);
     }
     const asset = asset_1.AssetHash.fromHex(this.asset);
-    const output = new output_1.Output(
+    const output = new output_1.PsetOutput(
       this.amount,
       asset.bytesWithoutPrefix,
       script,
@@ -90,13 +90,13 @@ class Output {
     return output;
   }
 }
-exports.Output = Output;
+exports.CreatorOutput = CreatorOutput;
 class Creator {
   static newPset(args) {
     const txModifiable = new bitset_1.default(0);
     txModifiable.set(0);
     txModifiable.set(1);
-    const globals = new globals_1.Global(2, 0, 0, 2);
+    const globals = new globals_1.PsetGlobal(2, 0, 0, 2);
     globals.txModifiable = txModifiable;
     globals.xpubs = [];
     globals.scalars = [];

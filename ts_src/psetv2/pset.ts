@@ -4,10 +4,10 @@ import { hash160 } from '../crypto';
 import { Issuance } from '../issuance';
 import { Transaction } from '../transaction';
 import { separator } from './fields';
-import { Global } from './globals';
-import { Input } from './input';
+import { PsetGlobal } from './globals';
+import { PsetInput } from './input';
 import { PartialSig } from './interfaces';
-import { Output } from './output';
+import { PsetOutput } from './output';
 import * as bscript from '../script';
 import { getScriptType, ScriptType } from '../address';
 import { p2pkh } from '../payments';
@@ -42,15 +42,15 @@ export class Pset {
       throw new Error('invalid magic prefix');
     }
 
-    const globals = Global.fromBuffer(r);
+    const globals = PsetGlobal.fromBuffer(r);
     const inputs = [];
     for (let i = 0; i < globals.inputCount; i++) {
-      const input = Input.fromBuffer(r);
+      const input = PsetInput.fromBuffer(r);
       inputs.push(input);
     }
     const outputs = [];
     for (let i = 0; i < globals.outputCount; i++) {
-      const output = Output.fromBuffer(r);
+      const output = PsetOutput.fromBuffer(r);
       outputs.push(output);
     }
 
@@ -74,14 +74,18 @@ export class Pset {
       ecc.verifySchnorr(msghash, pubkey, signature.slice(0, 64));
   }
 
-  inputs: Input[];
-  outputs: Output[];
-  globals: Global;
+  inputs: PsetInput[];
+  outputs: PsetOutput[];
+  globals: PsetGlobal;
 
-  constructor(globals?: Global, inputs?: Input[], outputs?: Output[]) {
+  constructor(
+    globals?: PsetGlobal,
+    inputs?: PsetInput[],
+    outputs?: PsetOutput[],
+  ) {
     this.inputs = inputs || [];
     this.outputs = outputs || [];
-    this.globals = globals || new Global();
+    this.globals = globals || new PsetGlobal();
   }
 
   sanityCheck(): this {
@@ -233,7 +237,7 @@ export class Pset {
     );
   }
 
-  addInput(newInput: Input): this {
+  addInput(newInput: PsetInput): this {
     newInput.sanityCheck();
 
     if (this.isDuplicatedInput(newInput)) {
@@ -297,7 +301,7 @@ export class Pset {
     return this;
   }
 
-  addOutput(newOutput: Output): this {
+  addOutput(newOutput: PsetOutput): this {
     newOutput.sanityCheck();
 
     if (!this.outputsModifiable()) {
@@ -456,7 +460,7 @@ export class Pset {
     return w.buffer;
   }
 
-  private isDuplicatedInput(input: Input): boolean {
+  private isDuplicatedInput(input: PsetInput): boolean {
     return this.inputs.some(
       inp =>
         inp.previousTxid.equals(input.previousTxid) &&

@@ -1,25 +1,25 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Updater = exports.Signer = exports.PsetOutput = exports.PsetInput = exports.PsetGlobal = exports.Pset = exports.Output = exports.Input = exports.Finalizer = exports.Extractor = exports.Creator = exports.Blinder = void 0;
+exports.Updater = exports.Signer = exports.PsetOutput = exports.PsetInput = exports.PsetGlobal = exports.Pset = exports.CreatorOutput = exports.CreatorInput = exports.Finalizer = exports.Extractor = exports.Creator = exports.Blinder = void 0;
 const globals_1 = require('./globals');
 Object.defineProperty(exports, 'PsetGlobal', {
   enumerable: true,
   get: function() {
-    return globals_1.Global;
+    return globals_1.PsetGlobal;
   },
 });
 const input_1 = require('./input');
 Object.defineProperty(exports, 'PsetInput', {
   enumerable: true,
   get: function() {
-    return input_1.Input;
+    return input_1.PsetInput;
   },
 });
 const output_1 = require('./output');
 Object.defineProperty(exports, 'PsetOutput', {
   enumerable: true,
   get: function() {
-    return output_1.Output;
+    return output_1.PsetOutput;
   },
 });
 const pset_1 = require('./pset');
@@ -36,16 +36,16 @@ Object.defineProperty(exports, 'Creator', {
     return creator_1.Creator;
   },
 });
-Object.defineProperty(exports, 'Input', {
+Object.defineProperty(exports, 'CreatorInput', {
   enumerable: true,
   get: function() {
-    return creator_1.Input;
+    return creator_1.CreatorInput;
   },
 });
-Object.defineProperty(exports, 'Output', {
+Object.defineProperty(exports, 'CreatorOutput', {
   enumerable: true,
   get: function() {
-    return creator_1.Output;
+    return creator_1.CreatorOutput;
   },
 });
 const updater_1 = require('./updater');

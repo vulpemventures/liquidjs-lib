@@ -1,6 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Output = exports.OutputDuplicateFieldError = void 0;
+exports.PsetOutput = exports.OutputDuplicateFieldError = void 0;
 const bufferutils_1 = require('../bufferutils');
 const bip32_1 = require('./bip32');
 const fields_1 = require('./fields');
@@ -17,7 +17,7 @@ class OutputDuplicateFieldError extends Error {
   }
 }
 exports.OutputDuplicateFieldError = OutputDuplicateFieldError;
-class Output {
+class PsetOutput {
   constructor(value, asset, script) {
     this.value = value || 0;
     this.asset = asset || Buffer.from([]);
@@ -25,7 +25,7 @@ class Output {
   }
   static fromBuffer(r) {
     let kp;
-    const output = new Output();
+    const output = new PsetOutput();
     while (true) {
       try {
         kp = key_pair_1.KeyPair.fromBuffer(r);
@@ -490,4 +490,4 @@ class Output {
     return keyPairs;
   }
 }
-exports.Output = Output;
+exports.PsetOutput = PsetOutput;

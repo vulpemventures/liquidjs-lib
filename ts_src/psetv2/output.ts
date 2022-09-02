@@ -28,10 +28,10 @@ export class OutputDuplicateFieldError extends Error {
   }
 }
 
-export class Output {
-  static fromBuffer(r: BufferReader): Output {
+export class PsetOutput {
+  static fromBuffer(r: BufferReader): PsetOutput {
     let kp: KeyPair;
-    const output = new Output();
+    const output = new PsetOutput();
     while (true) {
       try {
         kp = KeyPair.fromBuffer(r);

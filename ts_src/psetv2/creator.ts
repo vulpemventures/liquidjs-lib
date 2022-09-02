@@ -1,7 +1,7 @@
-import { Global } from './globals';
+import { PsetGlobal } from './globals';
 import { Pset } from './pset';
-import { Input as PsetInput } from './input';
-import { Output as PsetOutput } from './output';
+import { PsetInput } from './input';
+import { PsetOutput } from './output';
 import { reverseBuffer } from '../bufferutils';
 import { fromConfidential, isConfidential, toOutputScript } from '../address';
 import { AssetHash } from '../asset';
@@ -9,7 +9,7 @@ import { Transaction } from '../transaction';
 import { OPS } from '../ops';
 import BitSet from 'bitset';
 
-export class Input {
+export class CreatorInput {
   txid: string;
   txIndex: number;
   sequence: number;
@@ -51,7 +51,7 @@ export class Input {
   }
 }
 
-export class Output {
+export class CreatorOutput {
   asset: string;
   amount: number;
   address?: string;
@@ -110,15 +110,15 @@ export class Output {
 
 export class Creator {
   static newPset(args: {
-    inputs?: Input[];
-    outputs?: Output[];
+    inputs?: CreatorInput[];
+    outputs?: CreatorOutput[];
     locktime?: number;
   }): Pset {
     const txModifiable = new BitSet(0);
     txModifiable.set(0);
     txModifiable.set(1);
 
-    const globals = new Global(2, 0, 0, 2);
+    const globals = new PsetGlobal(2, 0, 0, 2);
     globals.txModifiable = txModifiable;
     globals.xpubs = [];
     globals.scalars = [];

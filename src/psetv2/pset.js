@@ -67,7 +67,7 @@ class Pset {
   constructor(globals, inputs, outputs) {
     this.inputs = inputs || [];
     this.outputs = outputs || [];
-    this.globals = globals || new globals_1.Global();
+    this.globals = globals || new globals_1.PsetGlobal();
   }
   static fromBase64(data) {
     const buf = Buffer.from(data, 'base64');
@@ -79,15 +79,15 @@ class Pset {
     if (!magic.equals(exports.magicPrefixWithSeparator)) {
       throw new Error('invalid magic prefix');
     }
-    const globals = globals_1.Global.fromBuffer(r);
+    const globals = globals_1.PsetGlobal.fromBuffer(r);
     const inputs = [];
     for (let i = 0; i < globals.inputCount; i++) {
-      const input = input_1.Input.fromBuffer(r);
+      const input = input_1.PsetInput.fromBuffer(r);
       inputs.push(input);
     }
     const outputs = [];
     for (let i = 0; i < globals.outputCount; i++) {
-      const output = output_1.Output.fromBuffer(r);
+      const output = output_1.PsetOutput.fromBuffer(r);
       outputs.push(output);
     }
     const pset = new Pset(globals, inputs, outputs);

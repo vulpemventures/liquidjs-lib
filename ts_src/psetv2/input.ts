@@ -39,10 +39,10 @@ export class InputDuplicateFieldError extends Error {
   }
 }
 
-export class Input {
-  static fromBuffer(r: BufferReader): Input {
+export class PsetInput {
+  static fromBuffer(r: BufferReader): PsetInput {
     let kp: KeyPair;
-    const input = new Input();
+    const input = new PsetInput();
     while (true) {
       try {
         kp = KeyPair.fromBuffer(r);

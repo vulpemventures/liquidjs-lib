@@ -8,8 +8,8 @@ import { ProprietaryData } from './proprietary_data';
 export declare class InputDuplicateFieldError extends Error {
     constructor(message?: string);
 }
-export declare class Input {
-    static fromBuffer(r: BufferReader): Input;
+export declare class PsetInput {
+    static fromBuffer(r: BufferReader): PsetInput;
     nonWitnessUtxo?: Transaction;
     witnessUtxo?: Output;
     partialSigs?: PartialSig[];

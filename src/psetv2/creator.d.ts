@@ -1,7 +1,7 @@
 import { Pset } from './pset';
-import { Input as PsetInput } from './input';
-import { Output as PsetOutput } from './output';
-export declare class Input {
+import { PsetInput } from './input';
+import { PsetOutput } from './output';
+export declare class CreatorInput {
     txid: string;
     txIndex: number;
     sequence: number;
@@ -11,7 +11,7 @@ export declare class Input {
     validate(): void;
     toPartialInput(): PsetInput;
 }
-export declare class Output {
+export declare class CreatorOutput {
     asset: string;
     amount: number;
     address?: string;
@@ -22,8 +22,8 @@ export declare class Output {
 }
 export declare class Creator {
     static newPset(args: {
-        inputs?: Input[];
-        outputs?: Output[];
+        inputs?: CreatorInput[];
+        outputs?: CreatorOutput[];
         locktime?: number;
     }): Pset;
 }
