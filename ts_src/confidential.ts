@@ -77,6 +77,9 @@ export async function unblindOutputWithNonce(
   out: Output,
   nonce: Buffer,
 ): Promise<UnblindOutputResult> {
+  if (!out.rangeProof || out.rangeProof.length === 0) {
+    throw new Error('Missing rangeproof to rewind');
+  }
   const secp = await secp256k1Promise;
   const gen = secp.generator.parse(out.asset);
   const { value, blindFactor, message } = secp.rangeproof.rewind(

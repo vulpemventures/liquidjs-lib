@@ -100,6 +100,9 @@ async function unblindOutputWithKey(out, blindingPrivKey) {
 }
 exports.unblindOutputWithKey = unblindOutputWithKey;
 async function unblindOutputWithNonce(out, nonce) {
+  if (!out.rangeProof || out.rangeProof.length === 0) {
+    throw new Error('Missing rangeproof to rewind');
+  }
   const secp = await secp256k1Promise;
   const gen = secp.generator.parse(out.asset);
   const { value, blindFactor, message } = secp.rangeproof.rewind(
