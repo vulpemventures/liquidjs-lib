@@ -140,7 +140,9 @@ class Pset {
     return this.globals.txModifiable.get(2) === 1;
   }
   needsBlinding() {
-    return this.outputs.some(out => out.needsBlinding());
+    return this.outputs.some(
+      out => out.needsBlinding() && !out.isFullyBlinded(),
+    );
   }
   isFullyBlinded() {
     if (!this.needsBlinding()) {
