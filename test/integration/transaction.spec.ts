@@ -10,10 +10,11 @@ import {
   networks as NETWORKS,
 } from '../../ts_src';
 import { ECPair, ecc } from '../ecc';
+import { ElementsValue } from '../../ts_src/value';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
-const { satoshiToConfidentialValue, unblindOutputWithKey } = confidential;
+const { unblindOutputWithKey } = confidential;
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
@@ -57,7 +58,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     psbt.addOutputs([
       {
         nonce: Buffer.from('00', 'hex'),
-        value: satoshiToConfidentialValue(50000000),
+        value: ElementsValue.fromNumber(50000000).bytes,
         script: Buffer.from(
           '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
           'hex',
@@ -72,7 +73,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       },
       {
         nonce: Buffer.from('00', 'hex'),
-        value: satoshiToConfidentialValue(49999100),
+        value: ElementsValue.fromNumber(49999100).bytes,
         script: Buffer.from(
           '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
           'hex',
@@ -87,7 +88,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       },
       {
         nonce: Buffer.from('00', 'hex'),
-        value: satoshiToConfidentialValue(500),
+        value: ElementsValue.fromNumber(500).bytes,
         script: Buffer.alloc(0),
         asset: Buffer.concat([
           Buffer.from('01', 'hex'),
@@ -141,7 +142,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       {
         nonce,
         asset,
-        value: satoshiToConfidentialValue(99996500),
+        value: ElementsValue.fromNumber(99996500).bytes,
         script: Buffer.from(
           '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
           'hex',
@@ -150,7 +151,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       {
         nonce,
         asset,
-        value: satoshiToConfidentialValue(3500),
+        value: ElementsValue.fromNumber(3500).bytes,
         script: Buffer.alloc(0),
       },
     ]);
@@ -194,19 +195,19 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
           'hex',
         ),
-        value: satoshiToConfidentialValue(150000000),
+        value: ElementsValue.fromNumber(150000000).bytes,
       }) // the actual spend
       .addOutput({
         asset,
         nonce,
         script: alice2.payment.output,
-        value: satoshiToConfidentialValue(49999300),
+        value: ElementsValue.fromNumber(49999300).bytes,
       }) // Alice's change
       .addOutput({
         asset,
         nonce,
         script: Buffer.alloc(0),
-        value: satoshiToConfidentialValue(700),
+        value: ElementsValue.fromNumber(700).bytes,
       }); // fees in Liquid are explicit
 
     // Let's show a new feature with PSBT.
@@ -289,19 +290,19 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
           'hex',
         ),
-        value: satoshiToConfidentialValue(50000000),
+        value: ElementsValue.fromNumber(50000000).bytes,
       }) // the actual spend
       .addOutput({
         asset,
         nonce,
         script: alice1.payment.output,
-        value: satoshiToConfidentialValue(49993000),
+        value: ElementsValue.fromNumber(49993000).bytes,
       }) // Alice's change
       .addOutput({
         asset,
         nonce,
         script: Buffer.alloc(0),
-        value: satoshiToConfidentialValue(7000),
+        value: ElementsValue.fromNumber(7000).bytes,
       }) // fees in Liquid are explicit
       .blindOutputs(
         Psbt.ECCKeysGenerator(ecc),
@@ -365,25 +366,25 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           asset,
           nonce,
           script: bobPayment.payment.output,
-          value: satoshiToConfidentialValue(50000000),
+          value: ElementsValue.fromNumber(50000000).bytes,
         }) // the actual spend to bob
         .addOutput({
           asset,
           nonce,
           script: alicePayment.payment.output,
-          value: satoshiToConfidentialValue(29993000),
+          value: ElementsValue.fromNumber(29993000).bytes,
         }) // Alice's change
         .addOutput({
           asset,
           nonce,
           script: alicePayment.payment.output,
-          value: satoshiToConfidentialValue(20000000),
+          value: ElementsValue.fromNumber(20000000).bytes,
         }) // Alice's change bis
         .addOutput({
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(7000),
+          value: ElementsValue.fromNumber(7000).bytes,
         }) // fees in Liquid are explicit
         .blindOutputsByIndex(
           Psbt.ECCKeysGenerator(ecc),
@@ -453,25 +454,25 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           asset,
           nonce,
           script: bobPayment.payment.output,
-          value: satoshiToConfidentialValue(99993000),
+          value: ElementsValue.fromNumber(99993000).bytes,
         }) // the actual spend to bob
         .addOutput({
           asset,
           nonce,
           script: alicePaymentConfidential.payment.output,
-          value: satoshiToConfidentialValue(99999000),
+          value: ElementsValue.fromNumber(99999000).bytes,
         }) // Alice's change
         .addOutput({
           asset,
           nonce,
           script: alicePaymentConfidential.payment.output,
-          value: satoshiToConfidentialValue(1000),
+          value: ElementsValue.fromNumber(1000).bytes,
         }) // Alice's change bis (need two blind outputs)
         .addOutput({
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(7000),
+          value: ElementsValue.fromNumber(7000).bytes,
         }) // fees in Liquid are explicit
         .blindOutputsByIndex(
           Psbt.ECCKeysGenerator(ecc),
@@ -541,25 +542,25 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           asset,
           nonce,
           script: bobPayment.payment.output,
-          value: satoshiToConfidentialValue(1000),
+          value: ElementsValue.fromNumber(1000).bytes,
         }) // the actual spend to bob
         .addOutput({
           asset,
           nonce,
           script: alicePaymentConfidential.payment.output,
-          value: satoshiToConfidentialValue(99991000),
+          value: ElementsValue.fromNumber(99991000).bytes,
         }) // Alice's change
         .addOutput({
           asset,
           nonce,
           script: alicePaymentConfidential.payment.output,
-          value: satoshiToConfidentialValue(1000),
+          value: ElementsValue.fromNumber(1000).bytes,
         }) // Alice's change bis (need two blind outputs)
         .addOutput({
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(7000),
+          value: ElementsValue.fromNumber(7000).bytes,
         }) // fees in Liquid are explicit
         .blindOutputsByIndex(
           Psbt.ECCKeysGenerator(ecc),
@@ -594,7 +595,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         asset,
         nonce,
         script: embed.output!,
-        value: satoshiToConfidentialValue(500),
+        value: ElementsValue.fromNumber(500).bytes,
       })
       .addOutput({
         asset,
@@ -603,13 +604,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
           '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
           'hex',
         ),
-        value: satoshiToConfidentialValue(99999000),
+        value: ElementsValue.fromNumber(99999000).bytes,
       })
       .addOutput({
         asset,
         nonce,
         script: Buffer.alloc(0),
-        value: satoshiToConfidentialValue(500),
+        value: ElementsValue.fromNumber(500).bytes,
       })
       .signInput(0, alice1.keys[0]);
 
@@ -649,13 +650,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(500).bytes,
         },
       ])
       .signInput(0, multisig.keys[0])
@@ -710,13 +711,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       asset: inputData.witnessUtxo.asset,
       nonce,
       script: p2sh.payment.output, // sending to myself for fun
-      value: satoshiToConfidentialValue(199999300),
+      value: ElementsValue.fromNumber(199999300).bytes,
     };
     const outputData2 = {
       asset: inputData.witnessUtxo.asset,
       nonce,
       script: Buffer.alloc(0), // fees
-      value: satoshiToConfidentialValue(700),
+      value: ElementsValue.fromNumber(700).bytes,
     };
 
     const tx = new Psbt()
@@ -751,7 +752,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       asset,
       nonce,
       script: p2sh.payment.output, // change
-      value: satoshiToConfidentialValue(159993000),
+      value: ElementsValue.fromNumber(159993000).bytes,
     };
     const outputData2 = {
       asset,
@@ -760,13 +761,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
         'hex',
       ), // actual spend
-      value: satoshiToConfidentialValue(40000000),
+      value: ElementsValue.fromNumber(40000000).bytes,
     };
     const outputData3 = {
       asset,
       nonce,
       script: Buffer.alloc(0), // fees
-      value: satoshiToConfidentialValue(7000),
+      value: ElementsValue.fromNumber(7000).bytes,
     };
 
     const psbt = await new Psbt()
@@ -795,13 +796,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       asset,
       nonce,
       script: p2sh.payment.output,
-      value: satoshiToConfidentialValue(199999300),
+      value: ElementsValue.fromNumber(199999300).bytes,
     };
     const outputData2 = {
       asset,
       nonce,
       script: Buffer.alloc(0),
-      value: satoshiToConfidentialValue(700),
+      value: ElementsValue.fromNumber(700).bytes,
     };
     const tx = new Psbt()
       .addInputs([inputData, inputData2])
@@ -830,13 +831,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         asset,
         nonce,
         script: p2sh.payment.output,
-        value: satoshiToConfidentialValue(199996500),
+        value: ElementsValue.fromNumber(199996500).bytes,
       };
       const outputData2 = {
         asset,
         nonce,
         script: Buffer.alloc(0),
-        value: satoshiToConfidentialValue(3500),
+        value: ElementsValue.fromNumber(3500).bytes,
       };
       const psbt = await new Psbt()
         .addInputs([inputData, inputData2])
@@ -876,13 +877,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(500).bytes,
         },
       ])
       .signInput(0, p2wpkh.keys[0]);
@@ -922,13 +923,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99996500),
+          value: ElementsValue.fromNumber(99996500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(3500),
+          value: ElementsValue.fromNumber(3500).bytes,
         },
       ])
       .blindOutputs(
@@ -966,13 +967,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(500).bytes,
         },
       ])
       .signInput(0, p2wpkh.keys[0]);
@@ -1002,13 +1003,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
               '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
               'hex',
             ),
-            value: satoshiToConfidentialValue(99996500),
+            value: ElementsValue.fromNumber(99996500).bytes,
           },
           {
             asset,
             nonce,
             script: Buffer.alloc(0),
-            value: satoshiToConfidentialValue(3500),
+            value: ElementsValue.fromNumber(3500).bytes,
           },
         ])
         .blindOutputs(
@@ -1050,13 +1051,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(500).bytes,
         },
       ])
       .signInput(0, p2wsh.keys[0]);
@@ -1102,13 +1103,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99996500),
+          value: ElementsValue.fromNumber(99996500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(3500),
+          value: ElementsValue.fromNumber(3500).bytes,
         },
       ])
       .blindOutputs(
@@ -1145,13 +1146,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(500).bytes,
         },
       ])
       .signInput(0, p2wsh.keys[0]);
@@ -1181,13 +1182,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
               '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
               'hex',
             ),
-            value: satoshiToConfidentialValue(99996500),
+            value: ElementsValue.fromNumber(99996500).bytes,
           },
           {
             asset,
             nonce,
             script: Buffer.alloc(0),
-            value: satoshiToConfidentialValue(3500),
+            value: ElementsValue.fromNumber(3500).bytes,
           },
         ])
         .blindOutputs(
@@ -1232,13 +1233,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
               '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
               'hex',
             ),
-            value: satoshiToConfidentialValue(99999500),
+            value: ElementsValue.fromNumber(99999500).bytes,
           },
           {
             asset,
             nonce,
             script: Buffer.alloc(0),
-            value: satoshiToConfidentialValue(500),
+            value: ElementsValue.fromNumber(500).bytes,
           },
         ])
         .signInput(0, p2sh.keys[0])
@@ -1311,13 +1312,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
               '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
               'hex',
             ),
-            value: satoshiToConfidentialValue(99996500),
+            value: ElementsValue.fromNumber(99996500).bytes,
           },
           {
             asset,
             nonce,
             script: Buffer.alloc(0),
-            value: satoshiToConfidentialValue(3500),
+            value: ElementsValue.fromNumber(3500).bytes,
           },
         ])
         .blindOutputs(
@@ -1377,13 +1378,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
               '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
               'hex',
             ),
-            value: satoshiToConfidentialValue(99999500),
+            value: ElementsValue.fromNumber(99999500).bytes,
           },
           {
             asset,
             nonce,
             script: Buffer.alloc(0),
-            value: satoshiToConfidentialValue(500),
+            value: ElementsValue.fromNumber(500).bytes,
           },
         ])
         .signInput(0, p2sh.keys[0])
@@ -1421,13 +1422,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
               '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
               'hex',
             ),
-            value: satoshiToConfidentialValue(99996500),
+            value: ElementsValue.fromNumber(99996500).bytes,
           },
           {
             asset,
             nonce,
             script: Buffer.alloc(0),
-            value: satoshiToConfidentialValue(3500),
+            value: ElementsValue.fromNumber(3500).bytes,
           },
         ])
         .blindOutputs(
@@ -1468,13 +1469,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
               '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
               'hex',
             ),
-            value: satoshiToConfidentialValue(99999500),
+            value: ElementsValue.fromNumber(99999500).bytes,
           },
           {
             asset,
             nonce,
             script: Buffer.alloc(0),
-            value: satoshiToConfidentialValue(500),
+            value: ElementsValue.fromNumber(500).bytes,
           },
         ])
         .signInput(0, p2sh.keys[0]);
@@ -1508,13 +1509,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
               '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
               'hex',
             ),
-            value: satoshiToConfidentialValue(99996500),
+            value: ElementsValue.fromNumber(99996500).bytes,
           },
           {
             asset,
             nonce,
             script: Buffer.alloc(0),
-            value: satoshiToConfidentialValue(3500),
+            value: ElementsValue.fromNumber(3500).bytes,
           },
         ])
         .blindOutputs(
@@ -1574,13 +1575,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99999500),
+          value: ElementsValue.fromNumber(99999500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(500),
+          value: ElementsValue.fromNumber(500).bytes,
         },
       ])
       .signInputHD(0, hdRoot); // must sign with root!!!
@@ -1653,13 +1654,13 @@ describe('liquidjs-lib (transactions with psbt)', () => {
             '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
             'hex',
           ),
-          value: satoshiToConfidentialValue(99996500),
+          value: ElementsValue.fromNumber(99996500).bytes,
         },
         {
           asset,
           nonce,
           script: Buffer.alloc(0),
-          value: satoshiToConfidentialValue(3500),
+          value: ElementsValue.fromNumber(3500).bytes,
         },
       ])
       .blindOutputs(

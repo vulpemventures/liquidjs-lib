@@ -1,8 +1,8 @@
 import { BufferWriter } from './bufferutils';
-import { satoshiToConfidentialValue } from './confidential';
 import * as bcrypto from './crypto';
 import { sha256Midstate } from './sha256d';
 import { Input } from './transaction';
+import { ElementsValue } from './value';
 
 // one of the field of the IssuanceContract interface.
 export interface IssuanceEntity {
@@ -95,9 +95,13 @@ export function newIssuance(
   const contractHash = contract ? hashContract(contract) : Buffer.alloc(32);
   const issuanceObject: Issuance = {
     assetAmount:
-      assetSats === 0 ? Buffer.of(0x00) : satoshiToConfidentialValue(assetSats),
+      assetSats === 0
+        ? Buffer.of(0x00)
+        : ElementsValue.fromNumber(assetSats).bytes,
     tokenAmount:
-      tokenSats === 0 ? Buffer.of(0x00) : satoshiToConfidentialValue(tokenSats),
+      tokenSats === 0
+        ? Buffer.of(0x00)
+        : ElementsValue.fromNumber(tokenSats).bytes,
     assetBlindingNonce: Buffer.alloc(32),
     // in case of issuance, the asset entropy = the contract hash.
     assetEntropy: contractHash,

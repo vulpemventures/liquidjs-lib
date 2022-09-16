@@ -8,11 +8,7 @@ import {
   Psbt,
 } from '../../ts_src/index';
 import { ECPair, ecc } from '../ecc';
-import { broadcast, faucet, fetchTx } from './_regtest';
-import {
-  confidentialValueToSatoshi,
-  satoshiToConfidentialValue,
-} from '../../ts_src/confidential';
+import { broadcast, faucet } from './_regtest';
 import { ECPairInterface } from 'ecpair';
 import {
   findScriptPath,
@@ -24,6 +20,7 @@ import {
 import { compile, OPS } from '../../ts_src/script';
 import { witnessStackToScriptWitness } from '../../ts_src/psbt';
 import * as assert from 'assert';
+import { ElementsValue } from '../../ts_src/value';
 
 const bip341 = BIP341Factory(ecc);
 
@@ -95,8 +92,8 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       [output],
       [
         {
-          asset: AssetHash.fromHex(utxo.asset, false).bytes,
-          value: satoshiToConfidentialValue(utxo.value),
+          asset: AssetHash.fromHex(utxo.asset).bytes,
+          value: ElementsValue.fromNumber(utxo.value).bytes,
         },
       ],
       changeAddress!,
@@ -155,8 +152,8 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       [output],
       [
         {
-          asset: AssetHash.fromHex(utxo.asset, false).bytes,
-          value: satoshiToConfidentialValue(utxo.value),
+          asset: AssetHash.fromHex(utxo.asset).bytes,
+          value: ElementsValue.fromNumber(utxo.value).bytes,
         },
       ],
       Transaction.SIGHASH_NONE | Transaction.SIGHASH_ANYONECANPAY,
@@ -201,19 +198,19 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       .addOutput({
         script: address.toOutputScript(faucetAddress, net),
         asset: utxo.asset,
-        value: satoshiToConfidentialValue(sendAmount),
+        value: ElementsValue.fromNumber(sendAmount).bytes,
         nonce: Buffer.of(0x00),
       })
       .addOutput({
         script: address.toOutputScript(faucetAddress, net),
         asset: utxo.asset,
-        value: satoshiToConfidentialValue(utxo.value - sendAmount - FEES),
+        value: ElementsValue.fromNumber(utxo.value - sendAmount - FEES).bytes,
         nonce: Buffer.of(0x00),
       })
       .addOutput({
         script: Buffer.alloc(0),
         asset: utxo.asset,
-        value: satoshiToConfidentialValue(FEES),
+        value: ElementsValue.fromNumber(FEES).bytes,
         nonce: Buffer.of(0x00),
       });
 
@@ -234,8 +231,8 @@ describe('liquidjs-lib (transaction with taproot)', () => {
       [output],
       [
         {
-          asset: AssetHash.fromHex(utxo.asset, false).bytes,
-          value: satoshiToConfidentialValue(utxo.value),
+          asset: AssetHash.fromHex(utxo.asset).bytes,
+          value: ElementsValue.fromNumber(utxo.value).bytes,
         },
       ],
       Transaction.SIGHASH_DEFAULT,
@@ -252,127 +249,6 @@ describe('liquidjs-lib (transaction with taproot)', () => {
     pset.finalizeAllInputs();
     const tx = pset.extractTransaction();
     const hex = tx.toHex();
-    await broadcast(hex, true);
-  });
-
-  it('can create (and broadcast via 3PBP) a confidential taproot scriptspend Pset (v0)', async () => {
-    const BOB = ECPair.makeRandom({ network: net });
-    const blindingKeys = ECPair.makeRandom({ network: net });
-
-    const bobPay = payments.p2wpkh({
-      pubkey: BOB.publicKey,
-      blindkey: blindingKeys.publicKey,
-      network: net,
-    });
-    const bobScript = compile([BOB.publicKey.slice(1), OPS.OP_CHECKSIG]);
-
-    // in this exemple, alice is the internal key (can spend via keypath spend)
-    // however, the script tree allows bob to spend the coin with a simple p2pkh
-    const leaves: TaprootLeaf[] = [
-      {
-        scriptHex: bobScript.toString('hex'),
-      },
-      {
-        scriptHex:
-          '20b617298552a72ade070667e86ca63b8f5789a9fe8731ef91202a91c9f3459007ac',
-      },
-    ];
-
-    const hashTree = toHashTree(leaves);
-    const output = bip341.taprootOutputScript(alice.publicKey, hashTree);
-    const faucetAddress = address.fromOutputScript(output, net); // UNCONFIDENTIAL
-
-    const confUtxo = await faucet(bobPay.confidentialAddress!);
-    const utxo = await faucet(faucetAddress);
-    const txhex = await fetchTx(utxo.txid);
-    const confTxHex = await fetchTx(confUtxo.txid);
-    const prevoutTx = Transaction.fromHex(txhex);
-    const prevoutConfTx = Transaction.fromHex(confTxHex);
-
-    const sendAmount = 1_0000_0000 - 10000;
-    // bob spends the coin with the script path of the leaf
-    // he gets the change and send the other one to the same taproot address
-
-    const lbtc = AssetHash.fromHex(net.assetHash, false);
-
-    const pset = new Psbt({ network: net })
-      .addInput({
-        hash: confUtxo.txid,
-        index: confUtxo.vout,
-        witnessUtxo: prevoutConfTx.outs[confUtxo.vout],
-      })
-      .addInput({
-        hash: utxo.txid,
-        index: utxo.vout,
-        witnessUtxo: prevoutTx.outs[utxo.vout],
-      })
-      .addOutput({
-        script: output,
-        asset: lbtc.bytes,
-        value: satoshiToConfidentialValue(sendAmount),
-        nonce: Buffer.of(0x00),
-      })
-      .addOutput({
-        script: output,
-        asset: lbtc.bytes,
-        value: satoshiToConfidentialValue(1_0000_0000 + 10000 - FEES),
-        nonce: Buffer.of(0x00),
-      })
-      .addOutput({
-        script: Buffer.alloc(0),
-        asset: lbtc.bytes,
-        value: satoshiToConfidentialValue(FEES),
-        nonce: Buffer.of(0x00),
-      });
-
-    const bobLeaf = leaves[0];
-    const leafHash = tapLeafHash(bobLeaf);
-    const pathToBobLeaf = findScriptPath(hashTree, leafHash);
-    const taprootStack = bip341.taprootSignScriptStack(
-      alice.publicKey,
-      bobLeaf,
-      hashTree.hash,
-      pathToBobLeaf,
-    );
-
-    await pset.blindOutputsByIndex(
-      Psbt.ECCKeysGenerator(ecc),
-      new Map().set(0, blindingKeys.privateKey),
-      new Map().set(0, blindingKeys.publicKey).set(1, blindingKeys.publicKey),
-    );
-
-    const inputsStack = makeStackCheckSig(
-      BOB,
-      pset.TX,
-      1,
-      [prevoutConfTx.outs[confUtxo.vout].script, output],
-      [
-        {
-          asset: prevoutConfTx.outs[confUtxo.vout].asset,
-          value: prevoutConfTx.outs[confUtxo.vout].value,
-        },
-        {
-          asset: prevoutTx.outs[utxo.vout].asset,
-          value: prevoutTx.outs[utxo.vout].value,
-        },
-      ],
-      Transaction.SIGHASH_DEFAULT,
-      leafHash,
-    );
-
-    pset.signInput(0, BOB);
-
-    pset.updateInput(1, {
-      finalScriptWitness: witnessStackToScriptWitness([
-        ...inputsStack,
-        ...taprootStack,
-      ]),
-    });
-
-    pset.finalizeAllInputs();
-    const tx = pset.extractTransaction();
-    const hex = tx.toHex();
-
     await broadcast(hex, true);
   });
 });
@@ -419,10 +295,10 @@ function makeTransaction(
   // Add input
   tx.addInput(Buffer.from(utxo.txid, 'hex').reverse(), utxo.vout);
   // Add output
-  const assetHash = AssetHash.fromHex(asset, false);
+  const assetHash = AssetHash.fromHex(asset);
   tx.addOutput(
     address.toOutputScript(to),
-    satoshiToConfidentialValue(amount),
+    ElementsValue.fromNumber(amount).bytes,
     assetHash.bytes,
     Buffer.alloc(1),
   );
@@ -430,7 +306,7 @@ function makeTransaction(
   // Add change output
   tx.addOutput(
     address.toOutputScript(changeAddress),
-    satoshiToConfidentialValue(utxo.value - amount - FEES),
+    ElementsValue.fromNumber(utxo.value - amount - FEES).bytes,
     assetHash.bytes,
     Buffer.alloc(1),
   );
@@ -438,7 +314,7 @@ function makeTransaction(
   // add fee output
   tx.addOutput(
     Buffer.alloc(0),
-    satoshiToConfidentialValue(FEES),
+    ElementsValue.fromNumber(FEES).bytes,
     assetHash.bytes,
     Buffer.alloc(1),
   );
@@ -459,7 +335,7 @@ function createSigned(
 ): Transaction {
   const changeAmount =
     values.reduce(
-      (acc, { value }) => acc + confidentialValueToSatoshi(value),
+      (acc, { value }) => acc + ElementsValue.fromBytes(value).number,
       0,
     ) -
     amountToSend -
@@ -470,23 +346,23 @@ function createSigned(
   // Add input
   tx.addInput(Buffer.from(txid, 'hex').reverse(), vout);
   // Add output
-  const assetHash = AssetHash.fromHex(net.assetHash, false);
+  const assetHash = AssetHash.fromHex(net.assetHash);
   try {
     tx.addOutput(
       scriptPubkeys[0],
-      satoshiToConfidentialValue(amountToSend),
+      ElementsValue.fromNumber(amountToSend).bytes,
       assetHash.bytes,
       Buffer.alloc(1),
     );
     tx.addOutput(
       address.toOutputScript(changeAddress),
-      satoshiToConfidentialValue(changeAmount),
+      ElementsValue.fromNumber(changeAmount).bytes,
       assetHash.bytes,
       Buffer.alloc(1),
     ); // change
     tx.addOutput(
       Buffer.alloc(0),
-      satoshiToConfidentialValue(500),
+      ElementsValue.fromNumber(500).bytes,
       assetHash.bytes,
       Buffer.alloc(1),
     ); // fees

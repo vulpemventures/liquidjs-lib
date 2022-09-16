@@ -1,7 +1,6 @@
 import { AssetHash, Transaction } from '../ts_src';
 import jsonFixture from './fixtures/transaction.json';
 import * as assert from 'assert';
-import { isUnconfidentialValue } from '../ts_src/confidential';
 
 const fromHex = (hex: string): Buffer => Buffer.from(hex, 'hex');
 
@@ -15,10 +14,7 @@ describe('Transaction', () => {
           test.inIndex,
           test.prevouts.map(p => fromHex(p.script)),
           test.prevouts.map(p => ({
-            asset: AssetHash.fromHex(
-              p.asset,
-              !isUnconfidentialValue(fromHex(p.value)),
-            ).bytes,
+            asset: AssetHash.fromHex(p.asset).bytes,
             value: fromHex(p.value),
           })),
           test.type,

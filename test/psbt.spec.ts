@@ -2,9 +2,9 @@ import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import { networks as NETWORKS, Psbt, script as bscript } from '../ts_src';
 import { ECPair } from './ecc';
-import { satoshiToConfidentialValue } from '../ts_src/confidential';
 import * as preFixtures from './fixtures/psbt.json';
-import * as ecc from 'tiny-secp256k1';
+import { ElementsValue } from '../ts_src/value';
+const ecc = require('tiny-secp256k1');
 
 const initBuffers = (object: any): typeof preFixtures =>
   JSON.parse(JSON.stringify(object), (_, value) => {
@@ -109,7 +109,7 @@ describe('Psbt', () => {
             'hex',
           ).reverse(),
         ]),
-        value: satoshiToConfidentialValue(10),
+        value: ElementsValue.fromNumber(10).bytes,
         nonce: Buffer.from(
           '031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f',
           'hex',
@@ -143,7 +143,7 @@ describe('Psbt', () => {
           '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
           'hex',
         ),
-        value: satoshiToConfidentialValue(80000),
+        value: ElementsValue.fromNumber(80000).bytes,
       });
 
       const encodedBase64Tx = psbt.toBase64();
@@ -427,7 +427,7 @@ describe('Psbt', () => {
             '0014d85c2b71d0060b09c9886aeb815e50991dda124d',
             'hex',
           ),
-          value: satoshiToConfidentialValue(2e5),
+          value: ElementsValue.fromNumber(2e5).bytes,
           nonce: Buffer.from('00', 'hex'),
           asset: Buffer.concat([
             Buffer.from('01', 'hex'),
@@ -476,7 +476,7 @@ describe('Psbt', () => {
           script: Buffer.from(f.outputData.script),
           value:
             typeof f.outputData.value === 'number'
-              ? satoshiToConfidentialValue(f.outputData.value)
+              ? ElementsValue.fromNumber(f.outputData.value).bytes
               : f.outputData.value,
           asset: Buffer.concat([
             Buffer.from('01', 'hex'),
@@ -675,7 +675,7 @@ describe('Psbt', () => {
         '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
         'hex',
       ),
-      value: satoshiToConfidentialValue(80000),
+      value: ElementsValue.fromNumber(80000).bytes,
     });
     psbt.signInput(0, alice);
     assert.throws(() => {

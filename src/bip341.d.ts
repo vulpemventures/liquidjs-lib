@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { TinySecp256k1Interface as ECPairSecp256k1Interface } from 'ecpair';
+export declare const LEAF_VERSION_TAPSCRIPT = 196;
 export interface XOnlyPointAddTweakResult {
     parity: 1 | 0;
     xOnlyPubkey: Uint8Array;

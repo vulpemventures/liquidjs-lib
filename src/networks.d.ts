@@ -6,6 +6,7 @@ export interface Network extends BitcoinJSNetwork {
     assetHash: string;
     confidentialPrefix: number;
     genesisBlockHash: GenesisBlockHash;
+    name: string;
 }
 export declare const liquid: Network;
 export declare const regtest: Network;

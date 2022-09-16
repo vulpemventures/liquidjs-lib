@@ -1,6 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.oneOf = exports.Null = exports.BufferN = exports.Function = exports.UInt32 = exports.UInt8 = exports.tuple = exports.maybe = exports.Object = exports.Hex = exports.Buffer = exports.String = exports.Boolean = exports.Array = exports.Number = exports.BufferOne = exports.ConfidentialValue = exports.AssetBuffer = exports.AssetBufferWithFlag = exports.ConfidentialCommitment = exports.Hash256bit = exports.Hash160bit = exports.Buffer256bit = exports.Network = exports.ECPoint = exports.Signer = exports.BIP32Path = exports.UInt31 = exports.isPoint = exports.typeforce = void 0;
+exports.oneOf = exports.Null = exports.BufferN = exports.Function = exports.UInt32 = exports.UInt8 = exports.tuple = exports.maybe = exports.Object = exports.Hex = exports.Buffer = exports.String = exports.Boolean = exports.Array = exports.Number = exports.BufferOne = exports.ConfidentialValue = exports.AssetBuffer = exports.AssetBufferWithFlag = exports.ConfidentialCommitment = exports.Hash256bit = exports.Hash160bit = exports.Buffer256bit = exports.isTaptree = exports.isTapleaf = exports.TAPLEAF_VERSION_MASK = exports.Network = exports.ECPoint = exports.Satoshi = exports.Signer = exports.BIP32Path = exports.UInt31 = exports.isPoint = exports.typeforce = void 0;
 const buffer_1 = require('buffer');
 exports.typeforce = require('typeforce');
 const ZERO32 = buffer_1.Buffer.alloc(32, 0);
@@ -47,6 +47,11 @@ function Signer(obj) {
   );
 }
 exports.Signer = Signer;
+const SATOSHI_MAX = 21 * 1e14;
+function Satoshi(value) {
+  return exports.typeforce.UInt53(value) && value <= SATOSHI_MAX;
+}
+exports.Satoshi = Satoshi;
 // external dependent types
 exports.ECPoint = exports.typeforce.quacksLike('Point');
 // exposed, external API
@@ -64,7 +69,23 @@ exports.Network = exports.typeforce.compile({
   wif: exports.typeforce.UInt8,
   assetHash: exports.typeforce.String,
   confidentialPrefix: exports.typeforce.UInt8,
+  name: exports.typeforce.String,
 });
+exports.TAPLEAF_VERSION_MASK = 0xfe;
+function isTapleaf(o) {
+  if (!o || !('output' in o)) return false;
+  if (!buffer_1.Buffer.isBuffer(o.output)) return false;
+  if (o.version !== undefined)
+    return (o.version & exports.TAPLEAF_VERSION_MASK) === o.version;
+  return true;
+}
+exports.isTapleaf = isTapleaf;
+function isTaptree(scriptTree) {
+  if (!(0, exports.Array)(scriptTree)) return isTapleaf(scriptTree);
+  if (scriptTree.length !== 2) return false;
+  return scriptTree.every(t => isTaptree(t));
+}
+exports.isTaptree = isTaptree;
 exports.Buffer256bit = exports.typeforce.BufferN(32);
 exports.Hash160bit = exports.typeforce.BufferN(20);
 exports.Hash256bit = exports.typeforce.BufferN(32);

@@ -69,6 +69,8 @@ exports.issuance = issuance;
 const bip341 = __importStar(require('./bip341'));
 exports.bip341 = bip341;
 __exportStar(require('./asset'), exports);
+__exportStar(require('./value'), exports);
+__exportStar(require('./psetv2'), exports);
 var psbt_1 = require('./psbt');
 Object.defineProperty(exports, 'Psbt', {
   enumerable: true,

@@ -28,7 +28,7 @@ export function readUInt64LE(buffer: Buffer, offset: number): number {
   let b = buffer.readUInt32LE(offset + 4);
   b *= 0x100000000;
 
-  verifuint(b + a, 0x001fffffffffffff);
+  verifuint(b + a, 0xffffffffffffffff);
   return b + a;
 }
 
@@ -37,7 +37,7 @@ export function writeUInt64LE(
   value: number,
   offset: number,
 ): number {
-  verifuint(value, 0x001fffffffffffff);
+  verifuint(value, 0xffffffffffffffff);
 
   buffer.writeInt32LE(value & -1, offset);
   buffer.writeUInt32LE(Math.floor(value / 0x100000000), offset + 4);

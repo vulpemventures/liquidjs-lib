@@ -37,7 +37,7 @@ async function buildAndSign(
       {
         asset,
         nonce,
-        value: liquid.confidential.satoshiToConfidentialValue(40000000),
+        value: liquid.ElementsValue.fromNumber(40000000).bytes,
         script: Buffer.from(
           '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
           'hex',
@@ -46,15 +46,14 @@ async function buildAndSign(
       {
         asset,
         nonce,
-        value: liquid.confidential.satoshiToConfidentialValue(
-          unspent.value - 40000000 - 600,
-        ),
+        value: liquid.ElementsValue.fromNumber(unspent.value - 40000000 - 600)
+          .bytes,
         script: sender.output,
       },
       {
         asset,
         nonce,
-        value: liquid.confidential.satoshiToConfidentialValue(600),
+        value: liquid.ElementsValue.fromNumber(600).bytes,
         script: Buffer.alloc(0),
       },
     ]);

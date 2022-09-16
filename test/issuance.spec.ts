@@ -7,9 +7,9 @@ import { Transaction } from './../ts_src/transaction';
 
 import { networks } from '../ts_src';
 import { ECPair } from './ecc';
-import { satoshiToConfidentialValue } from './../ts_src/confidential';
 import * as fixtures from './fixtures/issuance.json';
 import contractFixtures from './fixtures/contract_hash.json';
+import { ElementsValue } from '../ts_src/value';
 
 const typeforce = require('typeforce');
 
@@ -174,7 +174,7 @@ describe('Issuance', () => {
         '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
         'hex',
       ),
-      value: satoshiToConfidentialValue(80000),
+      value: ElementsValue.fromNumber(80000).bytes,
     };
 
     function signAndfinalizeWithAlice(psbt: Psbt, inputIndex: number): Psbt {

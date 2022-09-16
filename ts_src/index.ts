@@ -7,6 +7,8 @@ import * as script from './script';
 import * as issuance from './issuance';
 import * as bip341 from './bip341';
 export * from './asset';
+export * from './value';
+export * from './psetv2';
 
 export {
   address,
@@ -31,13 +33,9 @@ export {
   BlindingDataLike,
 } from './psbt';
 export { OPS as opcodes } from './ops';
-export { Transaction } from './transaction';
-export { Network as NetworkExtended } from './networks';
 export {
-  Payment,
-  PaymentCreator,
-  PaymentOpts,
-  Stack,
-  StackElement,
-} from './payments';
-export { Input as TxInput, Output as TxOutput } from './transaction';
+  Input as TxInput,
+  Output as TxOutput,
+  Transaction,
+} from './transaction';
+export { Network as NetworkExtended } from './networks';

@@ -39,6 +39,7 @@ import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
 import { checkForInput } from 'bip174-liquid/src/lib/utils';
 import { TinySecp256k1Interface, ECPairFactory } from 'ecpair';
+import { ElementsValue } from './value';
 
 // psbt.addIssuance options
 export interface AddIssuanceArgs {
@@ -409,9 +410,7 @@ export class Psbt {
 
     this.addInput(inputData);
 
-    const satsToReissue = confidential.satoshiToConfidentialValue(
-      args.assetSats,
-    );
+    const satsToReissue = ElementsValue.fromNumber(args.assetSats).bytes;
 
     // add the issuance object to input
     this.__CACHE.__TX.ins[inputIndex].issuance = {
@@ -441,7 +440,7 @@ export class Psbt {
       value:
         args.tokenSats === 0
           ? Buffer.of(0x00)
-          : confidential.satoshiToConfidentialValue(args.tokenSats),
+          : ElementsValue.fromNumber(args.tokenSats).bytes,
       script: toOutputScript(args.tokenAddress),
       asset: token,
       nonce: Buffer.of(0x00),
@@ -906,7 +905,7 @@ export class Psbt {
         ? witnessUtxo.value
         : typeof witnessUtxo.value === 'string'
         ? Buffer.from(witnessUtxo.value, 'hex')
-        : confidential.satoshiToConfidentialValue(witnessUtxo.value);
+        : ElementsValue.fromNumber(witnessUtxo.value).bytes;
       // if the asset is a string, by checking the first byte we can determine if
       // it's an asset commitment, in this case we decode the hex string as buffer,
       // or if it's an asset hash, in this case we put the unconf prefix in front of the reversed the buffer
@@ -1082,9 +1081,9 @@ export class Psbt {
         const asset = calculateAsset(entropy);
         const value = input.issuance.assetAmount.equals(Buffer.of(0x00))
           ? '0'
-          : confidential
-              .confidentialValueToSatoshi(input.issuance.assetAmount)
-              .toString(10);
+          : ElementsValue.fromBytes(input.issuance.assetAmount).number.toString(
+              10,
+            );
 
         const assetBlindingData = {
           value,
@@ -1101,9 +1100,9 @@ export class Psbt {
             entropy,
             isConfidentialIssuance,
           );
-          const tokenValue = confidential
-            .confidentialValueToSatoshi(input.issuance.tokenAmount)
-            .toString(10);
+          const tokenValue = ElementsValue.fromBytes(
+            input.issuance.tokenAmount,
+          ).number.toString(10);
 
           const tokenBlindingData = {
             value: tokenValue,
@@ -1261,9 +1260,7 @@ export class Psbt {
       if (output.script.length === 0)
         throw new Error("cant't blind the fee output");
 
-      const value = confidential
-        .confidentialValueToSatoshi(output.value)
-        .toString(10);
+      const value = ElementsValue.fromBytes(output.value).number.toString(10);
       return [value, output.asset.slice(1)] as [string, Buffer];
     });
 
@@ -1544,7 +1541,7 @@ class PsbtTransaction implements ITransaction {
       : Buffer.from(output.script, 'hex');
     const value = Buffer.isBuffer(output.value)
       ? output.value
-      : confidential.satoshiToConfidentialValue(output.value);
+      : ElementsValue.fromNumber(output.value).bytes;
     const asset = Buffer.isBuffer(output.asset)
       ? output.asset
       : Buffer.concat([
@@ -1709,7 +1706,7 @@ function checkInputsForPartialSig(inputs: PsbtInput[], action: string): void {
 }
 
 function checkPartialSigSighashes(input: PsbtInput): void {
-  if (!input.sighashType || !input.partialSig) return;
+  if (input.sighashType === undefined || !input.partialSig) return;
   const { partialSig, sighashType } = input;
   partialSig.forEach(pSig => {
     const { hashType } = bscript.signature.decode(pSig.signature);
@@ -2632,7 +2629,7 @@ function getUnconfidentialWitnessUtxoBlindingData(
   prevout: WitnessUtxo,
 ): confidential.UnblindOutputResult {
   const unblindedInputBlindingData: confidential.UnblindOutputResult = {
-    value: confidential.confidentialValueToSatoshi(prevout.value).toString(10),
+    value: ElementsValue.fromBytes(prevout.value).number.toString(10),
     valueBlindingFactor: ZERO,
     asset: prevout.asset.slice(1),
     assetBlindingFactor: ZERO,

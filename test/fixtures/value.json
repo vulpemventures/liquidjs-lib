@@ -1,0 +1,91 @@
+{
+  "fromNumber": {
+    "valid": [
+      {
+        "value": 0,
+        "expected": "010000000000000000"
+      },
+      {
+        "value": 1,
+        "expected": "010000000000000001"
+      },
+      {
+        "value": 1000,
+        "expected": "0100000000000003e8"
+      },
+      {
+        "value": 100000000,
+        "expected": "010000000005f5e100"
+      },
+      {
+        "value": 387548726302008,
+        "expected": "0100016079382a1538"
+      }
+    ],
+    "invalid": [
+      {
+        "value": -1,
+        "expectedError": "Invalid negative number"
+      }
+    ]
+  },
+  "fromHex": {
+    "valid": [
+      {
+        "hex": "010000000000000000",
+        "expected": 0
+      },
+      {
+        "hex": "010000000000000001",
+        "expected": 1
+      },
+      {
+        "hex": "0100000000000003e8",
+        "expected": 1000
+      },
+      {
+        "hex": "010000000005f5e100",
+        "expected": 100000000
+      },
+      {
+        "hex": "0100016079382a1538",
+        "expected": 387548726302008
+      },
+      {
+        "hex": "00016079382a1538",
+        "expected": 387548726302008
+      },
+      {
+        "hex": "0100e40b5402000000",
+        "expected": 64188750128742400
+      },
+      {
+        "hex": "083fc832df2b342f03581e642c90b8a11a8399cd06363ed6dd253ad3f887ed8339",
+        "expected": "083fc832df2b342f03581e642c90b8a11a8399cd06363ed6dd253ad3f887ed8339",
+        "isCommitment": true
+      }
+    ],
+    "invalid": [
+      {
+        "hex": "010000000000000000000000000000000000000000000000000000000000000000",
+        "expectedError": "Invalid unconfidential value length"
+      },
+      {
+        "hex": "010000",
+        "expectedError": "Invalid unconfidential value length"
+      },
+      {
+        "hex": "083fc832df2b342f03581e642c90b8a11a8399cd06363ed6dd253ad3f887ed83",
+        "expectedError": "Invalid confidential value length"
+      },
+      {
+        "hex": "083fc832df2b342f03581e642c90b8a11a8399cd06363ed6dd253ad3f8",
+        "expectedError": "Invalid confidential value length"
+      },
+      {
+        "hex": "0a3fc832df2b342f03581e642c90b8a11a8399cd06363ed6dd253ad3f887ed8339",
+        "expectedError": "Invalid value prefix"
+      }
+    ]
+  }
+}
