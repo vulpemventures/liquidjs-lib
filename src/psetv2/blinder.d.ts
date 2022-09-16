@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import { UnblindOutputResult } from '../confidential';
 import { Pset } from './pset';
 export interface IssuanceBlindingArgs {
     index: number;
@@ -26,13 +27,9 @@ export interface OutputBlindingArgs {
     valueBlinder: Buffer;
     assetBlinder: Buffer;
 }
-export interface OwnedInput {
+export declare type OwnedInput = {
     index: number;
-    value: string;
-    asset: Buffer;
-    valueBlinder: Buffer;
-    assetBlinder: Buffer;
-}
+} & UnblindOutputResult;
 export interface PsetBlindingGenerator {
     computeAndAddToScalarOffset(scalar: Buffer, value: string, assetBlinder: Buffer, valueBlinder: Buffer): Promise<Buffer>;
     subtractScalars(inputScalar: Buffer, outputScalar: Buffer): Promise<Buffer>;

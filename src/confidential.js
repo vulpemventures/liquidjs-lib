@@ -645,8 +645,8 @@ class ZKPGenerator {
         index: 0,
         value: value_1.ElementsValue.fromBytes(out.value).number.toString(10),
         asset: out.asset.slice(1),
-        valueBlinder: transaction_1.ZERO,
-        assetBlinder: transaction_1.ZERO,
+        valueBlindingFactor: transaction_1.ZERO,
+        assetBlindingFactor: transaction_1.ZERO,
       };
     }
     if (!this.inBlindingKeys && !this.masterBlindingKey) {
@@ -664,8 +664,8 @@ class ZKPGenerator {
           index: 0,
           value: revealed.value,
           asset: revealed.asset,
-          valueBlinder: revealed.valueBlindingFactor,
-          assetBlinder: revealed.assetBlindingFactor,
+          valueBlindingFactor: revealed.valueBlindingFactor,
+          assetBlindingFactor: revealed.assetBlindingFactor,
         };
       } catch (ignore) {}
     }
@@ -711,7 +711,7 @@ class ZKPGenerator {
             value: '',
             valueBlindingFactor: Buffer.from([]),
             asset: ownedInput.asset,
-            assetBlindingFactor: ownedInput.assetBlinder,
+            assetBlindingFactor: ownedInput.assetBlindingFactor,
           };
         }
         return {
@@ -735,8 +735,8 @@ class ZKPGenerator {
           return {
             value: revealed.value,
             asset: revealed.asset,
-            valueBlindingFactor: revealed.valueBlinder,
-            assetBlindingFactor: revealed.assetBlinder,
+            valueBlindingFactor: revealed.valueBlindingFactor,
+            assetBlindingFactor: revealed.assetBlindingFactor,
           };
         } catch (ignore) {
           return {

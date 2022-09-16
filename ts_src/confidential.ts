@@ -748,8 +748,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
         index: 0,
         value: ElementsValue.fromBytes(out.value).number.toString(10),
         asset: out.asset.slice(1),
-        valueBlinder: ZERO,
-        assetBlinder: ZERO,
+        valueBlindingFactor: ZERO,
+        assetBlindingFactor: ZERO,
       };
     }
 
@@ -770,8 +770,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
           index: 0,
           value: revealed.value,
           asset: revealed.asset,
-          valueBlinder: revealed.valueBlindingFactor,
-          assetBlinder: revealed.assetBlindingFactor,
+          valueBlindingFactor: revealed.valueBlindingFactor,
+          assetBlindingFactor: revealed.assetBlindingFactor,
         };
       } catch (ignore) {}
     }
@@ -831,7 +831,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
             value: '',
             valueBlindingFactor: Buffer.from([]),
             asset: ownedInput!.asset,
-            assetBlindingFactor: ownedInput!.assetBlinder,
+            assetBlindingFactor: ownedInput!.assetBlindingFactor,
           };
         }
         return {
@@ -857,8 +857,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
           return {
             value: revealed.value,
             asset: revealed.asset,
-            valueBlindingFactor: revealed.valueBlinder,
-            assetBlindingFactor: revealed.assetBlinder,
+            valueBlindingFactor: revealed.valueBlindingFactor,
+            assetBlindingFactor: revealed.assetBlindingFactor,
           };
         } catch (ignore) {
           return {

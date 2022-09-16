@@ -149,8 +149,8 @@ class Blinder {
       scalar = await this.blindingGenerator.computeAndAddToScalarOffset(
         scalar,
         input.value,
-        input.assetBlinder,
-        input.valueBlinder,
+        input.assetBlindingFactor,
+        input.valueBlindingFactor,
       );
       const pInput = this.pset.inputs[input.index];
       if (pInput.hasIssuance()) {
@@ -383,7 +383,7 @@ class Blinder {
       return ownedInput
         ? {
             asset: ownedInput.asset,
-            assetBlinder: ownedInput.assetBlinder,
+            assetBlinder: ownedInput.assetBlindingFactor,
           }
         : {
             asset: input.getUtxo().asset,

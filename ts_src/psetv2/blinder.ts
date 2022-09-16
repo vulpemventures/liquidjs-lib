@@ -1,3 +1,4 @@
+import { UnblindOutputResult } from '../confidential';
 import { ZERO } from '../transaction';
 import { Pset } from './pset';
 
@@ -29,13 +30,7 @@ export interface OutputBlindingArgs {
   assetBlinder: Buffer;
 }
 
-export interface OwnedInput {
-  index: number;
-  value: string;
-  asset: Buffer;
-  valueBlinder: Buffer;
-  assetBlinder: Buffer;
-}
+export type OwnedInput = { index: number } & UnblindOutputResult;
 
 export interface PsetBlindingGenerator {
   computeAndAddToScalarOffset(
@@ -281,8 +276,8 @@ export class Blinder {
       scalar = await this.blindingGenerator.computeAndAddToScalarOffset(
         scalar,
         input.value,
-        input.assetBlinder,
-        input.valueBlinder,
+        input.assetBlindingFactor,
+        input.valueBlindingFactor,
       );
 
       const pInput = this.pset.inputs[input.index];
@@ -534,7 +529,7 @@ export class Blinder {
       return ownedInput!
         ? {
             asset: ownedInput.asset,
-            assetBlinder: ownedInput.assetBlinder,
+            assetBlinder: ownedInput.assetBlindingFactor,
           }
         : {
             asset: input.getUtxo()!.asset,

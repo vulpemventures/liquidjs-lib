@@ -86,8 +86,8 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         index: 0,
         asset: AssetHash.fromHex(lbtc).bytesWithoutPrefix,
         value: '100000000',
-        assetBlinder: ZERO,
-        valueBlinder: ZERO,
+        assetBlindingFactor: ZERO,
+        valueBlindingFactor: ZERO,
       },
     ];
     const zkpGenerator = ZKPGenerator.fromOwnedInputs(ownedInputs);
