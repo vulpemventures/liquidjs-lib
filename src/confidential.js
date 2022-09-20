@@ -49,7 +49,7 @@ var __importDefault =
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.ZKPGenerator = exports.ZKPValidator = exports.assetBlindProofVerify = exports.blindAssetProof = exports.blindValueProof = exports.surjectionProofVerify = exports.surjectionProof = exports.rangeProof = exports.rangeProofVerify = exports.rangeProofWithNonceHash = exports.rangeProofInfo = exports.unblindOutputWithNonce = exports.unblindOutputWithKey = exports.assetCommitment = exports.valueCommitment = exports.valueBlindingFactor = void 0;
+exports.satoshiToConfidentialValue = exports.confidentialValueToSatoshi = exports.ZKPGenerator = exports.ZKPValidator = exports.assetBlindProofVerify = exports.blindAssetProof = exports.blindValueProof = exports.surjectionProofVerify = exports.surjectionProof = exports.rangeProof = exports.rangeProofVerify = exports.rangeProofWithNonceHash = exports.rangeProofInfo = exports.unblindOutputWithNonce = exports.unblindOutputWithKey = exports.assetCommitment = exports.valueCommitment = exports.valueBlindingFactor = void 0;
 const crypto = __importStar(require('./crypto'));
 const transaction_1 = require('./transaction');
 const secp256k1_zkp_1 = __importDefault(
@@ -805,3 +805,11 @@ function randomBytes(options) {
   const rng = options.rng || _randomBytes;
   return rng(32);
 }
+function confidentialValueToSatoshi(value) {
+  return value_1.ElementsValue.fromBytes(value).number;
+}
+exports.confidentialValueToSatoshi = confidentialValueToSatoshi;
+function satoshiToConfidentialValue(amount) {
+  return value_1.ElementsValue.fromNumber(amount).bytes;
+}
+exports.satoshiToConfidentialValue = satoshiToConfidentialValue;
