@@ -71,4 +71,6 @@ export declare class ZKPGenerator implements PsetBlindingGenerator {
     private getInputAssetsAndBlinders;
     private maybeUnblindInUtxos;
 }
+export declare function confidentialValueToSatoshi(value: Buffer): number;
+export declare function satoshiToConfidentialValue(amount: number): Buffer;
 export {};

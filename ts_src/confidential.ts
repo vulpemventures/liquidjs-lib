@@ -939,3 +939,11 @@ function randomBytes(options?: RngOpts): Buffer {
   const rng = options.rng || _randomBytes;
   return rng(32);
 }
+
+export function confidentialValueToSatoshi(value: Buffer): number {
+  return ElementsValue.fromBytes(value).number;
+}
+
+export function satoshiToConfidentialValue(amount: number): Buffer {
+  return ElementsValue.fromNumber(amount).bytes;
+}
