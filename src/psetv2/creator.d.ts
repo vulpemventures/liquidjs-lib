@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Pset } from './pset';
 import { PsetInput } from './input';
 import { PsetOutput } from './output';
@@ -14,9 +15,10 @@ export declare class CreatorInput {
 export declare class CreatorOutput {
     asset: string;
     amount: number;
-    address?: string;
+    script?: Buffer;
+    blindingPublicKey?: Buffer;
     blinderIndex?: number;
-    constructor(asset: string, amount: number, address?: string, blinderIndex?: number);
+    constructor(asset: string, amount: number, script?: Buffer, blindingPublicKey?: Buffer, blinderIndex?: number);
     validate(): void;
     toPartialOutput(): PsetOutput;
 }

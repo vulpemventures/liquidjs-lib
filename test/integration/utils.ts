@@ -1,13 +1,18 @@
 import * as liquid from '../../ts_src';
 import * as regtestUtils from './_regtest';
 import { ECPair } from '../ecc';
+import { Payment } from '../../ts_src/payments';
 
 export function createPayment(
   _type: string,
   myKeys?: any[],
   network?: any,
   confidential?: boolean,
-): any {
+): {
+  payment: Payment;
+  keys: any;
+  blindingKeys: any;
+} {
   network = network || liquid.networks.regtest;
   const splitType = _type.split('-').reverse();
   const isMultisig = splitType[0].slice(0, 4) === 'p2ms';

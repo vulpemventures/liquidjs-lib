@@ -11,10 +11,8 @@ const pset_1 = require('./pset');
 const input_1 = require('./input');
 const output_1 = require('./output');
 const bufferutils_1 = require('../bufferutils');
-const address_1 = require('../address');
 const asset_1 = require('../asset');
 const transaction_1 = require('../transaction');
-const ops_1 = require('../ops');
 const bitset_1 = __importDefault(require('bitset'));
 class CreatorInput {
   constructor(txid, txIndex, sequence, heightLocktime, timeLocktime) {
@@ -47,10 +45,11 @@ class CreatorInput {
 }
 exports.CreatorInput = CreatorInput;
 class CreatorOutput {
-  constructor(asset, amount, address, blinderIndex) {
+  constructor(asset, amount, script, blindingPublicKey, blinderIndex) {
     this.asset = asset;
     this.amount = amount;
-    this.address = address;
+    this.script = script;
+    this.blindingPublicKey = blindingPublicKey;
     this.blinderIndex = blinderIndex;
   }
   validate() {
@@ -61,31 +60,22 @@ class CreatorOutput {
       throw new Error('invalid asset length');
     }
     if (
-      this.address &&
-      (0, address_1.isConfidential)(this.address) &&
-      (this.blinderIndex === undefined || this.blinderIndex < 0)
+      this.blindingPublicKey &&
+      (!this.blinderIndex || this.blinderIndex < 0)
     ) {
       throw new Error('missing blinder index for confidential output');
     }
   }
   toPartialOutput() {
-    let script = Buffer.from([]);
-    if (this.address && this.address.length > 0) {
-      script =
-        this.amount > 0
-          ? (0, address_1.toOutputScript)(this.address)
-          : Buffer.of(ops_1.OPS.OP_RETURN);
-    }
     const asset = asset_1.AssetHash.fromHex(this.asset);
     const output = new output_1.PsetOutput(
       this.amount,
       asset.bytesWithoutPrefix,
-      script,
+      this.script || Buffer.of(),
     );
-    if (this.address && (0, address_1.isConfidential)(this.address)) {
-      const { blindingKey } = (0, address_1.fromConfidential)(this.address);
+    if (this.blindingPublicKey) {
       output.blinderIndex = this.blinderIndex;
-      output.blindingPubkey = blindingKey;
+      output.blindingPubkey = this.blindingPublicKey;
     }
     return output;
   }

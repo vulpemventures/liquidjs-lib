@@ -22,6 +22,7 @@ import * as regtestUtils from './_regtest';
 import { address, bip341 } from '../../ts_src';
 import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
+import { randomBytes } from 'crypto';
 
 const OPS = bscript.OPS;
 const { BIP341Factory } = bip341;
@@ -44,10 +45,10 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       new CreatorOutput(
         lbtc,
         60000000,
-        'ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq',
+        address.toOutputScript('ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq'),
       ),
-      new CreatorOutput(lbtc, 39999500, alice.payment.address!),
-      new CreatorOutput(lbtc, 500),
+      new CreatorOutput(lbtc, 39999500, alice.payment.output),
+      new CreatorOutput(lbtc, 500, Buffer.of(0x0)),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
@@ -71,8 +72,14 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       return new CreatorInput(txid, index);
     });
     const outputs = [
-      new CreatorOutput(lbtc, 60000000, bob.payment.confidentialAddress!, 0),
-      new CreatorOutput(lbtc, 39999500, alice.payment.address!),
+      new CreatorOutput(
+        lbtc,
+        60000000,
+        bob.payment.output,
+        bob.payment.blindkey,
+        0,
+      ),
+      new CreatorOutput(lbtc, 39999500, alice.payment.output),
       new CreatorOutput(lbtc, 500),
     ];
 
@@ -120,8 +127,20 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       return new CreatorInput(txid, index);
     });
     const outputs = [
-      new CreatorOutput(lbtc, 60000000, bob.payment.confidentialAddress!, 0),
-      new CreatorOutput(lbtc, 39999500, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(
+        lbtc,
+        60000000,
+        bob.payment.output,
+        bob.payment.blindkey,
+        0,
+      ),
+      new CreatorOutput(
+        lbtc,
+        39999500,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
       new CreatorOutput(lbtc, 500),
     ];
 
@@ -166,9 +185,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     //  - 0 amount is used to set the pset output's script to OP_RETURN.
     //
     const outputs = [
-      new CreatorOutput(lbtc, 60000000, bob.payment.address!, 0),
-      new CreatorOutput(lbtc, 39999500, alice.payment.address!, 0),
-      new CreatorOutput(lbtc, 0, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(lbtc, 60000000, bob.payment.output),
+      new CreatorOutput(lbtc, 39999500, alice.payment.output),
+      new CreatorOutput(lbtc, 0, Buffer.of(OPS.OP_RETURN), randomBytes(33), 0),
       new CreatorOutput(lbtc, 500),
     ];
 
@@ -209,7 +228,13 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       return new CreatorInput(txid, index);
     });
     const outputs = [
-      new CreatorOutput(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(
+        lbtc,
+        99999500,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
       new CreatorOutput(lbtc, 500),
     ];
 
@@ -257,7 +282,13 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       return new CreatorInput(txid, index);
     });
     const outputs = [
-      new CreatorOutput(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(
+        lbtc,
+        99999500,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
       new CreatorOutput(lbtc, 500),
     ];
 
@@ -305,7 +336,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       return new CreatorInput(txid, index);
     });
     const outputs = [
-      new CreatorOutput(lbtc, 99999500, alice.payment.address!),
+      new CreatorOutput(lbtc, 99999500, alice.payment.output),
       new CreatorOutput(lbtc, 500),
     ];
 
@@ -358,7 +389,13 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       return new CreatorInput(txid, index);
     });
     const outputs = [
-      new CreatorOutput(lbtc, 99999500, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(
+        lbtc,
+        99999500,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
       new CreatorOutput(lbtc, 500),
     ];
 
@@ -409,7 +446,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
     const usdt = bobInputData.asset;
     const aliceInputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = Buffer.from(hash)
+      const txid: string = Buffer.from(hash)
         .reverse()
         .toString('hex');
       return new CreatorInput(txid, index);
@@ -418,10 +455,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       new CreatorOutput(
         usdt,
         25000_00000000,
-        alice.payment.confidentialAddress!,
+        alice.payment.output,
+        alice.payment.blindkey,
         0,
       ),
-      new CreatorOutput(lbtc, 49999000, alice.payment.confidentialAddress!, 0),
+      new CreatorOutput(
+        lbtc,
+        49999000,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
       new CreatorOutput(lbtc, 1000),
     ];
 
@@ -438,11 +482,18 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       return new CreatorInput(txid, index);
     });
     const bobOutputs = [
-      new CreatorOutput(lbtc, 50000000, bob.payment.confidentialAddress!, 1),
+      new CreatorOutput(
+        lbtc,
+        50000000,
+        bob.payment.output,
+        alice.payment.blindkey,
+        1,
+      ),
       new CreatorOutput(
         usdt,
         25000_00000000,
-        bob.payment.confidentialAddress!,
+        bob.payment.output,
+        bob.payment.blindkey,
         1,
       ),
     ];
@@ -503,9 +554,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       new CreatorOutput(
         lbtc,
         sendAmount,
-        'ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq',
+        address.toOutputScript('ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq'),
       ),
-      new CreatorOutput(lbtc, change, taprootAddress),
+      new CreatorOutput(lbtc, change, address.toOutputScript(taprootAddress)),
       new CreatorOutput(lbtc, FEES),
     ];
 
@@ -599,10 +650,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       new CreatorOutput(
         lbtc,
         sendAmount,
-        bobPay.payment.confidentialAddress!,
+        bobPay.payment.output,
+        bobPay.payment.blindkey,
         0,
       ),
-      new CreatorOutput(lbtc, change, taprootAddress, 0),
+      new CreatorOutput(lbtc, change, address.toOutputScript(taprootAddress)),
       new CreatorOutput(lbtc, FEES),
     ];
 

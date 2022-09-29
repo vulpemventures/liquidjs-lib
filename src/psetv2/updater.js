@@ -209,13 +209,22 @@ class Updater {
       const issuedAsset = asset_1.AssetHash.fromBytes(
         (0, issuance_1.calculateAsset)(entropy),
       ).hex;
-      const blinderIndex = (0, address_1.isConfidential)(args.assetAddress)
-        ? inIndex
-        : undefined;
+      let blinderIndex;
+      let blindingPublicKey;
+      if (
+        args.assetAddress &&
+        (0, address_1.isConfidential)(args.assetAddress)
+      ) {
+        blinderIndex = inIndex;
+        blindingPublicKey = (0, address_1.fromConfidential)(args.assetAddress)
+          .blindingKey;
+      }
       const output = new creator_1.CreatorOutput(
         issuedAsset,
         assetAmount,
-        args.assetAddress,
+        // Why this should be undefined? should'nt be always be mandatory?
+        (0, address_1.toOutputScript)(args.assetAddress),
+        blindingPublicKey,
         blinderIndex,
       );
       pset.addOutput(output.toPartialOutput());
@@ -224,13 +233,21 @@ class Updater {
       const reissuanceToken = asset_1.AssetHash.fromBytes(
         (0, issuance_1.calculateReissuanceToken)(entropy, args.blindedIssuance),
       ).hex;
-      const blinderIndex = (0, address_1.isConfidential)(args.tokenAddress)
-        ? inIndex
-        : undefined;
+      let blinderIndex;
+      let blindingPublicKey;
+      if (
+        args.tokenAddress &&
+        (0, address_1.isConfidential)(args.tokenAddress)
+      ) {
+        blinderIndex = inIndex;
+        blindingPublicKey = (0, address_1.fromConfidential)(args.tokenAddress)
+          .blindingKey;
+      }
       const output = new creator_1.CreatorOutput(
         reissuanceToken,
         tokenAmount,
-        args.tokenAddress,
+        (0, address_1.toOutputScript)(args.tokenAddress),
+        blindingPublicKey,
         blinderIndex,
       );
       pset.addOutput(output.toPartialOutput());
@@ -263,16 +280,24 @@ class Updater {
     pset.inputs[inIndex].issuanceBlindingNonce = blindingNonce;
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = args.tokenAmount;
+    const assetBlindingPublicKey = (0, address_1.fromConfidential)(
+      args.assetAddress,
+    ).blindingKey;
     const assetOutput = new creator_1.CreatorOutput(
       asset,
       args.assetAmount,
-      args.assetAddress,
+      (0, address_1.toOutputScript)(args.assetAddress),
+      assetBlindingPublicKey,
       inIndex,
     );
+    const tokenBlindingPublicKey = (0, address_1.fromConfidential)(
+      args.tokenAddress,
+    ).blindingKey;
     const tokenOutput = new creator_1.CreatorOutput(
       reissuanceToken,
       args.tokenAmount,
-      args.tokenAddress,
+      (0, address_1.toOutputScript)(args.tokenAddress),
+      tokenBlindingPublicKey,
       inIndex,
     );
     pset.addOutput(assetOutput.toPartialOutput());
