@@ -333,10 +333,11 @@ function fromConfidentialLegacy(
   // BLIND_PREFIX|ADDRESS_PREFIX|BLINDING_KEY|SCRIPT_HASH
   // Prefixes are 1 byte long, thus blinding key always starts at 3rd byte
   const blindingKey = payload.slice(2, 35);
-  const script = payload.slice(35, payload.length);
+  const scriptHash = payload.slice(35, payload.length);
   const versionBuf = Buffer.of(prefix);
-  const scriptWithNetworkPrefix = Buffer.concat([versionBuf, script]);
-  const unconfidentialAddress = bs58check.encode(scriptWithNetworkPrefix);
+  const scriptHashWithNetworkPrefix = Buffer.concat([versionBuf, scriptHash]);
+  const unconfidentialAddress = bs58check.encode(scriptHashWithNetworkPrefix);
+  const script = toOutputScript(unconfidentialAddress);
   return { blindingKey, unconfidentialAddress, scriptPubKey: script };
 }
 
