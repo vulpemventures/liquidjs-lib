@@ -186,7 +186,13 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const outputs = [
       new CreatorOutput(lbtc, 60000000, bob.payment.output),
       new CreatorOutput(lbtc, 39999500, alice.payment.output),
-      new CreatorOutput(lbtc, 0, Buffer.of(OPS.OP_RETURN), alice.payment.blindkey, 0),
+      new CreatorOutput(
+        lbtc,
+        0,
+        Buffer.of(OPS.OP_RETURN),
+        alice.payment.blindkey,
+        0,
+      ),
       new CreatorOutput(lbtc, 500),
     ];
 

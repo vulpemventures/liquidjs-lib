@@ -124,10 +124,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     psbt.addInput(inputData);
     psbt.addIssuance({
       assetAddress: address.fromOutputScript(assetPay.payment.output!, regtest),
-      tokenAddress: address.fromOutputScript(
-        tokenPay.payment.output!,
-        regtest,
-      ),
+      tokenAddress: address.fromOutputScript(tokenPay.payment.output!, regtest),
       assetSats: 100_0000_0000,
       tokenSats: 1_0000_0000,
       contract: {
@@ -184,10 +181,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     psbt.addInput(inputData);
     psbt.addIssuance({
       assetAddress: address.fromOutputScript(assetPay.payment.output!, regtest),
-      tokenAddress: address.fromOutputScript(
-        tokenPay.payment.output!,
-        regtest,
-      ),
+      tokenAddress: address.fromOutputScript(tokenPay.payment.output!, regtest),
       assetSats: 100_0000_0000,
       tokenSats: 1_0000_0000,
       contract: {
