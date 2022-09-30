@@ -50,7 +50,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
           regtest,
         ),
         tokenAddress: address.fromOutputScript(
-          tokenPay.payment.output!!,
+          tokenPay.payment.output!,
           regtest,
         ),
         assetSats: amountWithPrecisionToSatoshis(100),
@@ -125,7 +125,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     psbt.addIssuance({
       assetAddress: address.fromOutputScript(assetPay.payment.output!, regtest),
       tokenAddress: address.fromOutputScript(
-        tokenPay.payment.output!!,
+        tokenPay.payment.output!,
         regtest,
       ),
       assetSats: 100_0000_0000,
@@ -185,7 +185,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     psbt.addIssuance({
       assetAddress: address.fromOutputScript(assetPay.payment.output!, regtest),
       tokenAddress: address.fromOutputScript(
-        tokenPay.payment.output!!,
+        tokenPay.payment.output!,
         regtest,
       ),
       assetSats: 100_0000_0000,
