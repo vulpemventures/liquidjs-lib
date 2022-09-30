@@ -110,7 +110,10 @@ describe('address', () => {
             t.unconfidentialAddress,
             (f.base58check || f.bech32)!,
           );
-          assert.strictEqual(t.scriptPubKey!.toString('hex'), f.script);
+          assert.strictEqual(
+            t.scriptPubKey!.toString('hex'),
+            bscript.fromASM(f.script),
+          );
         },
       );
     });
