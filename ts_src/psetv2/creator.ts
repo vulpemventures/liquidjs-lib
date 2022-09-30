@@ -79,7 +79,7 @@ export class CreatorOutput {
     }
     if (
       this.blindingPublicKey &&
-      (!this.blinderIndex || this.blinderIndex < 0)
+      (this.blinderIndex === undefined || this.blinderIndex < 0)
     ) {
       throw new Error('missing blinder index for confidential output');
     }
