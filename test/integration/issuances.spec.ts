@@ -46,11 +46,11 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       .addInput(inputData)
       .addIssuance({
         assetAddress: address.fromOutputScript(
-          assetPay.payment.output,
+          assetPay.payment.output!,
           regtest,
         ),
         tokenAddress: address.fromOutputScript(
-          tokenPay.payment.output,
+          tokenPay.payment.output!!,
           regtest,
         ),
         assetSats: amountWithPrecisionToSatoshis(100),
@@ -72,7 +72,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
           nonce,
           asset,
           value: ElementsValue.fromNumber(99999500).bytes,
-          script: alice1.payment.output,
+          script: alice1.payment.output!,
         },
         {
           nonce,
@@ -123,8 +123,11 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     psbt.setLocktime(0); // These are defaults. This line is not needed.
     psbt.addInput(inputData);
     psbt.addIssuance({
-      assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
-      tokenAddress: address.fromOutputScript(tokenPay.payment.output, regtest),
+      assetAddress: address.fromOutputScript(assetPay.payment.output!, regtest),
+      tokenAddress: address.fromOutputScript(
+        tokenPay.payment.output!!,
+        regtest,
+      ),
       assetSats: 100_0000_0000,
       tokenSats: 1_0000_0000,
       contract: {
@@ -143,7 +146,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         nonce,
         asset,
         value: ElementsValue.fromNumber(99996500).bytes,
-        script: alice1.payment.output,
+        script: alice1.payment.output!,
       },
       {
         nonce,
@@ -180,8 +183,11 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const psbt = new Psbt();
     psbt.addInput(inputData);
     psbt.addIssuance({
-      assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
-      tokenAddress: address.fromOutputScript(tokenPay.payment.output, regtest),
+      assetAddress: address.fromOutputScript(assetPay.payment.output!, regtest),
+      tokenAddress: address.fromOutputScript(
+        tokenPay.payment.output!!,
+        regtest,
+      ),
       assetSats: 100_0000_0000,
       tokenSats: 1_0000_0000,
       contract: {
@@ -200,7 +206,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         nonce,
         asset,
         value: ElementsValue.fromNumber(99999500).bytes,
-        script: alice1.payment.output,
+        script: alice1.payment.output!,
       },
       {
         nonce,
@@ -237,8 +243,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       ECPair.makeRandom({ network: regtest }),
     );
 
-    const assetAddress = assetPay.payment.confidentialAddress;
-    const tokenAddress = alice.payment.confidentialAddress;
+    const assetAddress = assetPay.payment.confidentialAddress!;
+    const tokenAddress = alice.payment.confidentialAddress!;
 
     const issuancePset = new Psbt({ network: NETWORKS.regtest });
     issuancePset
@@ -265,7 +271,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
           nonce,
           asset,
           value: ElementsValue.fromNumber(99999000).bytes,
-          script: alice.payment.output,
+          script: alice.payment.output!,
         },
         {
           nonce,
@@ -331,7 +337,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         nonce,
         asset,
         value: ElementsValue.fromNumber(99998000).bytes,
-        script: alice.payment.output,
+        script: alice.payment.output!,
       })
       .addReissuance({
         tokenPrevout: { txHash: issuanceTx.getHash(false), vout: 1 },
@@ -357,7 +363,10 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         .set(0, aliceBlindingPrivkeys[0])
         .set(1, aliceBlindingPrivkeys[0]),
       new Map<number, Buffer>()
-        .set(0, fromConfidential(alice.payment.confidentialAddress).blindingKey)
+        .set(
+          0,
+          fromConfidential(alice.payment.confidentialAddress!).blindingKey,
+        )
         .set(1, blindingKeysPair[1].publicKey)
         .set(2, blindingKeysPair[2].publicKey),
       new Map<number, IssuanceBlindingKeys>().set(1, {
@@ -387,8 +396,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const issuePsbt = new Psbt();
     issuePsbt.addInput(inputData);
     issuePsbt.addIssuance({
-      assetAddress: address.fromOutputScript(assetPay.payment.output, regtest),
-      tokenAddress: address.fromOutputScript(alice.payment.output, regtest),
+      assetAddress: address.fromOutputScript(assetPay.payment.output!, regtest),
+      tokenAddress: address.fromOutputScript(alice.payment.output!, regtest),
       assetSats: 1_0000_0000,
       tokenSats: 2_0000_0000,
       // confidentialFlag: true,
@@ -398,7 +407,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         nonce,
         asset,
         value: ElementsValue.fromNumber(99999000).bytes,
-        script: alice.payment.output,
+        script: alice.payment.output!,
       },
       {
         nonce,
@@ -440,13 +449,13 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
           asset: tokenOutput.asset,
           value: ElementsValue.fromNumber(amountWithPrecisionToSatoshis(2))
             .bytes,
-          script: alice.payment.output,
+          script: alice.payment.output!,
         },
         {
           nonce,
           asset,
           value: ElementsValue.fromNumber(99998000).bytes,
-          script: alice.payment.output,
+          script: alice.payment.output!,
         },
         {
           nonce,
@@ -509,7 +518,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         nonce,
         asset,
         value: ElementsValue.fromNumber(99997000).bytes,
-        script: alice.payment.output,
+        script: alice.payment.output!,
       })
       .addReissuance({
         tokenPrevout: { txHash: confTx.getHash(false), vout: 0 },
@@ -517,8 +526,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
         entropy,
         assetSats: amountWithPrecisionToSatoshis(200),
         tokenSats: amountWithPrecisionToSatoshis(2),
-        assetAddress: aliceConfidential.payment.confidentialAddress,
-        tokenAddress: aliceConfidential.payment.confidentialAddress,
+        assetAddress: aliceConfidential.payment.confidentialAddress!,
+        tokenAddress: aliceConfidential.payment.confidentialAddress!,
         witnessUtxo: tokenOutput,
         blindedIssuance: false,
       })
@@ -567,7 +576,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
       .addInput(inputData)
       .addIssuance({
         tokenAddress: address.fromOutputScript(
-          tokenPay.payment.output,
+          tokenPay.payment.output!,
           regtest,
         ),
         assetSats: 0,
@@ -589,7 +598,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
           nonce,
           asset,
           value: ElementsValue.fromNumber(99999500).bytes,
-          script: alice1.payment.output,
+          script: alice1.payment.output!,
         },
         {
           nonce,
