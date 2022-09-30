@@ -112,7 +112,7 @@ describe('address', () => {
           );
           assert.strictEqual(
             t.scriptPubKey!.toString('hex'),
-            bscript.fromASM(f.script),
+            bscript.fromASM(f.script).toString('hex'),
           );
         },
       );
