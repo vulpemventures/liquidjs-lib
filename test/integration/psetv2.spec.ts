@@ -48,7 +48,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         address.toOutputScript('ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq'),
       ),
       new CreatorOutput(lbtc, 39999500, alice.payment.output),
-      new CreatorOutput(lbtc, 500, Buffer.of(0x0)),
+      new CreatorOutput(lbtc, 500),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
