@@ -200,7 +200,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       .addOutput({
         asset,
         nonce,
-        script: alice2.payment.output!,
+        script: alice2.payment.output,
         value: ElementsValue.fromNumber(49999300).bytes,
       }) // Alice's change
       .addOutput({
@@ -295,7 +295,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       .addOutput({
         asset,
         nonce,
-        script: alice1.payment.output!,
+        script: alice1.payment.output,
         value: ElementsValue.fromNumber(49993000).bytes,
       }) // Alice's change
       .addOutput({
@@ -365,19 +365,19 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         .addOutput({
           asset,
           nonce,
-          script: bobPayment.payment.output!,
+          script: bobPayment.payment.output,
           value: ElementsValue.fromNumber(50000000).bytes,
         }) // the actual spend to bob
         .addOutput({
           asset,
           nonce,
-          script: alicePayment.payment.output!,
+          script: alicePayment.payment.output,
           value: ElementsValue.fromNumber(29993000).bytes,
         }) // Alice's change
         .addOutput({
           asset,
           nonce,
-          script: alicePayment.payment.output!,
+          script: alicePayment.payment.output,
           value: ElementsValue.fromNumber(20000000).bytes,
         }) // Alice's change bis
         .addOutput({
@@ -453,19 +453,19 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         .addOutput({
           asset,
           nonce,
-          script: bobPayment.payment.output!,
+          script: bobPayment.payment.output,
           value: ElementsValue.fromNumber(99993000).bytes,
         }) // the actual spend to bob
         .addOutput({
           asset,
           nonce,
-          script: alicePaymentConfidential.payment.output!,
+          script: alicePaymentConfidential.payment.output,
           value: ElementsValue.fromNumber(99999000).bytes,
         }) // Alice's change
         .addOutput({
           asset,
           nonce,
-          script: alicePaymentConfidential.payment.output!,
+          script: alicePaymentConfidential.payment.output,
           value: ElementsValue.fromNumber(1000).bytes,
         }) // Alice's change bis (need two blind outputs)
         .addOutput({
@@ -541,19 +541,19 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         .addOutput({
           asset,
           nonce,
-          script: bobPayment.payment.output!,
+          script: bobPayment.payment.output,
           value: ElementsValue.fromNumber(1000).bytes,
         }) // the actual spend to bob
         .addOutput({
           asset,
           nonce,
-          script: alicePaymentConfidential.payment.output!,
+          script: alicePaymentConfidential.payment.output,
           value: ElementsValue.fromNumber(99991000).bytes,
         }) // Alice's change
         .addOutput({
           asset,
           nonce,
-          script: alicePaymentConfidential.payment.output!,
+          script: alicePaymentConfidential.payment.output,
           value: ElementsValue.fromNumber(1000).bytes,
         }) // Alice's change bis (need two blind outputs)
         .addOutput({
@@ -710,7 +710,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     const outputData = {
       asset: inputData.witnessUtxo.asset,
       nonce,
-      script: p2sh.payment.output!, // sending to myself for fun
+      script: p2sh.payment.output, // sending to myself for fun
       value: ElementsValue.fromNumber(199999300).bytes,
     };
     const outputData2 = {
@@ -751,7 +751,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     const outputData = {
       asset,
       nonce,
-      script: p2sh.payment.output!, // change
+      script: p2sh.payment.output, // change
       value: ElementsValue.fromNumber(159993000).bytes,
     };
     const outputData2 = {
@@ -795,7 +795,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
     const outputData = {
       asset,
       nonce,
-      script: p2sh.payment.output!,
+      script: p2sh.payment.output,
       value: ElementsValue.fromNumber(199999300).bytes,
     };
     const outputData2 = {
@@ -830,7 +830,7 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       const outputData = {
         asset,
         nonce,
-        script: p2sh.payment.output!,
+        script: p2sh.payment.output,
         value: ElementsValue.fromNumber(199996500).bytes,
       };
       const outputData2 = {

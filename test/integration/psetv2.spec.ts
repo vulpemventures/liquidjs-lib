@@ -22,7 +22,6 @@ import * as regtestUtils from './_regtest';
 import { address, bip341 } from '../../ts_src';
 import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
-import { randomBytes } from 'crypto';
 
 const OPS = bscript.OPS;
 const { BIP341Factory } = bip341;
@@ -187,7 +186,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const outputs = [
       new CreatorOutput(lbtc, 60000000, bob.payment.output),
       new CreatorOutput(lbtc, 39999500, alice.payment.output),
-      new CreatorOutput(lbtc, 0, Buffer.of(OPS.OP_RETURN), randomBytes(33), 0),
+      new CreatorOutput(lbtc, 0, Buffer.of(OPS.OP_RETURN), alice.payment.blindkey, 0),
       new CreatorOutput(lbtc, 500),
     ];
 
