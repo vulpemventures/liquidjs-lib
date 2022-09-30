@@ -301,24 +301,24 @@ function fromConfidentialLegacy(address, network) {
     throw new TypeError(address + 'is not valid');
   if (payload.length < 55) throw new TypeError(address + ' is too short');
   if (payload.length > 55) throw new TypeError(address + ' is too long');
-  // Blinded decoded haddress has the form:
+  // Blinded decoded address has the form:
   // BLIND_PREFIX|ADDRESS_PREFIX|BLINDING_KEY|SCRIPT_HASH
   // Prefixes are 1 byte long, thus blinding key always starts at 3rd byte
   const blindingKey = payload.slice(2, 35);
-  const unconfidential = payload.slice(35, payload.length);
-  const versionBuf = Buffer.alloc(1);
-  versionBuf[0] = prefix;
-  const unconfidentialAddressBuffer = Buffer.concat([
-    versionBuf,
-    unconfidential,
-  ]);
-  const unconfidentialAddress = bs58check.encode(unconfidentialAddressBuffer);
-  return { blindingKey, unconfidentialAddress };
+  const script = payload.slice(35, payload.length);
+  const versionBuf = Buffer.of(prefix);
+  const scriptWithNetworkPrefix = Buffer.concat([versionBuf, script]);
+  const unconfidentialAddress = bs58check.encode(scriptWithNetworkPrefix);
+  return { blindingKey, unconfidentialAddress, scriptPubKey: script };
 }
 function fromConfidentialSegwit(address, network) {
   const result = fromBlech32(address);
   const unconfidentialAddress = fromOutputScript(result.data, network);
-  return { blindingKey: result.pubkey, unconfidentialAddress };
+  return {
+    blindingKey: result.pubkey,
+    unconfidentialAddress,
+    scriptPubKey: result.data,
+  };
 }
 function toConfidentialLegacy(address, blindingKey, network) {
   const payload = bs58check.decode(address);

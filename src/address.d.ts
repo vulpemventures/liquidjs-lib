@@ -17,6 +17,7 @@ export interface Blech32Result {
 export interface ConfidentialResult {
     blindingKey: Buffer;
     unconfidentialAddress: string;
+    scriptPubKey?: Buffer;
 }
 export declare enum AddressType {
     P2Pkh = 0,
