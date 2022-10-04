@@ -28,7 +28,7 @@ import {
 import { Pset, ValidateSigFunction } from './pset';
 import * as bscript from '../script';
 
-export interface AddInIssuanceArgs {
+export interface IssuanceOpts {
   assetAmount?: number;
   tokenAmount?: number;
   contract?: IssuanceContract;
@@ -37,13 +37,37 @@ export interface AddInIssuanceArgs {
   blindedIssuance: boolean;
 }
 
-export interface AddInReissuanceArgs {
+export interface ReissuanceOpts {
   entropy: string | Buffer;
   assetAmount: number;
   assetAddress: string;
   tokenAmount: number;
   tokenAddress: string;
   tokenAssetBlinder: string | Buffer;
+}
+
+export interface UpdaterInput {
+  txid: string;
+  txIndex: number;
+  sequence: number;
+  heightLocktime: number;
+  timeLocktime: number;
+  witnessUtxo?: TxOutput;
+  nonWitnessUtxo?: Transaction;
+  sighashType?: number;
+  tapInternalKey?: TapInternalKey;
+  tapLeafScript?: TapLeafScript;
+  tapMerkleRoot?: TapMerkleRoot;
+  issaunceOpts?: IssuanceOpts;
+  reissuanceOpts?: ReissuanceOpts;
+}
+
+export interface UpdaterOutput {
+  asset: string;
+  amount: number;
+  script?: Buffer;
+  blindingPublicKey?: Buffer;
+  blinderIndex?: number;
 }
 
 export class Updater {
@@ -54,12 +78,50 @@ export class Updater {
     this.pset = pset;
   }
 
-  addInputs(ins: CreatorInput[]): this {
+  addInputs(ins: UpdaterInput[]): this {
     const pset = this.pset.copy();
 
     ins.forEach(input => {
-      input.validate();
-      pset.addInput(input.toPartialInput());
+      const creatorInput = new CreatorInput(
+        input.txid,
+        input.txIndex,
+        input.sequence,
+        input.heightLocktime,
+        input.timeLocktime,
+      );
+      creatorInput.validate();
+      pset.addInput(creatorInput.toPartialInput());
+
+      // we know at this point, index can't be negative
+      const inputIndex = pset.inputs.length - 1;
+
+      if (input.witnessUtxo)
+        this.addInWitnessUtxo(inputIndex, input.witnessUtxo);
+
+      if (input.witnessUtxo && input.witnessUtxo.rangeProof) {
+        this.addInUtxoRangeProof(inputIndex, input.witnessUtxo.rangeProof);
+      }
+
+      if (input.nonWitnessUtxo)
+        this.addInNonWitnessUtxo(inputIndex, input.nonWitnessUtxo);
+
+      if (input.sighashType)
+        this.addInSighashType(inputIndex, input.sighashType);
+
+      if (input.tapInternalKey)
+        this.addInTapInternalKey(inputIndex, input.tapInternalKey);
+
+      if (input.tapLeafScript)
+        this.addInTapLeafScript(inputIndex, input.tapLeafScript);
+
+      if (input.tapMerkleRoot)
+        this.addInTapMerkleRoot(inputIndex, input.tapMerkleRoot);
+
+      if (input.issaunceOpts)
+        this.addInIssuance(inputIndex, input.issaunceOpts);
+
+      if (input.reissuanceOpts)
+        this.addInReissuance(inputIndex, input.reissuanceOpts);
     });
 
     pset.sanityCheck();
@@ -71,12 +133,19 @@ export class Updater {
     return this;
   }
 
-  addOutputs(outs: CreatorOutput[]): this {
+  addOutputs(outs: UpdaterOutput[]): this {
     const pset = this.pset.copy();
 
     outs.forEach(output => {
-      output.validate();
-      pset.addOutput(output.toPartialOutput());
+      const creatorOutput = new CreatorOutput(
+        output.asset,
+        output.amount,
+        output.script,
+        output.blindingPublicKey,
+        output.blinderIndex,
+      );
+      creatorOutput.validate();
+      pset.addOutput(creatorOutput.toPartialOutput());
     });
 
     pset.sanityCheck();
@@ -217,7 +286,7 @@ export class Updater {
     return this;
   }
 
-  addInIssuance(inIndex: number, args: AddInIssuanceArgs): this {
+  addInIssuance(inIndex: number, args: IssuanceOpts): this {
     this.validateIssuanceInput(inIndex);
     validateAddInIssuanceArgs(args);
 
@@ -291,7 +360,7 @@ export class Updater {
     return this;
   }
 
-  addInReissuance(inIndex: number, args: AddInReissuanceArgs): this {
+  addInReissuance(inIndex: number, args: ReissuanceOpts): this {
     this.validateReissuanceInput(inIndex);
     validateAddInReissuanceArgs(args);
 
@@ -490,7 +559,7 @@ export class Updater {
     return this;
   }
 
-  addInTapLeafScript(inIndex: number, leafScript: TapLeafScript): this {
+  addInTapLeafScript(inIndex: number, tapLeafScript: TapLeafScript): this {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -499,7 +568,7 @@ export class Updater {
     if (!pset.inputs[inIndex].tapLeafScript) {
       pset.inputs[inIndex].tapLeafScript = [];
     }
-    pset.inputs[inIndex].tapLeafScript!.push(leafScript);
+    pset.inputs[inIndex].tapLeafScript!.push(tapLeafScript);
     pset.sanityCheck();
 
     this.pset.globals = pset.globals;
@@ -753,7 +822,7 @@ export class Updater {
   }
 }
 
-function validateAddInIssuanceArgs(args: AddInIssuanceArgs): void {
+function validateAddInIssuanceArgs(args: IssuanceOpts): void {
   const assetAmount = args.assetAmount || 0;
   const tokenAmount = args.tokenAmount || 0;
   if (assetAmount <= 0 && tokenAmount <= 0) {
@@ -782,7 +851,7 @@ function validateAddInIssuanceArgs(args: AddInIssuanceArgs): void {
   }
 }
 
-function validateAddInReissuanceArgs(args: AddInReissuanceArgs): void {
+function validateAddInReissuanceArgs(args: ReissuanceOpts): void {
   const entropy =
     typeof args.entropy === 'string'
       ? Buffer.from(args.entropy, 'hex').reverse()
