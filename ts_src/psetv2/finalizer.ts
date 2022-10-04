@@ -121,7 +121,9 @@ const defaultFinalizer: FinalizeFunc = (inIndex: number, pset: Pset) => {
     (!input.tapKeySig || input.tapKeySig.length === 0) &&
     (!input.tapScriptSig || input.tapScriptSig.length === 0)
   ) {
-    throw new Error(`Missing partial signatures for input at index ${inIndex}. If the script does not have a CHECKSIG operation you must pass a custom finalizer function`);
+    throw new Error(
+      `Missing partial signatures for input at index ${inIndex}. If the script does not have a CHECKSIG operation you must pass a custom finalizer function`,
+    );
   }
 
   if (input.isTaproot()) return finalizeTaprootInput(inIndex, pset);
