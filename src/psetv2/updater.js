@@ -58,8 +58,36 @@ class Updater {
   addInputs(ins) {
     const pset = this.pset.copy();
     ins.forEach(input => {
-      input.validate();
-      pset.addInput(input.toPartialInput());
+      const creatorInput = new creator_1.CreatorInput(
+        input.txid,
+        input.txIndex,
+        input.sequence,
+        input.heightLocktime,
+        input.timeLocktime,
+      );
+      creatorInput.validate();
+      pset.addInput(creatorInput.toPartialInput());
+      // we know at this point, index can't be negative
+      const inputIndex = pset.inputs.length - 1;
+      if (input.witnessUtxo)
+        this.addInWitnessUtxo(inputIndex, input.witnessUtxo);
+      if (input.witnessUtxo && input.witnessUtxo.rangeProof) {
+        this.addInUtxoRangeProof(inputIndex, input.witnessUtxo.rangeProof);
+      }
+      if (input.nonWitnessUtxo)
+        this.addInNonWitnessUtxo(inputIndex, input.nonWitnessUtxo);
+      if (input.sighashType)
+        this.addInSighashType(inputIndex, input.sighashType);
+      if (input.tapInternalKey)
+        this.addInTapInternalKey(inputIndex, input.tapInternalKey);
+      if (input.tapLeafScript)
+        this.addInTapLeafScript(inputIndex, input.tapLeafScript);
+      if (input.tapMerkleRoot)
+        this.addInTapMerkleRoot(inputIndex, input.tapMerkleRoot);
+      if (input.issaunceOpts)
+        this.addInIssuance(inputIndex, input.issaunceOpts);
+      if (input.reissuanceOpts)
+        this.addInReissuance(inputIndex, input.reissuanceOpts);
     });
     pset.sanityCheck();
     this.pset.globals = pset.globals;
@@ -70,8 +98,15 @@ class Updater {
   addOutputs(outs) {
     const pset = this.pset.copy();
     outs.forEach(output => {
-      output.validate();
-      pset.addOutput(output.toPartialOutput());
+      const creatorOutput = new creator_1.CreatorOutput(
+        output.asset,
+        output.amount,
+        output.script,
+        output.blindingPublicKey,
+        output.blinderIndex,
+      );
+      creatorOutput.validate();
+      pset.addOutput(creatorOutput.toPartialOutput());
     });
     pset.sanityCheck();
     this.pset.globals = pset.globals;
@@ -414,7 +449,7 @@ class Updater {
     this.pset.outputs = pset.outputs;
     return this;
   }
-  addInTapLeafScript(inIndex, leafScript) {
+  addInTapLeafScript(inIndex, tapLeafScript) {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('input index out of range');
     }
@@ -422,7 +457,7 @@ class Updater {
     if (!pset.inputs[inIndex].tapLeafScript) {
       pset.inputs[inIndex].tapLeafScript = [];
     }
-    pset.inputs[inIndex].tapLeafScript.push(leafScript);
+    pset.inputs[inIndex].tapLeafScript.push(tapLeafScript);
     pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;

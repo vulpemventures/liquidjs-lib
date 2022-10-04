@@ -23,7 +23,7 @@ export declare class CreatorOutput {
     toPartialOutput(): PsetOutput;
 }
 export declare class Creator {
-    static newPset(args: {
+    static newPset(args?: {
         inputs?: CreatorInput[];
         outputs?: CreatorOutput[];
         locktime?: number;

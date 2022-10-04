@@ -10,6 +10,8 @@ import {
   Extractor as PsetExtractor,
   Blinder as PsetBlinder,
   BIP174SigningData,
+  UpdaterInput,
+  UpdaterOutput,
 } from '../../ts_src/psetv2';
 import { AssetHash } from '../../ts_src/asset';
 import { ZKPGenerator, ZKPValidator } from '../../ts_src/confidential';
@@ -33,27 +35,42 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const alice = createPayment('p2wpkh');
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
-    const inputs = [aliceInputData].map(({ hash, index }) => {
+    const pset = PsetCreator.newPset();
+
+    const inputs: UpdaterInput[] = [aliceInputData].map(({ hash, index }) => {
       const txid = hash
         .slice()
         .reverse()
         .toString('hex');
-      return new CreatorInput(txid, index);
+      return {
+        txid,
+        txIndex: index,
+        witnessUtxo: aliceInputData.witnessUtxo,
+        sighashType: Transaction.SIGHASH_ALL,
+      };
     });
-    const outputs = [
+    const outputs: UpdaterOutput[] = [
+      // we can mix UpdaterOutput as plain objects or use CreatorOutput as class which satisfies the interface
       new CreatorOutput(
         lbtc,
         60000000,
         address.toOutputScript('ert1qqndj7dqs4emt4ty475an693hcput6l87m4rajq'),
       ),
-      new CreatorOutput(lbtc, 39999500, alice.payment.output),
-      new CreatorOutput(lbtc, 500),
+      {
+        asset: lbtc,
+        amount: 39999500,
+        script: alice.payment.output,
+      },
+      {
+        asset: lbtc,
+        amount: 500,
+      },
     ];
 
-    const pset = PsetCreator.newPset({ inputs, outputs });
     const updater = new PsetUpdater(pset);
-    updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
-    updater.addInSighashType(0, Transaction.SIGHASH_ALL);
+    updater.addInputs(inputs);
+    updater.addOutputs(outputs);
+
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
     await regtestUtils.broadcast(rawTx.toHex());
   });
