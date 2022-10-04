@@ -3,7 +3,13 @@ import { PsetInput } from './input';
 import { PsetOutput } from './output';
 import { Pset } from './pset';
 import { Creator, CreatorInput, CreatorOutput } from './creator';
-import { Updater, AddInIssuanceArgs, AddInReissuanceArgs } from './updater';
+import {
+  Updater,
+  UpdaterOutput,
+  UpdaterInput,
+  IssuanceOpts,
+  ReissuanceOpts,
+} from './updater';
 import {
   Blinder,
   PsetBlindingGenerator,
@@ -17,8 +23,8 @@ import { Finalizer, FinalizeFunc } from './finalizer';
 import { Extractor } from './extractor';
 
 export {
-  AddInIssuanceArgs,
-  AddInReissuanceArgs,
+  IssuanceOpts,
+  ReissuanceOpts,
   Blinder,
   PsetBlindingGenerator,
   PsetBlindingValidator,
@@ -39,4 +45,6 @@ export {
   PsetOutput,
   Signer,
   Updater,
+  UpdaterInput,
+  UpdaterOutput,
 };
