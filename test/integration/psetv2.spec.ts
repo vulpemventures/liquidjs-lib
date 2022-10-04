@@ -31,7 +31,7 @@ const { regtest } = NETWORKS;
 const lbtc = regtest.assetHash;
 
 describe('liquidjs-lib (transactions with psetv2)', () => {
-  it.only('can create (and broadcast via 3PBP) a unconfidential Transaction', async () => {
+  it('can create (and broadcast via 3PBP) a unconfidential Transaction', async () => {
     const alice = createPayment('p2wpkh');
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
