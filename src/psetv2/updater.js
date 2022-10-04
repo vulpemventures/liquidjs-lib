@@ -76,6 +76,11 @@ class Updater {
       }
       if (input.nonWitnessUtxo)
         this.addInNonWitnessUtxo(inputIndex, input.nonWitnessUtxo);
+      if (input.nonWitnessUtxo && input.nonWitnessUtxo.outs[input.txIndex]) {
+        const previousOutput = input.nonWitnessUtxo.outs[input.txIndex];
+        if (previousOutput.rangeProof)
+          this.addInUtxoRangeProof(inputIndex, previousOutput.rangeProof);
+      }
       if (input.sighashType)
         this.addInSighashType(inputIndex, input.sighashType);
       if (input.tapInternalKey)

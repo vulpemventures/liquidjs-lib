@@ -34,13 +34,6 @@ class Finalizer {
     if (!input.getUtxo()) {
       throw new Error('Missing input (non-)witness utxo');
     }
-    if (
-      (!input.partialSigs || input.partialSigs.length === 0) &&
-      (!input.tapKeySig || input.tapKeySig.length === 0) &&
-      (!input.tapScriptSig || input.tapScriptSig.length === 0)
-    ) {
-      throw new Error('Missing input partial signatures');
-    }
     const pset = this.pset.copy();
     const { finalScriptSig, finalScriptWitness } = finalizeFunc(inIndex, pset);
     if (finalScriptSig) {
@@ -87,6 +80,16 @@ function getScriptFromInput(input) {
 }
 const defaultFinalizer = (inIndex, pset) => {
   const input = pset.inputs[inIndex];
+  // if we use the defaut finalizer we assume the input script has a CHECKSIG operation
+  if (
+    (!input.partialSigs || input.partialSigs.length === 0) &&
+    (!input.tapKeySig || input.tapKeySig.length === 0) &&
+    (!input.tapScriptSig || input.tapScriptSig.length === 0)
+  ) {
+    throw new Error(
+      `Missing partial signatures for input at index ${inIndex}. If the script does not have a CHECKSIG operation you must pass a custom finalizer function`,
+    );
+  }
   if (input.isTaproot()) return finalizeTaprootInput(inIndex, pset);
   return finalizeInput(inIndex, pset);
 };
