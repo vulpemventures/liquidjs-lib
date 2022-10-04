@@ -101,7 +101,7 @@ export class CreatorOutput {
 }
 
 export class Creator {
-  static newPset(args: {
+  static newPset(args?: {
     inputs?: CreatorInput[];
     outputs?: CreatorOutput[];
     locktime?: number;
@@ -119,14 +119,14 @@ export class Creator {
 
     const pset = new Pset(globals);
 
-    args.inputs! &&
-      args.inputs!.forEach(input => {
+    if (args && args.inputs)
+      args.inputs.forEach(input => {
         input.validate();
         pset.addInput(input.toPartialInput());
       });
 
-    args.outputs! &&
-      args.outputs!.forEach(output => {
+    if (args && args.outputs)
+      args.outputs.forEach(output => {
         output.validate();
         pset.addOutput(output.toPartialOutput());
       });

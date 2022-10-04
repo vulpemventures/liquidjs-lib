@@ -93,12 +93,12 @@ class Creator {
     globals.proprietaryData = [];
     globals.unknowns = [];
     const pset = new pset_1.Pset(globals);
-    args.inputs &&
+    if (args && args.inputs)
       args.inputs.forEach(input => {
         input.validate();
         pset.addInput(input.toPartialInput());
       });
-    args.outputs &&
+    if (args && args.outputs)
       args.outputs.forEach(output => {
         output.validate();
         pset.addOutput(output.toPartialOutput());

@@ -49,9 +49,9 @@ export interface ReissuanceOpts {
 export interface UpdaterInput {
   txid: string;
   txIndex: number;
-  sequence: number;
-  heightLocktime: number;
-  timeLocktime: number;
+  sequence?: number;
+  heightLocktime?: number;
+  timeLocktime?: number;
   witnessUtxo?: TxOutput;
   nonWitnessUtxo?: Transaction;
   sighashType?: number;
