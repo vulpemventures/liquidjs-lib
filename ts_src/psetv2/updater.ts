@@ -105,6 +105,15 @@ export class Updater {
       if (input.nonWitnessUtxo)
         this.addInNonWitnessUtxo(inputIndex, input.nonWitnessUtxo);
 
+      if (
+        input.nonWitnessUtxo &&
+        input.nonWitnessUtxo.outs[input.txIndex].rangeProof
+      )
+        this.addInUtxoRangeProof(
+          inputIndex,
+          input.nonWitnessUtxo.outs[input.txIndex].rangeProof!,
+        );
+
       if (input.sighashType)
         this.addInSighashType(inputIndex, input.sighashType);
 
