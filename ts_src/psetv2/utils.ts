@@ -48,11 +48,11 @@ export function hasSigs(
   let sigs: any;
   if (pubkeys) {
     sigs = pubkeys
-      .map(pkey => {
+      .map((pkey) => {
         const pubkey = compressPubkey(pkey);
-        return partialSig.find(pSig => pSig.pubkey.equals(pubkey));
+        return partialSig.find((pSig) => pSig.pubkey.equals(pubkey));
       })
-      .filter(v => !!v);
+      .filter((v) => !!v);
   } else {
     sigs = partialSig;
   }
@@ -64,17 +64,17 @@ function getSortedSigs(script: Buffer, partialSig: PartialSig[]): Buffer[] {
   const p2ms = payments.p2ms({ output: script });
   // for each pubkey in order of p2ms script
   return p2ms
-    .pubkeys!.map(pk => {
+    .pubkeys!.map((pk) => {
       // filter partialSig array by pubkey being equal
       return (
-        partialSig.filter(ps => {
+        partialSig.filter((ps) => {
           return ps.pubkey.equals(pk);
         })[0] || {}
       ).signature;
       // Any pubkey without a match will return undefined
       // this last filter removes all the undefined items in the array.
     })
-    .filter(v => !!v);
+    .filter((v) => !!v);
 }
 
 export function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
@@ -188,7 +188,7 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
   const decompiled = bscript.decompile(script);
   if (decompiled === null) throw new Error('Unknown script error');
 
-  return decompiled.findIndex(element => {
+  return decompiled.findIndex((element) => {
     if (typeof element === 'number') return false;
     return (
       element.equals(pubkey) ||

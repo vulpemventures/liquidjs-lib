@@ -8,11 +8,11 @@ const varuint = require('varuint-bitcoin');
 
 describe('bufferutils', () => {
   function concatToBuffer(values: number[][]): Buffer {
-    return Buffer.concat(values.map(data => Buffer.from(data)));
+    return Buffer.concat(values.map((data) => Buffer.from(data)));
   }
 
   describe('readUInt64LE', () => {
-    fixtures.valid.forEach(f => {
+    fixtures.valid.forEach((f) => {
       it('decodes ' + f.hex, () => {
         const buffer = Buffer.from(f.hex, 'hex');
         const num = bufferutils.readUInt64LE(buffer, 0);
@@ -23,7 +23,7 @@ describe('bufferutils', () => {
   });
 
   describe('writeUInt64LE', () => {
-    fixtures.valid.forEach(f => {
+    fixtures.valid.forEach((f) => {
       it('encodes ' + f.dec, () => {
         const buffer = Buffer.alloc(8, 0);
 
@@ -32,7 +32,7 @@ describe('bufferutils', () => {
       });
     });
 
-    fixtures.invalid.writeUInt64LE.forEach(f => {
+    fixtures.invalid.writeUInt64LE.forEach((f) => {
       it('throws on ' + f.description, () => {
         const buffer = Buffer.alloc(8, 0);
 
@@ -644,12 +644,8 @@ describe('bufferutils', () => {
         const exptectedOffset =
           bufferReader.offset +
           value.reduce((sum, v): number => sum + v.length, 0);
-        const {
-          assetBlindingNonce,
-          assetEntropy,
-          assetAmount,
-          tokenAmount,
-        } = bufferReader.readIssuance();
+        const { assetBlindingNonce, assetEntropy, assetAmount, tokenAmount } =
+          bufferReader.readIssuance();
         testValue(bufferReader, assetBlindingNonce, value[0], exptectedOffset);
         testValue(bufferReader, assetEntropy, value[1], exptectedOffset);
         testValue(bufferReader, assetAmount, value[2], exptectedOffset);

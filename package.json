@@ -87,7 +87,7 @@
     "mocha": "^7.1.1",
     "npm-audit-whitelister": "^1.0.2",
     "nyc": "^15.1.0",
-    "prettier": "1.16.4",
+    "prettier": "^2.7.1",
     "proxyquire": "^2.0.1",
     "randombytes": "^2.1.0",
     "regtest-client": "0.2.0",

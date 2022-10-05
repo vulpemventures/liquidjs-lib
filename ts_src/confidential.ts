@@ -320,9 +320,10 @@ interface RngOpts {
   rng?(arg0: number): Buffer;
 }
 
-export type KeysGenerator = (
-  opts?: RngOpts,
-) => { publicKey: Buffer; privateKey: Buffer };
+export type KeysGenerator = (opts?: RngOpts) => {
+  publicKey: Buffer;
+  privateKey: Buffer;
+};
 
 export class ZKPValidator implements PsetBlindingValidator {
   async verifyValueRangeProof(
@@ -518,7 +519,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     }
 
     const revealedInputs = await Promise.all(
-      inputIndexes.map(async i => {
+      inputIndexes.map(async (i) => {
         const prevout = pset.inputs[i].getUtxo();
         const revealedInput = await this.unblindUtxo(prevout!);
         revealedInput.index = i;
@@ -649,7 +650,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     );
 
     return Promise.all(
-      outputIndexes.map(async i => {
+      outputIndexes.map(async (i) => {
         const output = pset.outputs[i];
         const assetBlinder = randomBytes(this.opts);
         const valueBlinder = randomBytes(this.opts);
@@ -850,7 +851,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     }
 
     return Promise.all(
-      pset.inputs.map(async input => {
+      pset.inputs.map(async (input) => {
         const prevout = input.getUtxo()!;
         try {
           const revealed = await this.unblindUtxo(prevout);
@@ -885,7 +886,7 @@ function validatePset(pset: Pset): void {
 
 function validateInIndexes(pset: Pset, inIndexes: number[]): void {
   if (inIndexes.length > 0) {
-    inIndexes.forEach(i => {
+    inIndexes.forEach((i) => {
       if (i < 0 || i >= pset.globals.inputCount) {
         throw new Error('Input index out of range');
       }
@@ -895,7 +896,7 @@ function validateInIndexes(pset: Pset, inIndexes: number[]): void {
 
 function validateOutIndexes(pset: Pset, outIndexes: number[]): void {
   if (outIndexes.length > 0) {
-    outIndexes.forEach(i => {
+    outIndexes.forEach((i) => {
       if (i < 0 || i >= pset.globals.outputCount) {
         throw new Error('Output index out of range');
       }
@@ -926,7 +927,7 @@ function validateBlindedIssuances(
   blindedIssuances: IssuanceBlindingArgs[],
 ): void {
   if (blindedIssuances.length > 0) {
-    blindedIssuances.forEach(issuance => {
+    blindedIssuances.forEach((issuance) => {
       if (issuance.index < 0 || issuance.index >= pset.globals.inputCount) {
         throw new Error('Input index of blinded issuance is out of range');
       }

@@ -31,11 +31,11 @@ export function createPayment(
     blindingKeys.push(ECPair.makeRandom({ network }).privateKey!);
 
   let payment: any;
-  splitType.forEach(type => {
+  splitType.forEach((type) => {
     if (type.slice(0, 4) === 'p2ms') {
       payment = liquid.payments.p2ms({
         m,
-        pubkeys: keys.map(key => key.publicKey).sort(),
+        pubkeys: keys.map((key) => key.publicKey).sort(),
         network,
       });
     } else if (['p2sh', 'p2wsh'].indexOf(type) > -1) {

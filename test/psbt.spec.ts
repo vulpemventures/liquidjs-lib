@@ -21,7 +21,7 @@ const initBuffers = (object: any): typeof preFixtures =>
 const fixtures = initBuffers(preFixtures);
 
 const upperCaseFirstLetter = (str: string): string =>
-  str.replace(/^./, s => s.toUpperCase());
+  str.replace(/^./, (s) => s.toUpperCase());
 
 describe('Psbt', () => {
   describe('BIP174 Test Vectors', () => {
@@ -42,7 +42,7 @@ describe('Psbt', () => {
       });
     });
 
-    fixtures.bip174.updater.forEach(f => {
+    fixtures.bip174.updater.forEach((f) => {
       it('Updates PSBT to the expected result', () => {
         const psbt = Psbt.fromBase64(f.psbt);
 
@@ -65,7 +65,7 @@ describe('Psbt', () => {
       });
     });
 
-    fixtures.bip174.signer.forEach(f => {
+    fixtures.bip174.signer.forEach((f) => {
       it('Signs PSBT to the expected result', () => {
         const psbt = Psbt.fromBase64(f.psbt);
 
@@ -78,7 +78,7 @@ describe('Psbt', () => {
       });
     });
 
-    fixtures.bip174.finalizer.forEach(f => {
+    fixtures.bip174.finalizer.forEach((f) => {
       it('Finalizes PSBT to the expected result', () => {
         const psbt = Psbt.fromBase64(f.psbt);
         psbt.finalizeAllInputs();
@@ -86,7 +86,7 @@ describe('Psbt', () => {
       });
     });
 
-    fixtures.bip174.extractor.forEach(f => {
+    fixtures.bip174.extractor.forEach((f) => {
       it('Extracts PSBT to the expected result', () => {
         const psbt = Psbt.fromBase64(f.psbt);
         const tx = psbt.extractTransaction();
@@ -125,8 +125,7 @@ describe('Psbt', () => {
       };
 
       psbt.addInput({
-        hash:
-          '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
+        hash: '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
         index: 0,
         witnessUtxo,
       });
@@ -414,8 +413,7 @@ describe('Psbt', () => {
     it('fails if no script found', () => {
       const psbt = new Psbt();
       psbt.addInput({
-        hash:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+        hash: '0000000000000000000000000000000000000000000000000000000000000000',
         index: 0,
       });
       assert.throws(() => {
@@ -442,7 +440,7 @@ describe('Psbt', () => {
   });
 
   describe('addInput', () => {
-    fixtures.addInput.checks.forEach(f => {
+    fixtures.addInput.checks.forEach((f) => {
       it(f.description, () => {
         const psbt = new Psbt();
 
@@ -469,7 +467,7 @@ describe('Psbt', () => {
   });
 
   describe('addOutput', () => {
-    fixtures.addOutput.checks.forEach(f => {
+    fixtures.addOutput.checks.forEach((f) => {
       it(f.description, () => {
         const psbt = new Psbt();
         const out = {
@@ -527,8 +525,7 @@ describe('Psbt', () => {
     it('Sets the sequence number for a given input', () => {
       const psbt = new Psbt();
       psbt.addInput({
-        hash:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+        hash: '0000000000000000000000000000000000000000000000000000000000000000',
         index: 0,
       });
 
@@ -544,8 +541,7 @@ describe('Psbt', () => {
     it('throws if input index is too high', () => {
       const psbt = new Psbt();
       psbt.addInput({
-        hash:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+        hash: '0000000000000000000000000000000000000000000000000000000000000000',
         index: 0,
       });
 

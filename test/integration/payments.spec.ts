@@ -59,27 +59,24 @@ async function buildAndSign(
     ]);
 
   if (depends.signatures) {
-    keyPairs.forEach(keyPair => {
+    keyPairs.forEach((keyPair) => {
       psbt.signInput(0, keyPair);
     });
   } else if (depends.signature) {
     psbt.signInput(0, keyPairs[0]);
   }
-  const hex = psbt
-    .finalizeAllInputs()
-    .extractTransaction()
-    .toHex();
+  const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
   return regtestUtils.broadcast(hex);
 }
 
-['p2ms', 'p2pkh', 'p2wpkh'].forEach(k => {
+['p2ms', 'p2pkh', 'p2wpkh'].forEach((k) => {
   const fixtures = require('../fixtures/' + k);
   const { depends } = fixtures.dynamic;
   const fn: any = (liquid.payments as any)[k];
 
   const base: any = { network: NETWORK };
   if (depends.pubkey) base.pubkey = keyPairs[0].publicKey;
-  if (depends.pubkeys) base.pubkeys = keyPairs.map(x => x.publicKey);
+  if (depends.pubkeys) base.pubkeys = keyPairs.map((x) => x.publicKey);
   if (depends.m) base.m = base.pubkeys.length;
 
   const sender = fn(base);

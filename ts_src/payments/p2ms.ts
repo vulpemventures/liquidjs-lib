@@ -118,7 +118,7 @@ export function p2ms(a: Payment, opts?: PaymentOpts): Payment {
 
       if (o.m! <= 0 || o.n! > 16 || o.m! > o.n! || o.n !== chunks.length - 3)
         throw new TypeError('Output is invalid');
-      if (!o.pubkeys!.every(x => isPoint(x)))
+      if (!o.pubkeys!.every((x) => isPoint(x)))
         throw new TypeError('Output is invalid');
 
       if (a.m !== undefined && a.m !== o.m) throw new TypeError('m mismatch');

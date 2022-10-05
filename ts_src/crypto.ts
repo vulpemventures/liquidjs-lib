@@ -2,26 +2,18 @@ import createHash from 'create-hash';
 
 export function ripemd160(buffer: Buffer): Buffer {
   try {
-    return createHash('rmd160')
-      .update(buffer)
-      .digest();
+    return createHash('rmd160').update(buffer).digest();
   } catch (err) {
-    return createHash('ripemd160')
-      .update(buffer)
-      .digest();
+    return createHash('ripemd160').update(buffer).digest();
   }
 }
 
 export function sha1(buffer: Buffer): Buffer {
-  return createHash('sha1')
-    .update(buffer)
-    .digest();
+  return createHash('sha1').update(buffer).digest();
 }
 
 export function sha256(buffer: Buffer): Buffer {
-  return createHash('sha256')
-    .update(buffer)
-    .digest();
+  return createHash('sha256').update(buffer).digest();
 }
 
 export function hash160(buffer: Buffer): Buffer {
@@ -49,7 +41,7 @@ const TAGS = [
 export type TaggedHashPrefix = typeof TAGS[number];
 /** An object mapping tags to their tagged hash prefix of [SHA256(tag) | SHA256(tag)] */
 const TAGGED_HASH_PREFIXES = Object.fromEntries(
-  TAGS.map(tag => {
+  TAGS.map((tag) => {
     const tagHash = sha256(Buffer.from(tag, 'utf-8'));
     return [tag, Buffer.concat([tagHash, tagHash])];
   }),

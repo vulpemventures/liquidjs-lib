@@ -35,10 +35,10 @@ export function sortSignatures(
   });
 
   return (input.tapScriptSig || [])
-    .filter(tss => tss.leafHash.equals(leafHash))
-    .map(tss => addPubkeyPositionInScript(tapLeaf.script, tss))
+    .filter((tss) => tss.leafHash.equals(leafHash))
+    .map((tss) => addPubkeyPositionInScript(tapLeaf.script, tss))
     .sort((t1, t2) => t2.positionInScript - t1.positionInScript)
-    .map(t => t.signature) as Buffer[];
+    .map((t) => t.signature) as Buffer[];
 }
 
 function addPubkeyPositionInScript(
@@ -67,7 +67,7 @@ export function findTapLeafToFinalize(
     );
   const tapLeaf = (input.tapLeafScript || [])
     .sort((a, b) => a.controlBlock.length - b.controlBlock.length)
-    .find(leaf =>
+    .find((leaf) =>
       canFinalizeLeaf(leaf, input.tapScriptSig!, leafHashToFinalize),
     );
 
@@ -91,7 +91,7 @@ function canFinalizeLeaf(
   const whiteListedHash = !hash || hash.equals(leafHash);
   return (
     whiteListedHash &&
-    tapScriptSig!.find(tss => tss.leafHash.equals(leafHash)) !== undefined
+    tapScriptSig!.find((tss) => tss.leafHash.equals(leafHash)) !== undefined
   );
 }
 
