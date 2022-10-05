@@ -1,9 +1,13 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.findTapLeafToFinalize = exports.sortSignatures = exports.serializeTaprootSignature = exports.toXOnly = void 0;
+exports.findTapLeafToFinalize =
+  exports.sortSignatures =
+  exports.serializeTaprootSignature =
+  exports.toXOnly =
+    void 0;
 const bip341_1 = require('../bip341');
 const utils_1 = require('./utils');
-const toXOnly = pubkey => {
+const toXOnly = (pubkey) => {
   switch (pubkey.length) {
     case 32:
       return pubkey;
@@ -27,10 +31,10 @@ function sortSignatures(input, tapLeaf) {
     version: tapLeaf.leafVersion,
   });
   return (input.tapScriptSig || [])
-    .filter(tss => tss.leafHash.equals(leafHash))
-    .map(tss => addPubkeyPositionInScript(tapLeaf.script, tss))
+    .filter((tss) => tss.leafHash.equals(leafHash))
+    .map((tss) => addPubkeyPositionInScript(tapLeaf.script, tss))
     .sort((t1, t2) => t2.positionInScript - t1.positionInScript)
-    .map(t => t.signature);
+    .map((t) => t.signature);
 }
 exports.sortSignatures = sortSignatures;
 function addPubkeyPositionInScript(script, tss) {
@@ -51,7 +55,7 @@ function findTapLeafToFinalize(input, inputIndex, leafHashToFinalize) {
     );
   const tapLeaf = (input.tapLeafScript || [])
     .sort((a, b) => a.controlBlock.length - b.controlBlock.length)
-    .find(leaf =>
+    .find((leaf) =>
       canFinalizeLeaf(leaf, input.tapScriptSig, leafHashToFinalize),
     );
   if (!tapLeaf)
@@ -69,6 +73,6 @@ function canFinalizeLeaf(leaf, tapScriptSig, hash) {
   const whiteListedHash = !hash || hash.equals(leafHash);
   return (
     whiteListedHash &&
-    tapScriptSig.find(tss => tss.leafHash.equals(leafHash)) !== undefined
+    tapScriptSig.find((tss) => tss.leafHash.equals(leafHash)) !== undefined
   );
 }

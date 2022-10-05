@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -44,7 +44,20 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.pubkeyPositionInScript = exports.isP2TR = exports.isP2SH = exports.isP2WSH = exports.isP2WPKH = exports.isP2PKH = exports.isP2PK = exports.isP2MS = exports.classifyScript = exports.scriptWitnessToWitnessStack = exports.witnessStackToScriptWitness = exports.hasSigs = exports.getPayment = void 0;
+exports.pubkeyPositionInScript =
+  exports.isP2TR =
+  exports.isP2SH =
+  exports.isP2WSH =
+  exports.isP2WPKH =
+  exports.isP2PKH =
+  exports.isP2PK =
+  exports.isP2MS =
+  exports.classifyScript =
+  exports.scriptWitnessToWitnessStack =
+  exports.witnessStackToScriptWitness =
+  exports.hasSigs =
+  exports.getPayment =
+    void 0;
 const __1 = require('..');
 const bufferutils_1 = require('../bufferutils');
 const crypto_1 = require('../crypto');
@@ -85,11 +98,11 @@ function hasSigs(neededSigs, partialSig, pubkeys) {
   let sigs;
   if (pubkeys) {
     sigs = pubkeys
-      .map(pkey => {
+      .map((pkey) => {
         const pubkey = compressPubkey(pkey);
-        return partialSig.find(pSig => pSig.pubkey.equals(pubkey));
+        return partialSig.find((pSig) => pSig.pubkey.equals(pubkey));
       })
-      .filter(v => !!v);
+      .filter((v) => !!v);
   } else {
     sigs = partialSig;
   }
@@ -101,17 +114,17 @@ function getSortedSigs(script, partialSig) {
   const p2ms = __1.payments.p2ms({ output: script });
   // for each pubkey in order of p2ms script
   return p2ms.pubkeys
-    .map(pk => {
+    .map((pk) => {
       // filter partialSig array by pubkey being equal
       return (
-        partialSig.filter(ps => {
+        partialSig.filter((ps) => {
           return ps.pubkey.equals(pk);
         })[0] || {}
       ).signature;
       // Any pubkey without a match will return undefined
       // this last filter removes all the undefined items in the array.
     })
-    .filter(v => !!v);
+    .filter((v) => !!v);
 }
 function witnessStackToScriptWitness(witness) {
   let buffer = Buffer.allocUnsafe(0);
@@ -177,7 +190,7 @@ function classifyScript(script) {
 }
 exports.classifyScript = classifyScript;
 function isPaymentFactory(payment) {
-  return script => {
+  return (script) => {
     try {
       payment({ output: script });
       return true;
@@ -194,14 +207,14 @@ exports.isP2WSH = isPaymentFactory(__1.payments.p2wsh);
 exports.isP2SH = isPaymentFactory(__1.payments.p2sh);
 // TODO: use payment factory once in place. For now, let's check
 // if the script starts with OP_1.
-const isP2TR = script => script[0] === ops_1.OPS.OP_1;
+const isP2TR = (script) => script[0] === ops_1.OPS.OP_1;
 exports.isP2TR = isP2TR;
 function pubkeyPositionInScript(pubkey, script) {
   const pubkeyHash = (0, crypto_1.hash160)(pubkey);
   const pubkeyXOnly = pubkey.slice(1, 33); // slice before calling?
   const decompiled = bscript.decompile(script);
   if (decompiled === null) throw new Error('Unknown script error');
-  return decompiled.findIndex(element => {
+  return decompiled.findIndex((element) => {
     if (typeof element === 'number') return false;
     return (
       element.equals(pubkey) ||

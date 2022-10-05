@@ -1,7 +1,7 @@
 'use strict';
 var __importDefault =
   (this && this.__importDefault) ||
-  function(mod) {
+  function (mod) {
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -169,7 +169,7 @@ class PsetGlobal {
         }
         const next = this.xpubs.slice(i + 1);
         return next.some(
-          nextXpub => xpub.extendedKey.compare(nextXpub.extendedKey) === 0,
+          (nextXpub) => xpub.extendedKey.compare(nextXpub.extendedKey) === 0,
         );
       })
     ) {
@@ -182,7 +182,7 @@ class PsetGlobal {
           return false;
         }
         const next = this.scalars.slice(i + 1);
-        return next.some(nextScalar => scalar.compare(nextScalar) === 0);
+        return next.some((nextScalar) => scalar.compare(nextScalar) === 0);
       })
     ) {
       throw new GlobalDuplicateFieldError('scalar');
@@ -191,13 +191,13 @@ class PsetGlobal {
   }
   toBuffer() {
     const keyPairs = this.getKeyPairs();
-    const kpBuf = keyPairs.map(kp => kp.toBuffer());
+    const kpBuf = keyPairs.map((kp) => kp.toBuffer());
     let size = 0;
-    kpBuf.forEach(buf => {
+    kpBuf.forEach((buf) => {
       size += buf.length;
     });
     const w = bufferutils_1.BufferWriter.withCapacity(size);
-    kpBuf.forEach(buf => w.writeSlice(buf));
+    kpBuf.forEach((buf) => w.writeSlice(buf));
     return w.buffer;
   }
   getKeyPairs() {
@@ -255,7 +255,7 @@ class PsetGlobal {
       keyPairs.push(new key_pair_1.KeyPair(txModifiableKey, txModifiable));
     }
     if (this.scalars && this.scalars.length > 0) {
-      this.scalars.forEach(scalar => {
+      this.scalars.forEach((scalar) => {
         const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
           fields_1.GlobalProprietaryTypes.SCALAR,
           scalar,
@@ -284,7 +284,7 @@ class PsetGlobal {
     const versionKey = new key_pair_1.Key(fields_1.GlobalTypes.VERSION);
     keyPairs.push(new key_pair_1.KeyPair(versionKey, version));
     if (this.proprietaryData && this.proprietaryData.length > 0) {
-      this.proprietaryData.forEach(data => {
+      this.proprietaryData.forEach((data) => {
         const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,

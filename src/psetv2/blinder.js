@@ -28,7 +28,7 @@ class Blinder {
       throw new Error('missing outputs blinding args');
     }
     if (issuanceBlindingArgs && issuanceBlindingArgs.length > 0) {
-      issuanceBlindingArgs.forEach(arg =>
+      issuanceBlindingArgs.forEach((arg) =>
         this.validateIssuanceBlindingArgs(arg),
       );
     }
@@ -64,15 +64,12 @@ class Blinder {
           pset.inputs[index].issuanceValueCommitment = issuanceValueCommitment;
           pset.inputs[index].issuanceValueRangeproof = issuanceValueRangeProof;
           pset.inputs[index].issuanceBlindValueProof = issuanceValueBlindProof;
-          pset.inputs[
-            index
-          ].issuanceInflationKeysCommitment = issuanceTokenCommitment;
-          pset.inputs[
-            index
-          ].issuanceInflationKeysRangeproof = issuanceTokenRangeProof;
-          pset.inputs[
-            index
-          ].issuanceBlindInflationKeysProof = issuanceTokenBlindProof;
+          pset.inputs[index].issuanceInflationKeysCommitment =
+            issuanceTokenCommitment;
+          pset.inputs[index].issuanceInflationKeysRangeproof =
+            issuanceTokenRangeProof;
+          pset.inputs[index].issuanceBlindInflationKeysProof =
+            issuanceTokenBlindProof;
         },
       );
     }
@@ -87,11 +84,8 @@ class Blinder {
         nonceCommitment,
         nonce,
       } = sortedOutputBlindingArgs[i];
-      let {
-        valueCommitment,
-        valueRangeProof,
-        valueBlindProof,
-      } = sortedOutputBlindingArgs[i];
+      let { valueCommitment, valueRangeProof, valueBlindProof } =
+        sortedOutputBlindingArgs[i];
       const targetOutput = pset.outputs[index];
       const value = targetOutput.value.toString(10);
       if (lastBlinder && i === sortedOutputBlindingArgs.length - 1) {
@@ -407,8 +401,8 @@ class Blinder {
         }
       }
     });
-    const inputAssets = inAssetsAndBlinders.map(v => v.asset);
-    const inputAssetBlinders = inAssetsAndBlinders.map(v => v.assetBlinder);
+    const inputAssets = inAssetsAndBlinders.map((v) => v.asset);
+    const inputAssetBlinders = inAssetsAndBlinders.map((v) => v.assetBlinder);
     for (let i = 0; i < outputBlindingArgs.length; i++) {
       const {
         index,

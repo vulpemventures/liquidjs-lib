@@ -1,7 +1,7 @@
 'use strict';
 var __importDefault =
   (this && this.__importDefault) ||
-  function(mod) {
+  function (mod) {
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -94,12 +94,12 @@ class Creator {
     globals.unknowns = [];
     const pset = new pset_1.Pset(globals);
     if (args && args.inputs)
-      args.inputs.forEach(input => {
+      args.inputs.forEach((input) => {
         input.validate();
         pset.addInput(input.toPartialInput());
       });
     if (args && args.outputs)
-      args.outputs.forEach(output => {
+      args.outputs.forEach((output) => {
         output.validate();
         pset.addOutput(output.toPartialOutput());
       });

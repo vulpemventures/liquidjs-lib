@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -44,7 +44,13 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.validateAddReissuanceArgs = exports.validateAddIssuanceArgs = exports.toBlindingData = exports.computeOutputsBlindingData = exports.witnessStackToScriptWitness = exports.Psbt = void 0;
+exports.validateAddReissuanceArgs =
+  exports.validateAddIssuanceArgs =
+  exports.toBlindingData =
+  exports.computeOutputsBlindingData =
+  exports.witnessStackToScriptWitness =
+  exports.Psbt =
+    void 0;
 const confidential = __importStar(require('./confidential'));
 const varuint = __importStar(require('bip174-liquid/src/lib/converter/varint'));
 const address_1 = require('./address');
@@ -180,14 +186,14 @@ class Psbt {
     this.setLocktime(locktime);
   }
   get txInputs() {
-    return this.__CACHE.__TX.ins.map(input => ({
+    return this.__CACHE.__TX.ins.map((input) => ({
       hash: (0, bufferutils_2.cloneBuffer)(input.hash),
       index: input.index,
       sequence: input.sequence,
     }));
   }
   get txOutputs() {
-    return this.__CACHE.__TX.outs.map(output => {
+    return this.__CACHE.__TX.outs.map((output) => {
       let address;
       try {
         address = (0, address_2.fromOutputScript)(
@@ -202,7 +208,7 @@ class Psbt {
     });
   }
   combine(...those) {
-    this.data.combine(...those.map(o => o.data));
+    this.data.combine(...those.map((o) => o.data));
     return this;
   }
   clone() {
@@ -243,7 +249,7 @@ class Psbt {
     return this;
   }
   addInputs(inputDatas) {
-    inputDatas.forEach(inputData => this.addInput(inputData));
+    inputDatas.forEach((inputData) => this.addInput(inputData));
     return this;
   }
   addInput(inputData) {
@@ -343,8 +349,9 @@ class Psbt {
       inputData.nonWitnessUtxo = args.nonWitnessUtxo;
     }
     this.addInput(inputData);
-    const satsToReissue = value_1.ElementsValue.fromNumber(args.assetSats)
-      .bytes;
+    const satsToReissue = value_1.ElementsValue.fromNumber(
+      args.assetSats,
+    ).bytes;
     // add the issuance object to input
     this.__CACHE.__TX.ins[inputIndex].issuance = {
       assetBlindingNonce: args.prevoutBlinder,
@@ -383,7 +390,7 @@ class Psbt {
     return this;
   }
   addOutputs(outputDatas) {
-    outputDatas.forEach(outputData => this.addOutput(outputData));
+    outputDatas.forEach((outputData) => this.addOutput(outputData));
     return this;
   }
   addOutput(outputData) {
@@ -436,7 +443,7 @@ class Psbt {
   }
   finalizeAllInputs() {
     (0, utils_1.checkForInput)(this.data.inputs, 0); // making sure we have at least one
-    range(this.data.inputs.length).forEach(idx => this.finalizeInput(idx));
+    range(this.data.inputs.length).forEach((idx) => this.finalizeInput(idx));
     return this;
   }
   finalizeInput(inputIndex, finalScriptsFunc = getFinalScripts) {
@@ -525,7 +532,7 @@ class Psbt {
   }
   validateSignaturesOfAllInputs(validator) {
     (0, utils_1.checkForInput)(this.data.inputs, 0); // making sure we have at least one
-    const results = range(this.data.inputs.length).map(idx =>
+    const results = range(this.data.inputs.length).map((idx) =>
       this.validateSignaturesOfInput(idx, validator),
     );
     return results.reduce((final, res) => res === true && final, true);
@@ -538,7 +545,7 @@ class Psbt {
     if (typeof validator !== 'function')
       throw new Error('Need validator function to validate signatures');
     const mySigs = pubkey
-      ? partialSig.filter(sig => sig.pubkey.equals(pubkey))
+      ? partialSig.filter((sig) => sig.pubkey.equals(pubkey))
       : partialSig;
     if (mySigs.length < 1) throw new Error('No signatures for this pubkey');
     const results = [];
@@ -562,7 +569,7 @@ class Psbt {
       checkScriptForPubkey(pSig.pubkey, script, 'verify');
       results.push(validator(pSig.pubkey, hash, sig.signature));
     }
-    return results.every(res => res === true);
+    return results.every((res) => res === true);
   }
   signAllInputsHD(
     hdKeyPair,
@@ -580,7 +587,7 @@ class Psbt {
         results.push(false);
       }
     }
-    if (results.every(v => v === false)) {
+    if (results.every((v) => v === false)) {
       throw new Error('No inputs were signed');
     }
     return this;
@@ -608,7 +615,7 @@ class Psbt {
         );
       }
       return Promise.all(promises).then(() => {
-        if (results.every(v => v === false)) {
+        if (results.every((v) => v === false)) {
           return reject(new Error('No inputs were signed'));
         }
         resolve();
@@ -624,7 +631,9 @@ class Psbt {
       throw new Error('Need HDSigner to sign input');
     }
     const signers = getSignersFromHD(inputIndex, this.data.inputs, hdKeyPair);
-    signers.forEach(signer => this.signInput(inputIndex, signer, sighashTypes));
+    signers.forEach((signer) =>
+      this.signInput(inputIndex, signer, sighashTypes),
+    );
     return this;
   }
   signInputHDAsync(
@@ -637,7 +646,7 @@ class Psbt {
         return reject(new Error('Need HDSigner to sign input'));
       }
       const signers = getSignersFromHD(inputIndex, this.data.inputs, hdKeyPair);
-      const promises = signers.map(signer =>
+      const promises = signers.map((signer) =>
         this.signInputAsync(inputIndex, signer, sighashTypes),
       );
       return Promise.all(promises)
@@ -665,7 +674,7 @@ class Psbt {
         results.push(false);
       }
     }
-    if (results.every(v => v === false)) {
+    if (results.every((v) => v === false)) {
       throw new Error('No inputs were signed');
     }
     return this;
@@ -695,7 +704,7 @@ class Psbt {
         );
       }
       return Promise.all(promises).then(() => {
-        if (results.every(v => v === false)) {
+        if (results.every((v) => v === false)) {
           return reject(new Error('No inputs were signed'));
         }
         resolve();
@@ -740,7 +749,7 @@ class Psbt {
         this.__CACHE,
         sighashTypes,
       );
-      return Promise.resolve(keyPair.sign(hash)).then(signature => {
+      return Promise.resolve(keyPair.sign(hash)).then((signature) => {
         const partialSig = [
           {
             pubkey: keyPair.publicKey,
@@ -834,7 +843,7 @@ class Psbt {
     return this;
   }
   static ECCKeysGenerator(ecc) {
-    return opts => {
+    return (opts) => {
       const privateKey = randomBytes(opts);
       const publicKey = (0, ecpair_1.ECPairFactory)(ecc).fromPrivateKey(
         privateKey,
@@ -863,10 +872,10 @@ class Psbt {
     opts,
   ) {
     const blindingPrivKeysArgs = range(this.__CACHE.__TX.ins.length).map(
-      inputIndex => inputsBlindingData.get(inputIndex),
+      (inputIndex) => inputsBlindingData.get(inputIndex),
     );
     const blindingPrivKeysIssuancesArgs = issuancesBlindingKeys
-      ? range(this.__CACHE.__TX.ins.length).map(inputIndex =>
+      ? range(this.__CACHE.__TX.ins.length).map((inputIndex) =>
           issuancesBlindingKeys.get(inputIndex),
         )
       : [];
@@ -907,12 +916,12 @@ class Psbt {
       // check if the input is available for issuance.
     } else {
       // verify if there is at least one input available.
-      if (this.__CACHE.__TX.ins.filter(i => !i.issuance).length === 0)
+      if (this.__CACHE.__TX.ins.filter((i) => !i.issuance).length === 0)
         throw new Error(
           'transaction needs at least one input without issuance data.',
         );
       // search and extract the input index.
-      inputIndex = this.__CACHE.__TX.ins.findIndex(i => !i.issuance);
+      inputIndex = this.__CACHE.__TX.ins.findIndex((i) => !i.issuance);
     }
     if (this.__CACHE.__TX.ins[inputIndex].issuance)
       throw new Error(`The input ${inputIndex} already has issuance data.`);
@@ -1025,12 +1034,10 @@ class Psbt {
           0,
           52,
         );
-        this.__CACHE.__TX.ins[
-          inputIndex
-        ].issuanceRangeProof = issuanceRangeProof;
-        this.__CACHE.__TX.ins[
-          inputIndex
-        ].issuance.assetAmount = valueCommitment;
+        this.__CACHE.__TX.ins[inputIndex].issuanceRangeProof =
+          issuanceRangeProof;
+        this.__CACHE.__TX.ins[inputIndex].issuance.assetAmount =
+          valueCommitment;
         if (
           !(0, issuance_1.isReissuance)(input.issuance) &&
           (0, issuance_1.hasTokenAmount)(input.issuance)
@@ -1063,12 +1070,10 @@ class Psbt {
             0,
             52,
           );
-          this.__CACHE.__TX.ins[
-            inputIndex
-          ].inflationRangeProof = inflationRangeProof;
-          this.__CACHE.__TX.ins[
-            inputIndex
-          ].issuance.tokenAmount = tokenValueCommitment;
+          this.__CACHE.__TX.ins[inputIndex].inflationRangeProof =
+            inflationRangeProof;
+          this.__CACHE.__TX.ins[inputIndex].issuance.tokenAmount =
+            tokenValueCommitment;
         }
       }
       inputIndex++;
@@ -1083,7 +1088,7 @@ class Psbt {
     opts,
   ) {
     // get data (satoshis & asset) outputs to blind
-    const outputsData = outputIndexes.map(index => {
+    const outputsData = outputIndexes.map((index) => {
       const output = this.__CACHE.__TX.outs[index];
       // prevent blinding the fee output
       if (output.script.length === 0)
@@ -1151,7 +1156,7 @@ class Psbt {
     outputIndexes,
     opts,
   ) {
-    if (this.data.inputs.some(v => !v.nonWitnessUtxo && !v.witnessUtxo))
+    if (this.data.inputs.some((v) => !v.nonWitnessUtxo && !v.witnessUtxo))
       throw new Error(
         'All inputs must contain a non witness utxo or a witness utxo',
       );
@@ -1211,7 +1216,7 @@ exports.Psbt = Psbt;
  * It takes the "transaction buffer" portion of the psbt buffer and returns a
  * Transaction (From the bip174 library) interface.
  */
-const transactionFromBuffer = buffer => new PsbtTransaction(buffer);
+const transactionFromBuffer = (buffer) => new PsbtTransaction(buffer);
 /**
  * This class implements the Transaction interface from bip174 library.
  * It contains a liquidjs-lib Transaction object.
@@ -1310,11 +1315,11 @@ function hasSigs(neededSigs, partialSig, pubkeys) {
   let sigs;
   if (pubkeys) {
     sigs = pubkeys
-      .map(pkey => {
+      .map((pkey) => {
         const pubkey = compressPubkey(pkey);
-        return partialSig.find(pSig => pSig.pubkey.equals(pubkey));
+        return partialSig.find((pSig) => pSig.pubkey.equals(pubkey));
       })
-      .filter(v => !!v);
+      .filter((v) => !!v);
   } else {
     sigs = partialSig;
   }
@@ -1325,7 +1330,7 @@ function isFinalized(input) {
   return !!input.finalScriptSig || !!input.finalScriptWitness;
 }
 function isPaymentFactory(payment) {
-  return script => {
+  return (script) => {
     try {
       payment({ output: script });
       return true;
@@ -1341,7 +1346,7 @@ const isP2WPKH = isPaymentFactory(payments.p2wpkh);
 const isP2WSHScript = isPaymentFactory(payments.p2wsh);
 const isP2SHScript = isPaymentFactory(payments.p2sh);
 function bip32DerivationIsMine(root) {
-  return d => {
+  return (d) => {
     if (!d.masterFingerprint.equals(root.fingerprint)) return false;
     if (!root.derivePath(d.path).publicKey.equals(d.pubkey)) return false;
     return true;
@@ -1372,7 +1377,7 @@ function checkFees(psbt, cache, opts) {
   }
 }
 function checkInputsForPartialSig(inputs, action) {
-  inputs.forEach(input => {
+  inputs.forEach((input) => {
     let throws = false;
     let pSigs = [];
     if ((input.partialSig || []).length === 0) {
@@ -1381,7 +1386,7 @@ function checkInputsForPartialSig(inputs, action) {
     } else {
       pSigs = input.partialSig;
     }
-    pSigs.forEach(pSig => {
+    pSigs.forEach((pSig) => {
       const { hashType } = bscript.signature.decode(pSig.signature);
       const whitelist = [];
       const isAnyoneCanPay =
@@ -1409,7 +1414,7 @@ function checkInputsForPartialSig(inputs, action) {
 function checkPartialSigSighashes(input) {
   if (input.sighashType === undefined || !input.partialSig) return;
   const { partialSig, sighashType } = input;
-  partialSig.forEach(pSig => {
+  partialSig.forEach((pSig) => {
     const { hashType } = bscript.signature.decode(pSig.signature);
     if (sighashType !== hashType) {
       throw new Error('Signature sighash does not match input sighash type');
@@ -1425,7 +1430,7 @@ function checkScriptForPubkey(pubkey, script, action) {
 }
 function checkTxEmpty(tx) {
   const isEmpty = tx.ins.every(
-    input => input.script && input.script.length === 0,
+    (input) => input.script && input.script.length === 0,
   );
   if (!isEmpty) {
     throw new Error('Format Error: Transaction ScriptSigs are not empty');
@@ -1435,7 +1440,7 @@ function checkTxEmpty(tx) {
   // }
 }
 function checkTxForDupeIns(tx, cache) {
-  tx.ins.forEach(input => {
+  tx.ins.forEach((input) => {
     checkTxInputCache(cache, input);
   });
 }
@@ -1605,8 +1610,9 @@ function getHashForSig(inputIndex, input, cache, forValidate, sighashTypes) {
     );
   } else if (isP2WPKH(meaningfulScript)) {
     // P2WPKH uses the P2PKH template for prevoutScript when signing
-    const signingScript = payments.p2pkh({ hash: meaningfulScript.slice(2) })
-      .output;
+    const signingScript = payments.p2pkh({
+      hash: meaningfulScript.slice(2),
+    }).output;
     hash = unsignedTx.hashForWitnessV0(
       inputIndex,
       signingScript,
@@ -1687,10 +1693,10 @@ function getPsigsFromInputFinalScripts(input) {
     : bscript.decompile(input.finalScriptWitness) || [];
   return scriptItems
     .concat(witnessItems)
-    .filter(item => {
+    .filter((item) => {
       return Buffer.isBuffer(item) && bscript.isCanonicalScriptSignature(item);
     })
-    .map(sig => ({ signature: sig }));
+    .map((sig) => ({ signature: sig }));
 }
 function getScriptFromInput(inputIndex, input, cache) {
   const unsignedTx = cache.__TX;
@@ -1730,20 +1736,20 @@ function getSignersFromHD(inputIndex, inputs, hdKeyPair) {
     throw new Error('Need bip32Derivation to sign with HD');
   }
   const myDerivations = input.bip32Derivation
-    .map(bipDv => {
+    .map((bipDv) => {
       if (bipDv.masterFingerprint.equals(hdKeyPair.fingerprint)) {
         return bipDv;
       } else {
         return;
       }
     })
-    .filter(v => !!v);
+    .filter((v) => !!v);
   if (myDerivations.length === 0) {
     throw new Error(
       'Need one bip32Derivation masterFingerprint to match the HDSigner fingerprint',
     );
   }
-  const signers = myDerivations.map(bipDv => {
+  const signers = myDerivations.map((bipDv) => {
     const node = hdKeyPair.derivePath(bipDv.path);
     if (!bipDv.pubkey.equals(node.publicKey)) {
       throw new Error('pubkey did not match bip32Derivation');
@@ -1756,17 +1762,17 @@ function getSortedSigs(script, partialSig) {
   const p2ms = payments.p2ms({ output: script });
   // for each pubkey in order of p2ms script
   return p2ms.pubkeys
-    .map(pk => {
+    .map((pk) => {
       // filter partialSig array by pubkey being equal
       return (
-        partialSig.filter(ps => {
+        partialSig.filter((ps) => {
           return ps.pubkey.equals(pk);
         })[0] || {}
       ).signature;
       // Any pubkey without a match will return undefined
       // this last filter removes all the undefined items in the array.
     })
-    .filter(v => !!v);
+    .filter((v) => !!v);
 }
 function scriptWitnessToWitnessStack(buffer) {
   let offset = 0;
@@ -1867,7 +1873,7 @@ function inputFinalizeGetAmts(inputs, tx, cache, mustFinalize) {
       );
     }
   });
-  if (tx.ins.some(x => x.witness.length !== 0)) {
+  if (tx.ins.some((x) => x.witness.length !== 0)) {
     tx.flag = 1;
   }
   const bytes = tx.virtualSize();
@@ -2001,7 +2007,7 @@ function pubkeyInScript(pubkey, script) {
   const pubkeyHash = (0, crypto_1.hash160)(pubkey);
   const decompiled = bscript.decompile(script);
   if (decompiled === null) throw new Error('Unknown script error');
-  return decompiled.some(element => {
+  return decompiled.some((element) => {
     if (typeof element === 'number') return false;
     return element.equals(pubkey) || element.equals(pubkeyHash);
   });
@@ -2038,9 +2044,8 @@ async function computeOutputsBlindingData(inputsBlindingData, outputsData) {
     };
     outputsBlindingData.push(blindingData);
   });
-  const [lastOutputValue, lastOutputAsset] = outputsData[
-    outputsData.length - 1
-  ];
+  const [lastOutputValue, lastOutputAsset] =
+    outputsData[outputsData.length - 1];
   const finalBlindingData = {
     value: lastOutputValue,
     asset: lastOutputAsset,

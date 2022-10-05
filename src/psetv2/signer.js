@@ -23,7 +23,7 @@ class Signer {
     if ((input.sighashType & 0x1f) === transaction_1.Transaction.SIGHASH_ALL) {
       if (
         this.pset.outputs.some(
-          out => out.needsBlinding() && !out.isFullyBlinded(),
+          (out) => out.needsBlinding() && !out.isFullyBlinded(),
         )
       ) {
         throw new Error('Pset must be fully blinded');
@@ -105,7 +105,7 @@ class Signer {
       u.addInTapKeySig(inIndex, tapKeySig, genesisBlockHash, validator);
     }
     if (!!tapScriptSigs) {
-      tapScriptSigs.forEach(tapScriptSig => {
+      tapScriptSigs.forEach((tapScriptSig) => {
         u.addInTapScriptSig(inIndex, tapScriptSig, genesisBlockHash, validator);
       });
     }
