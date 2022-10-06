@@ -81,7 +81,7 @@ class Updater {
         if (previousOutput.rangeProof)
           this.addInUtxoRangeProof(inputIndex, previousOutput.rangeProof);
       }
-      if (input.sighashType)
+      if (input.sighashType !== undefined)
         this.addInSighashType(inputIndex, input.sighashType);
       if (input.tapInternalKey)
         this.addInTapInternalKey(inputIndex, input.tapInternalKey);
@@ -200,7 +200,7 @@ class Updater {
     if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
-    if (sighashType <= 0) {
+    if (sighashType < 0) {
       throw new Error('Invalid sighash type');
     }
     const pset = this.pset.copy();

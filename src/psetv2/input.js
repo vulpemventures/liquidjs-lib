@@ -113,7 +113,7 @@ class PsetInput {
           input.partialSigs.push({ pubkey: pk, signature });
           break;
         case fields_1.InputTypes.SIGHASH_TYPE:
-          if (input.sighashType > 0) {
+          if (input.sighashType !== undefined) {
             throw new InputDuplicateFieldError('sighash type');
           }
           if (kp.value.length !== 4) {
@@ -612,6 +612,9 @@ class PsetInput {
         'Missing input issuance inflation keys commitment or blind proof',
       );
     }
+    if (this.sighashType !== undefined && this.sighashType < 0) {
+      throw new Error('Invalid sighash type');
+    }
     return this;
   }
   hasIssuance() {
@@ -713,7 +716,7 @@ class PsetInput {
         keyPairs.push(new key_pair_1.KeyPair(key, signature));
       });
     }
-    if (this.sighashType > 0) {
+    if (this.sighashType !== undefined) {
       const key = new key_pair_1.Key(fields_1.InputTypes.SIGHASH_TYPE);
       const value = Buffer.allocUnsafe(4);
       value.writeUInt32LE(this.sighashType);
