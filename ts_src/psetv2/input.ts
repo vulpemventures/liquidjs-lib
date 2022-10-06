@@ -83,7 +83,7 @@ export class PsetInput {
           input.partialSigs!.push({ pubkey: pk, signature });
           break;
         case InputTypes.SIGHASH_TYPE:
-          if (input.sighashType! > 0) {
+          if (input.sighashType !== undefined) {
             throw new InputDuplicateFieldError('sighash type');
           }
           if (kp.value.length !== 4) {
@@ -632,6 +632,10 @@ export class PsetInput {
       );
     }
 
+    if (this.sighashType !== undefined && this.sighashType < 0) {
+      throw new Error('Invalid sighash type');
+    }
+
     return this;
   }
 
@@ -752,7 +756,7 @@ export class PsetInput {
       });
     }
 
-    if (this.sighashType! > 0) {
+    if (this.sighashType !== undefined) {
       const key = new Key(InputTypes.SIGHASH_TYPE);
       const value = Buffer.allocUnsafe(4);
       value.writeUInt32LE(this.sighashType!);

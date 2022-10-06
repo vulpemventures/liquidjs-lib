@@ -48,7 +48,7 @@ export class Finalizer {
     if (input.isFinalized()) {
       return this;
     }
-    if (input.sighashType! <= 0) {
+    if (input.sighashType === undefined) {
       throw new Error('Missing input sighash type');
     }
     if (!input.getUtxo()) {
