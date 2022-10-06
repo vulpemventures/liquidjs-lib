@@ -83,10 +83,11 @@ class CreatorOutput {
 exports.CreatorOutput = CreatorOutput;
 class Creator {
   static newPset(args) {
+    const locktime = args ? args.locktime : undefined;
     const txModifiable = new bitset_1.default(0);
     txModifiable.set(0);
     txModifiable.set(1);
-    const globals = new globals_1.PsetGlobal(2, 0, 0, 2);
+    const globals = new globals_1.PsetGlobal(2, 0, 0, 2, locktime);
     globals.txModifiable = txModifiable;
     globals.xpubs = [];
     globals.scalars = [];

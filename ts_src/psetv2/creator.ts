@@ -106,11 +106,12 @@ export class Creator {
     outputs?: CreatorOutput[];
     locktime?: number;
   }): Pset {
+    const locktime = args ? args.locktime : undefined;
     const txModifiable = new BitSet(0);
     txModifiable.set(0);
     txModifiable.set(1);
 
-    const globals = new PsetGlobal(2, 0, 0, 2);
+    const globals = new PsetGlobal(2, 0, 0, 2, locktime);
     globals.txModifiable = txModifiable;
     globals.xpubs = [];
     globals.scalars = [];

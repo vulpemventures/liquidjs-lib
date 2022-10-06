@@ -57,6 +57,8 @@ export declare class Updater {
     addInIssuance(inIndex: number, args: IssuanceOpts): this;
     addInReissuance(inIndex: number, args: ReissuanceOpts): this;
     addInPartialSignature(inIndex: number, ps: PartialSig, validator: ValidateSigFunction): this;
+    addInTimeLocktime(inIndex: number, locktime: number): this;
+    addInHeightLocktime(inIndex: number, locktime: number): this;
     addInTapKeySig(inIndex: number, sig: Buffer, genesisBlockHash: Buffer, validator: ValidateSigFunction): this;
     addInTapScriptSig(inIndex: number, sig: TapScriptSig, genesisBlockHash: Buffer, validator: ValidateSigFunction): this;
     addInTapLeafScript(inIndex: number, tapLeafScript: TapLeafScript): this;
