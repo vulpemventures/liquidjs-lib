@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -57,7 +57,7 @@ class Updater {
   }
   addInputs(ins) {
     const pset = this.pset.copy();
-    ins.forEach(input => {
+    ins.forEach((input) => {
       const creatorInput = new creator_1.CreatorInput(
         input.txid,
         input.txIndex,
@@ -102,7 +102,7 @@ class Updater {
   }
   addOutputs(outs) {
     const pset = this.pset.copy();
-    outs.forEach(output => {
+    outs.forEach((output) => {
       const creatorOutput = new creator_1.CreatorOutput(
         output.asset,
         output.amount,
@@ -256,8 +256,9 @@ class Updater {
         (0, address_1.isConfidential)(args.assetAddress)
       ) {
         blinderIndex = inIndex;
-        blindingPublicKey = (0, address_1.fromConfidential)(args.assetAddress)
-          .blindingKey;
+        blindingPublicKey = (0, address_1.fromConfidential)(
+          args.assetAddress,
+        ).blindingKey;
       }
       const output = new creator_1.CreatorOutput(
         issuedAsset,
@@ -280,8 +281,9 @@ class Updater {
         (0, address_1.isConfidential)(args.tokenAddress)
       ) {
         blinderIndex = inIndex;
-        blindingPublicKey = (0, address_1.fromConfidential)(args.tokenAddress)
-          .blindingKey;
+        blindingPublicKey = (0, address_1.fromConfidential)(
+          args.tokenAddress,
+        ).blindingKey;
       }
       const output = new creator_1.CreatorOutput(
         reissuanceToken,
@@ -766,7 +768,7 @@ function validateAddInReissuanceArgs(args) {
   }
 }
 function matchAddressesType(addrA, addrB) {
-  if (!addrA || addrA.length === 0 || (!addrB || addrB.length === 0)) {
+  if (!addrA || addrA.length === 0 || !addrB || addrB.length === 0) {
     return true;
   }
   const netA = (0, address_1.getNetwork)(addrA);

@@ -105,7 +105,8 @@ describe('Issuance', () => {
     });
 
     it('should create a valid Issuance object with an issuance contract', () => {
-      const contract = fixtureWithContract.contract as issuance.IssuanceContract;
+      const contract =
+        fixtureWithContract.contract as issuance.IssuanceContract;
       const iss: issuance.Issuance = issuance.newIssuance(
         issuance.amountWithPrecisionToSatoshis(
           fixtureWithContract.assetAmount,
@@ -308,9 +309,7 @@ describe('Issuance', () => {
 
     describe('contract hash calculation', () => {
       for (const contractFixture of contractFixtures) {
-        it(`should calculate the correct contract hash for ${
-          contractFixture.contractJSON.name
-        }`, () => {
+        it(`should calculate the correct contract hash for ${contractFixture.contractJSON.name}`, () => {
           const computed = issuance.hashContract(contractFixture.contractJSON);
           assert.strictEqual(
             computed.toString('hex'),

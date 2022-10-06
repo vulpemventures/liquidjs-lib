@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -44,12 +44,24 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.signature = exports.number = exports.isCanonicalScriptSignature = exports.isDefinedHashType = exports.isCanonicalPubKey = exports.toStack = exports.fromASM = exports.toASM = exports.decompile = exports.compile = exports.isPushOnly = exports.OPS = void 0;
+exports.signature =
+  exports.number =
+  exports.isCanonicalScriptSignature =
+  exports.isDefinedHashType =
+  exports.isCanonicalPubKey =
+  exports.toStack =
+  exports.fromASM =
+  exports.toASM =
+  exports.decompile =
+  exports.compile =
+  exports.isPushOnly =
+  exports.OPS =
+    void 0;
 const bip66 = __importStar(require('./bip66'));
 const ops_1 = require('./ops');
 Object.defineProperty(exports, 'OPS', {
   enumerable: true,
-  get: function() {
+  get: function () {
     return ops_1.OPS;
   },
 });
@@ -107,7 +119,7 @@ function compile(chunks) {
   }, 0.0);
   const buffer = Buffer.allocUnsafe(bufferSize);
   let offset = 0;
-  chunks.forEach(chunk => {
+  chunks.forEach((chunk) => {
     // data chunk
     if (singleChunkIsBuffer(chunk)) {
       // adhere to BIP62.3, minimal push policy
@@ -169,7 +181,7 @@ function toASM(chunks) {
     chunks = decompile(chunks);
   }
   return chunks
-    .map(chunk => {
+    .map((chunk) => {
       // data?
       if (singleChunkIsBuffer(chunk)) {
         const op = asMinimalOP(chunk);
@@ -185,7 +197,7 @@ exports.toASM = toASM;
 function fromASM(asm) {
   typeforce(types.String, asm);
   return compile(
-    asm.split(' ').map(chunkStr => {
+    asm.split(' ').map((chunkStr) => {
       // opcode?
       if (ops_1.OPS[chunkStr] !== undefined) return ops_1.OPS[chunkStr];
       typeforce(types.Hex, chunkStr);
@@ -198,7 +210,7 @@ exports.fromASM = fromASM;
 function toStack(chunks) {
   chunks = decompile(chunks);
   typeforce(isPushOnly, chunks);
-  return chunks.map(op => {
+  return chunks.map((op) => {
     if (singleChunkIsBuffer(op)) return op;
     if (op === ops_1.OPS.OP_0) return Buffer.allocUnsafe(0);
     return scriptNumber.encode(op - OP_INT_BASE);

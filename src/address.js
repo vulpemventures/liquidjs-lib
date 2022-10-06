@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -44,7 +44,23 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.getScriptType = exports.isConfidential = exports.decodeType = exports.getNetwork = exports.toOutputScript = exports.fromOutputScript = exports.toConfidential = exports.toBlech32 = exports.toBech32 = exports.toBase58Check = exports.fromConfidential = exports.fromBlech32 = exports.fromBech32 = exports.fromBase58Check = exports.ScriptType = exports.AddressType = void 0;
+exports.getScriptType =
+  exports.isConfidential =
+  exports.decodeType =
+  exports.getNetwork =
+  exports.toOutputScript =
+  exports.fromOutputScript =
+  exports.toConfidential =
+  exports.toBlech32 =
+  exports.toBech32 =
+  exports.toBase58Check =
+  exports.fromConfidential =
+  exports.fromBlech32 =
+  exports.fromBech32 =
+  exports.fromBase58Check =
+  exports.ScriptType =
+  exports.AddressType =
+    void 0;
 const networks = __importStar(require('./networks'));
 const payments = __importStar(require('./payments'));
 const bscript = __importStar(require('./script'));
@@ -78,7 +94,7 @@ function _toFutureSegwitAddress(output, network) {
 }
 // negative value for confidential types
 var AddressType;
-(function(AddressType) {
+(function (AddressType) {
   AddressType[(AddressType['P2Pkh'] = 0)] = 'P2Pkh';
   AddressType[(AddressType['P2Sh'] = 1)] = 'P2Sh';
   AddressType[(AddressType['P2Wpkh'] = 2)] = 'P2Wpkh';
@@ -89,7 +105,7 @@ var AddressType;
   AddressType[(AddressType['ConfidentialP2Wsh'] = 7)] = 'ConfidentialP2Wsh';
 })((AddressType = exports.AddressType || (exports.AddressType = {})));
 var ScriptType;
-(function(ScriptType) {
+(function (ScriptType) {
   ScriptType[(ScriptType['P2Pkh'] = 0)] = 'P2Pkh';
   ScriptType[(ScriptType['P2Sh'] = 1)] = 'P2Sh';
   ScriptType[(ScriptType['P2Wpkh'] = 2)] = 'P2Wpkh';
@@ -380,9 +396,7 @@ function decodeBech32(address) {
 }
 function UnkownPrefixError(prefix, network) {
   return new Error(
-    `unknown address prefix (${prefix}), need ${network.pubKeyHash} or ${
-      network.scriptHash
-    }`,
+    `unknown address prefix (${prefix}), need ${network.pubKeyHash} or ${network.scriptHash}`,
   );
 }
 function decodeBase58(address, network) {

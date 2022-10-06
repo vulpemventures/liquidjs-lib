@@ -552,7 +552,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const inputData = await getInputData(alice1.payment, true, 'noredeem');
     const blindingPrivkeys = alice1.blindingKeys;
 
-    const issuanceBlindingKeys = ['', ''].map(_ =>
+    const issuanceBlindingKeys = ['', ''].map((_) =>
       ECPair.makeRandom({ network: regtest }),
     );
 

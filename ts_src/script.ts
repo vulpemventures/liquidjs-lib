@@ -70,7 +70,7 @@ export function compile(chunks: Buffer | Stack): Buffer {
   const buffer = Buffer.allocUnsafe(bufferSize);
   let offset = 0;
 
-  chunks.forEach(chunk => {
+  chunks.forEach((chunk) => {
     // data chunk
     if (singleChunkIsBuffer(chunk)) {
       // adhere to BIP62.3, minimal push policy
@@ -149,7 +149,7 @@ export function toASM(chunks: Buffer | Array<number | Buffer>): string {
   }
 
   return chunks
-    .map(chunk => {
+    .map((chunk) => {
       // data?
       if (singleChunkIsBuffer(chunk)) {
         const op = asMinimalOP(chunk);
@@ -167,7 +167,7 @@ export function fromASM(asm: string): Buffer {
   typeforce(types.String, asm);
 
   return compile(
-    asm.split(' ').map(chunkStr => {
+    asm.split(' ').map((chunkStr) => {
       // opcode?
       if (OPS[chunkStr] !== undefined) return OPS[chunkStr];
       typeforce(types.Hex, chunkStr);
@@ -182,7 +182,7 @@ export function toStack(chunks: Buffer | Array<number | Buffer>): Buffer[] {
   chunks = decompile(chunks) as Stack;
   typeforce(isPushOnly, chunks);
 
-  return chunks.map(op => {
+  return chunks.map((op) => {
     if (singleChunkIsBuffer(op)) return op;
     if (op === OPS.OP_0) return Buffer.allocUnsafe(0);
 

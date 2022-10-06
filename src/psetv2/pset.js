@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -107,8 +107,8 @@ class Pset {
   }
   sanityCheck() {
     this.globals.sanityCheck();
-    this.inputs.forEach(input => input.sanityCheck());
-    this.outputs.forEach(output => output.sanityCheck());
+    this.inputs.forEach((input) => input.sanityCheck());
+    this.outputs.forEach((output) => output.sanityCheck());
     if (
       this.isFullyBlinded() &&
       this.globals.scalars &&
@@ -141,7 +141,7 @@ class Pset {
   }
   needsBlinding() {
     return this.outputs.some(
-      out => out.needsBlinding() && !out.isFullyBlinded(),
+      (out) => out.needsBlinding() && !out.isFullyBlinded(),
     );
   }
   isFullyBlinded() {
@@ -149,16 +149,16 @@ class Pset {
       return false;
     }
     return !this.outputs.some(
-      out => out.needsBlinding() && !out.isFullyBlinded(),
+      (out) => out.needsBlinding() && !out.isFullyBlinded(),
     );
   }
   isComplete() {
-    return this.inputs.every(input => input.isFinalized());
+    return this.inputs.every((input) => input.isFinalized());
   }
   locktime() {
     let heightLocktime = 0;
     let timeLocktime = 0;
-    this.inputs.forEach(input => {
+    this.inputs.forEach((input) => {
       if (input.requiredTimeLocktime > 0) {
         if (input.requiredTimeLocktime > timeLocktime) {
           timeLocktime = input.requiredTimeLocktime;
@@ -182,13 +182,14 @@ class Pset {
     const tx = new transaction_1.Transaction();
     tx.version = this.globals.txVersion;
     tx.locktime = this.locktime();
-    this.inputs.forEach(input => {
+    this.inputs.forEach((input) => {
       let issuance;
       if (input.hasIssuance()) {
         let assetAmount = input.issuanceValueCommitment;
         if (!assetAmount || assetAmount.length === 0) {
-          assetAmount = value_1.ElementsValue.fromNumber(input.issuanceValue)
-            .bytes;
+          assetAmount = value_1.ElementsValue.fromNumber(
+            input.issuanceValue,
+          ).bytes;
         }
         let tokenAmount = input.issuanceInflationKeysCommitment;
         if (!tokenAmount || tokenAmount.length === 0) {
@@ -213,7 +214,7 @@ class Pset {
         issuance,
       );
     });
-    this.outputs.forEach(output => {
+    this.outputs.forEach((output) => {
       const value =
         output.valueCommitment ||
         value_1.ElementsValue.fromNumber(output.value).bytes;
@@ -254,7 +255,7 @@ class Pset {
       let timeLocktime = newInput.requiredTimeLocktime;
       let heightLocktime = newInput.requiredHeightLocktime;
       let hasSigs = false;
-      this.inputs.forEach(input => {
+      this.inputs.forEach((input) => {
         if (input.requiredTimeLocktime > 0 && !input.requiredHeightLocktime) {
           heightLocktime = 0;
           if (timeLocktime === 0) {
@@ -312,7 +313,7 @@ class Pset {
     if (!input.partialSigs || input.partialSigs.length === 0) {
       return false;
     }
-    return input.partialSigs.every(ps =>
+    return input.partialSigs.every((ps) =>
       this.validatePartialSignature(index, validator, ps),
     );
   }
@@ -407,19 +408,19 @@ class Pset {
     let size = exports.magicPrefixWithSeparator.length;
     const globalsBuffer = this.globals.toBuffer();
     size += globalsBuffer.length + 1;
-    const inputBuffers = this.inputs.map(input => input.toBuffer());
-    inputBuffers.forEach(buf => (size += buf.length + 1));
-    const outputBuffers = this.outputs.map(output => output.toBuffer());
-    outputBuffers.forEach(buf => (size += buf.length + 1));
+    const inputBuffers = this.inputs.map((input) => input.toBuffer());
+    inputBuffers.forEach((buf) => (size += buf.length + 1));
+    const outputBuffers = this.outputs.map((output) => output.toBuffer());
+    outputBuffers.forEach((buf) => (size += buf.length + 1));
     const w = bufferutils_1.BufferWriter.withCapacity(size);
     w.writeSlice(exports.magicPrefixWithSeparator);
     w.writeSlice(globalsBuffer);
     w.writeUInt8(fields_1.separator);
-    inputBuffers.forEach(buf => {
+    inputBuffers.forEach((buf) => {
       w.writeSlice(buf);
       w.writeUInt8(fields_1.separator);
     });
-    outputBuffers.forEach(buf => {
+    outputBuffers.forEach((buf) => {
       w.writeSlice(buf);
       w.writeUInt8(fields_1.separator);
     });
@@ -427,7 +428,7 @@ class Pset {
   }
   isDuplicatedInput(input) {
     return this.inputs.some(
-      inp =>
+      (inp) =>
         inp.previousTxid.equals(input.previousTxid) &&
         inp.previousTxIndex === input.previousTxIndex,
     );
@@ -445,7 +446,7 @@ function pubkeyInScript(pubkey, script) {
   const pubkeyHash = (0, crypto_1.hash160)(pubkey);
   const decompiled = bscript.decompile(script);
   if (decompiled === null) throw new Error('Unknown script error');
-  return decompiled.some(element => {
+  return decompiled.some((element) => {
     if (typeof element === 'number') return false;
     return element.equals(pubkey) || element.equals(pubkeyHash);
   });

@@ -1,6 +1,40 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.oneOf = exports.Null = exports.BufferN = exports.Function = exports.UInt32 = exports.UInt8 = exports.tuple = exports.maybe = exports.Object = exports.Hex = exports.Buffer = exports.String = exports.Boolean = exports.Array = exports.Number = exports.BufferOne = exports.ConfidentialValue = exports.AssetBuffer = exports.AssetBufferWithFlag = exports.ConfidentialCommitment = exports.Hash256bit = exports.Hash160bit = exports.Buffer256bit = exports.isTaptree = exports.isTapleaf = exports.TAPLEAF_VERSION_MASK = exports.Network = exports.ECPoint = exports.Satoshi = exports.Signer = exports.BIP32Path = exports.UInt31 = exports.isPoint = exports.typeforce = void 0;
+exports.oneOf =
+  exports.Null =
+  exports.BufferN =
+  exports.Function =
+  exports.UInt32 =
+  exports.UInt8 =
+  exports.tuple =
+  exports.maybe =
+  exports.Object =
+  exports.Hex =
+  exports.Buffer =
+  exports.String =
+  exports.Boolean =
+  exports.Array =
+  exports.Number =
+  exports.BufferOne =
+  exports.ConfidentialValue =
+  exports.AssetBuffer =
+  exports.AssetBufferWithFlag =
+  exports.ConfidentialCommitment =
+  exports.Hash256bit =
+  exports.Hash160bit =
+  exports.Buffer256bit =
+  exports.isTaptree =
+  exports.isTapleaf =
+  exports.TAPLEAF_VERSION_MASK =
+  exports.Network =
+  exports.ECPoint =
+  exports.Satoshi =
+  exports.Signer =
+  exports.BIP32Path =
+  exports.UInt31 =
+  exports.isPoint =
+  exports.typeforce =
+    void 0;
 const buffer_1 = require('buffer');
 exports.typeforce = require('typeforce');
 const ZERO32 = buffer_1.Buffer.alloc(32, 0);
@@ -83,7 +117,7 @@ exports.isTapleaf = isTapleaf;
 function isTaptree(scriptTree) {
   if (!(0, exports.Array)(scriptTree)) return isTapleaf(scriptTree);
   if (scriptTree.length !== 2) return false;
-  return scriptTree.every(t => isTaptree(t));
+  return scriptTree.every((t) => isTaptree(t));
 }
 exports.isTaptree = isTaptree;
 exports.Buffer256bit = exports.typeforce.BufferN(32);

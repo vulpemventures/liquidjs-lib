@@ -57,7 +57,7 @@ class PsetOutput {
           if (!output.bip32Derivation) {
             output.bip32Derivation = [];
           }
-          if (output.bip32Derivation.find(d => d.pubkey.equals(pubkey))) {
+          if (output.bip32Derivation.find((d) => d.pubkey.equals(pubkey))) {
             throw new OutputDuplicateFieldError('bip32 derivation');
           }
           const { masterFingerprint, path } = (0,
@@ -89,7 +89,9 @@ class PsetOutput {
           }
           const tapBip32Pubkey = kp.key.keyData;
           if (
-            output.tapBip32Derivation.find(d => d.pubkey.equals(tapBip32Pubkey))
+            output.tapBip32Derivation.find((d) =>
+              d.pubkey.equals(tapBip32Pubkey),
+            )
           ) {
             throw new OutputDuplicateFieldError('taproot bip32 derivation');
           }
@@ -303,10 +305,13 @@ class PsetOutput {
     return (
       this.valueCommitment &&
       this.valueCommitment.length > 0 &&
-      (this.assetCommitment && this.assetCommitment.length > 0) &&
-      (this.valueRangeproof && this.valueRangeproof.length > 0) &&
+      this.assetCommitment &&
+      this.assetCommitment.length > 0 &&
+      this.valueRangeproof &&
+      this.valueRangeproof.length > 0 &&
       (this.assetSurjectionProof && this.assetSurjectionProof.length) > 0 &&
-      (this.ecdhPubkey && this.ecdhPubkey.length > 0)
+      this.ecdhPubkey &&
+      this.ecdhPubkey.length > 0
     );
   }
   isTaproot() {
@@ -319,13 +324,13 @@ class PsetOutput {
   }
   toBuffer() {
     const keyPairs = this.getKeyPairs();
-    const kpBuf = keyPairs.map(kp => kp.toBuffer());
+    const kpBuf = keyPairs.map((kp) => kp.toBuffer());
     let size = 0;
-    kpBuf.forEach(buf => {
+    kpBuf.forEach((buf) => {
       size += buf.length;
     });
     const w = bufferutils_1.BufferWriter.withCapacity(size);
-    kpBuf.forEach(buf => w.writeSlice(buf));
+    kpBuf.forEach((buf) => w.writeSlice(buf));
     return w.buffer;
   }
   getKeyPairs() {
@@ -375,7 +380,7 @@ class PsetOutput {
     if (this.tapTree) {
       const key = new key_pair_1.Key(fields_1.OutputTypes.TAP_TREE);
       const bufs = [].concat(
-        ...this.tapTree.leaves.map(tapLeaf => [
+        ...this.tapTree.leaves.map((tapLeaf) => [
           Buffer.of(tapLeaf.depth, tapLeaf.leafVersion),
           bufferutils_1.varuint.encode(tapLeaf.script.length),
           tapLeaf.script,
@@ -445,9 +450,10 @@ class PsetOutput {
       const key = new key_pair_1.Key(fields_1.OutputTypes.PROPRIETARY, keyData);
       keyPairs.push(new key_pair_1.KeyPair(key, this.ecdhPubkey));
     }
-    const proprietaryKeyData = proprietary_data_1.ProprietaryData.proprietaryKey(
-      fields_1.OutputProprietaryTypes.BLINDER_INDEX,
-    );
+    const proprietaryKeyData =
+      proprietary_data_1.ProprietaryData.proprietaryKey(
+        fields_1.OutputProprietaryTypes.BLINDER_INDEX,
+      );
     const blinderIndexKey = new key_pair_1.Key(
       fields_1.OutputTypes.PROPRIETARY,
       proprietaryKeyData,
@@ -474,7 +480,7 @@ class PsetOutput {
       keyPairs.push(new key_pair_1.KeyPair(key, this.blindAssetProof));
     }
     if (this.proprietaryData && this.proprietaryData.length > 0) {
-      this.proprietaryData.forEach(data => {
+      this.proprietaryData.forEach((data) => {
         const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,

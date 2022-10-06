@@ -75,7 +75,7 @@ export class PsetInput {
           if (pk.length !== 33) {
             throw new Error(`Invalid partial sig's pubkey length`);
           }
-          if (input.partialSigs!.find(ps => ps.pubkey.equals(pk))) {
+          if (input.partialSigs!.find((ps) => ps.pubkey.equals(pk))) {
             throw new InputDuplicateFieldError('partial sig');
           }
           const signature = kp.value;
@@ -111,7 +111,7 @@ export class PsetInput {
           if (!input.bip32Derivation) {
             input.bip32Derivation = [];
           }
-          if (input.bip32Derivation!.find(d => d.pubkey.equals(pubkey))) {
+          if (input.bip32Derivation!.find((d) => d.pubkey.equals(pubkey))) {
             throw new InputDuplicateFieldError('bip32 derivation');
           }
           const { masterFingerprint, path } = decodeBip32Derivation(kp.value);
@@ -233,7 +233,7 @@ export class PsetInput {
           const tapPubkey = kp.key.keyData.slice(0, 32);
           const leafHash = kp.key.keyData.slice(32);
 
-          if (input.tapScriptSig.find(ps => ps.pubkey.equals(tapPubkey))!) {
+          if (input.tapScriptSig.find((ps) => ps.pubkey.equals(tapPubkey))!) {
             throw new InputDuplicateFieldError('taproot scriptsig');
           }
           if (kp.value.length !== 64 && kp.value.length !== 65) {
@@ -274,7 +274,9 @@ export class PsetInput {
           }
           const tapBip32Pubkey = kp.key.keyData;
           if (
-            input.tapBip32Derivation!.find(d => d.pubkey.equals(tapBip32Pubkey))
+            input.tapBip32Derivation!.find((d) =>
+              d.pubkey.equals(tapBip32Pubkey),
+            )
           ) {
             throw new InputDuplicateFieldError('taproot bip32 derivation');
           }
@@ -724,13 +726,13 @@ export class PsetInput {
 
   toBuffer(): Buffer {
     const keyPairs = this.getKeyPairs();
-    const kpBuf = keyPairs.map(kp => kp.toBuffer());
+    const kpBuf = keyPairs.map((kp) => kp.toBuffer());
     let size = 0;
-    kpBuf.forEach(buf => {
+    kpBuf.forEach((buf) => {
       size += buf.length;
     });
     const w = BufferWriter.withCapacity(size);
-    kpBuf.forEach(buf => w.writeSlice(buf));
+    kpBuf.forEach((buf) => w.writeSlice(buf));
     return w.buffer;
   }
 
@@ -1071,7 +1073,7 @@ export class PsetInput {
     }
 
     if (this.proprietaryData! && this.proprietaryData!.length > 0) {
-      this.proprietaryData.forEach(data => {
+      this.proprietaryData.forEach((data) => {
         const keyData = ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,

@@ -1210,13 +1210,8 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       const p2sh = createPayment('p2sh-p2wsh-p2ms(3 of 4)');
       const inputData = await getInputData(p2sh.payment, true, 'p2sh-p2wsh');
       {
-        const {
-          hash,
-          index,
-          witnessUtxo,
-          redeemScript,
-          witnessScript,
-        } = inputData;
+        const { hash, index, witnessUtxo, redeemScript, witnessScript } =
+          inputData;
         assert.deepStrictEqual(
           { hash, index, witnessUtxo, redeemScript, witnessScript },
           inputData,
@@ -1289,13 +1284,8 @@ describe('liquidjs-lib (transactions with psbt)', () => {
       );
       const inputData = await getInputData(p2sh.payment, true, 'p2sh-p2wsh');
       {
-        const {
-          hash,
-          index,
-          witnessUtxo,
-          redeemScript,
-          witnessScript,
-        } = inputData;
+        const { hash, index, witnessUtxo, redeemScript, witnessScript } =
+          inputData;
         assert.deepStrictEqual(
           { hash, index, witnessUtxo, redeemScript, witnessScript },
           inputData,

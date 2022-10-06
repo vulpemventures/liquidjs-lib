@@ -11,7 +11,7 @@ const fixtures = initBuffers(preFixtures);
 describe('PSETv2', () => {
   describe('(De)serialization roundtrip', () => {
     describe('valid', () => {
-      fixtures.roundtrip.valid.forEach(f => {
+      fixtures.roundtrip.valid.forEach((f) => {
         it(f.name, () => {
           const pset = Pset.fromBase64(f.base64);
           assert.strictEqual(
@@ -22,7 +22,7 @@ describe('PSETv2', () => {
       });
     });
     describe('invalid', () => {
-      fixtures.roundtrip.invalid.forEach(f => {
+      fixtures.roundtrip.invalid.forEach((f) => {
         it(f.name, () => {
           let errMsg = '';
           try {

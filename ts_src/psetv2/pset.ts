@@ -90,8 +90,8 @@ export class Pset {
 
   sanityCheck(): this {
     this.globals.sanityCheck();
-    this.inputs.forEach(input => input.sanityCheck());
-    this.outputs.forEach(output => output.sanityCheck());
+    this.inputs.forEach((input) => input.sanityCheck());
+    this.outputs.forEach((output) => output.sanityCheck());
 
     if (
       this.isFullyBlinded() &&
@@ -134,7 +134,7 @@ export class Pset {
 
   needsBlinding(): boolean {
     return this.outputs.some(
-      out => out.needsBlinding() && !out.isFullyBlinded(),
+      (out) => out.needsBlinding() && !out.isFullyBlinded(),
     );
   }
 
@@ -143,19 +143,19 @@ export class Pset {
       return false;
     }
     return !this.outputs.some(
-      out => out.needsBlinding() && !out.isFullyBlinded(),
+      (out) => out.needsBlinding() && !out.isFullyBlinded(),
     );
   }
 
   isComplete(): boolean {
-    return this.inputs.every(input => input.isFinalized());
+    return this.inputs.every((input) => input.isFinalized());
   }
 
   locktime(): number {
     let heightLocktime = 0;
     let timeLocktime = 0;
 
-    this.inputs.forEach(input => {
+    this.inputs.forEach((input) => {
       if (input.requiredTimeLocktime! > 0) {
         if (input.requiredTimeLocktime! > timeLocktime) {
           timeLocktime = input.requiredTimeLocktime!;
@@ -182,7 +182,7 @@ export class Pset {
     tx.version = this.globals.txVersion;
     tx.locktime = this.locktime();
 
-    this.inputs.forEach(input => {
+    this.inputs.forEach((input) => {
       let issuance: Issuance | undefined;
       if (input.hasIssuance()) {
         let assetAmount = input.issuanceValueCommitment;
@@ -191,8 +191,9 @@ export class Pset {
         }
         let tokenAmount = input.issuanceInflationKeysCommitment;
         if (!tokenAmount || tokenAmount.length === 0) {
-          tokenAmount = ElementsValue.fromNumber(input.issuanceInflationKeys!)
-            .bytes;
+          tokenAmount = ElementsValue.fromNumber(
+            input.issuanceInflationKeys!,
+          ).bytes;
         }
         const assetEntropy = input.issuanceAssetEntropy!;
         const assetBlindingNonce = input.issuanceBlindingNonce!;
@@ -212,7 +213,7 @@ export class Pset {
       );
     });
 
-    this.outputs.forEach(output => {
+    this.outputs.forEach((output) => {
       const value =
         output.valueCommitment || ElementsValue.fromNumber(output.value).bytes;
       const asset =
@@ -258,7 +259,7 @@ export class Pset {
       let timeLocktime = newInput.requiredTimeLocktime!;
       let heightLocktime = newInput.requiredHeightLocktime!;
       let hasSigs = false;
-      this.inputs.forEach(input => {
+      this.inputs.forEach((input) => {
         if (input.requiredTimeLocktime! > 0 && !input.requiredHeightLocktime!) {
           heightLocktime = 0;
           if (timeLocktime === 0) {
@@ -328,7 +329,7 @@ export class Pset {
       return false;
     }
 
-    return input.partialSigs!.every(ps =>
+    return input.partialSigs!.every((ps) =>
       this.validatePartialSignature(index, validator, ps),
     );
   }
@@ -438,10 +439,10 @@ export class Pset {
     let size = magicPrefixWithSeparator.length;
     const globalsBuffer = this.globals.toBuffer();
     size += globalsBuffer.length + 1;
-    const inputBuffers = this.inputs.map(input => input.toBuffer());
-    inputBuffers.forEach(buf => (size += buf.length + 1));
-    const outputBuffers = this.outputs.map(output => output.toBuffer());
-    outputBuffers.forEach(buf => (size += buf.length + 1));
+    const inputBuffers = this.inputs.map((input) => input.toBuffer());
+    inputBuffers.forEach((buf) => (size += buf.length + 1));
+    const outputBuffers = this.outputs.map((output) => output.toBuffer());
+    outputBuffers.forEach((buf) => (size += buf.length + 1));
 
     const w = BufferWriter.withCapacity(size);
 
@@ -449,12 +450,12 @@ export class Pset {
     w.writeSlice(globalsBuffer);
     w.writeUInt8(separator);
 
-    inputBuffers.forEach(buf => {
+    inputBuffers.forEach((buf) => {
       w.writeSlice(buf);
       w.writeUInt8(separator);
     });
 
-    outputBuffers.forEach(buf => {
+    outputBuffers.forEach((buf) => {
       w.writeSlice(buf);
       w.writeUInt8(separator);
     });
@@ -464,7 +465,7 @@ export class Pset {
 
   private isDuplicatedInput(input: PsetInput): boolean {
     return this.inputs.some(
-      inp =>
+      (inp) =>
         inp.previousTxid.equals(input.previousTxid) &&
         inp.previousTxIndex === input.previousTxIndex,
     );
@@ -489,7 +490,7 @@ function pubkeyInScript(pubkey: Buffer, script: Buffer): boolean {
   const decompiled = bscript.decompile(script);
   if (decompiled === null) throw new Error('Unknown script error');
 
-  return decompiled.some(element => {
+  return decompiled.some((element) => {
     if (typeof element === 'number') return false;
     return element.equals(pubkey) || element.equals(pubkeyHash);
   });

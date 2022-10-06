@@ -42,7 +42,7 @@ export class Signer {
     if ((input.sighashType & 0x1f) === Transaction.SIGHASH_ALL) {
       if (
         this.pset.outputs.some(
-          out => out.needsBlinding() && !out.isFullyBlinded(),
+          (out) => out.needsBlinding() && !out.isFullyBlinded(),
         )
       ) {
         throw new Error('Pset must be fully blinded');
@@ -65,11 +65,8 @@ export class Signer {
     const pset = this.pset.copy();
     const sighashType = input.sighashType!;
 
-    const {
-      partialSig,
-      witnessScript,
-      redeemScript,
-    } = data as BIP174SigningData;
+    const { partialSig, witnessScript, redeemScript } =
+      data as BIP174SigningData;
     if (!partialSig) {
       throw new Error('Missing partial signature for input');
     }
@@ -136,11 +133,8 @@ export class Signer {
   ): this {
     const pset = this.pset.copy();
 
-    const {
-      tapKeySig,
-      tapScriptSigs,
-      genesisBlockHash,
-    } = data as BIP371SigningData;
+    const { tapKeySig, tapScriptSigs, genesisBlockHash } =
+      data as BIP371SigningData;
     if (!tapKeySig && (!tapScriptSigs || !tapScriptSigs.length)) {
       throw new Error('Missing taproot signature');
     }
@@ -150,7 +144,7 @@ export class Signer {
       u.addInTapKeySig(inIndex, tapKeySig, genesisBlockHash, validator);
     }
     if (!!tapScriptSigs) {
-      tapScriptSigs.forEach(tapScriptSig => {
+      tapScriptSigs.forEach((tapScriptSig) => {
         u.addInTapScriptSig(inIndex, tapScriptSig, genesisBlockHash, validator);
       });
     }

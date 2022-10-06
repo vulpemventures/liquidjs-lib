@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -45,11 +45,29 @@ var __importStar =
   };
 var __importDefault =
   (this && this.__importDefault) ||
-  function(mod) {
+  function (mod) {
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.satoshiToConfidentialValue = exports.confidentialValueToSatoshi = exports.ZKPGenerator = exports.ZKPValidator = exports.assetBlindProofVerify = exports.blindAssetProof = exports.blindValueProof = exports.surjectionProofVerify = exports.surjectionProof = exports.rangeProof = exports.rangeProofVerify = exports.rangeProofWithNonceHash = exports.rangeProofInfo = exports.unblindOutputWithNonce = exports.unblindOutputWithKey = exports.assetCommitment = exports.valueCommitment = exports.valueBlindingFactor = void 0;
+exports.satoshiToConfidentialValue =
+  exports.confidentialValueToSatoshi =
+  exports.ZKPGenerator =
+  exports.ZKPValidator =
+  exports.assetBlindProofVerify =
+  exports.blindAssetProof =
+  exports.blindValueProof =
+  exports.surjectionProofVerify =
+  exports.surjectionProof =
+  exports.rangeProof =
+  exports.rangeProofVerify =
+  exports.rangeProofWithNonceHash =
+  exports.rangeProofInfo =
+  exports.unblindOutputWithNonce =
+  exports.unblindOutputWithKey =
+  exports.assetCommitment =
+  exports.valueCommitment =
+  exports.valueBlindingFactor =
+    void 0;
 const crypto = __importStar(require('./crypto'));
 const transaction_1 = require('./transaction');
 const secp256k1_zkp_1 = __importDefault(
@@ -365,7 +383,7 @@ class ZKPGenerator {
     return bg;
   }
   static ECCKeysGenerator(ec) {
-    return opts => {
+    return (opts) => {
       const privateKey = randomBytes(opts);
       const publicKey = (0, ecpair_1.ECPairFactory)(ec).fromPrivateKey(
         privateKey,
@@ -447,7 +465,7 @@ class ZKPGenerator {
       return this.ownedInputs;
     }
     const revealedInputs = await Promise.all(
-      inputIndexes.map(async i => {
+      inputIndexes.map(async (i) => {
         const prevout = pset.inputs[i].getUtxo();
         const revealedInput = await this.unblindUtxo(prevout);
         revealedInput.index = i;
@@ -557,7 +575,7 @@ class ZKPGenerator {
       blindedIssuances,
     );
     return Promise.all(
-      outputIndexes.map(async i => {
+      outputIndexes.map(async (i) => {
         const output = pset.outputs[i];
         const assetBlinder = randomBytes(this.opts);
         const valueBlinder = randomBytes(this.opts);
@@ -728,7 +746,7 @@ class ZKPGenerator {
       );
     }
     return Promise.all(
-      pset.inputs.map(async input => {
+      pset.inputs.map(async (input) => {
         const prevout = input.getUtxo();
         try {
           const revealed = await this.unblindUtxo(prevout);
@@ -761,7 +779,7 @@ function validatePset(pset) {
 }
 function validateInIndexes(pset, inIndexes) {
   if (inIndexes.length > 0) {
-    inIndexes.forEach(i => {
+    inIndexes.forEach((i) => {
       if (i < 0 || i >= pset.globals.inputCount) {
         throw new Error('Input index out of range');
       }
@@ -770,7 +788,7 @@ function validateInIndexes(pset, inIndexes) {
 }
 function validateOutIndexes(pset, outIndexes) {
   if (outIndexes.length > 0) {
-    outIndexes.forEach(i => {
+    outIndexes.forEach((i) => {
       if (i < 0 || i >= pset.globals.outputCount) {
         throw new Error('Output index out of range');
       }
@@ -793,7 +811,7 @@ function validateBlindingKeysByIndex(pset, keys) {
 }
 function validateBlindedIssuances(pset, blindedIssuances) {
   if (blindedIssuances.length > 0) {
-    blindedIssuances.forEach(issuance => {
+    blindedIssuances.forEach((issuance) => {
       if (issuance.index < 0 || issuance.index >= pset.globals.inputCount) {
         throw new Error('Input index of blinded issuance is out of range');
       }

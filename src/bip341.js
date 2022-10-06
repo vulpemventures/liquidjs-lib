@@ -1,6 +1,11 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.findScriptPath = exports.toHashTree = exports.tapLeafHash = exports.BIP341Factory = exports.LEAF_VERSION_TAPSCRIPT = void 0;
+exports.findScriptPath =
+  exports.toHashTree =
+  exports.tapLeafHash =
+  exports.BIP341Factory =
+  exports.LEAF_VERSION_TAPSCRIPT =
+    void 0;
 const crypto_1 = require('./crypto');
 const ecpair_1 = require('ecpair');
 const bufferutils_1 = require('./bufferutils');

@@ -1,7 +1,7 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.testnet = exports.regtest = exports.liquid = void 0;
-const strToGenesisHash = str => Buffer.from(str, 'hex').reverse();
+const strToGenesisHash = (str) => Buffer.from(str, 'hex').reverse();
 const RegtestGenesisBlockHash = strToGenesisHash(
   '00902a6b70c2ca83b5d9c815d96a0e2f4202179316970d14ea1847dae5b1ca21',
 );

@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -150,10 +150,8 @@ class Transaction {
         tx.ins[i].inflationRangeProof = inflationRangeProof;
       }
       for (let i = 0; i < voutLen; ++i) {
-        const {
-          rangeProof,
-          surjectionProof,
-        } = bufferReader.readConfidentialOutFields();
+        const { rangeProof, surjectionProof } =
+          bufferReader.readConfidentialOutFields();
         tx.outs[i].rangeProof = rangeProof;
         tx.outs[i].surjectionProof = surjectionProof;
       }
@@ -274,10 +272,10 @@ class Transaction {
   hasWitnesses() {
     return (
       this.flag === 1 ||
-      this.ins.some(x => {
+      this.ins.some((x) => {
         return x.witness.length !== 0;
       }) ||
-      this.outs.some(x => {
+      this.outs.some((x) => {
         return x.rangeProof.length !== 0 && x.surjectionProof.length !== 0;
       })
     );
@@ -300,7 +298,7 @@ class Transaction {
     newTx.version = this.version;
     newTx.locktime = this.locktime;
     newTx.flag = this.flag;
-    newTx.ins = this.ins.map(txIn => {
+    newTx.ins = this.ins.map((txIn) => {
       return {
         hash: txIn.hash,
         index: txIn.index,
@@ -314,7 +312,7 @@ class Transaction {
         inflationRangeProof: txIn.inflationRangeProof,
       };
     });
-    newTx.outs = this.outs.map(txOut => {
+    newTx.outs = this.outs.map((txOut) => {
       return {
         script: txOut.script,
         value: txOut.value,
@@ -343,7 +341,7 @@ class Transaction {
     if (inIndex >= this.ins.length) return ONE;
     // ignore OP_CODESEPARATOR
     const ourScript = bscript.compile(
-      bscript.decompile(prevOutScript).filter(x => {
+      bscript.decompile(prevOutScript).filter((x) => {
         return x !== script_1.OPS.OP_CODESEPARATOR;
       }),
     );
@@ -379,7 +377,7 @@ class Transaction {
       // SIGHASH_ALL: only ignore input scripts
     } else {
       // "blank" others input scripts
-      txTmp.ins.forEach(input => {
+      txTmp.ins.forEach((input) => {
         input.script = EMPTY_BUFFER;
       });
       txTmp.ins[inIndex].script = ourScript;
@@ -557,7 +555,7 @@ class Transaction {
       const prevoutsHashWriter = bufferutils_1.BufferWriter.withCapacity(
         (32 + 4) * this.ins.length,
       );
-      this.ins.forEach(txIn => {
+      this.ins.forEach((txIn) => {
         prevoutsHashWriter.writeSlice(txIn.hash);
         prevoutsHashWriter.writeUInt32(txIn.index);
       });
@@ -572,7 +570,7 @@ class Transaction {
       const sequenceHashWriter = bufferutils_1.BufferWriter.withCapacity(
         4 * this.ins.length,
       );
-      this.ins.forEach(txIn => {
+      this.ins.forEach((txIn) => {
         sequenceHashWriter.writeUInt32(txIn.sequence);
       });
       hashSequence = bcrypto.hash256(sequenceHashWriter.end());
@@ -585,7 +583,7 @@ class Transaction {
       );
       const size = sizeOfIssuances === 0 ? this.ins.length : sizeOfIssuances;
       const issuancesHashWriter = bufferutils_1.BufferWriter.withCapacity(size);
-      this.ins.forEach(txIn => {
+      this.ins.forEach((txIn) => {
         if (txIn.issuance) {
           issuancesHashWriter.writeSlice(txIn.issuance.assetBlindingNonce);
           issuancesHashWriter.writeSlice(txIn.issuance.assetEntropy);
@@ -611,10 +609,9 @@ class Transaction {
           (0, bufferutils_1.varSliceSize)(output.script),
         0,
       );
-      const outputsHashWriter = bufferutils_1.BufferWriter.withCapacity(
-        txOutsSize,
-      );
-      this.outs.forEach(out => {
+      const outputsHashWriter =
+        bufferutils_1.BufferWriter.withCapacity(txOutsSize);
+      this.outs.forEach((out) => {
         outputsHashWriter.writeSlice(out.asset);
         outputsHashWriter.writeSlice(out.value);
         outputsHashWriter.writeSlice(out.nonce);
@@ -800,7 +797,7 @@ class Transaction {
       bufferWriter.writeUInt8(flags);
     }
     bufferWriter.writeVarInt(this.ins.length);
-    this.ins.forEach(txIn => {
+    this.ins.forEach((txIn) => {
       bufferWriter.writeSlice(txIn.hash);
       let prevIndex = txIn.index;
       if (txIn.issuance) {
@@ -820,7 +817,7 @@ class Transaction {
       }
     });
     bufferWriter.writeVarInt(this.outs.length);
-    this.outs.forEach(txOut => {
+    this.outs.forEach((txOut) => {
       // if we are serializing a confidential output for producing a signature,
       // we must exclude the confidential value from the serialization and
       // use the satoshi 0 value instead, as done for typical bitcoin witness signatures.
@@ -833,10 +830,10 @@ class Transaction {
     });
     bufferWriter.writeUInt32(this.locktime);
     if (!forSignature && hasWitnesses) {
-      this.ins.forEach(input => {
+      this.ins.forEach((input) => {
         bufferWriter.writeConfidentialInFields(input);
       });
-      this.outs.forEach(output => {
+      this.outs.forEach((output) => {
         bufferWriter.writeConfidentialOutFields(output);
       });
     }
@@ -857,7 +854,7 @@ Transaction.SIGHASH_OUTPUT_MASK = 0x03;
 Transaction.SIGHASH_INPUT_MASK = 0x80;
 Transaction.ADVANCED_TRANSACTION_FLAG = 0x01;
 function getOutputWitnessesSHA256(outs) {
-  const outProofsSize = o =>
+  const outProofsSize = (o) =>
     (0, bufferutils_1.varSliceSize)(o.rangeProof || Buffer.alloc(0)) +
     (0, bufferutils_1.varSliceSize)(o.surjectionProof || Buffer.alloc(0));
   const size = outs.reduce((sum, o) => sum + outProofsSize(o), 0);
@@ -869,7 +866,7 @@ function getOutputWitnessesSHA256(outs) {
   return bcrypto.sha256(bufferWriter.end());
 }
 function getIssuanceProofsSHA256(ins) {
-  const inProofsSize = i =>
+  const inProofsSize = (i) =>
     (0, bufferutils_1.varSliceSize)(i.issuanceRangeProof || Buffer.alloc(1)) +
     (0, bufferutils_1.varSliceSize)(i.inflationRangeProof || Buffer.alloc(1));
   const size = ins.reduce((sum, i) => sum + inProofsSize(i), 0);
@@ -931,14 +928,14 @@ function getPrevoutScriptsSHA256(scripts) {
   const bufferWriter = bufferutils_1.BufferWriter.withCapacity(
     scripts.map(bufferutils_1.varSliceSize).reduce((a, b) => a + b),
   );
-  scripts.forEach(prevOutScript => bufferWriter.writeVarSlice(prevOutScript));
+  scripts.forEach((prevOutScript) => bufferWriter.writeVarSlice(prevOutScript));
   return bcrypto.sha256(bufferWriter.end());
 }
 function getSequenceSHA256(inputs) {
   const bufferWriter = bufferutils_1.BufferWriter.withCapacity(
     4 * inputs.length,
   );
-  inputs.forEach(txIn => bufferWriter.writeUInt32(txIn.sequence));
+  inputs.forEach((txIn) => bufferWriter.writeUInt32(txIn.sequence));
   return bcrypto.sha256(bufferWriter.end());
 }
 function getIssuanceSHA256(inputs) {
@@ -948,7 +945,7 @@ function getIssuanceSHA256(inputs) {
   );
   const size = sizeOfIssuances === 0 ? inputs.length : sizeOfIssuances;
   const writer = bufferutils_1.BufferWriter.withCapacity(size);
-  inputs.forEach(txIn => {
+  inputs.forEach((txIn) => {
     if (txIn.issuance) {
       writer.writeSlice(txIn.issuance.assetBlindingNonce);
       writer.writeSlice(txIn.issuance.assetEntropy);
@@ -971,7 +968,7 @@ function getOutputsSHA256(outputs) {
     0,
   );
   const bufferWriter = bufferutils_1.BufferWriter.withCapacity(txOutsSize);
-  outputs.forEach(out => {
+  outputs.forEach((out) => {
     bufferWriter.writeSlice(out.asset);
     bufferWriter.writeSlice(out.value);
     bufferWriter.writeSlice(out.nonce);

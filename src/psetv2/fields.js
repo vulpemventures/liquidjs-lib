@@ -1,9 +1,17 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.OutputProprietaryTypes = exports.OutputTypes = exports.InputProprietaryTypes = exports.InputTypes = exports.GLOBAL_PROPRIETARY_TYPE_NAMES = exports.GlobalProprietaryTypes = exports.GlobalTypes = exports.separator = void 0;
+exports.OutputProprietaryTypes =
+  exports.OutputTypes =
+  exports.InputProprietaryTypes =
+  exports.InputTypes =
+  exports.GLOBAL_PROPRIETARY_TYPE_NAMES =
+  exports.GlobalProprietaryTypes =
+  exports.GlobalTypes =
+  exports.separator =
+    void 0;
 exports.separator = 0x00;
 var GlobalTypes;
-(function(GlobalTypes) {
+(function (GlobalTypes) {
   GlobalTypes[(GlobalTypes['XPUB'] = 1)] = 'XPUB';
   GlobalTypes[(GlobalTypes['TX_VERSION'] = 2)] = 'TX_VERSION';
   GlobalTypes[(GlobalTypes['FALLBACK_LOCKTIME'] = 3)] = 'FALLBACK_LOCKTIME';
@@ -16,7 +24,7 @@ var GlobalTypes;
   GlobalTypes[(GlobalTypes['PROPRIETARY'] = 252)] = 'PROPRIETARY';
 })((GlobalTypes = exports.GlobalTypes || (exports.GlobalTypes = {})));
 var GlobalProprietaryTypes;
-(function(GlobalProprietaryTypes) {
+(function (GlobalProprietaryTypes) {
   GlobalProprietaryTypes[(GlobalProprietaryTypes['SCALAR'] = 0)] = 'SCALAR';
   GlobalProprietaryTypes[(GlobalProprietaryTypes['TX_MODIFIABLE'] = 1)] =
     'TX_MODIFIABLE';
@@ -26,7 +34,7 @@ var GlobalProprietaryTypes;
 );
 exports.GLOBAL_PROPRIETARY_TYPE_NAMES = ['scalar', 'txModifiable'];
 var InputTypes;
-(function(InputTypes) {
+(function (InputTypes) {
   InputTypes[(InputTypes['NON_WITNESS_UTXO'] = 0)] = 'NON_WITNESS_UTXO';
   InputTypes[(InputTypes['WITNESS_UTXO'] = 1)] = 'WITNESS_UTXO';
   InputTypes[(InputTypes['PARTIAL_SIG'] = 2)] = 'PARTIAL_SIG';
@@ -58,7 +66,7 @@ var InputTypes;
   InputTypes[(InputTypes['PROPRIETARY'] = 252)] = 'PROPRIETARY';
 })((InputTypes = exports.InputTypes || (exports.InputTypes = {})));
 var InputProprietaryTypes;
-(function(InputProprietaryTypes) {
+(function (InputProprietaryTypes) {
   InputProprietaryTypes[(InputProprietaryTypes['ISSUANCE_VALUE'] = 0)] =
     'ISSUANCE_VALUE';
   InputProprietaryTypes[
@@ -106,7 +114,7 @@ var InputProprietaryTypes;
     exports.InputProprietaryTypes || (exports.InputProprietaryTypes = {})),
 );
 var OutputTypes;
-(function(OutputTypes) {
+(function (OutputTypes) {
   OutputTypes[(OutputTypes['REDEEM_SCRIPT'] = 0)] = 'REDEEM_SCRIPT';
   OutputTypes[(OutputTypes['WITNESS_SCRIPT'] = 1)] = 'WITNESS_SCRIPT';
   OutputTypes[(OutputTypes['BIP32_DERIVATION'] = 2)] = 'BIP32_DERIVATION';
@@ -119,7 +127,7 @@ var OutputTypes;
   OutputTypes[(OutputTypes['PROPRIETARY'] = 252)] = 'PROPRIETARY';
 })((OutputTypes = exports.OutputTypes || (exports.OutputTypes = {})));
 var OutputProprietaryTypes;
-(function(OutputProprietaryTypes) {
+(function (OutputProprietaryTypes) {
   OutputProprietaryTypes[(OutputProprietaryTypes['VALUE_COMMITMENT'] = 1)] =
     'VALUE_COMMITMENT';
   OutputProprietaryTypes[(OutputProprietaryTypes['ASSET'] = 2)] = 'ASSET';

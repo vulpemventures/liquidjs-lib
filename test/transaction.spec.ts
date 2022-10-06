@@ -12,8 +12,8 @@ describe('Transaction', () => {
         const tx = Transaction.fromHex(test.txHex);
         const hash = tx.hashForWitnessV1(
           test.inIndex,
-          test.prevouts.map(p => fromHex(p.script)),
-          test.prevouts.map(p => ({
+          test.prevouts.map((p) => fromHex(p.script)),
+          test.prevouts.map((p) => ({
             asset: AssetHash.fromHex(p.asset).bytes,
             value: fromHex(p.value),
           })),

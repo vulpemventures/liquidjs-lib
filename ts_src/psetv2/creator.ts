@@ -121,13 +121,13 @@ export class Creator {
     const pset = new Pset(globals);
 
     if (args && args.inputs)
-      args.inputs.forEach(input => {
+      args.inputs.forEach((input) => {
         input.validate();
         pset.addInput(input.toPartialInput());
       });
 
     if (args && args.outputs)
-      args.outputs.forEach(output => {
+      args.outputs.forEach((output) => {
         output.validate();
         pset.addOutput(output.toPartialOutput());
       });

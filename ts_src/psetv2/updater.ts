@@ -81,7 +81,7 @@ export class Updater {
   addInputs(ins: UpdaterInput[]): this {
     const pset = this.pset.copy();
 
-    ins.forEach(input => {
+    ins.forEach((input) => {
       const creatorInput = new CreatorInput(
         input.txid,
         input.txIndex,
@@ -142,7 +142,7 @@ export class Updater {
   addOutputs(outs: UpdaterOutput[]): this {
     const pset = this.pset.copy();
 
-    outs.forEach(output => {
+    outs.forEach((output) => {
       const creatorOutput = new CreatorOutput(
         output.asset,
         output.amount,
@@ -390,8 +390,9 @@ export class Updater {
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = args.tokenAmount;
 
-    const assetBlindingPublicKey = fromConfidential(args.assetAddress)
-      .blindingKey;
+    const assetBlindingPublicKey = fromConfidential(
+      args.assetAddress,
+    ).blindingKey;
     const assetOutput = new CreatorOutput(
       asset,
       args.assetAmount,
@@ -400,8 +401,9 @@ export class Updater {
       inIndex,
     );
 
-    const tokenBlindingPublicKey = fromConfidential(args.tokenAddress)
-      .blindingKey;
+    const tokenBlindingPublicKey = fromConfidential(
+      args.tokenAddress,
+    ).blindingKey;
     const tokenOutput = new CreatorOutput(
       reissuanceToken,
       args.tokenAmount,
@@ -932,7 +934,7 @@ function validateAddInReissuanceArgs(args: ReissuanceOpts): void {
 }
 
 function matchAddressesType(addrA?: string, addrB?: string): boolean {
-  if (!addrA || addrA!.length === 0 || (!addrB || addrB!.length === 0)) {
+  if (!addrA || addrA!.length === 0 || !addrB || addrB!.length === 0) {
     return true;
   }
 

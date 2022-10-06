@@ -38,10 +38,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const pset = PsetCreator.newPset();
 
     const inputs: UpdaterInput[] = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
-        .reverse()
-        .toString('hex');
+      const txid = hash.slice().reverse().toString('hex');
       return {
         txid,
         txIndex: index,
@@ -81,10 +78,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
-        .reverse()
-        .toString('hex');
+      const txid = hash.slice().reverse().toString('hex');
       return new CreatorInput(txid, index);
     });
     const outputs = [
@@ -136,10 +130,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
-        .reverse()
-        .toString('hex');
+      const txid = hash.slice().reverse().toString('hex');
       return new CreatorInput(txid, index);
     });
     const outputs = [
@@ -190,10 +181,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
-        .reverse()
-        .toString('hex');
+      const txid = hash.slice().reverse().toString('hex');
       return new CreatorInput(txid, index);
     });
     // dummy confidential output (3rd) has confidential address and 0 amount:
@@ -243,10 +231,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
-        .reverse()
-        .toString('hex');
+      const txid = hash.slice().reverse().toString('hex');
       return new CreatorInput(txid, index);
     });
     const outputs = [
@@ -297,10 +282,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
-        .reverse()
-        .toString('hex');
+      const txid = hash.slice().reverse().toString('hex');
       return new CreatorInput(txid, index);
     });
     const outputs = [
@@ -351,10 +333,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
-        .reverse()
-        .toString('hex');
+      const txid = hash.slice().reverse().toString('hex');
       return new CreatorInput(txid, index);
     });
     const outputs = [
@@ -404,10 +383,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
-      const txid = hash
-        .slice()
-        .reverse()
-        .toString('hex');
+      const txid = hash.slice().reverse().toString('hex');
       return new CreatorInput(txid, index);
     });
     const outputs = [
@@ -468,9 +444,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
     const usdt = bobInputData.asset;
     const aliceInputs = [aliceInputData].map(({ hash, index }) => {
-      const txid: string = Buffer.from(hash)
-        .reverse()
-        .toString('hex');
+      const txid: string = Buffer.from(hash).reverse().toString('hex');
       return new CreatorInput(txid, index);
     });
     const aliceOutputs = [

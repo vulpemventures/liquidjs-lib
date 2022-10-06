@@ -430,9 +430,7 @@ function decodeBech32(address: string): AddressType {
 
 function UnkownPrefixError(prefix: number, network: Network): Error {
   return new Error(
-    `unknown address prefix (${prefix}), need ${network.pubKeyHash} or ${
-      network.scriptHash
-    }`,
+    `unknown address prefix (${prefix}), need ${network.pubKeyHash} or ${network.scriptHash}`,
   );
 }
 

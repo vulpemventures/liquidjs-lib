@@ -2,7 +2,7 @@
 var __createBinding =
   (this && this.__createBinding) ||
   (Object.create
-    ? function(o, m, k, k2) {
+    ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         var desc = Object.getOwnPropertyDescriptor(m, k);
         if (
@@ -11,29 +11,29 @@ var __createBinding =
         ) {
           desc = {
             enumerable: true,
-            get: function() {
+            get: function () {
               return m[k];
             },
           };
         }
         Object.defineProperty(o, k2, desc);
       }
-    : function(o, m, k, k2) {
+    : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
         o[k2] = m[k];
       });
 var __setModuleDefault =
   (this && this.__setModuleDefault) ||
   (Object.create
-    ? function(o, v) {
+    ? function (o, v) {
         Object.defineProperty(o, 'default', { enumerable: true, value: v });
       }
-    : function(o, v) {
+    : function (o, v) {
         o['default'] = v;
       });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -105,7 +105,7 @@ class PsetInput {
           if (pk.length !== 33) {
             throw new Error(`Invalid partial sig's pubkey length`);
           }
-          if (input.partialSigs.find(ps => ps.pubkey.equals(pk))) {
+          if (input.partialSigs.find((ps) => ps.pubkey.equals(pk))) {
             throw new InputDuplicateFieldError('partial sig');
           }
           const signature = kp.value;
@@ -141,7 +141,7 @@ class PsetInput {
           if (!input.bip32Derivation) {
             input.bip32Derivation = [];
           }
-          if (input.bip32Derivation.find(d => d.pubkey.equals(pubkey))) {
+          if (input.bip32Derivation.find((d) => d.pubkey.equals(pubkey))) {
             throw new InputDuplicateFieldError('bip32 derivation');
           }
           const { masterFingerprint, path } = (0,
@@ -263,7 +263,7 @@ class PsetInput {
           }
           const tapPubkey = kp.key.keyData.slice(0, 32);
           const leafHash = kp.key.keyData.slice(32);
-          if (input.tapScriptSig.find(ps => ps.pubkey.equals(tapPubkey))) {
+          if (input.tapScriptSig.find((ps) => ps.pubkey.equals(tapPubkey))) {
             throw new InputDuplicateFieldError('taproot scriptsig');
           }
           if (kp.value.length !== 64 && kp.value.length !== 65) {
@@ -303,7 +303,9 @@ class PsetInput {
           }
           const tapBip32Pubkey = kp.key.keyData;
           if (
-            input.tapBip32Derivation.find(d => d.pubkey.equals(tapBip32Pubkey))
+            input.tapBip32Derivation.find((d) =>
+              d.pubkey.equals(tapBip32Pubkey),
+            )
           ) {
             throw new InputDuplicateFieldError('taproot bip32 derivation');
           }
@@ -689,13 +691,13 @@ class PsetInput {
   }
   toBuffer() {
     const keyPairs = this.getKeyPairs();
-    const kpBuf = keyPairs.map(kp => kp.toBuffer());
+    const kpBuf = keyPairs.map((kp) => kp.toBuffer());
     let size = 0;
-    kpBuf.forEach(buf => {
+    kpBuf.forEach((buf) => {
       size += buf.length;
     });
     const w = bufferutils_1.BufferWriter.withCapacity(size);
-    kpBuf.forEach(buf => w.writeSlice(buf));
+    kpBuf.forEach((buf) => w.writeSlice(buf));
     return w.buffer;
   }
   getKeyPairs() {
@@ -1033,7 +1035,7 @@ class PsetInput {
       );
     }
     if (this.proprietaryData && this.proprietaryData.length > 0) {
-      this.proprietaryData.forEach(data => {
+      this.proprietaryData.forEach((data) => {
         const keyData = proprietary_data_1.ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,

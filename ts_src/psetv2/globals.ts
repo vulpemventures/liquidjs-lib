@@ -43,10 +43,8 @@ export class PsetGlobal {
             throw new Error('Invalid xpub length');
           }
           const extendedKey = kp.key.keyData.slice(1);
-          const {
-            masterFingerprint,
-            path: derivationPath,
-          } = decodeBip32Derivation(kp.value);
+          const { masterFingerprint, path: derivationPath } =
+            decodeBip32Derivation(kp.value);
           if (!global.xpubs) {
             global.xpubs = [];
           }
@@ -187,7 +185,7 @@ export class PsetGlobal {
         }
         const next = this.xpubs!.slice(i + 1);
         return next.some(
-          nextXpub => xpub.extendedKey.compare(nextXpub.extendedKey) === 0,
+          (nextXpub) => xpub.extendedKey.compare(nextXpub.extendedKey) === 0,
         );
       })
     ) {
@@ -200,7 +198,7 @@ export class PsetGlobal {
           return false;
         }
         const next = this.scalars!.slice(i + 1);
-        return next.some(nextScalar => scalar.compare(nextScalar) === 0);
+        return next.some((nextScalar) => scalar.compare(nextScalar) === 0);
       })
     ) {
       throw new GlobalDuplicateFieldError('scalar');
@@ -210,13 +208,13 @@ export class PsetGlobal {
 
   toBuffer(): Buffer {
     const keyPairs = this.getKeyPairs();
-    const kpBuf = keyPairs.map(kp => kp.toBuffer());
+    const kpBuf = keyPairs.map((kp) => kp.toBuffer());
     let size = 0;
-    kpBuf.forEach(buf => {
+    kpBuf.forEach((buf) => {
       size += buf.length;
     });
     const w = BufferWriter.withCapacity(size);
-    kpBuf.forEach(buf => w.writeSlice(buf));
+    kpBuf.forEach((buf) => w.writeSlice(buf));
     return w.buffer;
   }
 
@@ -274,7 +272,7 @@ export class PsetGlobal {
     }
 
     if (this.scalars! && this.scalars!.length > 0) {
-      this.scalars.forEach(scalar => {
+      this.scalars.forEach((scalar) => {
         const keyData = ProprietaryData.proprietaryKey(
           GlobalProprietaryTypes.SCALAR,
           scalar,
@@ -300,7 +298,7 @@ export class PsetGlobal {
     keyPairs.push(new KeyPair(versionKey, version));
 
     if (this.proprietaryData! && this.proprietaryData!.length > 0) {
-      this.proprietaryData.forEach(data => {
+      this.proprietaryData.forEach((data) => {
         const keyData = ProprietaryData.proprietaryKey(
           data.subType,
           data.keyData,

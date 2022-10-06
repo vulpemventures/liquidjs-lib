@@ -18,7 +18,7 @@ export class Extractor {
     tx.version = pset.globals.txVersion;
     tx.locktime = pset.locktime();
 
-    pset.inputs.forEach(input => {
+    pset.inputs.forEach((input) => {
       tx.addInput(input.previousTxid, input.previousTxIndex, input.sequence);
       const inIndex = tx.ins.length - 1;
       if (input.hasIssuance()) {
@@ -73,7 +73,7 @@ export class Extractor {
       }
     });
 
-    pset.outputs.forEach(output => {
+    pset.outputs.forEach((output) => {
       const script = output.script || Buffer.from([]);
       const value =
         output.valueCommitment! && output.valueCommitment!.length > 0

@@ -74,17 +74,15 @@ export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
   const _chunks = lazy.value(() => {
     return bscript.decompile(a.input!);
   }) as StackFunction;
-  const _redeem = lazy.value(
-    (): Payment => {
-      const chunks = _chunks();
-      return {
-        network,
-        output: chunks[chunks.length - 1] as Buffer,
-        input: bscript.compile(chunks.slice(0, -1)),
-        witness: a.witness || [],
-      };
-    },
-  ) as PaymentFunction;
+  const _redeem = lazy.value((): Payment => {
+    const chunks = _chunks();
+    return {
+      network,
+      output: chunks[chunks.length - 1] as Buffer,
+      input: bscript.compile(chunks.slice(0, -1)),
+      witness: a.witness || [],
+    };
+  }) as PaymentFunction;
   const _confidentialAddress = lazy.value(() => {
     const payload = bs58check.decode(a.confidentialAddress!);
     const blindkey = payload.slice(2, 35);
