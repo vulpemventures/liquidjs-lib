@@ -261,7 +261,7 @@ export class PsetInput {
           input.tapLeafScript!.push({
             controlBlock,
             leafVersion,
-            script: kp.value,
+            script: kp.value.slice(0, kp.value.length - 1),
           });
           break;
         case InputTypes.TAP_BIP32_DERIVATION:
