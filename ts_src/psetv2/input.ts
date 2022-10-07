@@ -254,14 +254,14 @@ export class PsetInput {
           }
 
           const controlBlock = kp.key.keyData;
-          const leafVersion = kp.value.subarray(-1)[0];
+          const leafVersion = kp.value.slice(-1)[0];
           if ((controlBlock[0] & 0xfe) !== leafVersion) {
             throw new Error('Invalid input taproot leaf script version');
           }
           input.tapLeafScript!.push({
             controlBlock,
             leafVersion,
-            script: kp.value.subarray(0, -1),
+            script: kp.value.slice(0, -1),
           });
           break;
         case InputTypes.TAP_BIP32_DERIVATION:
