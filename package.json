@@ -50,7 +50,7 @@
   "dependencies": {
     "@types/randombytes": "^2.0.0",
     "@types/wif": "^2.0.2",
-    "@vulpemventures/secp256k1-zkp": "vulpemventures/secp256k1-zkp",
+    "@vulpemventures/secp256k1-zkp": "^2.1.0",
     "axios": "^0.21.1",
     "bech32": "^2.0.0",
     "bip174-liquid": "^1.0.3",
