@@ -12,6 +12,7 @@ import {
 import { Slip77Interface, SLIP77Factory } from 'slip77';
 import { ElementsValue } from './value';
 import { ECPairFactory, TinySecp256k1Interface } from 'ecpair';
+import { AssetHash } from './asset';
 const _randomBytes = require('randombytes');
 const ecc = require('tiny-secp256k1');
 
@@ -542,11 +543,86 @@ export class ZKPGenerator implements PsetBlindingGenerator {
         const input = pset.inputs[parseInt(i, 10)];
 
         let blindingArgs = {} as IssuanceBlindingArgs;
-        if (input.issuanceValue! > 0) {
+        if (input.hasIssuance()) {
+          if (input.issuanceValue! > 0) {
+            const value = input.issuanceValue!.toString(10);
+            const asset = input.getIssuanceAssetHash()!;
+            const blinder = randomBytes(this.opts);
+            const assetCommit = await assetCommitment(asset, ZERO);
+            const valueCommit = await valueCommitment(
+              value,
+              assetCommit,
+              blinder,
+            );
+            const blindproof = await blindValueProof(
+              value,
+              valueCommit,
+              assetCommit,
+              blinder,
+            );
+            const rangeproof = await rangeProof(
+              value,
+              key,
+              asset,
+              ZERO,
+              blinder,
+              valueCommit,
+              Buffer.from([]),
+            );
+
+            blindingArgs = {
+              ...blindingArgs,
+              index: parseInt(i, 10),
+              issuanceAsset: asset,
+              issuanceValueCommitment: valueCommit,
+              issuanceValueRangeProof: rangeproof,
+              issuanceValueBlindProof: blindproof,
+              issuanceValueBlinder: blinder,
+            };
+          }
+
+          if (input.issuanceInflationKeys! > 0) {
+            const token = input.issuanceInflationKeys!.toString(10);
+            const asset = input.getIssuanceInflationKeysHash(true)!;
+            const blinder = randomBytes(this.opts);
+            const assetCommit = await assetCommitment(asset, ZERO);
+            const tokenCommit = await valueCommitment(
+              token,
+              assetCommit,
+              blinder,
+            );
+            const blindproof = await blindValueProof(
+              token,
+              tokenCommit,
+              assetCommit,
+              blinder,
+            );
+            const rangeproof = await rangeProof(
+              token,
+              key,
+              asset,
+              ZERO,
+              blinder,
+              tokenCommit,
+              Buffer.from([]),
+            );
+
+            blindingArgs = {
+              ...blindingArgs,
+              issuanceToken: asset,
+              issuanceTokenCommitment: tokenCommit,
+              issuanceTokenRangeProof: rangeproof,
+              issuanceTokenBlindProof: blindproof,
+              issuanceTokenBlinder: blinder,
+            };
+          }
+        }
+
+        if (input.hasReissuance()) {
           const value = input.issuanceValue!.toString(10);
           const asset = input.getIssuanceAssetHash()!;
           const blinder = randomBytes(this.opts);
-          const assetCommit = await assetCommitment(asset, ZERO);
+          const assetCommit = await assetCommitment(asset!, ZERO);
           const valueCommit = await valueCommitment(
             value,
             assetCommit,
@@ -576,42 +652,6 @@ export class ZKPGenerator implements PsetBlindingGenerator {
             issuanceValueRangeProof: rangeproof,
             issuanceValueBlindProof: blindproof,
             issuanceValueBlinder: blinder,
-          };
-        }
-
-        if (input.issuanceInflationKeys! > 0) {
-          const token = input.issuanceInflationKeys!.toString(10);
-          const asset = input.getIssuanceInflationKeysHash(true)!;
-          const blinder = randomBytes(this.opts);
-          const assetCommit = await assetCommitment(asset, ZERO);
-          const tokenCommit = await valueCommitment(
-            token,
-            assetCommit,
-            blinder,
-          );
-          const blindproof = await blindValueProof(
-            token,
-            tokenCommit,
-            assetCommit,
-            blinder,
-          );
-          const rangeproof = await rangeProof(
-            token,
-            key,
-            asset,
-            ZERO,
-            blinder,
-            tokenCommit,
-            Buffer.from([]),
-          );
-
-          blindingArgs = {
-            ...blindingArgs,
-            issuanceToken: asset,
-            issuanceTokenCommitment: tokenCommit,
-            issuanceTokenRangeProof: rangeproof,
-            issuanceTokenBlindProof: blindproof,
-            issuanceTokenBlinder: blinder,
           };
         }
 
@@ -648,6 +688,10 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       pset,
       blindedIssuances,
     );
+
+    console.log('in assets and asset blinders')
+    assets.forEach(v => console.log(AssetHash.fromBytes(v).hex))
+    assetBlinders.forEach(v => console.log(v.toString('hex')))
 
     return Promise.all(
       outputIndexes.map(async (i) => {
@@ -808,6 +852,14 @@ export class ZKPGenerator implements PsetBlindingGenerator {
           });
         }
       }
+      if (input.hasReissuance()) {
+        unblindedIns.push({
+          value: '',
+          valueBlindingFactor: Buffer.from([]),
+          asset: input.getIssuanceAssetHash()!,
+          assetBlindingFactor: ZERO,
+        })
+      }
     });
 
     const assets = [] as Buffer[];
@@ -913,7 +965,7 @@ function validateBlindingKeysByIndex(
     if (i < 0 || i >= pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
-    if (!pset.inputs[i].hasIssuance()) {
+    if (!pset.inputs[i].hasIssuance() && !pset.inputs[i].hasReissuance()) {
       throw new Error('Input does not have any issuance to blind');
     }
     if (v.length !== 32) {

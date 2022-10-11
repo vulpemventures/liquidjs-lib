@@ -21,18 +21,18 @@ export class Extractor {
     pset.inputs.forEach((input) => {
       tx.addInput(input.previousTxid, input.previousTxIndex, input.sequence);
       const inIndex = tx.ins.length - 1;
-      if (input.hasIssuance()) {
+      if (input.hasIssuance() || input.hasReissuance()) {
         const assetAmount =
-          input.issuanceValueCommitment! &&
-          input.issuanceValueCommitment!.length > 0
-            ? input.issuanceValueCommitment!
+          input.issuanceValueCommitment &&
+          input.issuanceValueCommitment.length > 0
+            ? input.issuanceValueCommitment
             : input.issuanceValue! > 0
             ? ElementsValue.fromNumber(input.issuanceValue!).bytes
             : Buffer.of(0x00);
         const tokenAmount =
-          input.issuanceInflationKeysCommitment! &&
-          input.issuanceInflationKeysCommitment!.length > 0
-            ? input.issuanceInflationKeysCommitment!
+          input.issuanceInflationKeysCommitment &&
+          input.issuanceInflationKeysCommitment.length > 0
+            ? input.issuanceInflationKeysCommitment
             : input.issuanceInflationKeys! > 0
             ? ElementsValue.fromNumber(input.issuanceInflationKeys!).bytes
             : Buffer.of(0x00);

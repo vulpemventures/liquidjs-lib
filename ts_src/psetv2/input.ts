@@ -642,7 +642,10 @@ export class PsetInput {
   }
 
   hasIssuance(): boolean {
-    return this.issuanceValue! > 0 || this.issuanceInflationKeys! > 0;
+    if (!this.issuanceBlindingNonce) {
+      return false;
+    }
+    return this.issuanceBlindingNonce!.equals(ZERO) && (this.issuanceValue! > 0 || this.issuanceInflationKeys! > 0);
   }
 
   hasIssuanceBlinded(): boolean {
@@ -653,7 +656,7 @@ export class PsetInput {
     if (!this.issuanceBlindingNonce) {
       return false;
     }
-    return !this.issuanceBlindingNonce!.equals(ZERO);
+    return !this.issuanceBlindingNonce!.equals(ZERO) && this.issuanceValue! > 0;
   }
 
   isFinalized(): boolean {
@@ -674,7 +677,7 @@ export class PsetInput {
   }
 
   getIssuanceAssetHash(): Buffer | undefined {
-    if (!this.hasIssuance()) {
+    if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
 
@@ -693,7 +696,7 @@ export class PsetInput {
   }
 
   getIssuanceInflationKeysHash(blindedIssuance: boolean): Buffer | undefined {
-    if (!this.hasIssuance()) {
+    if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
 
@@ -702,7 +705,7 @@ export class PsetInput {
     }
 
     let entropy = this.issuanceAssetEntropy!;
-    if (!this.hasReissuance()) {
+    if (this.hasIssuance()) {
       entropy = generateEntropy(
         { txHash: this.previousTxid, vout: this.previousTxIndex },
         this.issuanceAssetEntropy!,
