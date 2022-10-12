@@ -309,9 +309,10 @@
   dependencies:
     "@types/node" "*"
 
-"@vulpemventures/secp256k1-zkp@vulpemventures/secp256k1-zkp":
+"@vulpemventures/secp256k1-zkp@^2.1.0":
   version "2.1.0"
-  resolved "https://codeload.github.com/vulpemventures/secp256k1-zkp/tar.gz/9cb16d1d601f2c78618176eef4eb2434184043eb"
+  resolved "https://registry.yarnpkg.com/@vulpemventures/secp256k1-zkp/-/secp256k1-zkp-2.1.0.tgz#11614110d0c3cc198dff5001d6564cdcb0da5b46"
+  integrity sha512-86EGAkPqEwy5KKeC8Ow8+fMhSiFtorvIQQ9yhTwwHqT0UdUVOW/Fu2ZDoooQK5KAQbyISBB+vf0jK3eYH+Dlqw==
   dependencies:
     "@types/node" "^13.9.2"
     long "^4.0.0"
