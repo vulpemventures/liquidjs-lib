@@ -9,11 +9,10 @@ import {
   PsetBlindingGenerator,
   PsetBlindingValidator,
 } from './psetv2';
-import { Slip77Interface, SLIP77Factory } from 'slip77';
+import { Slip77Interface } from 'slip77';
 import { ElementsValue } from './value';
 import { ECPairFactory, TinySecp256k1Interface } from 'ecpair';
-const _randomBytes = require('randombytes');
-const ecc = require('tiny-secp256k1');
+import * as randombytes from 'randombytes';
 
 const secp256k1Promise = secp256k1();
 
@@ -397,9 +396,9 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     return bg;
   }
 
-  static fromMasterBlindingKey(masterKey: Buffer): ZKPGenerator {
+  static fromMasterBlindingKey(masterKey: Slip77Interface): ZKPGenerator {
     const bg = new ZKPGenerator();
-    bg.masterBlindingKey = SLIP77Factory(ecc).fromMasterBlindingKey(masterKey);
+    bg.masterBlindingKey = masterKey;
     return bg;
   }
 
@@ -937,7 +936,7 @@ function validateBlindedIssuances(
 
 function randomBytes(options?: RngOpts): Buffer {
   if (options === undefined) options = {};
-  const rng = options.rng || _randomBytes;
+  const rng = options.rng || randombytes.default;
   return rng(32);
 }
 
