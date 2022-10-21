@@ -3,19 +3,12 @@ import { BIP32Factory } from 'bip32';
 import * as regtestUtils from './_regtest';
 import { describe, it } from 'mocha';
 import { createPayment, getInputData, nonWitnessUtxoBuffer } from './utils';
-import {
-  Confidential,
-  payments,
-  Psbt,
-  networks as NETWORKS,
-} from '../../ts_src';
-import { ECPair, ecc } from '../ecc';
+import { payments, Psbt, networks as NETWORKS } from '../../ts_src';
+import { ECPair, ecc, confidential } from '../ecc';
 import { ElementsValue } from '../../ts_src/value';
-import secp256k1 from '@vulpemventures/secp256k1-zkp';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
-const confidential = new Confidential(secp256k1());
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
