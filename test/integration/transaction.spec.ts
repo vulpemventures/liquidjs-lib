@@ -15,6 +15,7 @@ import secp256k1 from '@vulpemventures/secp256k1-zkp';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
+const confidential = new Confidential(secp256k1());
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
@@ -529,7 +530,6 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         'noredeem',
       );
 
-      const confidential = new Confidential(secp256k1());
       const inputBlindingData = await confidential.unblindOutputWithKey(
         inputDataConfidential.witnessUtxo,
         aliceBlindingPrivateKey,
