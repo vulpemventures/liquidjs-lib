@@ -1,10 +1,13 @@
 import * as assert from 'assert';
-import * as confidential from '../src/confidential';
+import secp256k1 from '@vulpemventures/secp256k1-zkp';
+import { Confidential } from '../src/confidential';
 import * as preFixtures from './fixtures/confidential.json';
 
 import { describe, it } from 'mocha';
 
 import { TxOutput } from '../ts_src/index';
+
+const confidential = new Confidential(secp256k1());
 
 const initBuffers = (object: any): typeof preFixtures =>
   JSON.parse(JSON.stringify(object), (_, value) => {
