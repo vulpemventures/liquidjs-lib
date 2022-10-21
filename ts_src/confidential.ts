@@ -1,6 +1,6 @@
 import * as crypto from './crypto';
 import { Output, ZERO } from './transaction';
-import secp256k1 from '@vulpemventures/secp256k1-zkp';
+import { ZKP } from '@vulpemventures/secp256k1-zkp';
 import {
   Pset,
   IssuanceBlindingArgs,
@@ -14,87 +14,12 @@ import { ElementsValue } from './value';
 import { ECPairFactory, TinySecp256k1Interface } from 'ecpair';
 import * as randombytes from 'randombytes';
 
-const secp256k1Promise = secp256k1();
-
-async function nonceHash(pubkey: Buffer, privkey: Buffer): Promise<Buffer> {
-  const { ecdh } = await secp256k1Promise;
-  return crypto.sha256(ecdh(pubkey, privkey));
-}
-
-export async function valueBlindingFactor(
-  inValues: string[],
-  outValues: string[],
-  inGenerators: Buffer[],
-  outGenerators: Buffer[],
-  inFactors: Buffer[],
-  outFactors: Buffer[],
-): Promise<Buffer> {
-  const { pedersen } = await secp256k1Promise;
-  const values = inValues.concat(outValues);
-  const nInputs = inValues.length;
-  const generators = inGenerators.concat(outGenerators);
-  const factors = inFactors.concat(outFactors);
-  return pedersen.blindGeneratorBlindSum(values, nInputs, generators, factors);
-}
-
-export async function valueCommitment(
-  value: string,
-  gen: Buffer,
-  factor: Buffer,
-): Promise<Buffer> {
-  const { generator, pedersen } = await secp256k1Promise;
-  const generatorParsed = generator.parse(gen);
-  const commit = pedersen.commit(factor, value, generatorParsed);
-  return pedersen.commitSerialize(commit);
-}
-
-export async function assetCommitment(
-  asset: Buffer,
-  factor: Buffer,
-): Promise<Buffer> {
-  const { generator } = await secp256k1Promise;
-  const gen = generator.generateBlinded(asset, factor);
-  return generator.serialize(gen);
-}
 
 export interface UnblindOutputResult {
   value: string;
   valueBlindingFactor: Buffer;
   asset: Buffer;
   assetBlindingFactor: Buffer;
-}
-
-export async function unblindOutputWithKey(
-  out: Output,
-  blindingPrivKey: Buffer,
-): Promise<UnblindOutputResult> {
-  const nonce = await nonceHash(out.nonce, blindingPrivKey);
-  return unblindOutputWithNonce(out, nonce);
-}
-
-export async function unblindOutputWithNonce(
-  out: Output,
-  nonce: Buffer,
-): Promise<UnblindOutputResult> {
-  if (!out.rangeProof || out.rangeProof.length === 0) {
-    throw new Error('Missing rangeproof to rewind');
-  }
-  const secp = await secp256k1Promise;
-  const gen = secp.generator.parse(out.asset);
-  const { value, blindFactor, message } = secp.rangeproof.rewind(
-    out.value,
-    out.rangeProof!,
-    nonce,
-    gen,
-    out.script,
-  );
-
-  return {
-    value,
-    asset: message.slice(0, 32),
-    valueBlindingFactor: blindFactor,
-    assetBlindingFactor: message.slice(32),
-  };
 }
 
 export interface RangeProofInfoResult {
@@ -104,216 +29,299 @@ export interface RangeProofInfoResult {
   maxValue: number;
 }
 
-export async function rangeProofInfo(
-  proof: Buffer,
-): Promise<RangeProofInfoResult> {
-  const { rangeproof } = await secp256k1Promise;
-  const { exp, mantissa, minValue, maxValue } = rangeproof.info(proof);
-  return {
-    minValue: parseInt(minValue, 10),
-    maxValue: parseInt(maxValue, 10),
-    ctExp: exp,
-    ctBits: parseInt(mantissa, 10),
-  };
+export default class Confidential {
+  constructor(private secp256k1Promise: Promise<ZKP>) {}
+
+  async nonceHash(pubkey: Buffer, privkey: Buffer): Promise<Buffer> {
+    const { ecdh } = await this.secp256k1Promise;
+    return crypto.sha256(ecdh(pubkey, privkey));
+  }
+  
+  async valueBlindingFactor(
+    inValues: string[],
+    outValues: string[],
+    inGenerators: Buffer[],
+    outGenerators: Buffer[],
+    inFactors: Buffer[],
+    outFactors: Buffer[],
+  ): Promise<Buffer> {
+    const { pedersen } = await this.secp256k1Promise;
+    const values = inValues.concat(outValues);
+    const nInputs = inValues.length;
+    const generators = inGenerators.concat(outGenerators);
+    const factors = inFactors.concat(outFactors);
+    return pedersen.blindGeneratorBlindSum(values, nInputs, generators, factors);
+  }
+  
+  async valueCommitment(
+    value: string,
+    gen: Buffer,
+    factor: Buffer,
+  ): Promise<Buffer> {
+    const { generator, pedersen } = await this.secp256k1Promise;
+    const generatorParsed = generator.parse(gen);
+    const commit = pedersen.commit(factor, value, generatorParsed);
+    return pedersen.commitSerialize(commit);
+  }
+  
+  async assetCommitment(
+    asset: Buffer,
+    factor: Buffer,
+  ): Promise<Buffer> {
+    const { generator } = await this.secp256k1Promise;
+    const gen = generator.generateBlinded(asset, factor);
+    return generator.serialize(gen);
+  }
+  
+  async unblindOutputWithKey(
+    out: Output,
+    blindingPrivKey: Buffer,
+  ): Promise<UnblindOutputResult> {
+    const nonce = await this.nonceHash(out.nonce, blindingPrivKey);
+    return this.unblindOutputWithNonce(out, nonce);
+  }
+  
+  async unblindOutputWithNonce(
+    out: Output,
+    nonce: Buffer,
+  ): Promise<UnblindOutputResult> {
+    if (!out.rangeProof || out.rangeProof.length === 0) {
+      throw new Error('Missing rangeproof to rewind');
+    }
+    const secp = await this.secp256k1Promise;
+    const gen = secp.generator.parse(out.asset);
+    const { value, blindFactor, message } = secp.rangeproof.rewind(
+      out.value,
+      out.rangeProof!,
+      nonce,
+      gen,
+      out.script,
+    );
+  
+    return {
+      value,
+      asset: message.slice(0, 32),
+      valueBlindingFactor: blindFactor,
+      assetBlindingFactor: message.slice(32),
+    };
+  }
+  
+  async rangeProofInfo(
+    proof: Buffer,
+  ): Promise<RangeProofInfoResult> {
+    const { rangeproof } = await this.secp256k1Promise;
+    const { exp, mantissa, minValue, maxValue } = rangeproof.info(proof);
+    return {
+      minValue: parseInt(minValue, 10),
+      maxValue: parseInt(maxValue, 10),
+      ctExp: exp,
+      ctBits: parseInt(mantissa, 10),
+    };
+  }
+  
+  /**
+   *  nonceHash from blinding key + ephemeral key and then rangeProof computation
+   */
+  async rangeProofWithNonceHash(
+    value: string,
+    blindingPubkey: Buffer,
+    ephemeralPrivkey: Buffer,
+    asset: Buffer,
+    assetBlindingFactor: Buffer,
+    valueBlindFactor: Buffer,
+    valueCommit: Buffer,
+    scriptPubkey: Buffer,
+    minValue?: string,
+    exp?: number,
+    minBits?: number,
+  ): Promise<Buffer> {
+    const nonce = await this.nonceHash(blindingPubkey, ephemeralPrivkey);
+    return this.rangeProof(
+      value,
+      nonce,
+      asset,
+      assetBlindingFactor,
+      valueBlindFactor,
+      valueCommit,
+      scriptPubkey,
+      minValue,
+      exp,
+      minBits,
+    );
+  }
+  
+  async rangeProofVerify(
+    valueCommit: Buffer,
+    assetCommit: Buffer,
+    proof: Buffer,
+    script?: Buffer,
+  ): Promise<boolean> {
+    const { generator, pedersen, rangeproof } = await this.secp256k1Promise;
+    const gen = generator.parse(assetCommit);
+    const commit = pedersen.commitParse(valueCommit);
+    return rangeproof.verify(commit, proof, gen, script);
+  }
+  
+  /**
+   *  rangeProof computation without nonceHash step.
+   */
+  async rangeProof(
+    value: string,
+    nonce: Buffer,
+    asset: Buffer,
+    assetBlindingFactor: Buffer,
+    valueBlindFactor: Buffer,
+    valueCommit: Buffer,
+    scriptPubkey: Buffer,
+    minValue?: string,
+    exp?: number,
+    minBits?: number,
+  ): Promise<Buffer> {
+    const { generator, pedersen, rangeproof } = await this.secp256k1Promise;
+  
+    const gen = generator.generateBlinded(asset, assetBlindingFactor);
+    const message = Buffer.concat([asset, assetBlindingFactor]);
+    const commit = pedersen.commitParse(valueCommit);
+  
+    const mv = value === '0' ? '0' : minValue ? minValue : '1';
+    const e = exp ? exp : 0;
+    const mb = minBits ? minBits : 52;
+  
+    return rangeproof.sign(
+      commit,
+      valueBlindFactor,
+      nonce,
+      value,
+      gen,
+      mv,
+      e,
+      mb,
+      message,
+      scriptPubkey,
+    );
+  }
+  
+  async surjectionProof(
+    outputAsset: Buffer,
+    outputAssetBlindingFactor: Buffer,
+    inputAssets: Buffer[],
+    inputAssetBlindingFactors: Buffer[],
+    seed: Buffer,
+  ): Promise<Buffer> {
+    const { generator, surjectionproof } = await this.secp256k1Promise;
+    const outputGenerator = generator.generateBlinded(
+      outputAsset,
+      outputAssetBlindingFactor,
+    );
+  
+    const inputGenerators = inputAssets.map((v, i) =>
+      generator.generateBlinded(v, inputAssetBlindingFactors[i]),
+    );
+    const nInputsToUse = inputAssets.length > 3 ? 3 : inputAssets.length;
+    const maxIterations = 100;
+  
+    const init = surjectionproof.initialize(
+      inputAssets,
+      nInputsToUse,
+      outputAsset,
+      maxIterations,
+      seed,
+    );
+  
+    const proof = surjectionproof.generate(
+      init.proof,
+      inputGenerators,
+      outputGenerator,
+      init.inputIndex,
+      inputAssetBlindingFactors[init.inputIndex],
+      outputAssetBlindingFactor,
+    );
+  
+    return surjectionproof.serialize(proof);
+  }
+  
+  async surjectionProofVerify(
+    inAssets: Buffer[],
+    inAssetBlinders: Buffer[],
+    outAsset: Buffer,
+    outAssetBlinder: Buffer,
+    proof: Buffer,
+  ): Promise<boolean> {
+    const { generator, surjectionproof } = await this.secp256k1Promise;
+    const inGenerators = inAssets.map((v, i) =>
+      generator.generateBlinded(v, inAssetBlinders[i]),
+    );
+    const outGenerator = generator.generateBlinded(outAsset, outAssetBlinder);
+    const sProof = surjectionproof.parse(proof);
+    return surjectionproof.verify(sProof, inGenerators, outGenerator);
+  }
+  
+  async blindValueProof(
+    value: string,
+    valueCommit: Buffer,
+    assetCommit: Buffer,
+    valueBlinder: Buffer,
+    opts?: RngOpts,
+  ): Promise<Buffer> {
+    const { generator, pedersen, rangeproof } = await this.secp256k1Promise;
+  
+    const gen = generator.parse(assetCommit);
+    const commit = pedersen.commitParse(valueCommit);
+    const nonce = randomBytes(opts);
+  
+    return rangeproof.sign(commit, valueBlinder, nonce, value, gen, value, -1);
+  }
+  
+  async blindAssetProof(
+    asset: Buffer,
+    assetCommit: Buffer,
+    assetBlinder: Buffer,
+  ): Promise<Buffer> {
+    const { generator, surjectionproof } = await this.secp256k1Promise;
+  
+    const nInputsToUse = 1;
+    const maxIterations = 100;
+  
+    const init = surjectionproof.initialize(
+      [asset],
+      nInputsToUse,
+      asset,
+      maxIterations,
+      ZERO,
+    );
+  
+    const gen = generator.generate(asset);
+    const assetGen = generator.parse(assetCommit);
+  
+    const proof = surjectionproof.generate(
+      init.proof,
+      [gen],
+      assetGen,
+      init.inputIndex,
+      ZERO,
+      assetBlinder,
+    );
+  
+    return surjectionproof.serialize(proof);
+  }
+  
+  async assetBlindProofVerify(
+    asset: Buffer,
+    assetCommit: Buffer,
+    proof: Buffer,
+  ): Promise<boolean> {
+    const { generator, surjectionproof } = await this.secp256k1Promise;
+    const inGenerators = [generator.generate(asset)];
+    const outGenerator = generator.parse(assetCommit);
+    const sProof = surjectionproof.parse(proof);
+    return surjectionproof.verify(sProof, inGenerators, outGenerator);
+  }
+
 }
 
-/**
- *  nonceHash from blinding key + ephemeral key and then rangeProof computation
- */
-export async function rangeProofWithNonceHash(
-  value: string,
-  blindingPubkey: Buffer,
-  ephemeralPrivkey: Buffer,
-  asset: Buffer,
-  assetBlindingFactor: Buffer,
-  valueBlindFactor: Buffer,
-  valueCommit: Buffer,
-  scriptPubkey: Buffer,
-  minValue?: string,
-  exp?: number,
-  minBits?: number,
-): Promise<Buffer> {
-  const nonce = await nonceHash(blindingPubkey, ephemeralPrivkey);
-  return rangeProof(
-    value,
-    nonce,
-    asset,
-    assetBlindingFactor,
-    valueBlindFactor,
-    valueCommit,
-    scriptPubkey,
-    minValue,
-    exp,
-    minBits,
-  );
-}
+//const secp256k1Promise = secp256k1();
 
-export async function rangeProofVerify(
-  valueCommit: Buffer,
-  assetCommit: Buffer,
-  proof: Buffer,
-  script?: Buffer,
-): Promise<boolean> {
-  const { generator, pedersen, rangeproof } = await secp256k1Promise;
-  const gen = generator.parse(assetCommit);
-  const commit = pedersen.commitParse(valueCommit);
-  return rangeproof.verify(commit, proof, gen, script);
-}
 
-/**
- *  rangeProof computation without nonceHash step.
- */
-export async function rangeProof(
-  value: string,
-  nonce: Buffer,
-  asset: Buffer,
-  assetBlindingFactor: Buffer,
-  valueBlindFactor: Buffer,
-  valueCommit: Buffer,
-  scriptPubkey: Buffer,
-  minValue?: string,
-  exp?: number,
-  minBits?: number,
-): Promise<Buffer> {
-  const { generator, pedersen, rangeproof } = await secp256k1Promise;
-
-  const gen = generator.generateBlinded(asset, assetBlindingFactor);
-  const message = Buffer.concat([asset, assetBlindingFactor]);
-  const commit = pedersen.commitParse(valueCommit);
-
-  const mv = value === '0' ? '0' : minValue ? minValue : '1';
-  const e = exp ? exp : 0;
-  const mb = minBits ? minBits : 52;
-
-  return rangeproof.sign(
-    commit,
-    valueBlindFactor,
-    nonce,
-    value,
-    gen,
-    mv,
-    e,
-    mb,
-    message,
-    scriptPubkey,
-  );
-}
-
-export async function surjectionProof(
-  outputAsset: Buffer,
-  outputAssetBlindingFactor: Buffer,
-  inputAssets: Buffer[],
-  inputAssetBlindingFactors: Buffer[],
-  seed: Buffer,
-): Promise<Buffer> {
-  const { generator, surjectionproof } = await secp256k1Promise;
-  const outputGenerator = generator.generateBlinded(
-    outputAsset,
-    outputAssetBlindingFactor,
-  );
-
-  const inputGenerators = inputAssets.map((v, i) =>
-    generator.generateBlinded(v, inputAssetBlindingFactors[i]),
-  );
-  const nInputsToUse = inputAssets.length > 3 ? 3 : inputAssets.length;
-  const maxIterations = 100;
-
-  const init = surjectionproof.initialize(
-    inputAssets,
-    nInputsToUse,
-    outputAsset,
-    maxIterations,
-    seed,
-  );
-
-  const proof = surjectionproof.generate(
-    init.proof,
-    inputGenerators,
-    outputGenerator,
-    init.inputIndex,
-    inputAssetBlindingFactors[init.inputIndex],
-    outputAssetBlindingFactor,
-  );
-
-  return surjectionproof.serialize(proof);
-}
-
-export async function surjectionProofVerify(
-  inAssets: Buffer[],
-  inAssetBlinders: Buffer[],
-  outAsset: Buffer,
-  outAssetBlinder: Buffer,
-  proof: Buffer,
-): Promise<boolean> {
-  const { generator, surjectionproof } = await secp256k1Promise;
-  const inGenerators = inAssets.map((v, i) =>
-    generator.generateBlinded(v, inAssetBlinders[i]),
-  );
-  const outGenerator = generator.generateBlinded(outAsset, outAssetBlinder);
-  const sProof = surjectionproof.parse(proof);
-  return surjectionproof.verify(sProof, inGenerators, outGenerator);
-}
-
-export async function blindValueProof(
-  value: string,
-  valueCommit: Buffer,
-  assetCommit: Buffer,
-  valueBlinder: Buffer,
-  opts?: RngOpts,
-): Promise<Buffer> {
-  const { generator, pedersen, rangeproof } = await secp256k1Promise;
-
-  const gen = generator.parse(assetCommit);
-  const commit = pedersen.commitParse(valueCommit);
-  const nonce = randomBytes(opts);
-
-  return rangeproof.sign(commit, valueBlinder, nonce, value, gen, value, -1);
-}
-
-export async function blindAssetProof(
-  asset: Buffer,
-  assetCommit: Buffer,
-  assetBlinder: Buffer,
-): Promise<Buffer> {
-  const { generator, surjectionproof } = await secp256k1Promise;
-
-  const nInputsToUse = 1;
-  const maxIterations = 100;
-
-  const init = surjectionproof.initialize(
-    [asset],
-    nInputsToUse,
-    asset,
-    maxIterations,
-    ZERO,
-  );
-
-  const gen = generator.generate(asset);
-  const assetGen = generator.parse(assetCommit);
-
-  const proof = surjectionproof.generate(
-    init.proof,
-    [gen],
-    assetGen,
-    init.inputIndex,
-    ZERO,
-    assetBlinder,
-  );
-
-  return surjectionproof.serialize(proof);
-}
-
-export async function assetBlindProofVerify(
-  asset: Buffer,
-  assetCommit: Buffer,
-  proof: Buffer,
-): Promise<boolean> {
-  const { generator, surjectionproof } = await secp256k1Promise;
-  const inGenerators = [generator.generate(asset)];
-  const outGenerator = generator.parse(assetCommit);
-  const sProof = surjectionproof.parse(proof);
-  return surjectionproof.verify(sProof, inGenerators, outGenerator);
-}
 
 interface RngOpts {
   rng?(arg0: number): Buffer;
@@ -325,6 +333,8 @@ export type KeysGenerator = (opts?: RngOpts) => {
 };
 
 export class ZKPValidator implements PsetBlindingValidator {
+  constructor(private zkpLib: Promise<ZKP>) {}
+
   async verifyValueRangeProof(
     valueCommit: Buffer,
     assetCommit: Buffer,
@@ -332,7 +342,8 @@ export class ZKPValidator implements PsetBlindingValidator {
     script: Buffer,
   ): Promise<boolean> {
     try {
-      return await rangeProofVerify(valueCommit, assetCommit, proof, script);
+      const confidential = new Confidential(this.zkpLib);
+      return await confidential.rangeProofVerify(valueCommit, assetCommit, proof, script);
     } catch (ignore) {
       return false;
     }
@@ -346,7 +357,8 @@ export class ZKPValidator implements PsetBlindingValidator {
     proof: Buffer,
   ): Promise<boolean> {
     try {
-      return await surjectionProofVerify(
+      const confidential = new Confidential(this.zkpLib);
+      return await confidential.surjectionProofVerify(
         inAssets,
         inAssetBlinders,
         outAsset,
@@ -364,7 +376,8 @@ export class ZKPValidator implements PsetBlindingValidator {
     proof: Buffer,
   ): Promise<boolean> {
     try {
-      return await rangeProofVerify(valueCommit, assetCommit, proof);
+      const confidential = new Confidential(this.zkpLib);
+      return await confidential.rangeProofVerify(valueCommit, assetCommit, proof);
     } catch (ignore) {
       return false;
     }
@@ -376,7 +389,8 @@ export class ZKPValidator implements PsetBlindingValidator {
     proof: Buffer,
   ): Promise<boolean> {
     try {
-      return await assetBlindProofVerify(asset, assetCommit, proof);
+      const confidential = new Confidential(this.zkpLib);
+      return await confidential.assetBlindProofVerify(asset, assetCommit, proof);
     } catch (ignore) {
       return false;
     }
@@ -384,20 +398,20 @@ export class ZKPValidator implements PsetBlindingValidator {
 }
 
 export class ZKPGenerator implements PsetBlindingGenerator {
-  static fromOwnedInputs(ownedInputs: OwnedInput[]): ZKPGenerator {
-    const bg = new ZKPGenerator();
+  static fromOwnedInputs(ownedInputs: OwnedInput[], zkpLib: Promise<ZKP>): ZKPGenerator {
+    const bg = new ZKPGenerator(zkpLib);
     bg.ownedInputs = ownedInputs;
     return bg;
   }
 
-  static fromInBlindingKeys(inBlindingKeys: Buffer[]): ZKPGenerator {
-    const bg = new ZKPGenerator();
+  static fromInBlindingKeys(inBlindingKeys: Buffer[], zkpLib: Promise<ZKP>): ZKPGenerator {
+    const bg = new ZKPGenerator(zkpLib);
     bg.inBlindingKeys = inBlindingKeys;
     return bg;
   }
 
-  static fromMasterBlindingKey(masterKey: Slip77Interface): ZKPGenerator {
-    const bg = new ZKPGenerator();
+  static fromMasterBlindingKey(masterKey: Slip77Interface, zkpLib: Promise<ZKP>): ZKPGenerator {
+    const bg = new ZKPGenerator(zkpLib);
     bg.masterBlindingKey = masterKey;
     return bg;
   }
@@ -418,7 +432,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
   masterBlindingKey?: Slip77Interface;
   opts?: RngOpts;
 
-  private constructor() {}
+  private constructor(private secp256k1Promise: Promise<ZKP>) {}
 
   async computeAndAddToScalarOffset(
     scalar: Buffer,
@@ -442,7 +456,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       return scalarOffset;
     }
 
-    const { ec } = await secp256k1Promise;
+    const { ec } = await this.secp256k1Promise;
     const negScalarOffset = ec.prvkeyNegate(scalarOffset);
 
     if (scalar.equals(negScalarOffset)) {
@@ -459,7 +473,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     if (outputScalar.equals(ZERO)) {
       return inputScalar.slice();
     }
-    const { ec } = await secp256k1Promise;
+    const { ec } = await this.secp256k1Promise;
     const negOutputScalar = ec.prvkeyNegate(outputScalar);
     if (inputScalar.equals(ZERO)) {
       return negOutputScalar;
@@ -472,7 +486,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     asset: Buffer,
     blinder: Buffer,
   ): Promise<Buffer> {
-    return valueCommitment(value, asset, blinder);
+    const confidential = new Confidential(this.secp256k1Promise);
+    return confidential.valueCommitment(value, asset, blinder);
   }
 
   async lastBlindValueProof(
@@ -481,7 +496,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     assetCommit: Buffer,
     blinder: Buffer,
   ): Promise<Buffer> {
-    return blindValueProof(value, valueCommit, assetCommit, blinder);
+    const confidential = new Confidential(this.secp256k1Promise);
+    return confidential.blindValueProof(value, valueCommit, assetCommit, blinder);
   }
 
   async lastValueRangeProof(
@@ -493,7 +509,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     script: Buffer,
     nonce: Buffer,
   ): Promise<Buffer> {
-    return rangeProof(
+    const confidential = new Confidential(this.secp256k1Promise);
+    return confidential.rangeProof(
       value,
       nonce,
       asset,
@@ -535,6 +552,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
   ): Promise<IssuanceBlindingArgs[]> {
     validatePset(pset);
     validateBlindingKeysByIndex(pset, blindingKeysByIndex);
+    
+    const confidential = new Confidential(this.secp256k1Promise);
 
     return Promise.all(
       Object.entries(blindingKeysByIndex).map(async ([i, key]) => {
@@ -542,22 +561,24 @@ export class ZKPGenerator implements PsetBlindingGenerator {
 
         let blindingArgs = {} as IssuanceBlindingArgs;
         if (input.issuanceValue! > 0) {
+
           const value = input.issuanceValue!.toString(10);
           const asset = input.getIssuanceAssetHash()!;
           const blinder = randomBytes(this.opts);
-          const assetCommit = await assetCommitment(asset, ZERO);
-          const valueCommit = await valueCommitment(
+
+          const assetCommit = await confidential.assetCommitment(asset, ZERO);
+          const valueCommit = await confidential.valueCommitment(
             value,
             assetCommit,
             blinder,
           );
-          const blindproof = await blindValueProof(
+          const blindproof = await confidential.blindValueProof(
             value,
             valueCommit,
             assetCommit,
             blinder,
           );
-          const rangeproof = await rangeProof(
+          const rangeproof = await confidential.rangeProof(
             value,
             key,
             asset,
@@ -582,19 +603,19 @@ export class ZKPGenerator implements PsetBlindingGenerator {
           const token = input.issuanceInflationKeys!.toString(10);
           const asset = input.getIssuanceInflationKeysHash(true)!;
           const blinder = randomBytes(this.opts);
-          const assetCommit = await assetCommitment(asset, ZERO);
-          const tokenCommit = await valueCommitment(
+          const assetCommit = await confidential.assetCommitment(asset, ZERO);
+          const tokenCommit = await confidential.valueCommitment(
             token,
             assetCommit,
             blinder,
           );
-          const blindproof = await blindValueProof(
+          const blindproof = await confidential.blindValueProof(
             token,
             tokenCommit,
             assetCommit,
             blinder,
           );
-          const rangeproof = await rangeProof(
+          const rangeproof = await confidential.rangeProof(
             token,
             key,
             asset,
@@ -648,6 +669,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       blindedIssuances,
     );
 
+    const confidential = new Confidential(this.secp256k1Promise);
     return Promise.all(
       outputIndexes.map(async (i) => {
         const output = pset.outputs[i];
@@ -655,20 +677,20 @@ export class ZKPGenerator implements PsetBlindingGenerator {
         const valueBlinder = randomBytes(this.opts);
         const seed = randomBytes(this.opts);
         const value = output.value!.toString(10);
-        const assetCommit = await assetCommitment(output.asset!, assetBlinder);
-        const valueCommit = await valueCommitment(
+        const assetCommit = await confidential.assetCommitment(output.asset!, assetBlinder);
+        const valueCommit = await confidential.valueCommitment(
           value,
           assetCommit,
           valueBlinder,
         );
         const ephemeralKeyPair = keysGenerator();
         const nonceCommitment = ephemeralKeyPair.publicKey;
-        const ecdhNonce = await nonceHash(
+        const ecdhNonce = await confidential.nonceHash(
           output.blindingPubkey!,
           ephemeralKeyPair.privateKey,
         );
         const script = output.script || Buffer.from([]);
-        const rangeproof = await rangeProof(
+        const rangeproof = await confidential.rangeProof(
           value,
           ecdhNonce,
           output.asset!,
@@ -677,20 +699,20 @@ export class ZKPGenerator implements PsetBlindingGenerator {
           valueCommit,
           script,
         );
-        const surjectionproof = await surjectionProof(
+        const surjectionproof = await confidential.surjectionProof(
           output.asset!,
           assetBlinder,
           assets,
           assetBlinders,
           seed,
         );
-        const valueBlindProof = await blindValueProof(
+        const valueBlindProof = await confidential.blindValueProof(
           value,
           valueCommit,
           assetCommit,
           valueBlinder,
         );
-        const assetBlindProof = await blindAssetProof(
+        const assetBlindProof = await confidential.blindAssetProof(
           output.asset!,
           assetCommit,
           assetBlinder,
@@ -725,7 +747,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
       return valueBlinder.slice();
     }
 
-    const { ec } = await secp256k1Promise;
+    const { ec } = await this.secp256k1Promise;
     const val = Buffer.alloc(32, 0);
     val.writeBigUInt64BE(BigInt(value), 24);
     const result = ec.prvkeyTweakMul(assetBlinder, val);
@@ -765,7 +787,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
 
     for (const key of keys) {
       try {
-        const revealed = await unblindOutputWithKey(out, key);
+        const confidential = new Confidential(this.secp256k1Promise);
+        const revealed = await confidential.unblindOutputWithKey(out, key);
         return {
           index: 0,
           value: revealed.value,
