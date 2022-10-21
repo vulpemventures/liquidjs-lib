@@ -29,7 +29,7 @@ export interface RangeProofInfoResult {
   maxValue: number;
 }
 
-export default class Confidential {
+export class Confidential {
   constructor(private secp256k1Promise: Promise<ZKP>) {}
 
   async nonceHash(pubkey: Buffer, privkey: Buffer): Promise<Buffer> {

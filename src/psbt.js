@@ -43,6 +43,11 @@ var __importStar =
     __setModuleDefault(result, mod);
     return result;
   };
+var __importDefault =
+  (this && this.__importDefault) ||
+  function (mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.validateAddReissuanceArgs =
   exports.validateAddIssuanceArgs =
@@ -52,6 +57,9 @@ exports.validateAddReissuanceArgs =
   exports.Psbt =
     void 0;
 const confidential = __importStar(require('./confidential'));
+const secp256k1_zkp_1 = __importDefault(
+  require('@vulpemventures/secp256k1-zkp'),
+);
 const varuint = __importStar(require('bip174-liquid/src/lib/converter/varint'));
 const address_1 = require('./address');
 const bufferutils_1 = require('./bufferutils');
@@ -993,6 +1001,7 @@ class Psbt {
         'no blinding factors generated for pseudo issuance inputs',
       );
     }
+    const conf = new confidential.Confidential((0, secp256k1_zkp_1.default)());
     // loop over inputs and create blindingData object in case of issuance
     let inputIndex = 0;
     for (const input of this.__CACHE.__TX.ins) {
@@ -1005,11 +1014,11 @@ class Psbt {
         const entropy = (0, issuance_1.issuanceEntropyFromInput)(input);
         const issuedAsset = (0, issuance_1.calculateAsset)(entropy);
         const blindingFactorsAsset = getBlindingFactors(issuedAsset);
-        const assetCommitment = await confidential.assetCommitment(
+        const assetCommitment = await conf.assetCommitment(
           blindingFactorsAsset.asset,
           blindingFactorsAsset.assetBlindingFactor,
         );
-        const valueCommitment = await confidential.valueCommitment(
+        const valueCommitment = await conf.valueCommitment(
           blindingFactorsAsset.value,
           assetCommitment,
           blindingFactorsAsset.valueBlindingFactor,
@@ -1022,7 +1031,7 @@ class Psbt {
             `missing asset blinding private key for issuance #${inputIndex}`,
           );
         }
-        const issuanceRangeProof = await confidential.rangeProof(
+        const issuanceRangeProof = await conf.rangeProof(
           blindingFactorsAsset.value,
           assetBlindingPrivateKey,
           blindingFactorsAsset.asset,
@@ -1044,11 +1053,11 @@ class Psbt {
         ) {
           const token = (0, issuance_1.calculateReissuanceToken)(entropy, true);
           const blindingFactorsToken = getBlindingFactors(token);
-          const issuedTokenCommitment = await confidential.assetCommitment(
+          const issuedTokenCommitment = await conf.assetCommitment(
             token,
             blindingFactorsToken.assetBlindingFactor,
           );
-          const tokenValueCommitment = await confidential.valueCommitment(
+          const tokenValueCommitment = await conf.valueCommitment(
             blindingFactorsToken.value,
             issuedTokenCommitment,
             blindingFactorsToken.valueBlindingFactor,
@@ -1058,7 +1067,7 @@ class Psbt {
               'you must specify tokenKey in order to blind the token issuance',
             );
           }
-          const inflationRangeProof = await confidential.rangeProof(
+          const inflationRangeProof = await conf.rangeProof(
             blindingFactorsToken.value,
             issuanceBlindingPrivKeys[inputIndex].tokenKey,
             token,
@@ -1103,6 +1112,7 @@ class Psbt {
       blindingData,
       outputsData,
     );
+    const conf = new confidential.Confidential((0, secp256k1_zkp_1.default)());
     // use blinders to compute proofs & commitments
     let indexInArray = 0;
     for (const outputIndex of outputIndexes) {
@@ -1111,17 +1121,17 @@ class Psbt {
       const outputNonce = ephemeralKeys.publicKey;
       const outputBlindingData = outputsBlindingData[indexInArray];
       // commitments
-      const assetCommitment = await confidential.assetCommitment(
+      const assetCommitment = await conf.assetCommitment(
         outputBlindingData.asset,
         outputBlindingData.assetBlindingFactor,
       );
-      const valueCommitment = await confidential.valueCommitment(
+      const valueCommitment = await conf.valueCommitment(
         outputBlindingData.value,
         assetCommitment,
         outputBlindingData.valueBlindingFactor,
       );
       // proofs
-      const rangeProof = await confidential.rangeProofWithNonceHash(
+      const rangeProof = await conf.rangeProofWithNonceHash(
         outputBlindingData.value,
         blindingPubkeys[indexInArray],
         ephemeralKeys.privateKey,
@@ -1131,7 +1141,7 @@ class Psbt {
         valueCommitment,
         this.__CACHE.__TX.outs[outputIndex].script,
       );
-      const surjectionProof = await confidential.surjectionProof(
+      const surjectionProof = await conf.surjectionProof(
         outputBlindingData.asset,
         outputBlindingData.assetBlindingFactor,
         blindingData.map(({ asset }) => asset),
@@ -2072,7 +2082,8 @@ async function computeOutputsBlindingData(inputsBlindingData, outputsData) {
     ({ valueBlindingFactor }) => valueBlindingFactor,
   );
   // compute output final amount blinder
-  const finalAmountBlinder = await confidential.valueBlindingFactor(
+  const conf = new confidential.Confidential((0, secp256k1_zkp_1.default)());
+  const finalAmountBlinder = await conf.valueBlindingFactor(
     inputsValues,
     outputsValues,
     inputsAssetBlinders,
@@ -2097,7 +2108,8 @@ async function toBlindingData(blindDataLike, witnessUtxo) {
   }
   if (Buffer.isBuffer(blindDataLike)) {
     if (!witnessUtxo) throw new Error('need witnessUtxo');
-    return confidential.unblindOutputWithKey(witnessUtxo, blindDataLike);
+    const conf = new confidential.Confidential((0, secp256k1_zkp_1.default)());
+    return conf.unblindOutputWithKey(witnessUtxo, blindDataLike);
   }
   return blindDataLike;
 }

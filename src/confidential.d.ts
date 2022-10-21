@@ -1,40 +1,46 @@
 /// <reference types="node" />
 import { Output } from './transaction';
+import { ZKP } from '@vulpemventures/secp256k1-zkp';
 import { Pset, IssuanceBlindingArgs, OutputBlindingArgs, OwnedInput, PsetBlindingGenerator, PsetBlindingValidator } from './psetv2';
 import { Slip77Interface } from 'slip77';
 import { TinySecp256k1Interface } from 'ecpair';
-export declare function valueBlindingFactor(inValues: string[], outValues: string[], inGenerators: Buffer[], outGenerators: Buffer[], inFactors: Buffer[], outFactors: Buffer[]): Promise<Buffer>;
-export declare function valueCommitment(value: string, gen: Buffer, factor: Buffer): Promise<Buffer>;
-export declare function assetCommitment(asset: Buffer, factor: Buffer): Promise<Buffer>;
 export interface UnblindOutputResult {
     value: string;
     valueBlindingFactor: Buffer;
     asset: Buffer;
     assetBlindingFactor: Buffer;
 }
-export declare function unblindOutputWithKey(out: Output, blindingPrivKey: Buffer): Promise<UnblindOutputResult>;
-export declare function unblindOutputWithNonce(out: Output, nonce: Buffer): Promise<UnblindOutputResult>;
 export interface RangeProofInfoResult {
     ctExp: number;
     ctBits: number;
     minValue: number;
     maxValue: number;
 }
-export declare function rangeProofInfo(proof: Buffer): Promise<RangeProofInfoResult>;
-/**
- *  nonceHash from blinding key + ephemeral key and then rangeProof computation
- */
-export declare function rangeProofWithNonceHash(value: string, blindingPubkey: Buffer, ephemeralPrivkey: Buffer, asset: Buffer, assetBlindingFactor: Buffer, valueBlindFactor: Buffer, valueCommit: Buffer, scriptPubkey: Buffer, minValue?: string, exp?: number, minBits?: number): Promise<Buffer>;
-export declare function rangeProofVerify(valueCommit: Buffer, assetCommit: Buffer, proof: Buffer, script?: Buffer): Promise<boolean>;
-/**
- *  rangeProof computation without nonceHash step.
- */
-export declare function rangeProof(value: string, nonce: Buffer, asset: Buffer, assetBlindingFactor: Buffer, valueBlindFactor: Buffer, valueCommit: Buffer, scriptPubkey: Buffer, minValue?: string, exp?: number, minBits?: number): Promise<Buffer>;
-export declare function surjectionProof(outputAsset: Buffer, outputAssetBlindingFactor: Buffer, inputAssets: Buffer[], inputAssetBlindingFactors: Buffer[], seed: Buffer): Promise<Buffer>;
-export declare function surjectionProofVerify(inAssets: Buffer[], inAssetBlinders: Buffer[], outAsset: Buffer, outAssetBlinder: Buffer, proof: Buffer): Promise<boolean>;
-export declare function blindValueProof(value: string, valueCommit: Buffer, assetCommit: Buffer, valueBlinder: Buffer, opts?: RngOpts): Promise<Buffer>;
-export declare function blindAssetProof(asset: Buffer, assetCommit: Buffer, assetBlinder: Buffer): Promise<Buffer>;
-export declare function assetBlindProofVerify(asset: Buffer, assetCommit: Buffer, proof: Buffer): Promise<boolean>;
+export declare class Confidential {
+    private secp256k1Promise;
+    constructor(secp256k1Promise: Promise<ZKP>);
+    nonceHash(pubkey: Buffer, privkey: Buffer): Promise<Buffer>;
+    valueBlindingFactor(inValues: string[], outValues: string[], inGenerators: Buffer[], outGenerators: Buffer[], inFactors: Buffer[], outFactors: Buffer[]): Promise<Buffer>;
+    valueCommitment(value: string, gen: Buffer, factor: Buffer): Promise<Buffer>;
+    assetCommitment(asset: Buffer, factor: Buffer): Promise<Buffer>;
+    unblindOutputWithKey(out: Output, blindingPrivKey: Buffer): Promise<UnblindOutputResult>;
+    unblindOutputWithNonce(out: Output, nonce: Buffer): Promise<UnblindOutputResult>;
+    rangeProofInfo(proof: Buffer): Promise<RangeProofInfoResult>;
+    /**
+     *  nonceHash from blinding key + ephemeral key and then rangeProof computation
+     */
+    rangeProofWithNonceHash(value: string, blindingPubkey: Buffer, ephemeralPrivkey: Buffer, asset: Buffer, assetBlindingFactor: Buffer, valueBlindFactor: Buffer, valueCommit: Buffer, scriptPubkey: Buffer, minValue?: string, exp?: number, minBits?: number): Promise<Buffer>;
+    rangeProofVerify(valueCommit: Buffer, assetCommit: Buffer, proof: Buffer, script?: Buffer): Promise<boolean>;
+    /**
+     *  rangeProof computation without nonceHash step.
+     */
+    rangeProof(value: string, nonce: Buffer, asset: Buffer, assetBlindingFactor: Buffer, valueBlindFactor: Buffer, valueCommit: Buffer, scriptPubkey: Buffer, minValue?: string, exp?: number, minBits?: number): Promise<Buffer>;
+    surjectionProof(outputAsset: Buffer, outputAssetBlindingFactor: Buffer, inputAssets: Buffer[], inputAssetBlindingFactors: Buffer[], seed: Buffer): Promise<Buffer>;
+    surjectionProofVerify(inAssets: Buffer[], inAssetBlinders: Buffer[], outAsset: Buffer, outAssetBlinder: Buffer, proof: Buffer): Promise<boolean>;
+    blindValueProof(value: string, valueCommit: Buffer, assetCommit: Buffer, valueBlinder: Buffer, opts?: RngOpts): Promise<Buffer>;
+    blindAssetProof(asset: Buffer, assetCommit: Buffer, assetBlinder: Buffer): Promise<Buffer>;
+    assetBlindProofVerify(asset: Buffer, assetCommit: Buffer, proof: Buffer): Promise<boolean>;
+}
 interface RngOpts {
     rng?(arg0: number): Buffer;
 }
@@ -43,15 +49,18 @@ export declare type KeysGenerator = (opts?: RngOpts) => {
     privateKey: Buffer;
 };
 export declare class ZKPValidator implements PsetBlindingValidator {
+    private zkpLib;
+    constructor(zkpLib: Promise<ZKP>);
     verifyValueRangeProof(valueCommit: Buffer, assetCommit: Buffer, proof: Buffer, script: Buffer): Promise<boolean>;
     verifyAssetSurjectionProof(inAssets: Buffer[], inAssetBlinders: Buffer[], outAsset: Buffer, outAssetBlinder: Buffer, proof: Buffer): Promise<boolean>;
     verifyBlindValueProof(valueCommit: Buffer, assetCommit: Buffer, proof: Buffer): Promise<boolean>;
     verifyBlindAssetProof(asset: Buffer, assetCommit: Buffer, proof: Buffer): Promise<boolean>;
 }
 export declare class ZKPGenerator implements PsetBlindingGenerator {
-    static fromOwnedInputs(ownedInputs: OwnedInput[]): ZKPGenerator;
-    static fromInBlindingKeys(inBlindingKeys: Buffer[]): ZKPGenerator;
-    static fromMasterBlindingKey(masterKey: Buffer): ZKPGenerator;
+    private secp256k1Promise;
+    static fromOwnedInputs(ownedInputs: OwnedInput[], zkpLib: Promise<ZKP>): ZKPGenerator;
+    static fromInBlindingKeys(inBlindingKeys: Buffer[], zkpLib: Promise<ZKP>): ZKPGenerator;
+    static fromMasterBlindingKey(masterKey: Slip77Interface, zkpLib: Promise<ZKP>): ZKPGenerator;
     static ECCKeysGenerator(ec: TinySecp256k1Interface): KeysGenerator;
     ownedInputs?: OwnedInput[];
     inBlindingKeys?: Buffer[];
