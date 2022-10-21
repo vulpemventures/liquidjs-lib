@@ -1,5 +1,5 @@
 import * as confidential from './confidential';
-import secp256k1ZKP from '@vulpemventures/secp256k1-zkp';
+import secp256k1 from '@vulpemventures/secp256k1-zkp';
 import * as varuint from 'bip174-liquid/src/lib/converter/varint';
 import {
   Transaction as ITransaction,
@@ -1136,7 +1136,7 @@ export class Psbt {
       );
     }
 
-    const conf = new confidential.Confidential(secp256k1ZKP());
+    const conf = new confidential.Confidential(secp256k1());
     // loop over inputs and create blindingData object in case of issuance
     let inputIndex = 0;
     for (const input of this.__CACHE.__TX.ins) {
@@ -1151,7 +1151,6 @@ export class Psbt {
 
         const issuedAsset = calculateAsset(entropy);
         const blindingFactorsAsset = getBlindingFactors(issuedAsset);
-
 
         const assetCommitment = await conf.assetCommitment(
           blindingFactorsAsset.asset,
@@ -1245,7 +1244,6 @@ export class Psbt {
     keysGenerator: KeysGenerator,
     opts?: RngOpts,
   ): Promise<this> {
-
     // get data (satoshis & asset) outputs to blind
     const outputsData = outputIndexes.map((index: number) => {
       const output = this.__CACHE.__TX.outs[index];
@@ -1264,7 +1262,7 @@ export class Psbt {
       outputsData,
     );
 
-    const conf = new confidential.Confidential(secp256k1ZKP());
+    const conf = new confidential.Confidential(secp256k1());
     // use blinders to compute proofs & commitments
     let indexInArray = 0;
     for (const outputIndex of outputIndexes) {
@@ -2582,7 +2580,7 @@ export async function computeOutputsBlindingData(
   );
 
   // compute output final amount blinder
-  const conf = new confidential.Confidential(secp256k1ZKP());
+  const conf = new confidential.Confidential(secp256k1());
   const finalAmountBlinder = await conf.valueBlindingFactor(
     inputsValues,
     outputsValues,
@@ -2614,7 +2612,7 @@ export async function toBlindingData(
 
   if (Buffer.isBuffer(blindDataLike)) {
     if (!witnessUtxo) throw new Error('need witnessUtxo');
-    const conf = new confidential.Confidential(secp256k1ZKP());
+    const conf = new confidential.Confidential(secp256k1());
     return conf.unblindOutputWithKey(witnessUtxo, blindDataLike);
   }
 
