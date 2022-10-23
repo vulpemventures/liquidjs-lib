@@ -12,7 +12,7 @@ export * from './confidential';
 
 export { address, crypto, networks, payments, script, issuance, bip341 };
 export { TaggedHashPrefix } from './crypto';
-export {
+/* export {
   Psbt,
   PsbtTxInput,
   PsbtTxOutput,
@@ -22,7 +22,7 @@ export {
   HDSignerAsync,
   witnessStackToScriptWitness,
   BlindingDataLike,
-} from './psbt';
+} from './psbt'; */
 export { OPS as opcodes } from './ops';
 export {
   Input as TxInput,
