@@ -1,6 +1,5 @@
 /// <reference types="node" />
 import { Output } from './transaction';
-import { ZKP } from '@vulpemventures/secp256k1-zkp';
 import { Pset, IssuanceBlindingArgs, OutputBlindingArgs, OwnedInput, PsetBlindingGenerator, PsetBlindingValidator } from './psetv2';
 import { Slip77Interface } from 'slip77';
 import { TinySecp256k1Interface } from 'ecpair';
@@ -18,7 +17,7 @@ export interface RangeProofInfoResult {
 }
 export declare class Confidential {
     private secp256k1Promise;
-    constructor(secp256k1Promise: Promise<ZKP>);
+    constructor(secp256k1Promise: Promise<any>);
     nonceHash(pubkey: Buffer, privkey: Buffer): Promise<Buffer>;
     valueBlindingFactor(inValues: string[], outValues: string[], inGenerators: Buffer[], outGenerators: Buffer[], inFactors: Buffer[], outFactors: Buffer[]): Promise<Buffer>;
     valueCommitment(value: string, gen: Buffer, factor: Buffer): Promise<Buffer>;
@@ -50,7 +49,7 @@ export declare type KeysGenerator = (opts?: RngOpts) => {
 };
 export declare class ZKPValidator implements PsetBlindingValidator {
     private zkpLib;
-    constructor(zkpLib: Promise<ZKP>);
+    constructor(zkpLib: Promise<any>);
     verifyValueRangeProof(valueCommit: Buffer, assetCommit: Buffer, proof: Buffer, script: Buffer): Promise<boolean>;
     verifyAssetSurjectionProof(inAssets: Buffer[], inAssetBlinders: Buffer[], outAsset: Buffer, outAssetBlinder: Buffer, proof: Buffer): Promise<boolean>;
     verifyBlindValueProof(valueCommit: Buffer, assetCommit: Buffer, proof: Buffer): Promise<boolean>;
@@ -58,9 +57,9 @@ export declare class ZKPValidator implements PsetBlindingValidator {
 }
 export declare class ZKPGenerator implements PsetBlindingGenerator {
     private secp256k1Promise;
-    static fromOwnedInputs(ownedInputs: OwnedInput[], zkpLib: Promise<ZKP>): ZKPGenerator;
-    static fromInBlindingKeys(inBlindingKeys: Buffer[], zkpLib: Promise<ZKP>): ZKPGenerator;
-    static fromMasterBlindingKey(masterKey: Slip77Interface, zkpLib: Promise<ZKP>): ZKPGenerator;
+    static fromOwnedInputs(ownedInputs: OwnedInput[], zkpLib: Promise<any>): ZKPGenerator;
+    static fromInBlindingKeys(inBlindingKeys: Buffer[], zkpLib: Promise<any>): ZKPGenerator;
+    static fromMasterBlindingKey(masterKey: Slip77Interface, zkpLib: Promise<any>): ZKPGenerator;
     static ECCKeysGenerator(ec: TinySecp256k1Interface): KeysGenerator;
     ownedInputs?: OwnedInput[];
     inBlindingKeys?: Buffer[];
