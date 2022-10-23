@@ -1,6 +1,5 @@
 import * as crypto from './crypto';
 import { Output, ZERO } from './transaction';
-import { ZKP } from '@vulpemventures/secp256k1-zkp';
 import {
   Pset,
   IssuanceBlindingArgs,
@@ -29,7 +28,7 @@ export interface RangeProofInfoResult {
 }
 
 export class Confidential {
-  constructor(private secp256k1Promise: Promise<ZKP>) {}
+  constructor(private secp256k1Promise: Promise<any>) {}
 
   async nonceHash(pubkey: Buffer, privkey: Buffer): Promise<Buffer> {
     const { ecdh } = await this.secp256k1Promise;
@@ -329,7 +328,7 @@ export type KeysGenerator = (opts?: RngOpts) => {
 };
 
 export class ZKPValidator implements PsetBlindingValidator {
-  constructor(private zkpLib: Promise<ZKP>) {}
+  constructor(private zkpLib: Promise<any>) {}
 
   async verifyValueRangeProof(
     valueCommit: Buffer,
@@ -409,7 +408,7 @@ export class ZKPValidator implements PsetBlindingValidator {
 export class ZKPGenerator implements PsetBlindingGenerator {
   static fromOwnedInputs(
     ownedInputs: OwnedInput[],
-    zkpLib: Promise<ZKP>,
+    zkpLib: Promise<any>,
   ): ZKPGenerator {
     const bg = new ZKPGenerator(zkpLib);
     bg.ownedInputs = ownedInputs;
@@ -418,7 +417,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
 
   static fromInBlindingKeys(
     inBlindingKeys: Buffer[],
-    zkpLib: Promise<ZKP>,
+    zkpLib: Promise<any>,
   ): ZKPGenerator {
     const bg = new ZKPGenerator(zkpLib);
     bg.inBlindingKeys = inBlindingKeys;
@@ -427,7 +426,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
 
   static fromMasterBlindingKey(
     masterKey: Slip77Interface,
-    zkpLib: Promise<ZKP>,
+    zkpLib: Promise<any>,
   ): ZKPGenerator {
     const bg = new ZKPGenerator(zkpLib);
     bg.masterBlindingKey = masterKey;
@@ -450,7 +449,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
   masterBlindingKey?: Slip77Interface;
   opts?: RngOpts;
 
-  private constructor(private secp256k1Promise: Promise<ZKP>) {}
+  private constructor(private secp256k1Promise: Promise<any>) {}
 
   async computeAndAddToScalarOffset(
     scalar: Buffer,
