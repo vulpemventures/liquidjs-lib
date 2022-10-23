@@ -1,5 +1,5 @@
 import { payments } from '..';
-import { witnessStackToScriptWitness } from '../psbt';
+import { varuint } from '../bufferutils';
 import { findTapLeafToFinalize, sortSignatures } from './bip371';
 import { PsetInput } from './input';
 import { PartialSig } from './interfaces';
@@ -274,4 +274,34 @@ function getTaprootFinalScripts(
   } catch (err) {
     throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);
   }
+}
+
+export function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
+  let buffer = Buffer.allocUnsafe(0);
+
+  function writeSlice(slice: Buffer): void {
+    buffer = Buffer.concat([buffer, Buffer.from(slice)]);
+  }
+
+  function writeVarInt(i: number): void {
+    const currentLen = buffer.length;
+    const varintLen = varuint.encodingLength(i);
+
+    buffer = Buffer.concat([buffer, Buffer.allocUnsafe(varintLen)]);
+    varuint.encode(i, buffer, currentLen);
+  }
+
+  function writeVarSlice(slice: Buffer): void {
+    writeVarInt(slice.length);
+    writeSlice(slice);
+  }
+
+  function writeVector(vector: Buffer[]): void {
+    writeVarInt(vector.length);
+    vector.forEach(writeVarSlice);
+  }
+
+  writeVector(witness);
+
+  return buffer;
 }

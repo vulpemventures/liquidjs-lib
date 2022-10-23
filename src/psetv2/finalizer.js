@@ -1,8 +1,8 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Finalizer = void 0;
+exports.witnessStackToScriptWitness = exports.Finalizer = void 0;
 const __1 = require('..');
-const psbt_1 = require('../psbt');
+const bufferutils_1 = require('../bufferutils');
 const bip371_1 = require('./bip371');
 const utils_1 = require('./utils');
 class Finalizer {
@@ -108,9 +108,7 @@ const finalizeTaprootInput = (inIndex, pset) => {
   // Check key spend first. Increased privacy and reduced block space.
   if (input.tapKeySig) {
     return {
-      finalScriptWitness: (0, psbt_1.witnessStackToScriptWitness)([
-        input.tapKeySig,
-      ]),
+      finalScriptWitness: witnessStackToScriptWitness([input.tapKeySig]),
     };
   } else {
     return getTaprootFinalScripts(inIndex, input);
@@ -150,13 +148,9 @@ function prepareFinalScripts(
   const p2sh = !isP2SH ? null : __1.payments.p2sh({ redeem: p2wsh || payment });
   if (isSegwit) {
     if (p2wsh) {
-      finalScriptWitness = (0, psbt_1.witnessStackToScriptWitness)(
-        p2wsh.witness,
-      );
+      finalScriptWitness = witnessStackToScriptWitness(p2wsh.witness);
     } else {
-      finalScriptWitness = (0, psbt_1.witnessStackToScriptWitness)(
-        payment.witness,
-      );
+      finalScriptWitness = witnessStackToScriptWitness(payment.witness);
     }
     if (p2sh) {
       finalScriptSig = p2sh.input;
@@ -195,10 +189,31 @@ function getTaprootFinalScripts(inputIndex, input, tapLeafHashToFinalize) {
   try {
     const sigs = (0, bip371_1.sortSignatures)(input, tapLeaf);
     const witness = sigs.concat(tapLeaf.script).concat(tapLeaf.controlBlock);
-    return {
-      finalScriptWitness: (0, psbt_1.witnessStackToScriptWitness)(witness),
-    };
+    return { finalScriptWitness: witnessStackToScriptWitness(witness) };
   } catch (err) {
     throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);
   }
 }
+function witnessStackToScriptWitness(witness) {
+  let buffer = Buffer.allocUnsafe(0);
+  function writeSlice(slice) {
+    buffer = Buffer.concat([buffer, Buffer.from(slice)]);
+  }
+  function writeVarInt(i) {
+    const currentLen = buffer.length;
+    const varintLen = bufferutils_1.varuint.encodingLength(i);
+    buffer = Buffer.concat([buffer, Buffer.allocUnsafe(varintLen)]);
+    bufferutils_1.varuint.encode(i, buffer, currentLen);
+  }
+  function writeVarSlice(slice) {
+    writeVarInt(slice.length);
+    writeSlice(slice);
+  }
+  function writeVector(vector) {
+    writeVarInt(vector.length);
+    vector.forEach(writeVarSlice);
+  }
+  writeVector(witness);
+  return buffer;
+}
+exports.witnessStackToScriptWitness = witnessStackToScriptWitness;
