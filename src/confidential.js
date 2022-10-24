@@ -483,7 +483,7 @@ class ZKPGenerator {
         const input = pset.inputs[parseInt(i, 10)];
         let blindingArgs = {};
         if (input.hasIssuance() || input.hasReissuance()) {
-          if (input.issuanceValue > 0) {
+          if (input.issuanceValue && input.issuanceValue > 0) {
             const value = input.issuanceValue.toString(10);
             const asset = input.getIssuanceAssetHash();
             const blinder = randomBytes(this.opts);
