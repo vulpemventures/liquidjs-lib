@@ -645,7 +645,10 @@ export class PsetInput {
     if (!this.issuanceBlindingNonce) {
       return false;
     }
-    return this.issuanceBlindingNonce!.equals(ZERO) && (this.issuanceValue! > 0 || this.issuanceInflationKeys! > 0);
+    return (
+      this.issuanceBlindingNonce!.equals(ZERO) &&
+      (this.issuanceValue! > 0 || this.issuanceInflationKeys! > 0)
+    );
   }
 
   hasIssuanceBlinded(): boolean {

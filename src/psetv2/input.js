@@ -620,7 +620,13 @@ class PsetInput {
     return this;
   }
   hasIssuance() {
-    return this.issuanceValue > 0 || this.issuanceInflationKeys > 0;
+    if (!this.issuanceBlindingNonce) {
+      return false;
+    }
+    return (
+      this.issuanceBlindingNonce.equals(transaction_1.ZERO) &&
+      (this.issuanceValue > 0 || this.issuanceInflationKeys > 0)
+    );
   }
   hasIssuanceBlinded() {
     return this.issuanceValueCommitment.length > 0;
@@ -629,7 +635,10 @@ class PsetInput {
     if (!this.issuanceBlindingNonce) {
       return false;
     }
-    return !this.issuanceBlindingNonce.equals(transaction_1.ZERO);
+    return (
+      !this.issuanceBlindingNonce.equals(transaction_1.ZERO) &&
+      this.issuanceValue > 0
+    );
   }
   isFinalized() {
     return (
@@ -647,7 +656,7 @@ class PsetInput {
     );
   }
   getIssuanceAssetHash() {
-    if (!this.hasIssuance()) {
+    if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
     if (!this.issuanceAssetEntropy) {
@@ -663,14 +672,14 @@ class PsetInput {
     return (0, issuance_1.calculateAsset)(entropy);
   }
   getIssuanceInflationKeysHash(blindedIssuance) {
-    if (!this.hasIssuance()) {
+    if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
     if (!this.issuanceAssetEntropy) {
       throw new Error('missing issuance asset entropy');
     }
     let entropy = this.issuanceAssetEntropy;
-    if (!this.hasReissuance()) {
+    if (this.hasIssuance()) {
       entropy = (0, issuance_1.generateEntropy)(
         { txHash: this.previousTxid, vout: this.previousTxIndex },
         this.issuanceAssetEntropy,

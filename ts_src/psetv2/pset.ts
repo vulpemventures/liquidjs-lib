@@ -191,9 +191,9 @@ export class Pset {
         }
         let tokenAmount = input.issuanceInflationKeysCommitment;
         if (!tokenAmount || tokenAmount.length === 0) {
-          tokenAmount = !input.issuanceInflationKeys ? Buffer.of(0x00) : ElementsValue.fromNumber(
-            input.issuanceInflationKeys!,
-          ).bytes;
+          tokenAmount = !input.issuanceInflationKeys
+            ? Buffer.of(0x00)
+            : ElementsValue.fromNumber(input.issuanceInflationKeys!).bytes;
         }
         const assetEntropy = input.issuanceAssetEntropy!;
         const assetBlindingNonce = input.issuanceBlindingNonce!;

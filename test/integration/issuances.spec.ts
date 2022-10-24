@@ -222,7 +222,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     await broadcast(hex);
   });
 
-  it('can create a confidential reissuance transaction from confidential issuance transaction', async () => {
+  it.only('can create a confidential reissuance transaction from confidential issuance transaction', async () => {
     // Issuance
     const alice = createPayment('p2wpkh', undefined, undefined, true);
     const inputData = await getInputData(alice.payment, true, 'noredeem');
@@ -371,6 +371,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
     strictEqual(validReissuance, true);
     reissuancePset.finalizeAllInputs();
+
     const reissuanceHex = reissuancePset.extractTransaction().toHex();
     await broadcast(reissuanceHex);
   });

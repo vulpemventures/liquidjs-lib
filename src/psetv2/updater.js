@@ -321,7 +321,7 @@ class Updater {
     pset.inputs[inIndex].issuanceAssetEntropy = entropy;
     pset.inputs[inIndex].issuanceBlindingNonce = blindingNonce;
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
-    pset.inputs[inIndex].issuanceInflationKeys = args.tokenAmount;
+    pset.inputs[inIndex].issuanceInflationKeys = 0;
     const assetBlindingPublicKey = (0, address_1.fromConfidential)(
       args.assetAddress,
     ).blindingKey;
