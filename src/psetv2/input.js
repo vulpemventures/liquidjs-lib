@@ -621,17 +621,14 @@ class PsetInput {
       this.issuanceInflationKeys
     ) {
       if (this.issuanceBlindingNonce.equals(transaction_1.ZERO)) {
-        if (
-          (this.issuanceValue ?? 0) <= 0 &&
-          (this.issuanceInflationKeys ?? 0) <= 0
-        ) {
+        if (this.issuanceValue <= 0 && this.issuanceInflationKeys <= 0) {
           throw new Error(
             'Invalid input issuance values (should at least issue 1 asset or 1 token)',
           );
         }
         // reissuance case
       } else {
-        if ((this.issuanceValue ?? 0) <= 0) {
+        if (this.issuanceValue <= 0) {
           throw new Error(
             'Invalid input reissuance value (should at least re-issue 1 asset)',
           );

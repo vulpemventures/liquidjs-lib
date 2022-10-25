@@ -642,8 +642,8 @@ export class PsetInput {
     ) {
       if (this.issuanceBlindingNonce.equals(ZERO)) {
         if (
-          (this.issuanceValue ?? 0) <= 0 &&
-          (this.issuanceInflationKeys ?? 0) <= 0
+          this.issuanceValue<= 0 &&
+          this.issuanceInflationKeys <= 0
         ) {
           throw new Error(
             'Invalid input issuance values (should at least issue 1 asset or 1 token)',
@@ -651,7 +651,7 @@ export class PsetInput {
         }
         // reissuance case
       } else {
-        if ((this.issuanceValue ?? 0) <= 0) {
+        if (this.issuanceValue <= 0) {
           throw new Error(
             'Invalid input reissuance value (should at least re-issue 1 asset)',
           );
