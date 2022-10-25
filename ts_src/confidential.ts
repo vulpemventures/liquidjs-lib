@@ -545,7 +545,7 @@ export class ZKPGenerator implements PsetBlindingGenerator {
         let blindingArgs = {} as IssuanceBlindingArgs;
         if (input.hasIssuance() || input.hasReissuance()) {
           if (input.issuanceValue && input.issuanceValue > 0) {
-            const value = input.issuanceValue!.toString(10);
+            const value = input.issuanceValue.toString(10);
             const asset = input.getIssuanceAssetHash()!;
             const blinder = randomBytes(this.opts);
             const assetCommit = await assetCommitment(asset, ZERO);
