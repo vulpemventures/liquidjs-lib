@@ -4,7 +4,7 @@ import { varuint } from '../bufferutils';
 import { hash160 } from '../crypto';
 import { OPS } from '../ops';
 import * as bscript from '../script';
-import { PartialSig } from './interfaces';
+import { PartialSig, RngOpts } from './interfaces';
 
 export function getPayment(
   script: Buffer,

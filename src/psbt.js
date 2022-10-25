@@ -1001,7 +1001,8 @@ class Psbt {
         'no blinding factors generated for pseudo issuance inputs',
       );
     }
-    const conf = new confidential.Confidential((0, secp256k1_zkp_1.default)());
+    const zkpLib = await (0, secp256k1_zkp_1.default)();
+    const conf = new confidential.Confidential(zkpLib);
     // loop over inputs and create blindingData object in case of issuance
     let inputIndex = 0;
     for (const input of this.__CACHE.__TX.ins) {
@@ -1112,7 +1113,8 @@ class Psbt {
       blindingData,
       outputsData,
     );
-    const conf = new confidential.Confidential((0, secp256k1_zkp_1.default)());
+    const zkpLib = await (0, secp256k1_zkp_1.default)();
+    const conf = new confidential.Confidential(zkpLib);
     // use blinders to compute proofs & commitments
     let indexInArray = 0;
     for (const outputIndex of outputIndexes) {
@@ -2082,7 +2084,8 @@ async function computeOutputsBlindingData(inputsBlindingData, outputsData) {
     ({ valueBlindingFactor }) => valueBlindingFactor,
   );
   // compute output final amount blinder
-  const conf = new confidential.Confidential((0, secp256k1_zkp_1.default)());
+  const zkpLib = await (0, secp256k1_zkp_1.default)();
+  const conf = new confidential.Confidential(zkpLib);
   const finalAmountBlinder = await conf.valueBlindingFactor(
     inputsValues,
     outputsValues,
@@ -2108,7 +2111,8 @@ async function toBlindingData(blindDataLike, witnessUtxo) {
   }
   if (Buffer.isBuffer(blindDataLike)) {
     if (!witnessUtxo) throw new Error('need witnessUtxo');
-    const conf = new confidential.Confidential((0, secp256k1_zkp_1.default)());
+    const zkpLib = await (0, secp256k1_zkp_1.default)();
+    const conf = new confidential.Confidential(zkpLib);
     return conf.unblindOutputWithKey(witnessUtxo, blindDataLike);
   }
   return blindDataLike;

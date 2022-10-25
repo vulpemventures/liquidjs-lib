@@ -12,9 +12,10 @@ import {
   BIP174SigningData,
   UpdaterInput,
   UpdaterOutput,
+  ZKPGenerator,
+  ZKPValidator,
 } from '../../ts_src/psetv2';
 import { AssetHash } from '../../ts_src/asset';
-import { ZKPGenerator, ZKPValidator } from '../../ts_src/confidential';
 import { Transaction, ZERO } from '../../ts_src/transaction';
 import * as bscript from '../../ts_src/script';
 import * as NETWORKS from '../../ts_src/networks';
@@ -108,11 +109,15 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         valueBlindingFactor: ZERO,
       },
     ];
-    const zkpGenerator = ZKPGenerator.fromOwnedInputs(ownedInputs, secp256k1());
-    const zkpValidator = new ZKPValidator(secp256k1());
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+    const zkpLib = await secp256k1();
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithOwnedInputs(ownedInputs),
+    );
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
     );
     const blinder = new PsetBlinder(
       pset,
@@ -120,7 +125,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpValidator,
       zkpGenerator,
     );
-    await blinder.blindLast({ outputBlindingArgs });
+    blinder.blindLast({ outputBlindingArgs });
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
     await regtestUtils.broadcast(rawTx.toHex());
   });
@@ -158,15 +163,16 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
-      alice.blindingKeys,
-      secp256k1(),
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
     );
-    const zkpValidator = new ZKPValidator(secp256k1());
-    const ownedInputs = await zkpGenerator.unblindInputs(pset);
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
     );
     const blinder = new PsetBlinder(
       pset,
@@ -174,7 +180,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpValidator,
       zkpGenerator,
     );
-    await blinder.blindLast({ outputBlindingArgs });
+    blinder.blindLast({ outputBlindingArgs });
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
     await regtestUtils.broadcast(rawTx.toHex());
   });
@@ -211,15 +217,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
-      alice.blindingKeys,
-      secp256k1(),
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
     );
-    const zkpValidator = new ZKPValidator(secp256k1());
-    const ownedInputs = await zkpGenerator.unblindInputs(pset);
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
     );
     const blinder = new PsetBlinder(
       pset,
@@ -227,7 +235,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpValidator,
       zkpGenerator,
     );
-    await blinder.blindLast({ outputBlindingArgs });
+    blinder.blindLast({ outputBlindingArgs });
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
     await regtestUtils.broadcast(rawTx.toHex());
   });
@@ -265,15 +273,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       blindedIssuance: false,
     });
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
-      alice.blindingKeys,
-      secp256k1(),
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
     );
-    const zkpValidator = new ZKPValidator(secp256k1());
-    const ownedInputs = await zkpGenerator.unblindInputs(pset);
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
     );
     const blinder = new PsetBlinder(
       pset,
@@ -281,7 +291,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpValidator,
       zkpGenerator,
     );
-    await blinder.blindLast({ outputBlindingArgs });
+    blinder.blindLast({ outputBlindingArgs });
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
     await regtestUtils.broadcast(rawTx.toHex());
   });
@@ -319,15 +329,17 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       blindedIssuance: false,
     });
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
-      alice.blindingKeys,
-      secp256k1(),
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
     );
-    const zkpValidator = new ZKPValidator(secp256k1());
-    const ownedInputs = await zkpGenerator.unblindInputs(pset);
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
     );
     const blinder = new PsetBlinder(
       pset,
@@ -335,7 +347,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpValidator,
       zkpGenerator,
     );
-    await blinder.blindLast({ outputBlindingArgs });
+    blinder.blindLast({ outputBlindingArgs });
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
     await regtestUtils.broadcast(rawTx.toHex());
   });
@@ -367,28 +379,31 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       blindedIssuance: true,
     });
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
-      alice.blindingKeys,
-      secp256k1(),
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
     );
-    const zkpValidator = new ZKPValidator(secp256k1());
-    const ownedInputs = await zkpGenerator.unblindInputs(pset);
-    const issuanceBlindingArgs = await zkpGenerator.blindIssuances(pset, {
+
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const issuanceBlindingArgs = zkpGenerator.blindIssuances(pset, {
       0: alice.blindingKeys[0],
     });
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
       undefined,
       issuanceBlindingArgs,
     );
+
     const blinder = new PsetBlinder(
       pset,
       ownedInputs,
       zkpValidator,
       zkpGenerator,
     );
-    await blinder.blindLast({ issuanceBlindingArgs, outputBlindingArgs });
+    blinder.blindLast({ issuanceBlindingArgs, outputBlindingArgs });
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
     await regtestUtils.broadcast(rawTx.toHex());
   });
@@ -426,18 +441,20 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       blindedIssuance: true,
     });
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
-      alice.blindingKeys,
-      secp256k1(),
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
     );
-    const zkpValidator = new ZKPValidator(secp256k1());
-    const ownedInputs = await zkpGenerator.unblindInputs(pset);
-    const issuanceBlindingArgs = await zkpGenerator.blindIssuances(pset, {
+
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const issuanceBlindingArgs = zkpGenerator.blindIssuances(pset, {
       0: alice.blindingKeys[0],
     });
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
       undefined,
       issuanceBlindingArgs,
     );
@@ -447,7 +464,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpValidator,
       zkpGenerator,
     );
-    await blinder.blindLast({ issuanceBlindingArgs, outputBlindingArgs });
+    blinder.blindLast({ issuanceBlindingArgs, outputBlindingArgs });
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
     await regtestUtils.broadcast(rawTx.toHex());
   });
@@ -524,15 +541,16 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInUtxoRangeProof(1, bobWitnessUtxo.rangeProof!);
     updater.addInSighashType(1, Transaction.SIGHASH_ALL);
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
-      alice.blindingKeys.concat(bob.blindingKeys),
-      secp256k1(),
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
     );
-    const zkpValidator = new ZKPValidator(secp256k1());
-    const ownedInputs = await zkpGenerator.unblindInputs(pset);
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
     );
 
     const blinder = new PsetBlinder(
@@ -541,7 +559,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpValidator,
       zkpGenerator,
     );
-    await blinder.blindLast({ outputBlindingArgs });
+    blinder.blindLast({ outputBlindingArgs });
     const rawTx = signTransaction(
       pset,
       [alice.keys, bob.keys],
@@ -704,16 +722,18 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       script,
     });
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(
-      bobPay.blindingKeys,
-      secp256k1(),
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(bobPay.blindingKeys),
     );
-    const ownedInputs = await zkpGenerator.unblindInputs(pset);
-    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      ZKPGenerator.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecc),
     );
-    const zkpValidator = new ZKPValidator(secp256k1());
 
     const blinder = new PsetBlinder(
       pset,
@@ -722,7 +742,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
 
-    await blinder.blindLast({ outputBlindingArgs });
+    blinder.blindLast({ outputBlindingArgs });
 
     const signer = new PsetSigner(pset);
     // segwit v0 input

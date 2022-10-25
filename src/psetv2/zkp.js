@@ -1,29 +1,15 @@
-import { Confidential, UnblindOutputResult, ZKP } from '../confidential';
-import { Output, ZERO } from '../transaction';
-import { ElementsValue } from '../value';
-import { randomBytes } from './utils';
-import type { Slip77Interface } from 'slip77';
-import type { RngOpts } from './interfaces';
-import type { KeysGenerator, Pset } from './pset';
-import type {
-  IssuanceBlindingArgs,
-  OutputBlindingArgs,
-  OwnedInput,
-} from './blinder';
-
-export class ZKPValidator {
-  private confidential: Confidential;
-
-  constructor(zkpLib: ZKP) {
-    this.confidential = new Confidential(zkpLib);
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
+exports.ZKPGenerator = exports.ZKPValidator = void 0;
+const confidential_1 = require('../confidential');
+const transaction_1 = require('../transaction');
+const value_1 = require('../value');
+const utils_1 = require('./utils');
+class ZKPValidator {
+  constructor(zkpLib) {
+    this.confidential = new confidential_1.Confidential(zkpLib);
   }
-
-  verifyValueRangeProof(
-    valueCommit: Buffer,
-    assetCommit: Buffer,
-    proof: Buffer,
-    script: Buffer,
-  ): boolean {
+  verifyValueRangeProof(valueCommit, assetCommit, proof, script) {
     try {
       return this.confidential.rangeProofVerify(
         valueCommit,
@@ -35,14 +21,13 @@ export class ZKPValidator {
       return false;
     }
   }
-
   verifyAssetSurjectionProof(
-    inAssets: Buffer[],
-    inAssetBlinders: Buffer[],
-    outAsset: Buffer,
-    outAssetBlinder: Buffer,
-    proof: Buffer,
-  ): boolean {
+    inAssets,
+    inAssetBlinders,
+    outAsset,
+    outAssetBlinder,
+    proof,
+  ) {
     try {
       return this.confidential.surjectionProofVerify(
         inAssets,
@@ -55,12 +40,7 @@ export class ZKPValidator {
       return false;
     }
   }
-
-  verifyBlindValueProof(
-    valueCommit: Buffer,
-    assetCommit: Buffer,
-    proof: Buffer,
-  ): boolean {
+  verifyBlindValueProof(valueCommit, assetCommit, proof) {
     try {
       return this.confidential.rangeProofVerify(
         valueCommit,
@@ -71,12 +51,7 @@ export class ZKPValidator {
       return false;
     }
   }
-
-  verifyBlindAssetProof(
-    asset: Buffer,
-    assetCommit: Buffer,
-    proof: Buffer,
-  ): boolean {
+  verifyBlindAssetProof(asset, assetCommit, proof) {
     try {
       return this.confidential.assetBlindProofVerify(asset, assetCommit, proof);
     } catch (ignore) {
@@ -84,97 +59,70 @@ export class ZKPValidator {
     }
   }
 }
-
-type ZKPGeneratorOption = (g: ZKPGenerator) => void;
-export class ZKPGenerator {
-  private ownedInputs?: OwnedInput[];
-  private inBlindingKeys?: Buffer[];
-  private masterBlindingKey?: Slip77Interface;
-  private opts?: RngOpts;
-  private confidential: Confidential;
-
-  constructor(private zkp: ZKP, ...options: ZKPGeneratorOption[]) {
-    this.confidential = new Confidential(zkp);
+exports.ZKPValidator = ZKPValidator;
+class ZKPGenerator {
+  constructor(zkp, ...options) {
+    this.zkp = zkp;
+    this.confidential = new confidential_1.Confidential(zkp);
     for (const option of options) {
       option(this);
     }
   }
-
-  static WithBlindingKeysOfInputs(
-    inBlindingKeys: Buffer[],
-  ): ZKPGeneratorOption {
-    return (g: ZKPGenerator): void => {
+  static WithBlindingKeysOfInputs(inBlindingKeys) {
+    return (g) => {
       g.inBlindingKeys = inBlindingKeys;
     };
   }
-
-  static WithMasterBlindingKey(masterKey: Slip77Interface): ZKPGeneratorOption {
-    return (g: ZKPGenerator): void => {
+  static WithMasterBlindingKey(masterKey) {
+    return (g) => {
       g.masterBlindingKey = masterKey;
     };
   }
-
-  static WithOwnedInputs(ownedInputs: OwnedInput[]): ZKPGeneratorOption {
-    return (g: ZKPGenerator): void => {
+  static WithOwnedInputs(ownedInputs) {
+    return (g) => {
       g.ownedInputs = ownedInputs;
     };
   }
-
-  computeAndAddToScalarOffset(
-    scalar: Buffer,
-    value: string,
-    assetBlinder: Buffer,
-    valueBlinder: Buffer,
-  ): Buffer {
+  computeAndAddToScalarOffset(scalar, value, assetBlinder, valueBlinder) {
     // If both asset and value blinders are null, 0 is added to the offset, so nothing actually happens
-    if (assetBlinder.equals(ZERO) && valueBlinder.equals(ZERO)) {
+    if (
+      assetBlinder.equals(transaction_1.ZERO) &&
+      valueBlinder.equals(transaction_1.ZERO)
+    ) {
       return scalar.slice();
     }
-
     const scalarOffset = this.calculateScalarOffset(
       value,
       assetBlinder,
       valueBlinder,
     );
-
     // When we start out, the result (a) is 0, so just set it to the scalar we just computed.
-    if (scalar.equals(ZERO)) {
+    if (scalar.equals(transaction_1.ZERO)) {
       return scalarOffset;
     }
-
     const { ec } = this.zkp;
     const negScalarOffset = ec.prvkeyNegate(scalarOffset);
-
     if (scalar.equals(negScalarOffset)) {
-      return ZERO;
+      return transaction_1.ZERO;
     }
-
     return ec.prvkeyTweakAdd(scalar, scalarOffset);
   }
-
-  subtractScalars(inputScalar: Buffer, outputScalar: Buffer): Buffer {
-    if (outputScalar.equals(ZERO)) {
+  subtractScalars(inputScalar, outputScalar) {
+    if (outputScalar.equals(transaction_1.ZERO)) {
       return inputScalar.slice();
     }
     const { ec } = this.zkp;
     const negOutputScalar = ec.prvkeyNegate(outputScalar);
-    if (inputScalar.equals(ZERO)) {
+    if (inputScalar.equals(transaction_1.ZERO)) {
       return negOutputScalar;
     }
     return ec.prvkeyTweakAdd(inputScalar, negOutputScalar);
   }
-
-  lastValueCommitment(value: string, asset: Buffer, blinder: Buffer): Buffer {
+  lastValueCommitment(value, asset, blinder) {
     return this.confidential.valueCommitment(value, asset, blinder);
   }
-
-  lastBlindValueProof(
-    value: string,
-    valueCommit: Buffer,
-    assetCommit: Buffer,
-    blinder: Buffer,
-  ): Buffer {
-    const nonce = randomBytes(this.opts);
+  lastBlindValueProof(value, valueCommit, assetCommit, blinder) {
+    const nonce = (0, utils_1.randomBytes)(this.opts);
     return this.confidential.blindValueProof(
       value,
       valueCommit,
@@ -183,16 +131,15 @@ export class ZKPGenerator {
       nonce,
     );
   }
-
   lastValueRangeProof(
-    value: string,
-    asset: Buffer,
-    valueCommit: Buffer,
-    valueBlinder: Buffer,
-    assetBlinder: Buffer,
-    script: Buffer,
-    nonce: Buffer,
-  ): Buffer {
+    value,
+    asset,
+    valueCommit,
+    valueBlinder,
+    assetBlinder,
+    script,
+    nonce,
+  ) {
     return this.confidential.rangeProof(
       value,
       nonce,
@@ -203,53 +150,45 @@ export class ZKPGenerator {
       script,
     );
   }
-
-  unblindInputs(pset: Pset, inIndexes?: number[]): OwnedInput[] {
+  unblindInputs(pset, inIndexes) {
     validatePset(pset);
-    if (inIndexes!) {
+    if (inIndexes) {
       validateInIndexes(pset, inIndexes);
     }
-
     const inputIndexes =
       inIndexes || Array.from({ length: pset.globals.inputCount }, (_, i) => i);
-
-    if (this.ownedInputs! && this.ownedInputs!.length > 0) {
-      return this.ownedInputs!;
+    if (this.ownedInputs && this.ownedInputs.length > 0) {
+      return this.ownedInputs;
     }
-
     const revealedInputs = inputIndexes.map((i) => {
       const prevout = pset.inputs[i].getUtxo();
-      const revealedInput = this.unblindUtxo(prevout!);
+      const revealedInput = this.unblindUtxo(prevout);
       revealedInput.index = i;
       return revealedInput;
     });
     this.ownedInputs = revealedInputs;
     return revealedInputs;
   }
-
-  blindIssuances(
-    pset: Pset,
-    blindingKeysByIndex: Record<number, Buffer>,
-  ): IssuanceBlindingArgs[] {
+  blindIssuances(pset, blindingKeysByIndex) {
     validatePset(pset);
     validateBlindingKeysByIndex(pset, blindingKeysByIndex);
-
     return Object.entries(blindingKeysByIndex).map(([i, key]) => {
       const input = pset.inputs[parseInt(i, 10)];
-
-      let blindingArgs = {} as IssuanceBlindingArgs;
-      if (input.issuanceValue! > 0) {
-        const value = input.issuanceValue!.toString(10);
-        const asset = input.getIssuanceAssetHash()!;
-        const blinder = randomBytes(this.opts);
-
-        const assetCommit = this.confidential.assetCommitment(asset, ZERO);
+      let blindingArgs = {};
+      if (input.issuanceValue > 0) {
+        const value = input.issuanceValue.toString(10);
+        const asset = input.getIssuanceAssetHash();
+        const blinder = (0, utils_1.randomBytes)(this.opts);
+        const assetCommit = this.confidential.assetCommitment(
+          asset,
+          transaction_1.ZERO,
+        );
         const valueCommit = this.confidential.valueCommitment(
           value,
           assetCommit,
           blinder,
         );
-        const nonce = randomBytes(this.opts);
+        const nonce = (0, utils_1.randomBytes)(this.opts);
         const blindproof = this.confidential.blindValueProof(
           value,
           valueCommit,
@@ -261,12 +200,11 @@ export class ZKPGenerator {
           value,
           key,
           asset,
-          ZERO,
+          transaction_1.ZERO,
           blinder,
           valueCommit,
           Buffer.from([]),
         );
-
         blindingArgs = {
           ...blindingArgs,
           index: parseInt(i, 10),
@@ -277,18 +215,20 @@ export class ZKPGenerator {
           issuanceValueBlinder: blinder,
         };
       }
-
-      if (input.issuanceInflationKeys! > 0) {
-        const token = input.issuanceInflationKeys!.toString(10);
-        const asset = input.getIssuanceInflationKeysHash(true)!;
-        const blinder = randomBytes(this.opts);
-        const assetCommit = this.confidential.assetCommitment(asset, ZERO);
+      if (input.issuanceInflationKeys > 0) {
+        const token = input.issuanceInflationKeys.toString(10);
+        const asset = input.getIssuanceInflationKeysHash(true);
+        const blinder = (0, utils_1.randomBytes)(this.opts);
+        const assetCommit = this.confidential.assetCommitment(
+          asset,
+          transaction_1.ZERO,
+        );
         const tokenCommit = this.confidential.valueCommitment(
           token,
           assetCommit,
           blinder,
         );
-        const nonce = randomBytes(this.opts);
+        const nonce = (0, utils_1.randomBytes)(this.opts);
         const blindproof = this.confidential.blindValueProof(
           token,
           tokenCommit,
@@ -300,12 +240,11 @@ export class ZKPGenerator {
           token,
           key,
           asset,
-          ZERO,
+          transaction_1.ZERO,
           blinder,
           tokenCommit,
           Buffer.from([]),
         );
-
         blindingArgs = {
           ...blindingArgs,
           issuanceToken: asset,
@@ -315,48 +254,36 @@ export class ZKPGenerator {
           issuanceTokenBlinder: blinder,
         };
       }
-
       return blindingArgs;
     });
   }
-
-  blindOutputs(
-    pset: Pset,
-    keysGenerator: KeysGenerator,
-    outIndexes?: number[],
-    blindedIssuances?: IssuanceBlindingArgs[],
-  ): OutputBlindingArgs[] {
+  blindOutputs(pset, keysGenerator, outIndexes, blindedIssuances) {
     validatePset(pset);
-    if (outIndexes!) {
+    if (outIndexes) {
       validateOutIndexes(pset, outIndexes);
     }
-    if (blindedIssuances! && blindedIssuances!.length > 0) {
+    if (blindedIssuances && blindedIssuances.length > 0) {
       validateBlindedIssuances(pset, blindedIssuances);
     }
-
     const outputIndexes =
-      outIndexes! && outIndexes.length > 0
+      outIndexes && outIndexes.length > 0
         ? outIndexes
         : pset.outputs.reduce(
-            (arr: number[], out, i) => (
-              out.needsBlinding() && arr.push(i), arr
-            ),
+            (arr, out, i) => (out.needsBlinding() && arr.push(i), arr),
             [],
           );
-
     const { assets, assetBlinders } = this.getInputAssetsAndBlinders(
       pset,
       blindedIssuances,
     );
-
     return outputIndexes.map((i) => {
       const output = pset.outputs[i];
-      const assetBlinder = randomBytes(this.opts);
-      const valueBlinder = randomBytes(this.opts);
-      const seed = randomBytes(this.opts);
-      const value = output.value!.toString(10);
+      const assetBlinder = (0, utils_1.randomBytes)(this.opts);
+      const valueBlinder = (0, utils_1.randomBytes)(this.opts);
+      const seed = (0, utils_1.randomBytes)(this.opts);
+      const value = output.value.toString(10);
       const assetCommit = this.confidential.assetCommitment(
-        output.asset!,
+        output.asset,
         assetBlinder,
       );
       const valueCommit = this.confidential.valueCommitment(
@@ -367,27 +294,27 @@ export class ZKPGenerator {
       const ephemeralKeyPair = keysGenerator();
       const nonceCommitment = ephemeralKeyPair.publicKey;
       const ecdhNonce = this.confidential.nonceHash(
-        output.blindingPubkey!,
+        output.blindingPubkey,
         ephemeralKeyPair.privateKey,
       );
       const script = output.script || Buffer.from([]);
       const rangeproof = this.confidential.rangeProof(
         value,
         ecdhNonce,
-        output.asset!,
+        output.asset,
         assetBlinder,
         valueBlinder,
         valueCommit,
         script,
       );
       const surjectionproof = this.confidential.surjectionProof(
-        output.asset!,
+        output.asset,
         assetBlinder,
         assets,
         assetBlinders,
         seed,
       );
-      const nonce = randomBytes(this.opts);
+      const nonce = (0, utils_1.randomBytes)(this.opts);
       const valueBlindProof = this.confidential.blindValueProof(
         value,
         valueCommit,
@@ -396,11 +323,10 @@ export class ZKPGenerator {
         nonce,
       );
       const assetBlindProof = this.confidential.blindAssetProof(
-        output.asset!,
+        output.asset,
         assetCommit,
         assetBlinder,
       );
-
       return {
         index: i,
         nonce: ecdhNonce,
@@ -416,19 +342,13 @@ export class ZKPGenerator {
       };
     });
   }
-
-  private calculateScalarOffset(
-    value: string,
-    assetBlinder: Buffer,
-    valueBlinder: Buffer,
-  ): Buffer {
-    if (assetBlinder.equals(ZERO)) {
+  calculateScalarOffset(value, assetBlinder, valueBlinder) {
+    if (assetBlinder.equals(transaction_1.ZERO)) {
       return valueBlinder.slice();
     }
     if (value === '0') {
       return valueBlinder.slice();
     }
-
     const { ec } = this.zkp;
     const val = Buffer.alloc(32, 0);
     val.writeBigUInt64BE(BigInt(value), 24);
@@ -436,37 +356,30 @@ export class ZKPGenerator {
     if (valueBlinder.length === 0) {
       throw new Error('Missing value blinder');
     }
-
     const negVb = ec.prvkeyNegate(valueBlinder);
-
     if (negVb.equals(result)) {
-      return ZERO;
+      return transaction_1.ZERO;
     }
-
     return ec.prvkeyTweakAdd(result, valueBlinder);
   }
-
-  private unblindUtxo(out: Output): OwnedInput {
+  unblindUtxo(out) {
     if (out.nonce.length === 1) {
       return {
         index: 0,
-        value: ElementsValue.fromBytes(out.value).number.toString(10),
+        value: value_1.ElementsValue.fromBytes(out.value).number.toString(10),
         asset: out.asset.slice(1),
-        valueBlindingFactor: ZERO,
-        assetBlindingFactor: ZERO,
+        valueBlindingFactor: transaction_1.ZERO,
+        assetBlindingFactor: transaction_1.ZERO,
       };
     }
-
     if (!this.inBlindingKeys && !this.masterBlindingKey) {
       throw new Error(
         'Missing either input private blinding keys or SLIP-77 master blinding key',
       );
     }
-
     const keys = this.inBlindingKeys
       ? this.inBlindingKeys
-      : [this.masterBlindingKey!.derive(out.script).privateKey!];
-
+      : [this.masterBlindingKey.derive(out.script).privateKey];
     for (const key of keys) {
       try {
         const revealed = this.confidential.unblindOutputWithKey(out, key);
@@ -479,80 +392,66 @@ export class ZKPGenerator {
         };
       } catch (ignore) {}
     }
-
     throw new Error('Could not unblind output with any blinding key');
   }
-
-  private getInputAssetsAndBlinders(
-    pset: Pset,
-    issuanceBlindingArgs?: IssuanceBlindingArgs[],
-  ): {
-    assets: Buffer[];
-    assetBlinders: Buffer[];
-  } {
+  getInputAssetsAndBlinders(pset, issuanceBlindingArgs) {
     const unblindedIns = this.maybeUnblindInUtxos(pset);
     pset.inputs.forEach((input, i) => {
       if (input.hasIssuance()) {
         unblindedIns.push({
           value: '',
           valueBlindingFactor: Buffer.from([]),
-          asset: input.getIssuanceAssetHash()!,
-          assetBlindingFactor: ZERO,
+          asset: input.getIssuanceAssetHash(),
+          assetBlindingFactor: transaction_1.ZERO,
         });
-        if (input.issuanceInflationKeys! > 0) {
+        if (input.issuanceInflationKeys > 0) {
           const isBlindedIssuance =
-            issuanceBlindingArgs! &&
+            issuanceBlindingArgs &&
             issuanceBlindingArgs.find(({ index }) => index === i) !== undefined;
           unblindedIns.push({
             value: '',
             valueBlindingFactor: Buffer.from([]),
-            asset: input.getIssuanceInflationKeysHash(isBlindedIssuance)!,
-            assetBlindingFactor: ZERO,
+            asset: input.getIssuanceInflationKeysHash(isBlindedIssuance),
+            assetBlindingFactor: transaction_1.ZERO,
           });
         }
       }
     });
-
-    const assets = [] as Buffer[];
-    const assetBlinders = [] as Buffer[];
-
+    const assets = [];
+    const assetBlinders = [];
     unblindedIns.forEach(({ asset, assetBlindingFactor }) => {
       assets.push(asset);
       assetBlinders.push(assetBlindingFactor);
     });
-
     return { assets, assetBlinders };
   }
-
-  private maybeUnblindInUtxos(pset: Pset): UnblindOutputResult[] {
-    if (this.ownedInputs! && this.ownedInputs!.length > 0) {
+  maybeUnblindInUtxos(pset) {
+    if (this.ownedInputs && this.ownedInputs.length > 0) {
       return pset.inputs.map((input, i) => {
-        const ownedInput = this.ownedInputs!.find(({ index }) => index === i);
-        if (ownedInput!) {
+        const ownedInput = this.ownedInputs.find(({ index }) => index === i);
+        if (ownedInput) {
           return {
             value: '',
             valueBlindingFactor: Buffer.from([]),
-            asset: ownedInput!.asset,
-            assetBlindingFactor: ownedInput!.assetBlindingFactor,
+            asset: ownedInput.asset,
+            assetBlindingFactor: ownedInput.assetBlindingFactor,
           };
         }
         return {
           value: '',
           valueBlindingFactor: Buffer.from([]),
-          asset: input.getUtxo()!.asset,
-          assetBlindingFactor: ZERO,
+          asset: input.getUtxo().asset,
+          assetBlindingFactor: transaction_1.ZERO,
         };
       });
     }
-
     if (!this.inBlindingKeys && !this.masterBlindingKey) {
       throw new Error(
         'Missing either input private blinding keys or SLIP-77 master blinding key',
       );
     }
-
     return pset.inputs.map((input) => {
-      const prevout = input.getUtxo()!;
+      const prevout = input.getUtxo();
       try {
         const revealed = this.unblindUtxo(prevout);
         return {
@@ -566,24 +465,22 @@ export class ZKPGenerator {
           value: '',
           asset: prevout.asset,
           valueBlindingFactor: Buffer.from([]),
-          assetBlindingFactor: ZERO,
+          assetBlindingFactor: transaction_1.ZERO,
         };
       }
     });
   }
 }
-
-function validatePset(pset: Pset): void {
+exports.ZKPGenerator = ZKPGenerator;
+function validatePset(pset) {
   pset.sanityCheck();
-
   pset.inputs.forEach((input, i) => {
     if (!input.getUtxo()) {
       throw new Error('Missing (non-)witness utxo for input ' + i);
     }
   });
 }
-
-function validateInIndexes(pset: Pset, inIndexes: number[]): void {
+function validateInIndexes(pset, inIndexes) {
   if (inIndexes.length > 0) {
     inIndexes.forEach((i) => {
       if (i < 0 || i >= pset.globals.inputCount) {
@@ -592,8 +489,7 @@ function validateInIndexes(pset: Pset, inIndexes: number[]): void {
     });
   }
 }
-
-function validateOutIndexes(pset: Pset, outIndexes: number[]): void {
+function validateOutIndexes(pset, outIndexes) {
   if (outIndexes.length > 0) {
     outIndexes.forEach((i) => {
       if (i < 0 || i >= pset.globals.outputCount) {
@@ -602,11 +498,7 @@ function validateOutIndexes(pset: Pset, outIndexes: number[]): void {
     });
   }
 }
-
-function validateBlindingKeysByIndex(
-  pset: Pset,
-  keys: Record<number, Buffer>,
-): void {
+function validateBlindingKeysByIndex(pset, keys) {
   Object.entries(keys).forEach(([k, v]) => {
     const i = parseInt(k, 10);
     if (i < 0 || i >= pset.globals.inputCount) {
@@ -620,11 +512,7 @@ function validateBlindingKeysByIndex(
     }
   });
 }
-
-function validateBlindedIssuances(
-  pset: Pset,
-  blindedIssuances: IssuanceBlindingArgs[],
-): void {
+function validateBlindedIssuances(pset, blindedIssuances) {
   if (blindedIssuances.length > 0) {
     blindedIssuances.forEach((issuance) => {
       if (issuance.index < 0 || issuance.index >= pset.globals.inputCount) {

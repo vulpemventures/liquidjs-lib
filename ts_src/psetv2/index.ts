@@ -12,8 +12,6 @@ import {
 } from './updater';
 import {
   Blinder,
-  PsetBlindingGenerator,
-  PsetBlindingValidator,
   IssuanceBlindingArgs,
   OutputBlindingArgs,
   OwnedInput,
@@ -26,13 +24,12 @@ import {
   scriptWitnessToWitnessStack,
   classifyScript,
 } from './utils';
+import { ZKPGenerator, ZKPValidator } from './zkp';
 
 export {
   IssuanceOpts,
   ReissuanceOpts,
   Blinder,
-  PsetBlindingGenerator,
-  PsetBlindingValidator,
   BIP174SigningData,
   BIP371SigningData,
   Creator,
@@ -53,6 +50,8 @@ export {
   Updater,
   UpdaterInput,
   UpdaterOutput,
+  ZKPGenerator,
+  ZKPValidator,
   witnessStackToScriptWitness,
   scriptWitnessToWitnessStack,
   classifyScript,

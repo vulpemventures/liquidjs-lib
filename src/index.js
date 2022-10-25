@@ -75,21 +75,6 @@ const issuance = __importStar(require('./issuance'));
 exports.issuance = issuance;
 const bip341 = __importStar(require('./bip341'));
 exports.bip341 = bip341;
-__exportStar(require('./asset'), exports);
-__exportStar(require('./value'), exports);
-__exportStar(require('./psetv2'), exports);
-__exportStar(require('./confidential'), exports);
-/* export {
-  Psbt,
-  PsbtTxInput,
-  PsbtTxOutput,
-  Signer,
-  SignerAsync,
-  HDSigner,
-  HDSignerAsync,
-  witnessStackToScriptWitness,
-  BlindingDataLike,
-} from './psbt'; */
 var ops_1 = require('./ops');
 Object.defineProperty(exports, 'opcodes', {
   enumerable: true,
@@ -104,3 +89,7 @@ Object.defineProperty(exports, 'Transaction', {
     return transaction_1.Transaction;
   },
 });
+__exportStar(require('./asset'), exports);
+__exportStar(require('./value'), exports);
+__exportStar(require('./psetv2'), exports);
+__exportStar(require('./confidential'), exports);

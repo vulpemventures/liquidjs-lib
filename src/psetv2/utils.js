@@ -44,7 +44,8 @@ var __importStar =
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.pubkeyPositionInScript =
+exports.randomBytes =
+  exports.pubkeyPositionInScript =
   exports.isP2TR =
   exports.isP2SH =
   exports.isP2WSH =
@@ -58,6 +59,7 @@ exports.pubkeyPositionInScript =
   exports.hasSigs =
   exports.getPayment =
     void 0;
+const randombytes = __importStar(require('randombytes'));
 const __1 = require('..');
 const bufferutils_1 = require('../bufferutils');
 const crypto_1 = require('../crypto');
@@ -224,3 +226,9 @@ function pubkeyPositionInScript(pubkey, script) {
   });
 }
 exports.pubkeyPositionInScript = pubkeyPositionInScript;
+function randomBytes(options) {
+  if (options === undefined) options = {};
+  const rng = options.rng || randombytes.default;
+  return rng(32);
+}
+exports.randomBytes = randomBytes;
