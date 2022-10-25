@@ -515,8 +515,8 @@ export class ZKPGenerator implements PsetBlindingGenerator {
     const inputIndexes =
       inIndexes || Array.from({ length: pset.globals.inputCount }, (_, i) => i);
 
-    if (this.ownedInputs! && this.ownedInputs!.length > 0) {
-      return this.ownedInputs!;
+    if (this.ownedInputs && this.ownedInputs.length > 0) {
+      return this.ownedInputs;
     }
 
     const revealedInputs = await Promise.all(
