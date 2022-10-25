@@ -21,6 +21,11 @@ import {
 import { Signer, BIP174SigningData, BIP371SigningData } from './signer';
 import { Finalizer, FinalizeFunc } from './finalizer';
 import { Extractor } from './extractor';
+import {
+  witnessStackToScriptWitness,
+  scriptWitnessToWitnessStack,
+  classifyScript,
+} from './utils';
 
 export {
   IssuanceOpts,
@@ -47,4 +52,7 @@ export {
   Updater,
   UpdaterInput,
   UpdaterOutput,
+  witnessStackToScriptWitness,
+  scriptWitnessToWitnessStack,
+  classifyScript,
 };

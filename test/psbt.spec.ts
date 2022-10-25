@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import { describe, it } from 'mocha';
-import { networks as NETWORKS, Psbt, script as bscript } from '../ts_src';
+import { networks as NETWORKS, script as bscript } from '../ts_src';
+import { Psbt } from '../ts_src/psbt';
 import { ECPair } from './ecc';
 import * as preFixtures from './fixtures/psbt.json';
 import { ElementsValue } from '../ts_src/value';

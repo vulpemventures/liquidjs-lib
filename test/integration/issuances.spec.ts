@@ -5,11 +5,11 @@ import { broadcast, faucet } from './_regtest';
 import {
   address,
   ElementsValue,
-  Psbt,
   Transaction,
   networks as NETWORKS,
   Confidential,
 } from '../../ts_src';
+import { Psbt } from '../../ts_src/psbt';
 
 import { ECPair, ecc } from '../ecc';
 import { strictEqual } from 'assert';

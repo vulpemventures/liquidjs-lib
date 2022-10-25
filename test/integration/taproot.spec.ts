@@ -5,8 +5,9 @@ import {
   Transaction,
   payments,
   address,
-  Psbt,
+  witnessStackToScriptWitness,
 } from '../../ts_src/index';
+import { Psbt } from '../../ts_src/psbt';
 import { ECPair, ecc } from '../ecc';
 import { broadcast, faucet } from './_regtest';
 import { ECPairInterface } from 'ecpair';
@@ -18,7 +19,6 @@ import {
   BIP341Factory,
 } from '../../ts_src/bip341';
 import { compile, OPS } from '../../ts_src/script';
-import { witnessStackToScriptWitness } from '../../ts_src/psbt';
 import * as assert from 'assert';
 import { ElementsValue } from '../../ts_src/value';
 

@@ -3,9 +3,9 @@ import { BIP32Factory } from 'bip32';
 import * as regtestUtils from './_regtest';
 import { describe, it } from 'mocha';
 import { createPayment, getInputData, nonWitnessUtxoBuffer } from './utils';
-import { payments, Psbt, networks as NETWORKS } from '../../ts_src';
+import { payments, networks as NETWORKS, ElementsValue } from '../../ts_src';
+import { Psbt } from '../../ts_src/psbt';
 import { ECPair, ecc, confidential } from '../ecc';
-import { ElementsValue } from '../../ts_src/value';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
