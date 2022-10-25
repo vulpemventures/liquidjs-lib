@@ -3,9 +3,15 @@ import { BIP32Factory } from 'bip32';
 import * as regtestUtils from './_regtest';
 import { describe, it } from 'mocha';
 import { createPayment, getInputData, nonWitnessUtxoBuffer } from './utils';
-import { payments, networks as NETWORKS, ElementsValue } from '../../ts_src';
+import {
+  payments,
+  networks as NETWORKS,
+  ElementsValue,
+  Confidential,
+} from '../../ts_src';
 import { Psbt } from '../../ts_src/psbt';
-import { ECPair, ecc, confidential } from '../ecc';
+import { ECPair, ecc } from '../ecc';
+import secp256k1 from '@vulpemventures/secp256k1-zkp';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
@@ -523,6 +529,8 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         'noredeem',
       );
 
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
       const inputBlindingData = await confidential.unblindOutputWithKey(
         inputDataConfidential.witnessUtxo,
         aliceBlindingPrivateKey,
