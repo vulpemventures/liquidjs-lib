@@ -84,7 +84,7 @@
     "dhttp": "^3.0.0",
     "hoodwink": "^2.0.0",
     "minimaldata": "^1.0.2",
-    "mocha": "^7.1.1",
+    "mocha": "^10.1.0",
     "npm-audit-whitelister": "^1.0.2",
     "nyc": "^15.1.0",
     "prettier": "^2.7.1",
