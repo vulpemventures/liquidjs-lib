@@ -18,7 +18,7 @@ const { regtest } = NETWORKS;
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
-describe('liquidjs-lib (transactions with psbt)', () => {
+describe.skip('liquidjs-lib (transactions with psbt)', () => {
   const alice = ECPair.fromWIF(
     'cPNMJD4VyFnQjGbGs3kcydRzAbDCXrLAbvH6wTCqs88qg1SkZT3J',
     regtest,
