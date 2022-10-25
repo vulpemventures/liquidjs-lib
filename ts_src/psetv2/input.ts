@@ -635,27 +635,29 @@ export class PsetInput {
     }
 
     // issuance case
-    if (this.issuanceBlindingNonce?.equals(ZERO)) {
-      if (
-        (this.issuanceValue ?? 0) <= 0 &&
-        (this.issuanceInflationKeys ?? 0) <= 0
-      ) {
-        throw new Error(
-          'Invalid input issuance values (should at least issue 1 asset or 1 token)',
-        );
-      }
-      // reissuance case
-    } else {
-      if ((this.issuanceValue ?? 0) <= 0) {
-        throw new Error(
-          'Invalid input reissuance value (should at least re-issue 1 asset)',
-        );
-      }
+    if (this.issuanceBlindingNonce) {
+      if (this.issuanceBlindingNonce.equals(ZERO)) {
+        if (
+          (this.issuanceValue ?? 0) <= 0 &&
+          (this.issuanceInflationKeys ?? 0) <= 0
+        ) {
+          throw new Error(
+            'Invalid input issuance values (should at least issue 1 asset or 1 token)',
+          );
+        }
+        // reissuance case
+      } else {
+        if ((this.issuanceValue ?? 0) <= 0) {
+          throw new Error(
+            'Invalid input reissuance value (should at least re-issue 1 asset)',
+          );
+        }
 
-      if ((this.issuanceInflationKeys ?? 0) > 0) {
-        throw new Error(
-          'Invalid input reissuance inflation keys (should not re-issue tokens)',
-        );
+        if ((this.issuanceInflationKeys ?? 0) > 0) {
+          throw new Error(
+            'Invalid input reissuance inflation keys (should not re-issue tokens)',
+          );
+        }
       }
     }
 
