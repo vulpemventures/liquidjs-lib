@@ -1,3 +1,4 @@
+import * as randombytes from 'randombytes';
 import { payments } from '..';
 import { varuint } from '../bufferutils';
 import { hash160 } from '../crypto';
@@ -196,4 +197,10 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
       element.equals(pubkeyXOnly)
     );
   });
+}
+
+export function randomBytes(options?: RngOpts): Buffer {
+  if (options === undefined) options = {};
+  const rng = options.rng || randombytes.default;
+  return rng(32);
 }

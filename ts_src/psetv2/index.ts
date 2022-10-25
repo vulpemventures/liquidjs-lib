@@ -1,7 +1,7 @@
 import { PsetGlobal } from './globals';
 import { PsetInput } from './input';
 import { PsetOutput } from './output';
-import { Pset } from './pset';
+import { Pset, KeysGenerator } from './pset';
 import { Creator, CreatorInput, CreatorOutput } from './creator';
 import {
   Updater,
@@ -44,6 +44,7 @@ export {
   CreatorOutput,
   OutputBlindingArgs,
   OwnedInput,
+  KeysGenerator,
   Pset,
   PsetGlobal,
   PsetInput,

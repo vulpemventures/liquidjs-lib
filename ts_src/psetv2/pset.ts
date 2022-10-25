@@ -6,7 +6,7 @@ import { Transaction } from '../transaction';
 import { separator } from './fields';
 import { PsetGlobal } from './globals';
 import { PsetInput } from './input';
-import { PartialSig } from './interfaces';
+import { PartialSig, RngOpts } from './interfaces';
 import { PsetOutput } from './output';
 import * as bscript from '../script';
 import { getScriptType, ScriptType } from '../address';
@@ -14,6 +14,7 @@ import { p2pkh } from '../payments';
 import { ElementsValue } from '../value';
 import { AssetHash } from '../asset';
 import { bip341 } from '..';
+import { randomBytes } from './utils';
 
 export const magicPrefix = Buffer.from([0x70, 0x73, 0x65, 0x74]);
 export const magicPrefixWithSeparator = Buffer.concat([
@@ -27,6 +28,11 @@ export type ValidateSigFunction = (
   msghash: Buffer,
   signature: Buffer,
 ) => boolean;
+
+export type KeysGenerator = (opts?: RngOpts) => {
+  publicKey: Buffer;
+  privateKey: Buffer;
+};
 
 export class Pset {
   static fromBase64(data: string): Pset {
@@ -57,6 +63,17 @@ export class Pset {
     const pset = new Pset(globals, inputs, outputs);
     pset.sanityCheck();
     return pset;
+  }
+
+  static ECCKeysGenerator(ec: TinySecp256k1Interface): KeysGenerator {
+    return (opts?: RngOpts) => {
+      const privateKey = randomBytes(opts);
+      const publicKey = ECPairFactory(ec).fromPrivateKey(privateKey).publicKey;
+      return {
+        privateKey,
+        publicKey,
+      };
+    };
   }
 
   static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction {
