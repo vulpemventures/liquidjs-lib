@@ -10,4 +10,3 @@ export declare class Finalizer {
     finalize(): void;
     finalizeInput(inIndex: number, finalizeFunc?: FinalizeFunc): this;
 }
-export declare function witnessStackToScriptWitness(witness: Buffer[]): Buffer;
