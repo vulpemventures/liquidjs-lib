@@ -440,7 +440,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       reissuancePset,
       ZKPGenerator.ECCKeysGenerator(ecc),
       undefined,
-      issuanceBlindingArgs,
+      reissuanceBlindingArgs,
     );
 
     blinder = new PsetBlinder(
