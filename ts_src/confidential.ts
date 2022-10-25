@@ -1,5 +1,6 @@
 import * as crypto from './crypto';
 import { Output, ZERO } from './transaction';
+import type { ZKP } from '@vulpemventures/secp256k1-zkp';
 import {
   Pset,
   IssuanceBlindingArgs,
@@ -28,7 +29,7 @@ export interface RangeProofInfoResult {
 }
 
 export class Confidential {
-  constructor(private secp256k1Promise: Promise<any>) {}
+  constructor(private secp256k1Promise: Promise<ZKP>) {}
 
   async nonceHash(pubkey: Buffer, privkey: Buffer): Promise<Buffer> {
     const { ecdh } = await this.secp256k1Promise;
