@@ -545,7 +545,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const zkpValidator = new ZKPValidator(zkpLib);
     const zkpGenerator = new ZKPGenerator(
       zkpLib,
-      ZKPGenerator.WithBlindingKeysOfInputs(bob.blindingKeys),
+      ZKPGenerator.WithBlindingKeysOfInputs(
+        alice.blindingKeys.concat(bob.blindingKeys),
+      ),
     );
     const ownedInputs = zkpGenerator.unblindInputs(pset);
     const outputBlindingArgs = zkpGenerator.blindOutputs(
