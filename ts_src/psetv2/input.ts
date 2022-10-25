@@ -610,28 +610,53 @@ export class PsetInput {
       );
     }
     const issuanceValueCommitSet =
-      this.issuanceValueCommitment! && this.issuanceValueCommitment.length > 0;
+      this.issuanceValueCommitment && this.issuanceValueCommitment.length > 0;
     const issuanceBlindValueProofSet =
-      this.issuanceBlindValueProof! && this.issuanceBlindValueProof.length > 0;
+      this.issuanceBlindValueProof && this.issuanceBlindValueProof.length > 0;
     if (
-      this.issuanceValue! &&
+      this.issuanceValue &&
       issuanceValueCommitSet !== issuanceBlindValueProofSet
     ) {
       throw new Error('Missing input issuance value commitment or blind proof');
     }
     const issuanceInflationKeysCommitSet =
-      this.issuanceInflationKeysCommitment! &&
+      this.issuanceInflationKeysCommitment &&
       this.issuanceInflationKeysCommitment.length > 0;
     const issuanceBlindInflationKeysProofSet =
-      this.issuanceBlindInflationKeysProof! &&
+      this.issuanceBlindInflationKeysProof &&
       this.issuanceBlindInflationKeysProof.length > 0;
     if (
-      this.issuanceInflationKeys! &&
+      this.issuanceInflationKeys &&
       issuanceInflationKeysCommitSet !== issuanceBlindInflationKeysProofSet
     ) {
       throw new Error(
         'Missing input issuance inflation keys commitment or blind proof',
       );
+    }
+
+    // issuance case
+    if (this.issuanceBlindingNonce?.equals(ZERO)) {
+      if (
+        (this.issuanceValue ?? 0) <= 0 &&
+        (this.issuanceInflationKeys ?? 0) <= 0
+      ) {
+        throw new Error(
+          'Invalid input issuance values (should at least issue 1 asset or 1 token)',
+        );
+      }
+      // reissuance case
+    } else {
+      if ((this.issuanceValue ?? 0) <= 0) {
+        throw new Error(
+          'Invalid input reissuance value (should at least re-issue 1 asset)',
+        );
+      }
+
+      if ((this.issuanceInflationKeys ?? 0) > 0) {
+        throw new Error(
+          'Invalid input reissuance inflation keys (should not re-issue tokens)',
+        );
+      }
     }
 
     if (this.sighashType !== undefined && this.sighashType < 0) {
@@ -642,13 +667,8 @@ export class PsetInput {
   }
 
   hasIssuance(): boolean {
-    if (!this.issuanceBlindingNonce) {
-      return false;
-    }
-    return (
-      this.issuanceBlindingNonce!.equals(ZERO) &&
-      (this.issuanceValue! > 0 || this.issuanceInflationKeys! > 0)
-    );
+    if (!this.issuanceBlindingNonce) return false;
+    return this.issuanceBlindingNonce.equals(ZERO);
   }
 
   hasIssuanceBlinded(): boolean {
@@ -656,10 +676,8 @@ export class PsetInput {
   }
 
   hasReissuance(): boolean {
-    if (!this.issuanceBlindingNonce) {
-      return false;
-    }
-    return !this.issuanceBlindingNonce!.equals(ZERO) && this.issuanceValue! > 0;
+    if (!this.issuanceBlindingNonce) return false;
+    return !this.issuanceBlindingNonce.equals(ZERO);
   }
 
   isFinalized(): boolean {
