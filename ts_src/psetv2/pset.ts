@@ -201,16 +201,16 @@ export class Pset {
 
     this.inputs.forEach((input) => {
       let issuance: Issuance | undefined;
-      if (input.hasIssuance()) {
+      if (input.hasIssuance() || input.hasReissuance()) {
         let assetAmount = input.issuanceValueCommitment;
         if (!assetAmount || assetAmount.length === 0) {
           assetAmount = ElementsValue.fromNumber(input.issuanceValue!).bytes;
         }
         let tokenAmount = input.issuanceInflationKeysCommitment;
         if (!tokenAmount || tokenAmount.length === 0) {
-          tokenAmount = ElementsValue.fromNumber(
-            input.issuanceInflationKeys!,
-          ).bytes;
+          tokenAmount = !input.issuanceInflationKeys
+            ? Buffer.of(0x00)
+            : ElementsValue.fromNumber(input.issuanceInflationKeys!).bytes;
         }
         const assetEntropy = input.issuanceAssetEntropy!;
         const assetBlindingNonce = input.issuanceBlindingNonce!;

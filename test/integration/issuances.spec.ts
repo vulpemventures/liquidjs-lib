@@ -375,6 +375,7 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     );
     strictEqual(validReissuance, true);
     reissuancePset.finalizeAllInputs();
+
     const reissuanceHex = reissuancePset.extractTransaction().toHex();
     await broadcast(reissuanceHex);
   });

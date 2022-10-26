@@ -21,8 +21,11 @@ export async function faucet(address: string): Promise<any> {
 
     return filter()[0];
   } catch (e) {
-    console.error(e);
-    throw e;
+    const err = e as any;
+    const errMsg =
+      err.response && err.response.data ? err.response.data : err.request.data;
+    console.error(errMsg);
+    throw new Error(errMsg);
   }
 }
 
@@ -43,20 +46,39 @@ export async function mint(address: string, quantity: number): Promise<any> {
 
     return { asset, txid: filter()[0].txid, index: filter()[0].vout };
   } catch (e) {
-    console.error(e);
-    throw e;
+    const err = e as any;
+    const errMsg =
+      err.response && err.response.data ? err.response.data : err.request.data;
+    console.error(errMsg);
+    throw new Error(errMsg);
   }
 }
 
 export async function fetchTx(txId: string): Promise<string> {
-  const resp = await axios.get(`${APIURL}/tx/${txId}/hex`);
-  return resp.data;
+  try {
+    const resp = await axios.get(`${APIURL}/tx/${txId}/hex`);
+    return resp.data;
+  } catch (e) {
+    const err = e as any;
+    const errMsg =
+      err.response && err.response.data ? err.response.data : err.request.data;
+    console.error(errMsg);
+    throw new Error(errMsg);
+  }
 }
 
 export async function fetchUtxo(txId: string): Promise<any> {
-  const txHex = await fetchTx(txId);
-  const resp = await axios.get(`${APIURL}/tx/${txId}`);
-  return { txHex, ...resp.data };
+  try {
+    const txHex = await fetchTx(txId);
+    const resp = await axios.get(`${APIURL}/tx/${txId}`);
+    return { txHex, ...resp.data };
+  } catch (e) {
+    const err = e as any;
+    const errMsg =
+      err.response && err.response.data ? err.response.data : err.request.data;
+    console.error(errMsg);
+    throw new Error(errMsg);
+  }
 }
 
 export async function broadcast(
@@ -68,8 +90,11 @@ export async function broadcast(
     const resp = await axios.get(`${api}/broadcast?tx=${txHex}`);
     return resp.data;
   } catch (e) {
-    if (verbose) console.error(e);
-    throw e;
+    const err = e as any;
+    const errMsg =
+      err.response && err.response.data ? err.response.data : err.request.data;
+    if (verbose) console.error(errMsg);
+    throw new Error(errMsg);
   }
 }
 

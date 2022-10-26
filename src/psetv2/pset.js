@@ -197,7 +197,7 @@ class Pset {
     tx.locktime = this.locktime();
     this.inputs.forEach((input) => {
       let issuance;
-      if (input.hasIssuance()) {
+      if (input.hasIssuance() || input.hasReissuance()) {
         let assetAmount = input.issuanceValueCommitment;
         if (!assetAmount || assetAmount.length === 0) {
           assetAmount = value_1.ElementsValue.fromNumber(
@@ -206,9 +206,10 @@ class Pset {
         }
         let tokenAmount = input.issuanceInflationKeysCommitment;
         if (!tokenAmount || tokenAmount.length === 0) {
-          tokenAmount = value_1.ElementsValue.fromNumber(
-            input.issuanceInflationKeys,
-          ).bytes;
+          tokenAmount = !input.issuanceInflationKeys
+            ? Buffer.of(0x00)
+            : value_1.ElementsValue.fromNumber(input.issuanceInflationKeys)
+                .bytes;
         }
         const assetEntropy = input.issuanceAssetEntropy;
         const assetBlindingNonce = input.issuanceBlindingNonce;
