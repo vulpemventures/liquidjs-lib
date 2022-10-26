@@ -460,9 +460,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       ]),
     );
 
-    const reissuanceownedInputs = zkpGenerator2.unblindInputs(
-      reissuancePset,
-    );
+    const reissuanceownedInputs = zkpGenerator2.unblindInputs(reissuancePset);
     const reissuanceBlindingArgs = zkpGenerator2.blindIssuances(
       reissuancePset,
       {
