@@ -641,10 +641,7 @@ export class PsetInput {
       this.issuanceInflationKeys
     ) {
       if (this.issuanceBlindingNonce.equals(ZERO)) {
-        if (
-          this.issuanceValue<= 0 &&
-          this.issuanceInflationKeys <= 0
-        ) {
+        if (this.issuanceValue <= 0 && this.issuanceInflationKeys <= 0) {
           throw new Error(
             'Invalid input issuance values (should at least issue 1 asset or 1 token)',
           );
