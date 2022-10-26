@@ -614,23 +614,6 @@ class PsetInput {
         'Missing input issuance inflation keys commitment or blind proof',
       );
     }
-    // issuance case
-    const isIssuanceValueSet = this.issuanceValue > 0;
-    const isIssuanceInflationKeysSet = this.issuanceInflationKeys > 0;
-    const isIssuanceBlindingNonceSet =
-      this.issuanceBlindingNonce && this.issuanceBlindingNonce.length > 0;
-    if (
-      (isIssuanceValueSet || isIssuanceInflationKeysSet) &&
-      !isIssuanceBlindingNonceSet
-    ) {
-      throw new Error('missing issuance blinding nonce');
-    }
-    if (
-      isIssuanceBlindingNonceSet &&
-      !(isIssuanceValueSet || isIssuanceInflationKeysSet)
-    ) {
-      throw new Error('missing issuance value and/or inflation keys');
-    }
     if (this.sighashType !== undefined && this.sighashType < 0) {
       throw new Error('Invalid sighash type');
     }
