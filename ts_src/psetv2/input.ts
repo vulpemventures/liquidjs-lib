@@ -614,7 +614,7 @@ export class PsetInput {
     const issuanceBlindValueProofSet =
       this.issuanceBlindValueProof && this.issuanceBlindValueProof.length > 0;
     if (
-      this.issuanceValue !== undefined &&
+      this.issuanceValue! &&
       issuanceValueCommitSet !== issuanceBlindValueProofSet
     ) {
       throw new Error('Missing input issuance value commitment or blind proof');
@@ -626,7 +626,7 @@ export class PsetInput {
       this.issuanceBlindInflationKeysProof &&
       this.issuanceBlindInflationKeysProof.length > 0;
     if (
-      this.issuanceInflationKeys !== undefined &&
+      this.issuanceInflationKeys! &&
       issuanceInflationKeysCommitSet !== issuanceBlindInflationKeysProofSet
     ) {
       throw new Error(
@@ -637,11 +637,18 @@ export class PsetInput {
     // issuance case
     const isIssuanceValueSet = this.issuanceValue! > 0;
     const isIssuanceInflationKeysSet = this.issuanceInflationKeys! > 0;
-    const isIssuanceBlindingNonceSet = this.issuanceBlindingNonce && this.issuanceBlindingNonce.length > 0;
-    if ((isIssuanceValueSet || isIssuanceInflationKeysSet) && !isIssuanceBlindingNonceSet) {
+    const isIssuanceBlindingNonceSet =
+      this.issuanceBlindingNonce && this.issuanceBlindingNonce.length > 0;
+    if (
+      (isIssuanceValueSet || isIssuanceInflationKeysSet) &&
+      !isIssuanceBlindingNonceSet
+    ) {
       throw new Error('missing issuance blinding nonce');
     }
-    if (isIssuanceBlindingNonceSet && !(isIssuanceValueSet || isIssuanceInflationKeysSet)) {
+    if (
+      isIssuanceBlindingNonceSet &&
+      !(isIssuanceValueSet || isIssuanceInflationKeysSet)
+    ) {
       throw new Error('missing issuance value and/or inflation keys');
     }
 

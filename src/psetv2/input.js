@@ -595,7 +595,7 @@ class PsetInput {
     const issuanceBlindValueProofSet =
       this.issuanceBlindValueProof && this.issuanceBlindValueProof.length > 0;
     if (
-      this.issuanceValue !== undefined &&
+      this.issuanceValue &&
       issuanceValueCommitSet !== issuanceBlindValueProofSet
     ) {
       throw new Error('Missing input issuance value commitment or blind proof');
@@ -607,7 +607,7 @@ class PsetInput {
       this.issuanceBlindInflationKeysProof &&
       this.issuanceBlindInflationKeysProof.length > 0;
     if (
-      this.issuanceInflationKeys !== undefined &&
+      this.issuanceInflationKeys &&
       issuanceInflationKeysCommitSet !== issuanceBlindInflationKeysProofSet
     ) {
       throw new Error(
@@ -615,24 +615,21 @@ class PsetInput {
       );
     }
     // issuance case
-    if (this.issuanceBlindingNonce) {
-      if (this.issuanceBlindingNonce.equals(transaction_1.ZERO)) {
-        if (
-          (this.issuanceValue || 0) <= 0 &&
-          (this.issuanceInflationKeys || 0) <= 0
-        ) {
-          throw new Error(
-            'Invalid input issuance values (should at least issue 1 asset or 1 token)',
-          );
-        }
-        // reissuance case
-      } else {
-        if ((this.issuanceValue || 0) <= 0) {
-          throw new Error(
-            'Invalid input reissuance value (should at least re-issue 1 asset)',
-          );
-        }
-      }
+    const isIssuanceValueSet = this.issuanceValue > 0;
+    const isIssuanceInflationKeysSet = this.issuanceInflationKeys > 0;
+    const isIssuanceBlindingNonceSet =
+      this.issuanceBlindingNonce && this.issuanceBlindingNonce.length > 0;
+    if (
+      (isIssuanceValueSet || isIssuanceInflationKeysSet) &&
+      !isIssuanceBlindingNonceSet
+    ) {
+      throw new Error('missing issuance blinding nonce');
+    }
+    if (
+      isIssuanceBlindingNonceSet &&
+      !(isIssuanceValueSet || isIssuanceInflationKeysSet)
+    ) {
+      throw new Error('missing issuance value and/or inflation keys');
     }
     if (this.sighashType !== undefined && this.sighashType < 0) {
       throw new Error('Invalid sighash type');
