@@ -610,9 +610,9 @@ export class PsetInput {
       );
     }
     const issuanceValueCommitSet =
-      this.issuanceValueCommitment! && this.issuanceValueCommitment.length > 0;
+      this.issuanceValueCommitment && this.issuanceValueCommitment.length > 0;
     const issuanceBlindValueProofSet =
-      this.issuanceBlindValueProof! && this.issuanceBlindValueProof.length > 0;
+      this.issuanceBlindValueProof && this.issuanceBlindValueProof.length > 0;
     if (
       this.issuanceValue! &&
       issuanceValueCommitSet !== issuanceBlindValueProofSet
@@ -620,10 +620,10 @@ export class PsetInput {
       throw new Error('Missing input issuance value commitment or blind proof');
     }
     const issuanceInflationKeysCommitSet =
-      this.issuanceInflationKeysCommitment! &&
+      this.issuanceInflationKeysCommitment &&
       this.issuanceInflationKeysCommitment.length > 0;
     const issuanceBlindInflationKeysProofSet =
-      this.issuanceBlindInflationKeysProof! &&
+      this.issuanceBlindInflationKeysProof &&
       this.issuanceBlindInflationKeysProof.length > 0;
     if (
       this.issuanceInflationKeys! &&
@@ -642,7 +642,8 @@ export class PsetInput {
   }
 
   hasIssuance(): boolean {
-    return this.issuanceValue! > 0 || this.issuanceInflationKeys! > 0;
+    if (!this.issuanceBlindingNonce) return false;
+    return this.issuanceBlindingNonce.equals(ZERO);
   }
 
   hasIssuanceBlinded(): boolean {
@@ -650,10 +651,8 @@ export class PsetInput {
   }
 
   hasReissuance(): boolean {
-    if (!this.issuanceBlindingNonce) {
-      return false;
-    }
-    return !this.issuanceBlindingNonce!.equals(ZERO);
+    if (!this.issuanceBlindingNonce) return false;
+    return !this.issuanceBlindingNonce.equals(ZERO);
   }
 
   isFinalized(): boolean {
@@ -674,7 +673,7 @@ export class PsetInput {
   }
 
   getIssuanceAssetHash(): Buffer | undefined {
-    if (!this.hasIssuance()) {
+    if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
 
@@ -693,7 +692,7 @@ export class PsetInput {
   }
 
   getIssuanceInflationKeysHash(blindedIssuance: boolean): Buffer | undefined {
-    if (!this.hasIssuance()) {
+    if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
 
@@ -702,7 +701,7 @@ export class PsetInput {
     }
 
     let entropy = this.issuanceAssetEntropy!;
-    if (!this.hasReissuance()) {
+    if (this.hasIssuance()) {
       entropy = generateEntropy(
         { txHash: this.previousTxid, vout: this.previousTxIndex },
         this.issuanceAssetEntropy!,

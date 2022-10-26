@@ -24,6 +24,7 @@ import * as regtestUtils from './_regtest';
 import { address, bip341 } from '../../ts_src';
 import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
+import { issuanceEntropyFromInput } from '../../ts_src/issuance';
 
 const OPS = bscript.OPS;
 const { BIP341Factory } = bip341;
@@ -327,9 +328,8 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
-  it('can create (and broadcast via 3PBP) a confidential issuance Transaction', async () => {
+  it('can create (and broadcast via 3PBP) a confidential issuance and reissuance Transactions', async () => {
     const alice = createPayment('p2wpkh', undefined, undefined, true);
-    const bob = createPayment('p2pkh', undefined, undefined, true);
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
@@ -337,12 +337,18 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       return new CreatorInput(txid, index);
     });
     const outputs = [
-      new CreatorOutput(lbtc, 99999500, alice.payment.output),
-      new CreatorOutput(lbtc, 500),
+      new CreatorOutput(
+        lbtc,
+        99999400,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
+      new CreatorOutput(lbtc, 600),
     ];
 
     const pset = PsetCreator.newPset({ inputs, outputs });
-    const updater = new PsetUpdater(pset);
+    let updater = new PsetUpdater(pset);
     updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
     updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
@@ -350,11 +356,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       assetAmount: 1000,
       tokenAmount: 1,
       assetAddress: alice.payment.confidentialAddress!,
-      tokenAddress: bob.payment.confidentialAddress!,
+      tokenAddress: alice.payment.confidentialAddress!,
       blindedIssuance: true,
     });
 
-    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(alice.blindingKeys);
+    let zkpGenerator = ZKPGenerator.fromInBlindingKeys(alice.blindingKeys);
     const zkpValidator = new ZKPValidator();
     const ownedInputs = await zkpGenerator.unblindInputs(pset);
     const issuanceBlindingArgs = await zkpGenerator.blindIssuances(pset, {
@@ -366,15 +372,94 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       undefined,
       issuanceBlindingArgs,
     );
-    const blinder = new PsetBlinder(
+    let blinder = new PsetBlinder(
       pset,
       ownedInputs,
       zkpValidator,
       zkpGenerator,
     );
     await blinder.blindLast({ issuanceBlindingArgs, outputBlindingArgs });
-    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
-    await regtestUtils.broadcast(rawTx.toHex());
+    const issuanceTx = signTransaction(
+      pset,
+      [alice.keys],
+      Transaction.SIGHASH_ALL,
+    );
+    const issuanceTxid = await regtestUtils.broadcast(issuanceTx.toHex());
+
+    const assetEntropy = issuanceEntropyFromInput(issuanceTx.ins[0]);
+    const reissuanceInputs = [
+      new CreatorInput(issuanceTxid, 0),
+      new CreatorInput(issuanceTxid, 3),
+    ];
+    const reissuanceOutputs = [
+      new CreatorOutput(
+        lbtc,
+        99998700,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
+      new CreatorOutput(lbtc, 700),
+    ];
+    const reissuancePset = PsetCreator.newPset({
+      inputs: reissuanceInputs,
+      outputs: reissuanceOutputs,
+    });
+
+    updater = new PsetUpdater(reissuancePset);
+    updater.addInWitnessUtxo(0, issuanceTx.outs[0]);
+    updater.addInWitnessUtxo(1, issuanceTx.outs[3]);
+    updater.addInUtxoRangeProof(0, issuanceTx.outs[0].rangeProof!);
+    updater.addInUtxoRangeProof(1, issuanceTx.outs[3].rangeProof!);
+    updater.addInReissuance(1, {
+      entropy: assetEntropy,
+      assetAmount: 1000,
+      assetAddress: alice.payment.confidentialAddress!,
+      tokenAmount: 1,
+      tokenAddress: alice.payment.confidentialAddress!,
+      tokenAssetBlinder: outputBlindingArgs[2].assetBlinder,
+    });
+    updater.addInSighashType(0, Transaction.SIGHASH_ALL);
+    updater.addInSighashType(1, Transaction.SIGHASH_ALL);
+
+    zkpGenerator = ZKPGenerator.fromInBlindingKeys([
+      alice.blindingKeys[0],
+      alice.blindingKeys[0],
+    ]);
+    const reissuanceownedInputs = await zkpGenerator.unblindInputs(
+      reissuancePset,
+    );
+    const reissuanceBlindingArgs = await zkpGenerator.blindIssuances(
+      reissuancePset,
+      {
+        1: alice.blindingKeys[0],
+      },
+    );
+
+    const reissuanceOutputBlindingArgs = await zkpGenerator.blindOutputs(
+      reissuancePset,
+      ZKPGenerator.ECCKeysGenerator(ecc),
+      undefined,
+      reissuanceBlindingArgs,
+    );
+
+    blinder = new PsetBlinder(
+      reissuancePset,
+      reissuanceownedInputs,
+      zkpValidator,
+      zkpGenerator,
+    );
+    await blinder.blindLast({
+      issuanceBlindingArgs: reissuanceBlindingArgs,
+      outputBlindingArgs: reissuanceOutputBlindingArgs,
+    });
+
+    const reissuanceTx = signTransaction(
+      reissuancePset,
+      [alice.keys, alice.keys],
+      Transaction.SIGHASH_ALL,
+    );
+    await regtestUtils.broadcast(reissuanceTx.toHex());
   });
 
   it('can create (and broadcast via 3PBP) a confidential issuance Transaction w/ unconfidential outputs', async () => {

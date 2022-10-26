@@ -147,7 +147,7 @@ class Blinder {
         input.valueBlindingFactor,
       );
       const pInput = this.pset.inputs[input.index];
-      if (pInput.hasIssuance()) {
+      if (pInput.hasIssuance() || pInput.hasReissuance()) {
         const issuance =
           issuanceBlindingArgs &&
           issuanceBlindingArgs.find(({ index }) => index === input.index);
@@ -231,7 +231,7 @@ class Blinder {
       throw new Error('Input index out of range');
     }
     const targetInput = this.pset.inputs[index];
-    if (!targetInput.hasIssuance()) {
+    if (!targetInput.hasIssuance() && !targetInput.hasReissuance()) {
       throw new Error('Missing issuance on target input');
     }
     if (issuanceAsset.length === 0) {
@@ -385,7 +385,7 @@ class Blinder {
           };
     });
     this.pset.inputs.forEach((input, i) => {
-      if (input.hasIssuance()) {
+      if (input.hasIssuance() || input.hasReissuance()) {
         inAssetsAndBlinders.push({
           asset: input.getIssuanceAssetHash(),
           assetBlinder: transaction_1.ZERO,

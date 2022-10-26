@@ -19,7 +19,7 @@ class Extractor {
     pset.inputs.forEach((input) => {
       tx.addInput(input.previousTxid, input.previousTxIndex, input.sequence);
       const inIndex = tx.ins.length - 1;
-      if (input.hasIssuance()) {
+      if (input.hasIssuance() || input.hasReissuance()) {
         const assetAmount =
           input.issuanceValueCommitment &&
           input.issuanceValueCommitment.length > 0
