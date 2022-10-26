@@ -595,7 +595,7 @@ class PsetInput {
     const issuanceBlindValueProofSet =
       this.issuanceBlindValueProof && this.issuanceBlindValueProof.length > 0;
     if (
-      this.issuanceValue &&
+      this.issuanceValue !== undefined &&
       issuanceValueCommitSet !== issuanceBlindValueProofSet
     ) {
       throw new Error('Missing input issuance value commitment or blind proof');
@@ -607,7 +607,7 @@ class PsetInput {
       this.issuanceBlindInflationKeysProof &&
       this.issuanceBlindInflationKeysProof.length > 0;
     if (
-      this.issuanceInflationKeys &&
+      this.issuanceInflationKeys !== undefined &&
       issuanceInflationKeysCommitSet !== issuanceBlindInflationKeysProofSet
     ) {
       throw new Error(
@@ -615,20 +615,19 @@ class PsetInput {
       );
     }
     // issuance case
-    if (
-      this.issuanceBlindingNonce &&
-      this.issuanceValue &&
-      this.issuanceInflationKeys
-    ) {
+    if (this.issuanceBlindingNonce) {
       if (this.issuanceBlindingNonce.equals(transaction_1.ZERO)) {
-        if (this.issuanceValue <= 0 && this.issuanceInflationKeys <= 0) {
+        if (
+          (this.issuanceValue || 0) <= 0 &&
+          (this.issuanceInflationKeys || 0) <= 0
+        ) {
           throw new Error(
             'Invalid input issuance values (should at least issue 1 asset or 1 token)',
           );
         }
         // reissuance case
       } else {
-        if (this.issuanceValue <= 0) {
+        if ((this.issuanceValue || 0) <= 0) {
           throw new Error(
             'Invalid input reissuance value (should at least re-issue 1 asset)',
           );
