@@ -353,7 +353,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
-  it('can create (and broadcast via 3PBP) a confidential issuance and reissuance Transactions', async () => {
+  it.only('can create (and broadcast via 3PBP) a confidential issuance and reissuance Transactions', async () => {
     const alice = createPayment('p2wpkh', undefined, undefined, true);
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
