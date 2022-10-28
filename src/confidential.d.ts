@@ -83,7 +83,7 @@ interface SurjectionProof {
         data: Buffer;
     }, inputTags: Array<Buffer>, outputTag: Buffer) => boolean;
 }
-export interface ZKP {
+export interface ZKPInterface {
     ecdh: Ecdh;
     ec: Ec;
     surjectionproof: SurjectionProof;
@@ -93,7 +93,7 @@ export interface ZKP {
 }
 export declare class Confidential {
     private zkp;
-    constructor(zkp: ZKP);
+    constructor(zkp: ZKPInterface);
     nonceHash(pubkey: Buffer, privkey: Buffer): Buffer;
     valueBlindingFactor(inValues: string[], outValues: string[], inGenerators: Buffer[], outGenerators: Buffer[], inFactors: Buffer[], outFactors: Buffer[]): Buffer;
     valueCommitment(value: string, gen: Buffer, factor: Buffer): Buffer;

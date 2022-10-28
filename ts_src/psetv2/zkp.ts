@@ -1,4 +1,8 @@
-import { Confidential, UnblindOutputResult, ZKP } from '../confidential';
+import {
+  Confidential,
+  UnblindOutputResult,
+  ZKPInterface,
+} from '../confidential';
 import { Output, ZERO } from '../transaction';
 import { ElementsValue } from '../value';
 import { randomBytes } from './utils';
@@ -14,7 +18,7 @@ import type {
 export class ZKPValidator {
   private confidential: Confidential;
 
-  constructor(zkpLib: ZKP) {
+  constructor(zkpLib: ZKPInterface) {
     this.confidential = new Confidential(zkpLib);
   }
 
@@ -93,7 +97,7 @@ export class ZKPGenerator {
   private opts?: RngOpts;
   private confidential: Confidential;
 
-  constructor(private zkp: ZKP, ...options: ZKPGeneratorOption[]) {
+  constructor(private zkp: ZKPInterface, ...options: ZKPGeneratorOption[]) {
     this.confidential = new Confidential(zkp);
     for (const option of options) {
       option(this);

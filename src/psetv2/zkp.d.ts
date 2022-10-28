@@ -1,11 +1,11 @@
 /// <reference types="node" />
-import { ZKP } from '../confidential';
+import { ZKPInterface } from '../confidential';
 import type { Slip77Interface } from 'slip77';
 import type { KeysGenerator, Pset } from './pset';
 import type { IssuanceBlindingArgs, OutputBlindingArgs, OwnedInput } from './blinder';
 export declare class ZKPValidator {
     private confidential;
-    constructor(zkpLib: ZKP);
+    constructor(zkpLib: ZKPInterface);
     verifyValueRangeProof(valueCommit: Buffer, assetCommit: Buffer, proof: Buffer, script: Buffer): boolean;
     verifyAssetSurjectionProof(inAssets: Buffer[], inAssetBlinders: Buffer[], outAsset: Buffer, outAssetBlinder: Buffer, proof: Buffer): boolean;
     verifyBlindValueProof(valueCommit: Buffer, assetCommit: Buffer, proof: Buffer): boolean;
@@ -19,7 +19,7 @@ export declare class ZKPGenerator {
     private masterBlindingKey?;
     private opts?;
     private confidential;
-    constructor(zkp: ZKP, ...options: ZKPGeneratorOption[]);
+    constructor(zkp: ZKPInterface, ...options: ZKPGeneratorOption[]);
     static WithBlindingKeysOfInputs(inBlindingKeys: Buffer[]): ZKPGeneratorOption;
     static WithMasterBlindingKey(masterKey: Slip77Interface): ZKPGeneratorOption;
     static WithOwnedInputs(ownedInputs: OwnedInput[]): ZKPGeneratorOption;

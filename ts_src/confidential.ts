@@ -121,7 +121,7 @@ interface SurjectionProof {
   ) => boolean;
 }
 
-export interface ZKP {
+export interface ZKPInterface {
   ecdh: Ecdh;
   ec: Ec;
   surjectionproof: SurjectionProof;
@@ -131,7 +131,7 @@ export interface ZKP {
 }
 
 export class Confidential {
-  constructor(private zkp: ZKP) {}
+  constructor(private zkp: ZKPInterface) {}
 
   nonceHash(pubkey: Buffer, privkey: Buffer): Buffer {
     return crypto.sha256(this.zkp.ecdh(pubkey, privkey));
