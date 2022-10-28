@@ -387,7 +387,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
     const zkpLib = await secp256k1();
     const zkpValidator = new ZKPValidator(zkpLib);
-    let zkpGenerator = new ZKPGenerator(
+    const zkpGenerator = new ZKPGenerator(
       zkpLib,
       ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
     );
@@ -461,9 +461,12 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     );
 
     const reissuanceownedInputs = zkpGenerator2.unblindInputs(reissuancePset);
-    const reissuanceBlindingArgs = zkpGenerator2.blindIssuances(reissuancePset, {
-      1: alice.blindingKeys[0],
-    });
+    const reissuanceBlindingArgs = zkpGenerator2.blindIssuances(
+      reissuancePset,
+      {
+        1: alice.blindingKeys[0],
+      },
+    );
 
     const reissuanceOutputBlindingArgs = zkpGenerator2.blindOutputs(
       reissuancePset,
