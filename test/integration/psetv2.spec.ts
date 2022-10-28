@@ -297,7 +297,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
-  it('can create (and broadcast via 3PBP) a unconfidential issuance Transaction w/ confidential outputs', async () => {
+  it.only('can create (and broadcast via 3PBP) a unconfidential issuance Transaction w/ confidential outputs', async () => {
     const alice = createPayment('p2wpkh', undefined, undefined, true);
     const bob = createPayment('p2sh-p2wpkh', undefined, undefined, true);
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
@@ -452,7 +452,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInSighashType(0, Transaction.SIGHASH_ALL);
     updater.addInSighashType(1, Transaction.SIGHASH_ALL);
 
-    zkpGenerator = new ZKPGenerator(
+    const zkpGenerator2 = new ZKPGenerator(
       zkpLib,
       ZKPGenerator.WithBlindingKeysOfInputs([
         alice.blindingKeys[0],
@@ -460,12 +460,12 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       ]),
     );
 
-    const reissuanceownedInputs = zkpGenerator.unblindInputs(reissuancePset);
-    const reissuanceBlindingArgs = zkpGenerator.blindIssuances(reissuancePset, {
+    const reissuanceownedInputs = zkpGenerator2.unblindInputs(reissuancePset);
+    const reissuanceBlindingArgs = zkpGenerator2.blindIssuances(reissuancePset, {
       1: alice.blindingKeys[0],
     });
 
-    const reissuanceOutputBlindingArgs = zkpGenerator.blindOutputs(
+    const reissuanceOutputBlindingArgs = zkpGenerator2.blindOutputs(
       reissuancePset,
       Pset.ECCKeysGenerator(ecc),
       undefined,
@@ -476,9 +476,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       reissuancePset,
       reissuanceownedInputs,
       zkpValidator,
-      zkpGenerator,
+      zkpGenerator2,
     );
-    await blinder.blindLast({
+    blinder.blindLast({
       issuanceBlindingArgs: reissuanceBlindingArgs,
       outputBlindingArgs: reissuanceOutputBlindingArgs,
     });
