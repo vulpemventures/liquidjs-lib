@@ -53,11 +53,8 @@ var __exportStar =
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Transaction =
   exports.opcodes =
-  exports.witnessStackToScriptWitness =
-  exports.Psbt =
   exports.bip341 =
   exports.issuance =
-  exports.confidential =
   exports.script =
   exports.payments =
   exports.networks =
@@ -66,8 +63,6 @@ exports.Transaction =
     void 0;
 const address = __importStar(require('./address'));
 exports.address = address;
-const confidential = __importStar(require('./confidential'));
-exports.confidential = confidential;
 const crypto = __importStar(require('./crypto'));
 exports.crypto = crypto;
 const networks = __importStar(require('./networks'));
@@ -80,22 +75,6 @@ const issuance = __importStar(require('./issuance'));
 exports.issuance = issuance;
 const bip341 = __importStar(require('./bip341'));
 exports.bip341 = bip341;
-__exportStar(require('./asset'), exports);
-__exportStar(require('./value'), exports);
-__exportStar(require('./psetv2'), exports);
-var psbt_1 = require('./psbt');
-Object.defineProperty(exports, 'Psbt', {
-  enumerable: true,
-  get: function () {
-    return psbt_1.Psbt;
-  },
-});
-Object.defineProperty(exports, 'witnessStackToScriptWitness', {
-  enumerable: true,
-  get: function () {
-    return psbt_1.witnessStackToScriptWitness;
-  },
-});
 var ops_1 = require('./ops');
 Object.defineProperty(exports, 'opcodes', {
   enumerable: true,
@@ -110,3 +89,7 @@ Object.defineProperty(exports, 'Transaction', {
     return transaction_1.Transaction;
   },
 });
+__exportStar(require('./asset'), exports);
+__exportStar(require('./value'), exports);
+__exportStar(require('./psetv2'), exports);
+__exportStar(require('./confidential'), exports);

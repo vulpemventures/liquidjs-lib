@@ -58,6 +58,7 @@ const address_1 = require('../address');
 const payments_1 = require('../payments');
 const value_1 = require('../value');
 const asset_1 = require('../asset');
+const utils_1 = require('./utils');
 exports.magicPrefix = Buffer.from([0x70, 0x73, 0x65, 0x74]);
 exports.magicPrefixWithSeparator = Buffer.concat([
   exports.magicPrefix,
@@ -93,6 +94,18 @@ class Pset {
     const pset = new Pset(globals, inputs, outputs);
     pset.sanityCheck();
     return pset;
+  }
+  static ECCKeysGenerator(ec) {
+    return (opts) => {
+      const privateKey = (0, utils_1.randomBytes)(opts);
+      const publicKey = (0, ecpair_1.ECPairFactory)(ec).fromPrivateKey(
+        privateKey,
+      ).publicKey;
+      return {
+        privateKey,
+        publicKey,
+      };
+    };
   }
   static ECDSASigValidator(ecc) {
     return (pubkey, msghash, signature) => {

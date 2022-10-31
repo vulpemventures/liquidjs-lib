@@ -4,21 +4,21 @@ import * as regtestUtils from './_regtest';
 import { describe, it } from 'mocha';
 import { createPayment, getInputData, nonWitnessUtxoBuffer } from './utils';
 import {
-  confidential,
   payments,
-  Psbt,
   networks as NETWORKS,
+  ElementsValue,
+  Confidential,
 } from '../../ts_src';
+import { Psbt } from '../../ts_src/psbt';
 import { ECPair, ecc } from '../ecc';
-import { ElementsValue } from '../../ts_src/value';
+import secp256k1 from '@vulpemventures/secp256k1-zkp';
 
 const rng = require('randombytes');
 const { regtest } = NETWORKS;
-const { unblindOutputWithKey } = confidential;
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
-describe('liquidjs-lib (transactions with psbt)', () => {
+describe.skip('liquidjs-lib (transactions with psbt)', () => {
   const alice = ECPair.fromWIF(
     'cPNMJD4VyFnQjGbGs3kcydRzAbDCXrLAbvH6wTCqs88qg1SkZT3J',
     regtest,
@@ -529,7 +529,9 @@ describe('liquidjs-lib (transactions with psbt)', () => {
         'noredeem',
       );
 
-      const inputBlindingData = await unblindOutputWithKey(
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+      const inputBlindingData = await confidential.unblindOutputWithKey(
         inputDataConfidential.witnessUtxo,
         aliceBlindingPrivateKey,
       );

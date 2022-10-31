@@ -1,6 +1,7 @@
 import { describe, it } from 'mocha';
 import { networks as NETWORKS } from '../../ts_src';
 import * as liquid from '../../ts_src';
+import { Psbt } from '../../ts_src/psbt';
 import * as regtestUtils from './_regtest';
 import { ECPair } from '../ecc';
 
@@ -25,7 +26,7 @@ async function buildAndSign(
   ]);
   const nonce = Buffer.from('00', 'hex');
 
-  const psbt = new liquid.Psbt({ network: NETWORK })
+  const psbt = new Psbt({ network: NETWORK })
     .addInput({
       hash: unspent.txid,
       index: unspent.vout,
