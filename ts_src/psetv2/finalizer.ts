@@ -1,10 +1,15 @@
 import { payments } from '..';
-import { witnessStackToScriptWitness } from '../psbt';
 import { findTapLeafToFinalize, sortSignatures } from './bip371';
 import { PsetInput } from './input';
 import { PartialSig } from './interfaces';
 import { Pset } from './pset';
-import { classifyScript, getPayment, hasSigs, isP2WPKH } from './utils';
+import {
+  classifyScript,
+  getPayment,
+  hasSigs,
+  isP2WPKH,
+  witnessStackToScriptWitness,
+} from './utils';
 
 export type FinalizeFunc = (
   inIndex: number,

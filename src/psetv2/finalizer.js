@@ -2,7 +2,6 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Finalizer = void 0;
 const __1 = require('..');
-const psbt_1 = require('../psbt');
 const bip371_1 = require('./bip371');
 const utils_1 = require('./utils');
 class Finalizer {
@@ -108,7 +107,7 @@ const finalizeTaprootInput = (inIndex, pset) => {
   // Check key spend first. Increased privacy and reduced block space.
   if (input.tapKeySig) {
     return {
-      finalScriptWitness: (0, psbt_1.witnessStackToScriptWitness)([
+      finalScriptWitness: (0, utils_1.witnessStackToScriptWitness)([
         input.tapKeySig,
       ]),
     };
@@ -150,11 +149,11 @@ function prepareFinalScripts(
   const p2sh = !isP2SH ? null : __1.payments.p2sh({ redeem: p2wsh || payment });
   if (isSegwit) {
     if (p2wsh) {
-      finalScriptWitness = (0, psbt_1.witnessStackToScriptWitness)(
+      finalScriptWitness = (0, utils_1.witnessStackToScriptWitness)(
         p2wsh.witness,
       );
     } else {
-      finalScriptWitness = (0, psbt_1.witnessStackToScriptWitness)(
+      finalScriptWitness = (0, utils_1.witnessStackToScriptWitness)(
         payment.witness,
       );
     }
@@ -196,7 +195,7 @@ function getTaprootFinalScripts(inputIndex, input, tapLeafHashToFinalize) {
     const sigs = (0, bip371_1.sortSignatures)(input, tapLeaf);
     const witness = sigs.concat(tapLeaf.script).concat(tapLeaf.controlBlock);
     return {
-      finalScriptWitness: (0, psbt_1.witnessStackToScriptWitness)(witness),
+      finalScriptWitness: (0, utils_1.witnessStackToScriptWitness)(witness),
     };
   } catch (err) {
     throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);

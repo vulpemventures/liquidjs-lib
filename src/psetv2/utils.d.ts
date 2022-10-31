@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { payments } from '..';
-import { PartialSig } from './interfaces';
+import { PartialSig, RngOpts } from './interfaces';
 export declare function getPayment(script: Buffer, scriptType: ScriptType, partialSig: PartialSig[]): payments.Payment;
 export declare function hasSigs(neededSigs: number, partialSig?: any[], pubkeys?: Buffer[]): boolean;
 export declare function witnessStackToScriptWitness(witness: Buffer[]): Buffer;
@@ -15,4 +15,5 @@ export declare const isP2WSH: (script: Buffer) => boolean;
 export declare const isP2SH: (script: Buffer) => boolean;
 export declare const isP2TR: (script: Buffer) => boolean;
 export declare function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number;
+export declare function randomBytes(options?: RngOpts): Buffer;
 export {};

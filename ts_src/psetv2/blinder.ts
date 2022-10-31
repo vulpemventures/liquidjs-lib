@@ -1,6 +1,7 @@
 import { UnblindOutputResult } from '../confidential';
 import { ZERO } from '../transaction';
 import { Pset } from './pset';
+import { ZKPGenerator, ZKPValidator } from './zkp';
 
 export interface IssuanceBlindingArgs {
   index: number;
@@ -32,73 +33,17 @@ export interface OutputBlindingArgs {
 
 export type OwnedInput = { index: number } & UnblindOutputResult;
 
-export interface PsetBlindingGenerator {
-  computeAndAddToScalarOffset(
-    scalar: Buffer,
-    value: string,
-    assetBlinder: Buffer,
-    valueBlinder: Buffer,
-  ): Promise<Buffer>;
-  subtractScalars(inputScalar: Buffer, outputScalar: Buffer): Promise<Buffer>;
-  lastValueCommitment(
-    value: string,
-    asset: Buffer,
-    blinder: Buffer,
-  ): Promise<Buffer>;
-  lastBlindValueProof(
-    value: string,
-    valueCommitment: Buffer,
-    assetCommitment: Buffer,
-    blinder: Buffer,
-  ): Promise<Buffer>;
-  lastValueRangeProof(
-    value: string,
-    asset: Buffer,
-    valueCommitment: Buffer,
-    valueBlinder: Buffer,
-    assetBlinder: Buffer,
-    script: Buffer,
-    nonce: Buffer,
-  ): Promise<Buffer>;
-}
-
-export interface PsetBlindingValidator {
-  verifyValueRangeProof(
-    valueCommitment: Buffer,
-    assetCommitment: Buffer,
-    proof: Buffer,
-    script: Buffer,
-  ): Promise<boolean>;
-  verifyAssetSurjectionProof(
-    inAssets: Buffer[],
-    inAssetBlinders: Buffer[],
-    outAsset: Buffer,
-    outAssetBlinder: Buffer,
-    proof: Buffer,
-  ): Promise<boolean>;
-  verifyBlindValueProof(
-    valueCommitment: Buffer,
-    assetCommitment: Buffer,
-    proof: Buffer,
-  ): Promise<boolean>;
-  verifyBlindAssetProof(
-    asset: Buffer,
-    assetCommitment: Buffer,
-    proof: Buffer,
-  ): Promise<boolean>;
-}
-
 export class Blinder {
   pset: Pset;
   ownedInputs: OwnedInput[];
-  blindingValidator: PsetBlindingValidator;
-  blindingGenerator: PsetBlindingGenerator;
+  blindingValidator: ZKPValidator;
+  blindingGenerator: ZKPGenerator;
 
   constructor(
     pset: Pset,
     ownedInputs: OwnedInput[],
-    validator: PsetBlindingValidator,
-    generator: PsetBlindingGenerator,
+    validator: ZKPValidator,
+    generator: ZKPGenerator,
   ) {
     if (ownedInputs.length === 0) {
       throw new Error('Missing owned inputs');
@@ -110,27 +55,27 @@ export class Blinder {
     this.blindingGenerator = generator;
   }
 
-  async blindNonLast(args: {
+  blindNonLast(args: {
     issuanceBlindingArgs?: IssuanceBlindingArgs[];
     outputBlindingArgs: OutputBlindingArgs[];
-  }): Promise<void> {
-    await this.blind(args, false);
+  }): void {
+    this.blind(args, false);
   }
 
-  async blindLast(args: {
+  blindLast(args: {
     issuanceBlindingArgs?: IssuanceBlindingArgs[];
     outputBlindingArgs: OutputBlindingArgs[];
-  }): Promise<void> {
-    await this.blind(args, true);
+  }): void {
+    this.blind(args, true);
   }
 
-  private async blind(
+  private blind(
     args: {
       issuanceBlindingArgs?: IssuanceBlindingArgs[];
       outputBlindingArgs: OutputBlindingArgs[];
     },
     lastBlinder: boolean,
-  ): Promise<void> {
+  ): void {
     if (this.pset.isFullyBlinded()) {
       return;
     }
@@ -155,16 +100,14 @@ export class Blinder {
       this.validateOutputBlindingArgs(arg, isLastBlinder);
     });
 
-    await this.validateBlindingData(
+    this.validateBlindingData(
       lastBlinder,
       outputBlindingArgs,
       issuanceBlindingArgs,
     );
 
-    const inputScalar = await this.calculateInputScalar(issuanceBlindingArgs);
-    const outputScalar = await this.calculateOutputScalar(
-      sortedOutputBlindingArgs,
-    );
+    const inputScalar = this.calculateInputScalar(issuanceBlindingArgs);
+    const outputScalar = this.calculateOutputScalar(sortedOutputBlindingArgs);
 
     const pset = this.pset.copy();
 
@@ -208,18 +151,18 @@ export class Blinder {
       const targetOutput = pset.outputs[index];
       const value = targetOutput.value.toString(10);
       if (lastBlinder && i === sortedOutputBlindingArgs.length - 1) {
-        const lastValueBlinder = await this.calculateLastValueBlinder(
+        const lastValueBlinder = this.calculateLastValueBlinder(
           valueBlinder,
           outputScalar,
           inputScalar,
         );
 
-        valueCommitment = await this.blindingGenerator.lastValueCommitment(
+        valueCommitment = this.blindingGenerator.lastValueCommitment(
           value,
           assetCommitment,
           lastValueBlinder,
         );
-        valueRangeProof = await this.blindingGenerator.lastValueRangeProof(
+        valueRangeProof = this.blindingGenerator.lastValueRangeProof(
           value,
           targetOutput.asset!,
           valueCommitment,
@@ -228,7 +171,7 @@ export class Blinder {
           targetOutput.script! || Buffer.alloc(0),
           nonce,
         );
-        valueBlindProof = await this.blindingGenerator.lastBlindValueProof(
+        valueBlindProof = this.blindingGenerator.lastBlindValueProof(
           value,
           valueCommitment,
           assetCommitment,
@@ -262,12 +205,12 @@ export class Blinder {
     this.pset.outputs = pset.outputs;
   }
 
-  private async calculateInputScalar(
+  private calculateInputScalar(
     issuanceBlindingArgs?: IssuanceBlindingArgs[],
-  ): Promise<Buffer> {
+  ): Buffer {
     let scalar = Buffer.from(ZERO);
     for (const input of this.ownedInputs) {
-      scalar = await this.blindingGenerator.computeAndAddToScalarOffset(
+      scalar = this.blindingGenerator.computeAndAddToScalarOffset(
         scalar,
         input.value,
         input.assetBlindingFactor,
@@ -285,7 +228,7 @@ export class Blinder {
             issuance.issuanceValueBlinder!.length > 0
               ? issuance.issuanceValueBlinder!
               : ZERO;
-          scalar = await this.blindingGenerator.computeAndAddToScalarOffset(
+          scalar = this.blindingGenerator.computeAndAddToScalarOffset(
             scalar,
             pInput.issuanceValue ? pInput.issuanceValue!.toString(10) : '0',
             ZERO,
@@ -297,7 +240,7 @@ export class Blinder {
               issuance.issuanceTokenBlinder!.length > 0
                 ? issuance.issuanceTokenBlinder!
                 : ZERO;
-            scalar = await this.blindingGenerator.computeAndAddToScalarOffset(
+            scalar = this.blindingGenerator.computeAndAddToScalarOffset(
               scalar,
               pInput.issuanceInflationKeys!.toString(10),
               ZERO,
@@ -310,13 +253,13 @@ export class Blinder {
     return scalar;
   }
 
-  private async calculateOutputScalar(
+  private calculateOutputScalar(
     outputBlindingArgs: OutputBlindingArgs[],
-  ): Promise<Buffer> {
+  ): Buffer {
     let scalar = Buffer.from(ZERO);
     for (const args of outputBlindingArgs) {
       const output = this.pset.outputs[args.index];
-      scalar = await this.blindingGenerator.computeAndAddToScalarOffset(
+      scalar = this.blindingGenerator.computeAndAddToScalarOffset(
         scalar,
         output.value.toString(10),
         args.assetBlinder,
@@ -326,22 +269,22 @@ export class Blinder {
     return scalar;
   }
 
-  private async calculateLastValueBlinder(
+  private calculateLastValueBlinder(
     valueBlinder: Buffer,
     outputScalar: Buffer,
     inputScalar: Buffer,
-  ): Promise<Buffer> {
-    const offset = await this.blindingGenerator.subtractScalars(
+  ): Buffer {
+    const offset = this.blindingGenerator.subtractScalars(
       outputScalar,
       inputScalar,
     );
-    let lastValueBlinder = await this.blindingGenerator.subtractScalars(
+    let lastValueBlinder = this.blindingGenerator.subtractScalars(
       valueBlinder,
       offset,
     );
     if (this.pset.globals.scalars!) {
       for (const scalar of this.pset.globals.scalars!) {
-        lastValueBlinder = await this.blindingGenerator.subtractScalars(
+        lastValueBlinder = this.blindingGenerator.subtractScalars(
           lastValueBlinder,
           scalar,
         );
@@ -513,11 +456,11 @@ export class Blinder {
     );
   }
 
-  private async validateBlindingData(
+  private validateBlindingData(
     isLastBlinder: boolean,
     outputBlindingArgs: OutputBlindingArgs[],
     issuanceBlindingArgs?: IssuanceBlindingArgs[],
-  ): Promise<void> {
+  ): void {
     const inAssetsAndBlinders = this.pset.inputs.map((input, i) => {
       const ownedInput = this.ownedInputs.find(({ index }) => index === i);
       return ownedInput!
@@ -566,42 +509,42 @@ export class Blinder {
       const lastBlinder = isLastBlinder && i === outputBlindingArgs.length - 1;
 
       if (
-        !(await this.blindingValidator.verifyAssetSurjectionProof(
+        !this.blindingValidator.verifyAssetSurjectionProof(
           inputAssets,
           inputAssetBlinders,
           targetOutput.asset!,
           assetBlinder,
           assetSurjectionProof,
-        ))
+        )
       ) {
         throw new Error('Invalid output asset surjection proof');
       }
       if (
-        !(await this.blindingValidator.verifyBlindAssetProof(
+        !this.blindingValidator.verifyBlindAssetProof(
           targetOutput.asset!,
           assetCommitment,
           assetBlindProof,
-        ))
+        )
       ) {
         throw new Error('Invalid output asset blind proof');
       }
       if (!lastBlinder) {
         if (
-          !(await this.blindingValidator.verifyValueRangeProof(
+          !this.blindingValidator.verifyValueRangeProof(
             valueCommitment,
             assetCommitment,
             valueRangeProof,
             targetOutput.script!,
-          ))
+          )
         ) {
           throw new Error('Invalid output value range proof');
         }
         if (
-          !(await this.blindingValidator.verifyBlindValueProof(
+          !this.blindingValidator.verifyBlindValueProof(
             valueCommitment,
             assetCommitment,
             valueBlindProof,
-          ))
+          )
         ) {
           throw new Error('Invalid output value blind proof');
         }

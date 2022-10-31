@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { UnblindOutputResult } from '../confidential';
 import { Pset } from './pset';
+import { ZKPGenerator, ZKPValidator } from './zkp';
 export interface IssuanceBlindingArgs {
     index: number;
     issuanceAsset: Buffer;
@@ -30,33 +31,20 @@ export interface OutputBlindingArgs {
 export declare type OwnedInput = {
     index: number;
 } & UnblindOutputResult;
-export interface PsetBlindingGenerator {
-    computeAndAddToScalarOffset(scalar: Buffer, value: string, assetBlinder: Buffer, valueBlinder: Buffer): Promise<Buffer>;
-    subtractScalars(inputScalar: Buffer, outputScalar: Buffer): Promise<Buffer>;
-    lastValueCommitment(value: string, asset: Buffer, blinder: Buffer): Promise<Buffer>;
-    lastBlindValueProof(value: string, valueCommitment: Buffer, assetCommitment: Buffer, blinder: Buffer): Promise<Buffer>;
-    lastValueRangeProof(value: string, asset: Buffer, valueCommitment: Buffer, valueBlinder: Buffer, assetBlinder: Buffer, script: Buffer, nonce: Buffer): Promise<Buffer>;
-}
-export interface PsetBlindingValidator {
-    verifyValueRangeProof(valueCommitment: Buffer, assetCommitment: Buffer, proof: Buffer, script: Buffer): Promise<boolean>;
-    verifyAssetSurjectionProof(inAssets: Buffer[], inAssetBlinders: Buffer[], outAsset: Buffer, outAssetBlinder: Buffer, proof: Buffer): Promise<boolean>;
-    verifyBlindValueProof(valueCommitment: Buffer, assetCommitment: Buffer, proof: Buffer): Promise<boolean>;
-    verifyBlindAssetProof(asset: Buffer, assetCommitment: Buffer, proof: Buffer): Promise<boolean>;
-}
 export declare class Blinder {
     pset: Pset;
     ownedInputs: OwnedInput[];
-    blindingValidator: PsetBlindingValidator;
-    blindingGenerator: PsetBlindingGenerator;
-    constructor(pset: Pset, ownedInputs: OwnedInput[], validator: PsetBlindingValidator, generator: PsetBlindingGenerator);
+    blindingValidator: ZKPValidator;
+    blindingGenerator: ZKPGenerator;
+    constructor(pset: Pset, ownedInputs: OwnedInput[], validator: ZKPValidator, generator: ZKPGenerator);
     blindNonLast(args: {
         issuanceBlindingArgs?: IssuanceBlindingArgs[];
         outputBlindingArgs: OutputBlindingArgs[];
-    }): Promise<void>;
+    }): void;
     blindLast(args: {
         issuanceBlindingArgs?: IssuanceBlindingArgs[];
         outputBlindingArgs: OutputBlindingArgs[];
-    }): Promise<void>;
+    }): void;
     private blind;
     private calculateInputScalar;
     private calculateOutputScalar;

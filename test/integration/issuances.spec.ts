@@ -1,14 +1,16 @@
+import secp256k1 from '@vulpemventures/secp256k1-zkp';
 import { IssuanceBlindingKeys } from './../../ts_src/types';
 import { createPayment, getInputData } from './utils';
 import { broadcast, faucet } from './_regtest';
 import {
   address,
-  confidential,
   ElementsValue,
-  Psbt,
   Transaction,
   networks as NETWORKS,
+  confidential,
 } from '../../ts_src';
+import { Psbt } from '../../ts_src/psbt';
+
 import { ECPair, ecc } from '../ecc';
 import { strictEqual } from 'assert';
 import {
@@ -312,7 +314,9 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const tokenOutput = issuanceTx.outs[1];
     const changeOutput = issuanceTx.outs[2];
 
-    const unblindedTokenOutput = await confidential.unblindOutputWithKey(
+    const zkpLib = await secp256k1();
+    const conf = new confidential.Confidential(zkpLib);
+    const unblindedTokenOutput = conf.unblindOutputWithKey(
       tokenOutput,
       aliceBlindingPrivkeys[0],
     );
@@ -487,7 +491,9 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const issuanceInput = issuanceTx.ins[0];
     const entropy = issuanceEntropyFromInput(issuanceInput);
 
-    const unblindedTokenOutput = await confidential.unblindOutputWithKey(
+    const zkpLib = await secp256k1();
+    const conf = new confidential.Confidential(zkpLib);
+    const unblindedTokenOutput = conf.unblindOutputWithKey(
       tokenOutput,
       alice.blindingKeys[0],
     );

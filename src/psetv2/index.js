@@ -1,6 +1,11 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.Updater =
+exports.classifyScript =
+  exports.scriptWitnessToWitnessStack =
+  exports.witnessStackToScriptWitness =
+  exports.ZKPValidator =
+  exports.ZKPGenerator =
+  exports.Updater =
   exports.Signer =
   exports.PsetOutput =
   exports.PsetInput =
@@ -93,5 +98,37 @@ Object.defineProperty(exports, 'Extractor', {
   enumerable: true,
   get: function () {
     return extractor_1.Extractor;
+  },
+});
+const utils_1 = require('./utils');
+Object.defineProperty(exports, 'witnessStackToScriptWitness', {
+  enumerable: true,
+  get: function () {
+    return utils_1.witnessStackToScriptWitness;
+  },
+});
+Object.defineProperty(exports, 'scriptWitnessToWitnessStack', {
+  enumerable: true,
+  get: function () {
+    return utils_1.scriptWitnessToWitnessStack;
+  },
+});
+Object.defineProperty(exports, 'classifyScript', {
+  enumerable: true,
+  get: function () {
+    return utils_1.classifyScript;
+  },
+});
+const zkp_1 = require('./zkp');
+Object.defineProperty(exports, 'ZKPGenerator', {
+  enumerable: true,
+  get: function () {
+    return zkp_1.ZKPGenerator;
+  },
+});
+Object.defineProperty(exports, 'ZKPValidator', {
+  enumerable: true,
+  get: function () {
+    return zkp_1.ZKPValidator;
   },
 });

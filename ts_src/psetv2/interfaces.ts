@@ -56,3 +56,7 @@ export interface TapLeaf extends TapScript {
 export interface TapTree {
   leaves: TapLeaf[];
 }
+
+export interface RngOpts {
+  rng?(arg0: number): Buffer;
+}

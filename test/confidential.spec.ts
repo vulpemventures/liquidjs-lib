@@ -1,5 +1,6 @@
 import * as assert from 'assert';
-import * as confidential from '../src/confidential';
+import secp256k1 from '@vulpemventures/secp256k1-zkp';
+import { Confidential } from '../src/confidential';
 import * as preFixtures from './fixtures/confidential.json';
 
 import { describe, it } from 'mocha';
@@ -23,7 +24,9 @@ const fixtures = initBuffers(preFixtures);
 describe('confidential', () => {
   it('valueCommitment', async () => {
     for (const f of fixtures.valid.valueCommitment) {
-      const valueCommitment = await confidential.valueCommitment(
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+      const valueCommitment = confidential.valueCommitment(
         f.value,
         Buffer.from(f.generator, 'hex'),
         Buffer.from(f.factor, 'hex'),
@@ -42,7 +45,9 @@ describe('confidential', () => {
       );
       const inFactors = f.inFactors.map((v: any) => Buffer.from(v, 'hex'));
       const outFactors = f.outFactors.map((v: any) => Buffer.from(v, 'hex'));
-      const vbf = await confidential.valueBlindingFactor(
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+      const vbf = confidential.valueBlindingFactor(
         f.inValues,
         f.outValues,
         inGenerators,
@@ -56,7 +61,9 @@ describe('confidential', () => {
 
   it('assetCommitment', async () => {
     for (const f of fixtures.valid.assetCommitment) {
-      const assetCommitment = await confidential.assetCommitment(
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+      const assetCommitment = confidential.assetCommitment(
         Buffer.from(f.asset, 'hex'),
         Buffer.from(f.factor, 'hex'),
       );
@@ -73,7 +80,9 @@ describe('confidential', () => {
         rangeProof: f.rangeproof,
         nonce: f.ephemeralPubkey,
       };
-      const unblindProof = await confidential.unblindOutputWithKey(
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+      const unblindProof = confidential.unblindOutputWithKey(
         out,
         f.blindingPrivkey,
       );
@@ -93,7 +102,9 @@ describe('confidential', () => {
 
   it('rangeProofInfo', async () => {
     for (const f of fixtures.valid.rangeproofInfo) {
-      const proofInfo = await confidential.rangeProofInfo(
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+      const proofInfo = confidential.rangeProofInfo(
         Buffer.from(f.proof, 'hex'),
       );
       assert.strictEqual(proofInfo.ctExp, f.expected.ctExp);
@@ -109,7 +120,9 @@ describe('confidential', () => {
       const exp = 0;
       const minBits = 36;
 
-      const proof = await confidential.rangeProofWithNonceHash(
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+      const proof = confidential.rangeProofWithNonceHash(
         f.value,
         Buffer.from(f.blindingPubkey, 'hex'),
         Buffer.from(f.ephemeralPrivkey, 'hex'),
@@ -132,7 +145,10 @@ describe('confidential', () => {
       const inputAssetBlindingFactors = f.inputAssetBlindingFactors.map(
         (v: any) => Buffer.from(v, 'hex'),
       );
-      const proof = await confidential.surjectionProof(
+
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+      const proof = confidential.surjectionProof(
         Buffer.from(f.outputAsset, 'hex'),
         Buffer.from(f.outputAssetBlindingFactor, 'hex'),
         inputAssets,

@@ -1,9 +1,10 @@
+import * as randombytes from 'randombytes';
 import { payments } from '..';
 import { varuint } from '../bufferutils';
 import { hash160 } from '../crypto';
 import { OPS } from '../ops';
 import * as bscript from '../script';
-import { PartialSig } from './interfaces';
+import { PartialSig, RngOpts } from './interfaces';
 
 export function getPayment(
   script: Buffer,
@@ -196,4 +197,10 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
       element.equals(pubkeyXOnly)
     );
   });
+}
+
+export function randomBytes(options?: RngOpts): Buffer {
+  if (options === undefined) options = {};
+  const rng = options.rng || randombytes.default;
+  return rng(32);
 }
