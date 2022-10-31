@@ -188,9 +188,7 @@ export class Updater {
   }
 
   addInNonWitnessUtxo(inIndex: number, nonWitnessUtxo: Transaction): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     const txid = nonWitnessUtxo.getHash(false);
     if (!txid.equals(pset.inputs[inIndex].previousTxid)) {
@@ -207,9 +205,7 @@ export class Updater {
   }
 
   addInWitnessUtxo(inIndex: number, witnessUtxo: TxOutput): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     pset.inputs[inIndex].witnessUtxo = witnessUtxo;
     pset.inputs[inIndex].utxoRangeProof = witnessUtxo.rangeProof;
@@ -223,9 +219,7 @@ export class Updater {
   }
 
   addInRedeemScript(inIndex: number, redeemScript: Buffer): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     pset.inputs[inIndex].redeemScript = redeemScript;
     pset.sanityCheck();
@@ -238,9 +232,8 @@ export class Updater {
   }
 
   addInWitnessScript(inIndex: number, witnessScript: Buffer): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     const pset = this.pset.copy();
     pset.inputs[inIndex].witnessScript = witnessScript;
     pset.sanityCheck();
@@ -253,9 +246,7 @@ export class Updater {
   }
 
   addInBIP32Derivation(inIndex: number, d: Bip32Derivation): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid pubkey length');
@@ -283,9 +274,8 @@ export class Updater {
   }
 
   addInSighashType(inIndex: number, sighashType: number): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (sighashType < 0) {
       throw new Error('Invalid sighash type');
     }
@@ -302,9 +292,7 @@ export class Updater {
   }
 
   addInUtxoRangeProof(inIndex: number, proof: Buffer): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     const pset = this.pset.copy();
     pset.inputs[inIndex].utxoRangeProof = proof;
@@ -454,9 +442,7 @@ export class Updater {
     ps: PartialSig,
     validator: ValidateSigFunction,
   ): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     // ensure the pubkey and signature are valid
     validatePartialSignature(ps);
@@ -495,9 +481,7 @@ export class Updater {
   }
 
   addInTimeLocktime(inIndex: number, locktime: number): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (locktime < 0) {
       throw new Error('Invalid required time locktime');
     }
@@ -513,9 +497,8 @@ export class Updater {
   }
 
   addInHeightLocktime(inIndex: number, locktime: number): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (locktime < 0) {
       throw new Error('Invalid required height locktime');
     }
@@ -536,9 +519,8 @@ export class Updater {
     genesisBlockHash: Buffer,
     validator: ValidateSigFunction,
   ): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (sig.length !== 64 && sig.length !== 65) {
       throw new Error('Invalid taproot key signature length');
     }
@@ -582,9 +564,8 @@ export class Updater {
     genesisBlockHash: Buffer,
     validator: ValidateSigFunction,
   ): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (sig.pubkey.length !== 32) {
       throw new Error('Invalid xonly pubkey length');
     }
@@ -630,9 +611,7 @@ export class Updater {
   }
 
   addInTapLeafScript(inIndex: number, tapLeafScript: TapLeafScript): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     const pset = this.pset.copy();
     if (!pset.inputs[inIndex].tapLeafScript) {
@@ -649,9 +628,7 @@ export class Updater {
   }
 
   addInTapBIP32Derivation(inIndex: number, d: TapBip32Derivation): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid input taproot pubkey length');
@@ -679,9 +656,8 @@ export class Updater {
   }
 
   addInTapInternalKey(inIndex: number, tapInternalKey: TapInternalKey): this {
-    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (tapInternalKey.length !== 32) {
       throw new Error('Invalid taproot internal key length');
     }
@@ -704,9 +680,8 @@ export class Updater {
   }
 
   addInTapMerkleRoot(inIndex: number, tapMerkleRoot: TapMerkleRoot): this {
-    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (tapMerkleRoot.length !== 32) {
       throw new Error('Invalid taproot merkle root length');
     }
@@ -733,9 +708,8 @@ export class Updater {
     explicitValue: number,
     explicitValueProof: Buffer,
   ): this {
-    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (this.pset.inputs[inIndex].explicitValue !== undefined) {
       throw new Error(`Explicit value is already set up on input #${inIndex}`);
     }
@@ -757,9 +731,8 @@ export class Updater {
     explicitAsset: Buffer,
     explicitAssetProof: Buffer,
   ): this {
-    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (this.pset.inputs[inIndex].explicitAsset !== undefined) {
       throw new Error(`Explicit asset is already set up on input #${inIndex}`);
     }
@@ -776,9 +749,7 @@ export class Updater {
   }
 
   addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): this {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
 
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid pubkey length');
@@ -806,9 +777,8 @@ export class Updater {
   }
 
   addOutRedeemScript(outIndex: number, redeemScript: Buffer): this {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
+
     const pset = this.pset.copy();
     pset.outputs[outIndex].redeemScript = redeemScript;
     pset.sanityCheck();
@@ -821,9 +791,8 @@ export class Updater {
   }
 
   addOutWitnessScript(outIndex: number, witnessScript: Buffer): this {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
+
     const pset = this.pset.copy();
     pset.outputs[outIndex].witnessScript = witnessScript;
     pset.sanityCheck();
@@ -836,9 +805,8 @@ export class Updater {
   }
 
   addOutTapInternalKey(outIndex: number, tapInternalKey: TapInternalKey): this {
-    if (outIndex < 0 || outIndex > this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
+
     if (tapInternalKey.length !== 32) {
       throw new Error('Invalid taproot internal key length');
     }
@@ -861,9 +829,8 @@ export class Updater {
   }
 
   addOutTapTree(outIndex: number, tapTree: TapTree): this {
-    if (outIndex < 0 || outIndex > this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
+
     if (this.pset.outputs[outIndex].tapTree) {
       throw new Error('Duplicated taproot tree');
     }
@@ -880,9 +847,7 @@ export class Updater {
   }
 
   addOutTapBIP32Derivation(outIndex: number, d: TapBip32Derivation): this {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
 
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid output taproot pubkey length');
@@ -910,9 +875,7 @@ export class Updater {
   }
 
   private validateIssuanceInput(inIndex: number): void {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     const input = this.pset.inputs[inIndex];
     if (input.issuanceAssetEntropy! && input.issuanceAssetEntropy!.length > 0) {
@@ -921,9 +884,7 @@ export class Updater {
   }
 
   private validateReissuanceInput(inIndex: number): void {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     const input = this.pset.inputs[inIndex];
     if (input.issuanceAssetEntropy! && input.issuanceAssetEntropy!.length > 0) {
@@ -935,6 +896,18 @@ export class Updater {
     }
     if (prevout.nonce.length <= 1) {
       throw new Error('Input prevout (non-)witness utxo must be confidential');
+    }
+  }
+
+  private validateOutputIndex(outIndex: number): void {
+    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
+      throw new Error('Output index out of range');
+    }
+  }
+
+  private validateInputIndex(inIndex: number): void {
+    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
     }
   }
 }

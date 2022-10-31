@@ -79,4 +79,6 @@ export declare class Updater {
     addOutTapBIP32Derivation(outIndex: number, d: TapBip32Derivation): this;
     private validateIssuanceInput;
     private validateReissuanceInput;
+    private validateOutputIndex;
+    private validateInputIndex;
 }
