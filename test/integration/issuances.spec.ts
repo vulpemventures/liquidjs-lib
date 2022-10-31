@@ -7,7 +7,7 @@ import {
   ElementsValue,
   Transaction,
   networks as NETWORKS,
-  Confidential,
+  confidential,
 } from '../../ts_src';
 import { Psbt } from '../../ts_src/psbt';
 
@@ -315,8 +315,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const changeOutput = issuanceTx.outs[2];
 
     const zkpLib = await secp256k1();
-    const confidential = new Confidential(zkpLib);
-    const unblindedTokenOutput = confidential.unblindOutputWithKey(
+    const { unblindOutputWithKey } = new confidential.Confidential(zkpLib);
+    const unblindedTokenOutput = unblindOutputWithKey(
       tokenOutput,
       aliceBlindingPrivkeys[0],
     );
@@ -492,8 +492,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const entropy = issuanceEntropyFromInput(issuanceInput);
 
     const zkpLib = await secp256k1();
-    const confidential = new Confidential(zkpLib);
-    const unblindedTokenOutput = confidential.unblindOutputWithKey(
+    const { unblindOutputWithKey } = new confidential.Confidential(zkpLib);
+    const unblindedTokenOutput = unblindOutputWithKey(
       tokenOutput,
       alice.blindingKeys[0],
     );

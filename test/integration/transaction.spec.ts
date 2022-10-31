@@ -7,7 +7,7 @@ import {
   payments,
   networks as NETWORKS,
   ElementsValue,
-  Confidential,
+  confidential,
 } from '../../ts_src';
 import { Psbt } from '../../ts_src/psbt';
 import { ECPair, ecc } from '../ecc';
@@ -530,8 +530,8 @@ describe.skip('liquidjs-lib (transactions with psbt)', () => {
       );
 
       const zkpLib = await secp256k1();
-      const confidential = new Confidential(zkpLib);
-      const inputBlindingData = await confidential.unblindOutputWithKey(
+      const { unblindOutputWithKey } = new confidential.Confidential(zkpLib);
+      const inputBlindingData = unblindOutputWithKey(
         inputDataConfidential.witnessUtxo,
         aliceBlindingPrivateKey,
       );
