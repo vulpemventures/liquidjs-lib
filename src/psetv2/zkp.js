@@ -397,7 +397,7 @@ class ZKPGenerator {
   getInputAssetsAndBlinders(pset, issuanceBlindingArgs) {
     const unblindedIns = this.maybeUnblindInUtxos(pset);
     pset.inputs.forEach((input, i) => {
-      if (input.hasIssuance()) {
+      if (input.hasIssuance() || input.hasReissuance()) {
         unblindedIns.push({
           value: '',
           valueBlindingFactor: Buffer.from([]),
@@ -504,8 +504,10 @@ function validateBlindingKeysByIndex(pset, keys) {
     if (i < 0 || i >= pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
-    if (!pset.inputs[i].hasIssuance()) {
-      throw new Error('Input does not have any issuance to blind');
+    if (!pset.inputs[i].hasIssuance() && !pset.inputs[i].hasReissuance()) {
+      throw new Error(
+        'Input does not have any issuance or reissuance to blind',
+      );
     }
     if (v.length !== 32) {
       throw new Error('Invalid private blinding key length for input ' + i);
