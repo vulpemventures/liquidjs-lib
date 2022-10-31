@@ -134,13 +134,23 @@ export class Updater {
         this.addInReissuance(inputIndex, input.reissuanceOpts);
 
       if (input.explicitAsset) {
-        if (!input.explicitAssetProof) throw new Error('missing explicitAssetProof');
-        this.addInExplicitAsset(inputIndex, input.explicitAsset, input.explicitAssetProof);
+        if (!input.explicitAssetProof)
+          throw new Error('missing explicitAssetProof');
+        this.addInExplicitAsset(
+          inputIndex,
+          input.explicitAsset,
+          input.explicitAssetProof,
+        );
       }
 
       if (input.explicitValue) {
-        if (!input.explicitValueProof) throw new Error('missing explicitValueProof');
-        this.addInExplicitValue(inputIndex, input.explicitValue, input.explicitValueProof);
+        if (!input.explicitValueProof)
+          throw new Error('missing explicitValueProof');
+        this.addInExplicitValue(
+          inputIndex,
+          input.explicitValue,
+          input.explicitValueProof,
+        );
       }
     });
 
@@ -202,6 +212,7 @@ export class Updater {
     }
     const pset = this.pset.copy();
     pset.inputs[inIndex].witnessUtxo = witnessUtxo;
+    pset.inputs[inIndex].utxoRangeProof = witnessUtxo.rangeProof;
     pset.sanityCheck();
 
     this.pset.globals = pset.globals;
@@ -717,12 +728,16 @@ export class Updater {
     return this;
   }
 
-  addInExplicitValue(inIndex: number, explicitValue: number, explicitValueProof: Buffer): this {
+  addInExplicitValue(
+    inIndex: number,
+    explicitValue: number,
+    explicitValueProof: Buffer,
+  ): this {
     if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
     if (this.pset.inputs[inIndex].explicitValue !== undefined) {
-      throw new Error(`Explicit value is already set up on input #${inIndex}`)
+      throw new Error(`Explicit value is already set up on input #${inIndex}`);
     }
 
     const pset = this.pset.copy();
@@ -737,17 +752,21 @@ export class Updater {
     return this;
   }
 
-  addInExplicitAsset(inIndex: number, explicitAsset: Buffer, explicitAssetProof: Buffer): this {
+  addInExplicitAsset(
+    inIndex: number,
+    explicitAsset: Buffer,
+    explicitAssetProof: Buffer,
+  ): this {
     if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
     if (this.pset.inputs[inIndex].explicitAsset !== undefined) {
-      throw new Error(`Explicit asset is already set up on input #${inIndex}`)
+      throw new Error(`Explicit asset is already set up on input #${inIndex}`);
     }
 
     const pset = this.pset.copy();
     pset.inputs[inIndex].explicitAsset = explicitAsset;
-    pset.inputs[inIndex].explicitAssetProof = explicitAssetProof;    
+    pset.inputs[inIndex].explicitAssetProof = explicitAssetProof;
 
     pset.sanityCheck();
     this.pset.globals = pset.globals;

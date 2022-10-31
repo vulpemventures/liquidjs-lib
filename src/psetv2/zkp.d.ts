@@ -30,7 +30,7 @@ export declare class ZKPGenerator {
     lastValueRangeProof(value: string, asset: Buffer, valueCommit: Buffer, valueBlinder: Buffer, assetBlinder: Buffer, script: Buffer, nonce: Buffer): Buffer;
     unblindInputs(pset: Pset, inIndexes?: number[]): OwnedInput[];
     blindIssuances(pset: Pset, blindingKeysByIndex: Record<number, Buffer>): IssuanceBlindingArgs[];
-    blindOutputs(pset: Pset, keysGenerator: KeysGenerator, outIndexes?: number[], blindedIssuances?: IssuanceBlindingArgs[]): OutputBlindingArgs[];
+    blindOutputs(pset: Pset, keysGenerator: KeysGenerator, outIndexes?: number[]): OutputBlindingArgs[];
     private calculateScalarOffset;
     private unblindUtxo;
     private getInputAssetsAndBlinders;

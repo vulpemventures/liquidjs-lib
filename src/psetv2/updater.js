@@ -159,6 +159,7 @@ class Updater {
     }
     const pset = this.pset.copy();
     pset.inputs[inIndex].witnessUtxo = witnessUtxo;
+    pset.inputs[inIndex].utxoRangeProof = witnessUtxo.rangeProof;
     pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
