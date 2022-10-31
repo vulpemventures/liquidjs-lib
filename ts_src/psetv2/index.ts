@@ -25,6 +25,16 @@ import {
   classifyScript,
 } from './utils';
 import { ZKPGenerator, ZKPValidator } from './zkp';
+import {
+  ControlBlock,
+  TapInternalKey,
+  TapKeySig,
+  TapLeaf,
+  TapLeafScript,
+  TapMerkleRoot,
+  TapScriptSig,
+  TapTree,
+} from './interfaces';
 
 export {
   IssuanceOpts,
@@ -52,6 +62,14 @@ export {
   UpdaterOutput,
   ZKPGenerator,
   ZKPValidator,
+  TapLeafScript,
+  TapScriptSig,
+  TapLeaf,
+  TapTree,
+  TapKeySig,
+  ControlBlock,
+  TapInternalKey,
+  TapMerkleRoot,
   witnessStackToScriptWitness,
   scriptWitnessToWitnessStack,
   classifyScript,
