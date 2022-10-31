@@ -315,8 +315,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const changeOutput = issuanceTx.outs[2];
 
     const zkpLib = await secp256k1();
-    const { unblindOutputWithKey } = new confidential.Confidential(zkpLib);
-    const unblindedTokenOutput = unblindOutputWithKey(
+    const conf = new confidential.Confidential(zkpLib);
+    const unblindedTokenOutput = conf.unblindOutputWithKey(
       tokenOutput,
       aliceBlindingPrivkeys[0],
     );
@@ -492,8 +492,8 @@ describe('liquidjs-lib (issuances transactions with psbt)', () => {
     const entropy = issuanceEntropyFromInput(issuanceInput);
 
     const zkpLib = await secp256k1();
-    const { unblindOutputWithKey } = new confidential.Confidential(zkpLib);
-    const unblindedTokenOutput = unblindOutputWithKey(
+    const conf = new confidential.Confidential(zkpLib);
+    const unblindedTokenOutput = conf.unblindOutputWithKey(
       tokenOutput,
       alice.blindingKeys[0],
     );
