@@ -69,8 +69,7 @@ export class ElementsValue {
   }
 
   isConfidential(): boolean {
-    if (this.bytes[0] === ElementsValue.UNCONFIDENTIAL_PREFIX) return false;
-    return true;
+    return !(this.prefix === ElementsValue.UNCONFIDENTIAL_PREFIX);
   }
 }
 

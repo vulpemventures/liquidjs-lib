@@ -51,6 +51,11 @@ export declare class PsetInput {
     utxoRangeProof?: Buffer;
     issuanceBlindValueProof?: Buffer;
     issuanceBlindInflationKeysProof?: Buffer;
+    explicitValue?: number;
+    explicitValueProof?: Buffer;
+    explicitAsset?: Buffer;
+    explicitAssetProof?: Buffer;
+    blindedIssuance?: boolean;
     proprietaryData?: ProprietaryData[];
     unknowns?: KeyPair[];
     constructor(previousTxid?: Buffer, previousTxIndex?: number, sequence?: number);

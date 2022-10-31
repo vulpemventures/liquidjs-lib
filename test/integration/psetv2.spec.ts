@@ -369,8 +369,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const outputBlindingArgs = await zkpGenerator.blindOutputs(
       pset,
       ZKPGenerator.ECCKeysGenerator(ecc),
-      undefined,
-      issuanceBlindingArgs,
     );
     let blinder = new PsetBlinder(
       pset,
@@ -439,8 +437,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const reissuanceOutputBlindingArgs = await zkpGenerator.blindOutputs(
       reissuancePset,
       ZKPGenerator.ECCKeysGenerator(ecc),
-      undefined,
-      reissuanceBlindingArgs,
     );
 
     blinder = new PsetBlinder(
@@ -504,8 +500,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const outputBlindingArgs = await zkpGenerator.blindOutputs(
       pset,
       ZKPGenerator.ECCKeysGenerator(ecc),
-      undefined,
-      issuanceBlindingArgs,
     );
     const blinder = new PsetBlinder(
       pset,
@@ -871,3 +865,60 @@ const serializeSchnnorrSig = (sig: Buffer, hashtype: number) =>
     sig,
     hashtype !== 0x00 ? Buffer.of(hashtype) : Buffer.alloc(0),
   ]);
+
+
+///////// DELETE
+
+ it('can create (and broadcast via 3PBP) a confidential Transaction w/ confidential inputs', async () => {
+    const alice = createPayment('p2pkh', undefined, undefined, true);
+    const bob = createPayment('p2wpkh', undefined, undefined, true);
+    const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
+
+    const inputs = [aliceInputData].map(({ hash, index }) => {
+      const txid = hash.slice().reverse().toString('hex');
+      return new CreatorInput(txid, index);
+    });
+    const outputs = [
+      new CreatorOutput(
+        lbtc,
+        60000000,
+        bob.payment.output,
+        bob.payment.blindkey,
+        0,
+      ),
+      new CreatorOutput(
+        lbtc,
+        39999500,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
+      new CreatorOutput(lbtc, 500),
+    ];
+
+    const pset = PsetCreator.newPset({ inputs, outputs });
+    const updater = new PsetUpdater(pset);
+    updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
+    updater.addInSighashType(0, Transaction.SIGHASH_ALL);
+
+    const zkpGenerator = ZKPGenerator.fromInBlindingKeys(alice.blindingKeys);
+    const zkpValidator = new ZKPValidator();
+    const ownedInputs = await zkpGenerator.unblindInputs(pset);
+    
+    // updater.addInExplicitValue(0, parseInt(ownedInputs[0].value, 10), )
+
+    const outputBlindingArgs = await zkpGenerator.blindOutputs(
+      pset,
+      ZKPGenerator.ECCKeysGenerator(ecc),
+    );
+    const blinder = new PsetBlinder(
+      pset,
+      ownedInputs,
+      zkpValidator,
+      zkpGenerator,
+    );
+    await blinder.blindLast({ outputBlindingArgs });
+    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
+    await regtestUtils.broadcast(rawTx.toHex());
+  });

@@ -34,6 +34,10 @@ export interface UpdaterInput {
     tapMerkleRoot?: TapMerkleRoot;
     issaunceOpts?: IssuanceOpts;
     reissuanceOpts?: ReissuanceOpts;
+    explicitValue?: number;
+    explicitValueProof?: Buffer;
+    explicitAsset?: Buffer;
+    explicitAssetProof?: Buffer;
 }
 export interface UpdaterOutput {
     asset: string;
@@ -65,6 +69,8 @@ export declare class Updater {
     addInTapBIP32Derivation(inIndex: number, d: TapBip32Derivation): this;
     addInTapInternalKey(inIndex: number, tapInternalKey: TapInternalKey): this;
     addInTapMerkleRoot(inIndex: number, tapMerkleRoot: TapMerkleRoot): this;
+    addInExplicitValue(inIndex: number, explicitValue: number, explicitValueProof: Buffer): this;
+    addInExplicitAsset(inIndex: number, explicitAsset: Buffer, explicitAssetProof: Buffer): this;
     addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): this;
     addOutRedeemScript(outIndex: number, redeemScript: Buffer): this;
     addOutWitnessScript(outIndex: number, witnessScript: Buffer): this;

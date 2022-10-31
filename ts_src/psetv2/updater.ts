@@ -60,7 +60,10 @@ export interface UpdaterInput {
   tapMerkleRoot?: TapMerkleRoot;
   issaunceOpts?: IssuanceOpts;
   reissuanceOpts?: ReissuanceOpts;
-  explicitAsset?
+  explicitValue?: number;
+  explicitValueProof?: Buffer;
+  explicitAsset?: Buffer;
+  explicitAssetProof?: Buffer;
 }
 
 export interface UpdaterOutput {
@@ -129,6 +132,16 @@ export class Updater {
 
       if (input.reissuanceOpts)
         this.addInReissuance(inputIndex, input.reissuanceOpts);
+
+      if (input.explicitAsset) {
+        if (!input.explicitAssetProof) throw new Error('missing explicitAssetProof');
+        this.addInExplicitAsset(inputIndex, input.explicitAsset, input.explicitAssetProof);
+      }
+
+      if (input.explicitValue) {
+        if (!input.explicitValueProof) throw new Error('missing explicitValueProof');
+        this.addInExplicitValue(inputIndex, input.explicitValue, input.explicitValueProof);
+      }
     });
 
     pset.sanityCheck();
@@ -708,7 +721,39 @@ export class Updater {
     if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
       throw new Error('Input index out of range');
     }
-    if 
+    if (this.pset.inputs[inIndex].explicitValue !== undefined) {
+      throw new Error(`Explicit value is already set up on input #${inIndex}`)
+    }
+
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].explicitValue = explicitValue;
+    pset.inputs[inIndex].explicitValueProof = explicitValueProof;
+
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addInExplicitAsset(inIndex: number, explicitAsset: Buffer, explicitAssetProof: Buffer): this {
+    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
+    }
+    if (this.pset.inputs[inIndex].explicitAsset !== undefined) {
+      throw new Error(`Explicit asset is already set up on input #${inIndex}`)
+    }
+
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].explicitAsset = explicitAsset;
+    pset.inputs[inIndex].explicitAssetProof = explicitAssetProof;    
+
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+    return this;
   }
 
   addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): this {

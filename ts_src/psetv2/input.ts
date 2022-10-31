@@ -29,6 +29,8 @@ import { ProprietaryData } from './proprietary_data';
 import { magicPrefix } from './pset';
 import * as bscript from '../script';
 import { isP2TR } from './utils';
+import { AssetHash } from '../asset';
+import { ElementsValue } from '../value';
 
 export class InputDuplicateFieldError extends Error {
   constructor(message?: string) {
@@ -685,6 +687,7 @@ export class PsetInput {
       throw new Error('Explicit value proof is required if explicit value is set')
     }
 
+
     if (this.explicitValueProof && !this.explicitValue) {
       throw new Error('Explicit value proof set without explicit value')
     }
@@ -695,6 +698,26 @@ export class PsetInput {
 
     if (this.explicitAssetProof && !this.explicitAsset) {
       throw new Error('Explicit asset proof set without explicit asset')
+    }
+
+    if (this.explicitAsset) {
+      const asset = AssetHash.fromBytes(this.explicitAsset);
+      if (asset.isConfidential()) {
+        throw new Error(`Explicit asset should be unconfidential`)
+      }
+    }
+
+    const utxo = this.getUtxo();
+    if (utxo && this.explicitAsset) {
+      if (!AssetHash.fromBytes(utxo.asset).isConfidential()) {
+        throw new Error('Explicit asset must be undefined if previous utxo is unconfidential')
+      }
+    }
+
+    if (utxo && this.explicitValue !== undefined) {
+      if (!ElementsValue.fromBytes(utxo.value).isConfidential()) {
+        throw new Error('Explicit value must be undefined if previout utxo is unconfidential')
+      }
     }
 
     return this;

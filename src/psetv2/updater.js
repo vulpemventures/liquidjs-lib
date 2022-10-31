@@ -93,6 +93,24 @@ class Updater {
         this.addInIssuance(inputIndex, input.issaunceOpts);
       if (input.reissuanceOpts)
         this.addInReissuance(inputIndex, input.reissuanceOpts);
+      if (input.explicitAsset) {
+        if (!input.explicitAssetProof)
+          throw new Error('missing explicitAssetProof');
+        this.addInExplicitAsset(
+          inputIndex,
+          input.explicitAsset,
+          input.explicitAssetProof,
+        );
+      }
+      if (input.explicitValue) {
+        if (!input.explicitValueProof)
+          throw new Error('missing explicitValueProof');
+        this.addInExplicitValue(
+          inputIndex,
+          input.explicitValue,
+          input.explicitValueProof,
+        );
+      }
     });
     pset.sanityCheck();
     this.pset.globals = pset.globals;
@@ -238,6 +256,7 @@ class Updater {
     pset.inputs[inIndex].issuanceInflationKeys = tokenAmount;
     pset.inputs[inIndex].issuanceAssetEntropy = issuance.assetEntropy;
     pset.inputs[inIndex].issuanceBlindingNonce = issuance.assetBlindingNonce;
+    pset.inputs[inIndex].blindedIssuance = args.blindedIssuance ? true : false;
     const entropy = (0, issuance_1.generateEntropy)(
       {
         txHash: pset.inputs[inIndex].previousTxid,
@@ -562,6 +581,38 @@ class Updater {
     }
     const pset = this.pset.copy();
     pset.inputs[inIndex].tapMerkleRoot = tapMerkleRoot;
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+    return this;
+  }
+  addInExplicitValue(inIndex, explicitValue, explicitValueProof) {
+    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
+    }
+    if (this.pset.inputs[inIndex].explicitValue !== undefined) {
+      throw new Error(`Explicit value is already set up on input #${inIndex}`);
+    }
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].explicitValue = explicitValue;
+    pset.inputs[inIndex].explicitValueProof = explicitValueProof;
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+    return this;
+  }
+  addInExplicitAsset(inIndex, explicitAsset, explicitAssetProof) {
+    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
+    }
+    if (this.pset.inputs[inIndex].explicitAsset !== undefined) {
+      throw new Error(`Explicit asset is already set up on input #${inIndex}`);
+    }
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].explicitAsset = explicitAsset;
+    pset.inputs[inIndex].explicitAssetProof = explicitAssetProof;
     pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;

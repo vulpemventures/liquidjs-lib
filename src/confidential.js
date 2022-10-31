@@ -467,6 +467,7 @@ class ZKPGenerator {
     const revealedInputs = await Promise.all(
       inputIndexes.map(async (i) => {
         const prevout = pset.inputs[i].getUtxo();
+        if (!prevout) throw new Error(`missing prevout utxo for input #${i}`);
         const revealedInput = await this.unblindUtxo(prevout);
         revealedInput.index = i;
         return revealedInput;
@@ -526,7 +527,11 @@ class ZKPGenerator {
           }
           if (!input.hasReissuance() && input.issuanceInflationKeys > 0) {
             const token = input.issuanceInflationKeys.toString(10);
-            const asset = input.getIssuanceInflationKeysHash(true);
+            const asset = input.getIssuanceInflationKeysHash(
+              input.blindedIssuance !== undefined
+                ? input.blindedIssuance
+                : true,
+            );
             const blinder = randomBytes(this.opts);
             const assetCommit = await assetCommitment(
               asset,
@@ -569,13 +574,10 @@ class ZKPGenerator {
       }),
     );
   }
-  async blindOutputs(pset, keysGenerator, outIndexes, blindedIssuances) {
+  async blindOutputs(pset, keysGenerator, outIndexes) {
     validatePset(pset);
     if (outIndexes) {
       validateOutIndexes(pset, outIndexes);
-    }
-    if (blindedIssuances && blindedIssuances.length > 0) {
-      validateBlindedIssuances(pset, blindedIssuances);
     }
     const outputIndexes =
       outIndexes && outIndexes.length > 0
@@ -586,7 +588,6 @@ class ZKPGenerator {
           );
     const { assets, assetBlinders } = await this.getInputAssetsAndBlinders(
       pset,
-      blindedIssuances,
     );
     return Promise.all(
       outputIndexes.map(async (i) => {
@@ -703,34 +704,39 @@ class ZKPGenerator {
     }
     throw new Error('Could not unblind output with any blinding key');
   }
-  async getInputAssetsAndBlinders(pset, issuanceBlindingArgs) {
-    const unblindedIns = await this.maybeUnblindInUtxos(pset);
-    pset.inputs.forEach((input, i) => {
-      if (input.hasIssuance() || input.hasReissuance()) {
-        unblindedIns.push({
-          value: '',
-          valueBlindingFactor: Buffer.from([]),
-          asset: input.getIssuanceAssetHash(),
-          assetBlindingFactor: transaction_1.ZERO,
-        });
-        if (!input.hasReissuance() && input.issuanceInflationKeys > 0) {
-          const isBlindedIssuance =
-            issuanceBlindingArgs &&
-            issuanceBlindingArgs.find(({ index }) => index === i) !== undefined;
-          unblindedIns.push({
-            value: '',
-            valueBlindingFactor: Buffer.from([]),
-            asset: input.getIssuanceInflationKeysHash(isBlindedIssuance),
-            assetBlindingFactor: transaction_1.ZERO,
-          });
-        }
-      }
-    });
+  async getInputAssetsAndBlinders(pset) {
     const assets = [];
     const assetBlinders = [];
-    unblindedIns.forEach(({ asset, assetBlindingFactor }) => {
-      assets.push(asset);
-      assetBlinders.push(assetBlindingFactor);
+    // add the inputs prevout blinders + assets
+    const unblindedPrevouts = await this.maybeUnblindInUtxos(pset);
+    for (const unblindedPrevout of unblindedPrevouts) {
+      assets.push(unblindedPrevout.asset);
+      assetBlinders.push(unblindedPrevout.assetBlindingFactor);
+    }
+    // add the issuances/reissuances assets & blinders
+    pset.inputs.forEach((input, i) => {
+      if (input.hasIssuance() || input.hasReissuance()) {
+        const assetHash = input.getIssuanceAssetHash();
+        if (!assetHash)
+          throw new Error(
+            `something went wrong computing the issuance hash for input #${i}`,
+          );
+        assets.push(assetHash);
+        assetBlinders.push(transaction_1.ZERO);
+        if (!input.hasReissuance() && input.issuanceInflationKeys > 0) {
+          const isBlindedIssuance = input.blindedIssuance;
+          if (!isBlindedIssuance)
+            throw new Error(`missing blindedIssuance field on input #${i}`);
+          const inflationTokenHash =
+            input.getIssuanceInflationKeysHash(isBlindedIssuance);
+          if (!inflationTokenHash)
+            throw new Error(
+              `something went wrong computing the input inflation token hash for input #${i}`,
+            );
+          assets.push(inflationTokenHash);
+          assetBlinders.push(transaction_1.ZERO);
+        }
+      }
     });
     return { assets, assetBlinders };
   }
@@ -822,15 +828,6 @@ function validateBlindingKeysByIndex(pset, keys) {
       throw new Error('Invalid private blinding key length for input ' + i);
     }
   });
-}
-function validateBlindedIssuances(pset, blindedIssuances) {
-  if (blindedIssuances.length > 0) {
-    blindedIssuances.forEach((issuance) => {
-      if (issuance.index < 0 || issuance.index >= pset.globals.inputCount) {
-        throw new Error('Input index of blinded issuance is out of range');
-      }
-    });
-  }
 }
 function randomBytes(options) {
   if (options === undefined) options = {};

@@ -65,7 +65,7 @@ export declare class ZKPGenerator implements PsetBlindingGenerator {
     lastValueRangeProof(value: string, asset: Buffer, valueCommit: Buffer, valueBlinder: Buffer, assetBlinder: Buffer, script: Buffer, nonce: Buffer): Promise<Buffer>;
     unblindInputs(pset: Pset, inIndexes?: number[]): Promise<OwnedInput[]>;
     blindIssuances(pset: Pset, blindingKeysByIndex: Record<number, Buffer>): Promise<IssuanceBlindingArgs[]>;
-    blindOutputs(pset: Pset, keysGenerator: KeysGenerator, outIndexes?: number[], blindedIssuances?: IssuanceBlindingArgs[]): Promise<OutputBlindingArgs[]>;
+    blindOutputs(pset: Pset, keysGenerator: KeysGenerator, outIndexes?: number[]): Promise<OutputBlindingArgs[]>;
     private calculateScalarOffset;
     private unblindUtxo;
     private getInputAssetsAndBlinders;
