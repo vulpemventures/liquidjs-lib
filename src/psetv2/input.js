@@ -767,6 +767,8 @@ class PsetInput {
     }
     if (!this.nonWitnessUtxo) {
       const utxo = this.witnessUtxo;
+      if (!this.utxoRangeProof)
+        throw new Error('missing utxoRangeProof (getUtxo)');
       utxo.rangeProof = this.utxoRangeProof;
       return utxo;
     }
