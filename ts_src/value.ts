@@ -67,6 +67,11 @@ export class ElementsValue {
     }
     return readUInt64LE(reverseWithoutMutate(this.value), 0);
   }
+
+  isConfidential(): boolean {
+    if (this.bytes[0] === ElementsValue.UNCONFIDENTIAL_PREFIX) return false;
+    return true;
+  }
 }
 
 function reverseWithoutMutate(buf: Buffer): Buffer {

@@ -60,6 +60,7 @@ export interface UpdaterInput {
   tapMerkleRoot?: TapMerkleRoot;
   issaunceOpts?: IssuanceOpts;
   reissuanceOpts?: ReissuanceOpts;
+  explicitAsset?
 }
 
 export interface UpdaterOutput {
@@ -306,6 +307,7 @@ export class Updater {
     pset.inputs[inIndex].issuanceInflationKeys = tokenAmount;
     pset.inputs[inIndex].issuanceAssetEntropy = issuance.assetEntropy;
     pset.inputs[inIndex].issuanceBlindingNonce = issuance.assetBlindingNonce;
+    pset.inputs[inIndex].blindedIssuance = args.blindedIssuance ? true : false;
 
     const entropy = generateEntropy(
       {
@@ -700,6 +702,13 @@ export class Updater {
     this.pset.outputs = pset.outputs;
 
     return this;
+  }
+
+  addInExplicitValue(inIndex: number, explicitValue: number, explicitValueProof: Buffer): this {
+    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
+    }
+    if 
   }
 
   addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): this {
