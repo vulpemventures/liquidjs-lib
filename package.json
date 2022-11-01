@@ -37,7 +37,7 @@
     "nobuild:unit": "npm run mocha:ts -- --timeout 60000 'test/*.ts'",
     "prettier": "prettier 'ts_src/**/*.ts' 'test/**/*.ts' --ignore-path ./.prettierignore",
     "prettierjs": "prettier 'src/**/*.js' --ignore-path ./.prettierignore",
-    "test:ci": "npm run build && npm run format:ci && npm run lint && npm run nobuild:coverage",
+    "checks": "npm run build && npm run format:ci && npm run lint && npm run nobuild:coverage",
     "test": "npm run build && npm run nobuild:unit && npm run nobuild:integration",
     "unit": "npm run build && npm run nobuild:unit"
   },
