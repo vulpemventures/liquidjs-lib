@@ -696,7 +696,7 @@ export class PsetInput {
     }
 
     if (this.explicitValueProof && !this.explicitValue) {
-      throw new Error('Explicit value proof set without explicit value');
+      throw new Error('Explicit value is required if value proof is set');
     }
 
     if (this.explicitAsset && !this.explicitAssetProof) {
