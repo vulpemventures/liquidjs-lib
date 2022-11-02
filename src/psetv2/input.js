@@ -672,18 +672,18 @@ class PsetInput {
       );
     }
     if (this.explicitValueProof && !this.explicitValue) {
-      throw new Error('Explicit value proof set without explicit value');
+      throw new Error('Explicit value is required if value proof is set');
     }
     if (this.explicitAsset && !this.explicitAssetProof) {
       throw new Error('Explicit asset proof is required if explicit asset set');
     }
     if (this.explicitAssetProof && !this.explicitAsset) {
-      throw new Error('Explicit asset proof set without explicit asset');
+      throw new Error('Explicit asset is required if asset proof is set');
     }
     if (this.explicitAsset) {
       const asset = asset_1.AssetHash.fromBytes(this.explicitAsset);
       if (asset.isConfidential()) {
-        throw new Error(`Explicit asset should be unconfidential`);
+        throw new Error(`Explicit asset must be unconfidential`);
       }
     }
     const utxo = this.getUtxo();

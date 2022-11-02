@@ -49,7 +49,7 @@ class AssetHash {
     return this.value;
   }
   isConfidential() {
-    return !(this.prefix === AssetHash.UNCONFIDENTIAL_PREFIX);
+    return this.prefix !== AssetHash.UNCONFIDENTIAL_PREFIX;
   }
 }
 exports.AssetHash = AssetHash;
