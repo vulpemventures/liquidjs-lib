@@ -710,7 +710,7 @@ export class PsetInput {
     if (this.explicitAsset) {
       const asset = AssetHash.fromBytes(this.explicitAsset);
       if (asset.isConfidential()) {
-        throw new Error(`Explicit asset should be unconfidential`);
+        throw new Error(`Explicit asset must be unconfidential`);
       }
     }
 
