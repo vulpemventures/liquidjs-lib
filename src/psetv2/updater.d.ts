@@ -10,7 +10,7 @@ export interface IssuanceOpts {
     contract?: IssuanceContract;
     assetAddress?: string;
     tokenAddress?: string;
-    blindedIssuance: boolean;
+    blindedIssuance?: boolean;
 }
 export interface ReissuanceOpts {
     entropy: string | Buffer;

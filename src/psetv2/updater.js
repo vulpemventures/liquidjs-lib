@@ -94,21 +94,17 @@ class Updater {
       if (input.reissuanceOpts)
         this.addInReissuance(inputIndex, input.reissuanceOpts);
       if (input.explicitAsset) {
-        if (!input.explicitAssetProof)
-          throw new Error('missing explicitAssetProof');
         this.addInExplicitAsset(
           inputIndex,
           input.explicitAsset,
-          input.explicitAssetProof,
+          input.explicitAssetProof ?? Buffer.alloc(0),
         );
       }
       if (input.explicitValue) {
-        if (!input.explicitValueProof)
-          throw new Error('missing explicitValueProof');
         this.addInExplicitValue(
           inputIndex,
           input.explicitValue,
-          input.explicitValueProof,
+          input.explicitValueProof ?? Buffer.alloc(0),
         );
       }
     });
@@ -243,7 +239,8 @@ class Updater {
     pset.inputs[inIndex].issuanceInflationKeys = tokenAmount;
     pset.inputs[inIndex].issuanceAssetEntropy = issuance.assetEntropy;
     pset.inputs[inIndex].issuanceBlindingNonce = issuance.assetBlindingNonce;
-    pset.inputs[inIndex].blindedIssuance = args.blindedIssuance ? true : false;
+    pset.inputs[inIndex].blindedIssuance =
+      args.blindedIssuance !== undefined ? args.blindedIssuance : true;
     const entropy = (0, issuance_1.generateEntropy)(
       {
         txHash: pset.inputs[inIndex].previousTxid,
@@ -558,9 +555,6 @@ class Updater {
   }
   addInExplicitValue(inIndex, explicitValue, explicitValueProof) {
     this.validateInputIndex(inIndex);
-    if (this.pset.inputs[inIndex].explicitValue !== undefined) {
-      throw new Error(`Explicit value is already set up on input #${inIndex}`);
-    }
     const pset = this.pset.copy();
     pset.inputs[inIndex].explicitValue = explicitValue;
     pset.inputs[inIndex].explicitValueProof = explicitValueProof;
@@ -572,9 +566,6 @@ class Updater {
   }
   addInExplicitAsset(inIndex, explicitAsset, explicitAssetProof) {
     this.validateInputIndex(inIndex);
-    if (this.pset.inputs[inIndex].explicitAsset !== undefined) {
-      throw new Error(`Explicit asset is already set up on input #${inIndex}`);
-    }
     const pset = this.pset.copy();
     pset.inputs[inIndex].explicitAsset = explicitAsset;
     pset.inputs[inIndex].explicitAssetProof = explicitAssetProof;

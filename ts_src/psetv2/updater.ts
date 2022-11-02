@@ -34,7 +34,7 @@ export interface IssuanceOpts {
   contract?: IssuanceContract;
   assetAddress?: string;
   tokenAddress?: string;
-  blindedIssuance: boolean;
+  blindedIssuance?: boolean;
 }
 
 export interface ReissuanceOpts {
@@ -134,22 +134,18 @@ export class Updater {
         this.addInReissuance(inputIndex, input.reissuanceOpts);
 
       if (input.explicitAsset) {
-        if (!input.explicitAssetProof)
-          throw new Error('missing explicitAssetProof');
         this.addInExplicitAsset(
           inputIndex,
           input.explicitAsset,
-          input.explicitAssetProof,
+          input.explicitAssetProof ?? Buffer.alloc(0),
         );
       }
 
       if (input.explicitValue) {
-        if (!input.explicitValueProof)
-          throw new Error('missing explicitValueProof');
         this.addInExplicitValue(
           inputIndex,
           input.explicitValue,
-          input.explicitValueProof,
+          input.explicitValueProof ?? Buffer.alloc(0),
         );
       }
     });
@@ -319,7 +315,8 @@ export class Updater {
     pset.inputs[inIndex].issuanceInflationKeys = tokenAmount;
     pset.inputs[inIndex].issuanceAssetEntropy = issuance.assetEntropy;
     pset.inputs[inIndex].issuanceBlindingNonce = issuance.assetBlindingNonce;
-    pset.inputs[inIndex].blindedIssuance = args.blindedIssuance ? true : false;
+    pset.inputs[inIndex].blindedIssuance =
+      args.blindedIssuance !== undefined ? args.blindedIssuance : true;
 
     const entropy = generateEntropy(
       {
@@ -710,10 +707,6 @@ export class Updater {
   ): this {
     this.validateInputIndex(inIndex);
 
-    if (this.pset.inputs[inIndex].explicitValue !== undefined) {
-      throw new Error(`Explicit value is already set up on input #${inIndex}`);
-    }
-
     const pset = this.pset.copy();
     pset.inputs[inIndex].explicitValue = explicitValue;
     pset.inputs[inIndex].explicitValueProof = explicitValueProof;
@@ -732,10 +725,6 @@ export class Updater {
     explicitAssetProof: Buffer,
   ): this {
     this.validateInputIndex(inIndex);
-
-    if (this.pset.inputs[inIndex].explicitAsset !== undefined) {
-      throw new Error(`Explicit asset is already set up on input #${inIndex}`);
-    }
 
     const pset = this.pset.copy();
     pset.inputs[inIndex].explicitAsset = explicitAsset;
@@ -878,7 +867,7 @@ export class Updater {
     this.validateInputIndex(inIndex);
 
     const input = this.pset.inputs[inIndex];
-    if (input.issuanceAssetEntropy! && input.issuanceAssetEntropy!.length > 0) {
+    if (input.issuanceAssetEntropy && input.issuanceAssetEntropy.length > 0) {
       throw new Error('Input ' + inIndex + ' already has an issuance');
     }
   }
@@ -887,7 +876,7 @@ export class Updater {
     this.validateInputIndex(inIndex);
 
     const input = this.pset.inputs[inIndex];
-    if (input.issuanceAssetEntropy! && input.issuanceAssetEntropy!.length > 0) {
+    if (input.issuanceAssetEntropy && input.issuanceAssetEntropy.length > 0) {
       throw new Error(`Input ${inIndex} already has an issuance`);
     }
     const prevout = input.getUtxo();

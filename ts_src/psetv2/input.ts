@@ -784,7 +784,7 @@ export class PsetInput {
     return calculateAsset(entropy);
   }
 
-  getIssuanceInflationKeysHash(blindedIssuance: boolean): Buffer | undefined {
+  getIssuanceInflationKeysHash(): Buffer | undefined {
     if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
@@ -800,7 +800,7 @@ export class PsetInput {
         this.issuanceAssetEntropy!,
       );
     }
-    return calculateReissuanceToken(entropy, blindedIssuance);
+    return calculateReissuanceToken(entropy, this.blindedIssuance ?? true);
   }
 
   getUtxo(): Output | undefined {
@@ -810,8 +810,6 @@ export class PsetInput {
 
     if (!this.nonWitnessUtxo) {
       const utxo = this.witnessUtxo!;
-      if (!this.utxoRangeProof)
-        throw new Error('missing utxoRangeProof (getUtxo)');
       utxo.rangeProof = this.utxoRangeProof;
       return utxo;
     }

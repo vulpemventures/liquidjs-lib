@@ -66,7 +66,7 @@ export declare class PsetInput {
     isFinalized(): boolean;
     isTaproot(): boolean;
     getIssuanceAssetHash(): Buffer | undefined;
-    getIssuanceInflationKeysHash(blindedIssuance: boolean): Buffer | undefined;
+    getIssuanceInflationKeysHash(): Buffer | undefined;
     getUtxo(): Output | undefined;
     toBuffer(): Buffer;
     private getKeyPairs;

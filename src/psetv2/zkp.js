@@ -217,7 +217,11 @@ class ZKPGenerator {
       }
       if (input.issuanceInflationKeys > 0) {
         const token = input.issuanceInflationKeys.toString(10);
-        const asset = input.getIssuanceInflationKeysHash(true);
+        const asset = input.getIssuanceInflationKeysHash();
+        if (!asset)
+          throw new Error(
+            'something went wrong during the inflation token hash computation',
+          );
         const blinder = (0, utils_1.randomBytes)(this.opts);
         const assetCommit = this.confidential.assetCommitment(
           asset,
@@ -406,11 +410,7 @@ class ZKPGenerator {
         assets.push(issAssetHash);
         assetBlinders.push(transaction_1.ZERO);
         if (!input.hasReissuance() && input.issuanceInflationKeys > 0) {
-          const blindedIssuance = input.blindedIssuance;
-          if (blindedIssuance === undefined)
-            throw new Error(`input #${i} is missing blindedIssuance field`);
-          const inflationTokenAssetHash =
-            input.getIssuanceInflationKeysHash(blindedIssuance);
+          const inflationTokenAssetHash = input.getIssuanceInflationKeysHash();
           if (!inflationTokenAssetHash)
             throw new Error(
               `something went wrong computing the issuance inflation keys hash on input #${i}`,

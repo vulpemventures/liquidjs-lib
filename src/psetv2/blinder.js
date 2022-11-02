@@ -40,11 +40,7 @@ class Blinder {
         lastBlinder && i === sortedOutputBlindingArgs.length - 1;
       this.validateOutputBlindingArgs(arg, isLastBlinder);
     });
-    this.validateBlindingData(
-      lastBlinder,
-      outputBlindingArgs,
-      issuanceBlindingArgs,
-    );
+    this.validateBlindingData(lastBlinder, outputBlindingArgs);
     const inputScalar = this.calculateInputScalar(issuanceBlindingArgs);
     const outputScalar = this.calculateOutputScalar(sortedOutputBlindingArgs);
     const pset = this.pset.copy();
@@ -365,11 +361,7 @@ class Blinder {
       this.ownedInputs.find(({ index }) => index === blinderIndex) !== undefined
     );
   }
-  validateBlindingData(
-    isLastBlinder,
-    outputBlindingArgs,
-    issuanceBlindingArgs,
-  ) {
+  validateBlindingData(isLastBlinder, outputBlindingArgs) {
     const inAssetsAndBlinders = this.pset.inputs.map((input, i) => {
       const ownedInput = this.ownedInputs.find(({ index }) => index === i);
       return ownedInput
@@ -382,23 +374,20 @@ class Blinder {
             assetBlinder: transaction_1.ZERO,
           };
     });
-    this.pset.inputs.forEach((input, i) => {
+    for (const input of this.pset.inputs) {
       if (input.hasIssuance() || input.hasReissuance()) {
         inAssetsAndBlinders.push({
           asset: input.getIssuanceAssetHash(),
           assetBlinder: transaction_1.ZERO,
         });
         if (input.issuanceInflationKeys > 0) {
-          const blindedIssuance =
-            issuanceBlindingArgs &&
-            issuanceBlindingArgs.find(({ index }) => index === i) !== undefined;
           inAssetsAndBlinders.push({
-            asset: input.getIssuanceInflationKeysHash(blindedIssuance),
+            asset: input.getIssuanceInflationKeysHash(),
             assetBlinder: transaction_1.ZERO,
           });
         }
       }
-    });
+    }
     const inputAssets = inAssetsAndBlinders.map((v) => v.asset);
     const inputAssetBlinders = inAssetsAndBlinders.map((v) => v.assetBlinder);
     for (let i = 0; i < outputBlindingArgs.length; i++) {

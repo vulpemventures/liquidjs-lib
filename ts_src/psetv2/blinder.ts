@@ -100,11 +100,7 @@ export class Blinder {
       this.validateOutputBlindingArgs(arg, isLastBlinder);
     });
 
-    this.validateBlindingData(
-      lastBlinder,
-      outputBlindingArgs,
-      issuanceBlindingArgs,
-    );
+    this.validateBlindingData(lastBlinder, outputBlindingArgs);
 
     const inputScalar = this.calculateInputScalar(issuanceBlindingArgs);
     const outputScalar = this.calculateOutputScalar(sortedOutputBlindingArgs);
@@ -459,7 +455,6 @@ export class Blinder {
   private validateBlindingData(
     isLastBlinder: boolean,
     outputBlindingArgs: OutputBlindingArgs[],
-    issuanceBlindingArgs?: IssuanceBlindingArgs[],
   ): void {
     const inAssetsAndBlinders = this.pset.inputs.map((input, i) => {
       const ownedInput = this.ownedInputs.find(({ index }) => index === i);
@@ -473,24 +468,20 @@ export class Blinder {
             assetBlinder: ZERO,
           };
     });
-    this.pset.inputs.forEach((input, i) => {
+    for (const input of this.pset.inputs) {
       if (input.hasIssuance() || input.hasReissuance()) {
         inAssetsAndBlinders.push({
           asset: input.getIssuanceAssetHash()!,
           assetBlinder: ZERO,
         });
         if (input.issuanceInflationKeys! > 0) {
-          const blindedIssuance =
-            issuanceBlindingArgs! &&
-            issuanceBlindingArgs!.find(({ index }) => index === i) !==
-              undefined;
           inAssetsAndBlinders.push({
-            asset: input.getIssuanceInflationKeysHash(blindedIssuance)!,
+            asset: input.getIssuanceInflationKeysHash()!,
             assetBlinder: ZERO,
           });
         }
       }
-    });
+    }
 
     const inputAssets = inAssetsAndBlinders.map((v) => v.asset);
     const inputAssetBlinders = inAssetsAndBlinders.map((v) => v.assetBlinder);

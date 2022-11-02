@@ -745,7 +745,7 @@ class PsetInput {
     }
     return (0, issuance_1.calculateAsset)(entropy);
   }
-  getIssuanceInflationKeysHash(blindedIssuance) {
+  getIssuanceInflationKeysHash() {
     if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
@@ -759,7 +759,10 @@ class PsetInput {
         this.issuanceAssetEntropy,
       );
     }
-    return (0, issuance_1.calculateReissuanceToken)(entropy, blindedIssuance);
+    return (0, issuance_1.calculateReissuanceToken)(
+      entropy,
+      this.blindedIssuance ?? true,
+    );
   }
   getUtxo() {
     if (!this.witnessUtxo && !this.nonWitnessUtxo) {
@@ -767,8 +770,6 @@ class PsetInput {
     }
     if (!this.nonWitnessUtxo) {
       const utxo = this.witnessUtxo;
-      if (!this.utxoRangeProof)
-        throw new Error('missing utxoRangeProof (getUtxo)');
       utxo.rangeProof = this.utxoRangeProof;
       return utxo;
     }
