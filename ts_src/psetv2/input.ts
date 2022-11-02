@@ -704,7 +704,7 @@ export class PsetInput {
     }
 
     if (this.explicitAssetProof && !this.explicitAsset) {
-      throw new Error('Explicit asset proof set without explicit asset');
+      throw new Error('Explicit asset is required if asset proof is set');
     }
 
     if (this.explicitAsset) {
