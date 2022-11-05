@@ -6,7 +6,7 @@ import * as script from './script';
 import * as issuance from './issuance';
 import * as bip341 from './bip341';
 import * as confidential from './confidential';
-export { address, confidential, crypto, networks, payments, script, issuance, bip341 };
+export { address, confidential, crypto, networks, payments, script, issuance, bip341, };
 export { OPS as opcodes } from './ops';
 export { Input as TxInput, Output as TxOutput, Transaction, } from './transaction';
 export * from './asset';
