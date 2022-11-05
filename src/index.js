@@ -59,6 +59,7 @@ exports.Transaction =
   exports.payments =
   exports.networks =
   exports.crypto =
+  exports.confidential =
   exports.address =
     void 0;
 const address = __importStar(require('./address'));
@@ -75,6 +76,8 @@ const issuance = __importStar(require('./issuance'));
 exports.issuance = issuance;
 const bip341 = __importStar(require('./bip341'));
 exports.bip341 = bip341;
+const confidential = __importStar(require('./confidential'));
+exports.confidential = confidential;
 var ops_1 = require('./ops');
 Object.defineProperty(exports, 'opcodes', {
   enumerable: true,
@@ -92,4 +95,3 @@ Object.defineProperty(exports, 'Transaction', {
 __exportStar(require('./asset'), exports);
 __exportStar(require('./value'), exports);
 __exportStar(require('./psetv2'), exports);
-__exportStar(require('./confidential'), exports);

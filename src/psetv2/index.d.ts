@@ -10,4 +10,5 @@ import { Finalizer, FinalizeFunc } from './finalizer';
 import { Extractor } from './extractor';
 import { witnessStackToScriptWitness, scriptWitnessToWitnessStack, classifyScript } from './utils';
 import { ZKPGenerator, ZKPValidator } from './zkp';
-export { IssuanceOpts, ReissuanceOpts, Blinder, BIP174SigningData, BIP371SigningData, Creator, Extractor, Finalizer, FinalizeFunc, CreatorInput, IssuanceBlindingArgs, CreatorOutput, OutputBlindingArgs, OwnedInput, KeysGenerator, Pset, PsetGlobal, PsetInput, PsetOutput, Signer, Updater, UpdaterInput, UpdaterOutput, ZKPGenerator, ZKPValidator, witnessStackToScriptWitness, scriptWitnessToWitnessStack, classifyScript, };
+import { ControlBlock, TapInternalKey, TapKeySig, TapLeaf, TapLeafScript, TapMerkleRoot, TapScriptSig, TapTree } from './interfaces';
+export { IssuanceOpts, ReissuanceOpts, Blinder, BIP174SigningData, BIP371SigningData, Creator, Extractor, Finalizer, FinalizeFunc, CreatorInput, IssuanceBlindingArgs, CreatorOutput, OutputBlindingArgs, OwnedInput, KeysGenerator, Pset, PsetGlobal, PsetInput, PsetOutput, Signer, Updater, UpdaterInput, UpdaterOutput, ZKPGenerator, ZKPValidator, TapLeafScript, TapScriptSig, TapLeaf, TapTree, TapKeySig, ControlBlock, TapInternalKey, TapMerkleRoot, witnessStackToScriptWitness, scriptWitnessToWitnessStack, classifyScript, };
