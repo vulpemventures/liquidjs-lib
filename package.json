@@ -1,6 +1,6 @@
 {
   "name": "liquidjs-lib",
-  "version": "6.0.2-liquid.17",
+  "version": "6.0.2-liquid.18",
   "description": "Client-side Liquid JavaScript library",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
