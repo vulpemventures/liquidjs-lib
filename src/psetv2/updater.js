@@ -50,6 +50,18 @@ const asset_1 = require('../asset');
 const issuance_1 = require('../issuance');
 const creator_1 = require('./creator');
 const bscript = __importStar(require('../script'));
+function processOutputDestination(dest) {
+  if (typeof dest === 'string') {
+    const script = (0, address_1.toOutputScript)(dest);
+    if ((0, address_1.isConfidential)(dest))
+      return {
+        script,
+        blindingPublicKey: (0, address_1.fromConfidential)(dest).blindingKey,
+      };
+    return { script };
+  }
+  return dest;
+}
 class Updater {
   constructor(pset) {
     pset.sanityCheck();
@@ -249,51 +261,42 @@ class Updater {
       issuance.assetEntropy,
     );
     if (assetAmount > 0) {
+      if (!args.assetAddress)
+        throw new Error(
+          'Missing asset destination, cannot add the issued asset output',
+        );
       const issuedAsset = asset_1.AssetHash.fromBytes(
         (0, issuance_1.calculateAsset)(entropy),
       ).hex;
-      let blinderIndex;
-      let blindingPublicKey;
-      if (
-        args.assetAddress &&
-        (0, address_1.isConfidential)(args.assetAddress)
-      ) {
-        blinderIndex = inIndex;
-        blindingPublicKey = (0, address_1.fromConfidential)(
-          args.assetAddress,
-        ).blindingKey;
-      }
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.assetAddress,
+      );
       const output = new creator_1.CreatorOutput(
         issuedAsset,
         assetAmount,
-        // Why this should be undefined? should'nt be always be mandatory?
-        (0, address_1.toOutputScript)(args.assetAddress),
+        script,
         blindingPublicKey,
-        blinderIndex,
+        blindingPublicKey ? inIndex : undefined,
       );
       pset.addOutput(output.toPartialOutput());
     }
     if (tokenAmount > 0) {
+      if (!args.tokenAddress)
+        throw new Error(
+          'Missing token destination, cannot add the issued token output',
+        );
       const reissuanceToken = asset_1.AssetHash.fromBytes(
         (0, issuance_1.calculateReissuanceToken)(entropy, args.blindedIssuance),
       ).hex;
-      let blinderIndex;
-      let blindingPublicKey;
-      if (
-        args.tokenAddress &&
-        (0, address_1.isConfidential)(args.tokenAddress)
-      ) {
-        blinderIndex = inIndex;
-        blindingPublicKey = (0, address_1.fromConfidential)(
-          args.tokenAddress,
-        ).blindingKey;
-      }
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.tokenAddress,
+      );
       const output = new creator_1.CreatorOutput(
         reissuanceToken,
         tokenAmount,
-        (0, address_1.toOutputScript)(args.tokenAddress),
+        script,
         blindingPublicKey,
-        blinderIndex,
+        blindingPublicKey ? inIndex : undefined,
       );
       pset.addOutput(output.toPartialOutput());
     }
@@ -325,28 +328,32 @@ class Updater {
     pset.inputs[inIndex].issuanceBlindingNonce = blindingNonce;
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = 0;
-    const assetBlindingPublicKey = (0, address_1.fromConfidential)(
-      args.assetAddress,
-    ).blindingKey;
-    const assetOutput = new creator_1.CreatorOutput(
-      asset,
-      args.assetAmount,
-      (0, address_1.toOutputScript)(args.assetAddress),
-      assetBlindingPublicKey,
-      inIndex,
-    );
-    const tokenBlindingPublicKey = (0, address_1.fromConfidential)(
-      args.tokenAddress,
-    ).blindingKey;
-    const tokenOutput = new creator_1.CreatorOutput(
-      reissuanceToken,
-      args.tokenAmount,
-      (0, address_1.toOutputScript)(args.tokenAddress),
-      tokenBlindingPublicKey,
-      inIndex,
-    );
-    pset.addOutput(assetOutput.toPartialOutput());
-    pset.addOutput(tokenOutput.toPartialOutput());
+    if (args.assetAddress) {
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.assetAddress,
+      );
+      const assetOutput = new creator_1.CreatorOutput(
+        asset,
+        args.assetAmount,
+        script,
+        blindingPublicKey,
+        blindingPublicKey ? inIndex : undefined,
+      );
+      pset.addOutput(assetOutput.toPartialOutput());
+    }
+    if (args.tokenAddress) {
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.tokenAddress,
+      );
+      const tokenOutput = new creator_1.CreatorOutput(
+        reissuanceToken,
+        args.tokenAmount,
+        script,
+        blindingPublicKey,
+        blindingPublicKey ? inIndex : undefined,
+      );
+      pset.addOutput(tokenOutput.toPartialOutput());
+    }
     pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
@@ -713,23 +720,21 @@ function validateAddInIssuanceArgs(args) {
     throw new Error('Either asset or token amounts must be a positive number');
   }
   if (assetAmount > 0) {
-    if (!args.assetAddress || args.assetAddress.length === 0) {
+    if (!args.assetAddress) {
       throw new Error(
         'Asset address must be defined if asset amount is non-zero',
       );
     }
   }
   if (tokenAmount > 0) {
-    if (!args.tokenAddress || args.tokenAddress.length === 0) {
+    if (!args.tokenAddress) {
       throw new Error(
         'Token address must be defined if token amount is non-zero',
       );
     }
   }
-  if (!matchAddressesType(args.assetAddress, args.tokenAddress)) {
-    throw new Error(
-      'Asset and token addresses must be of same network and both unconfidential or confidential',
-    );
+  if (!matchAddressesNetworkType(args.assetAddress, args.tokenAddress)) {
+    throw new Error('Asset and token addresses must be of same network');
   }
 }
 function validateAddInReissuanceArgs(args) {
@@ -753,34 +758,26 @@ function validateAddInReissuanceArgs(args) {
   if (args.tokenAmount <= 0) {
     throw new Error('Token amount must be a positive number');
   }
-  if (args.assetAddress.length === 0) {
+  if (!args.assetAddress) {
     throw new Error('Missing asset address');
   }
-  if (args.tokenAddress.length === 0) {
+  if (!args.assetAddress) {
     throw new Error('Missing token address');
   }
-  if (!matchAddressesType(args.assetAddress, args.tokenAddress)) {
+  if (!matchAddressesNetworkType(args.assetAddress, args.tokenAddress)) {
     throw new Error(
       'Asset and token addresses must be both of same network and both confidential',
     );
   }
-  if (!(0, address_1.isConfidential)(args.assetAddress)) {
-    throw new Error('Asset and token addresses must be both confidential');
-  }
 }
-function matchAddressesType(addrA, addrB) {
-  if (!addrA || addrA.length === 0 || !addrB || addrB.length === 0) {
+function matchAddressesNetworkType(addrA, addrB) {
+  if (!addrA || !addrB) {
     return true;
   }
-  const netA = (0, address_1.getNetwork)(addrA);
-  const netB = (0, address_1.getNetwork)(addrB);
-  if (netA.name !== netB.name) {
-    return false;
-  }
-  const isConfidentialA = (0, address_1.isConfidential)(addrA);
-  const isConfidentialB = (0, address_1.isConfidential)(addrB);
-  if (isConfidentialA !== isConfidentialB) {
-    return false;
+  if (typeof addrA === 'string' && typeof addrB === 'string') {
+    const netA = (0, address_1.getNetwork)(addrA);
+    const netB = (0, address_1.getNetwork)(addrB);
+    return netA.name === netB.name;
   }
   return true;
 }

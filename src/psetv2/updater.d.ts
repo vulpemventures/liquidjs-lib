@@ -4,20 +4,24 @@ import { IssuanceContract } from '../issuance';
 import { Transaction } from '../transaction';
 import { Bip32Derivation, PartialSig, TapBip32Derivation, TapInternalKey, TapLeafScript, TapMerkleRoot, TapScriptSig, TapTree } from './interfaces';
 import { Pset, ValidateSigFunction } from './pset';
+declare type OutputDestination = string | {
+    script: Buffer;
+    blindingPublicKey?: Buffer;
+};
 export interface IssuanceOpts {
     assetAmount?: number;
     tokenAmount?: number;
     contract?: IssuanceContract;
-    assetAddress?: string;
-    tokenAddress?: string;
+    assetAddress?: OutputDestination;
+    tokenAddress?: OutputDestination;
     blindedIssuance?: boolean;
 }
 export interface ReissuanceOpts {
     entropy: string | Buffer;
     assetAmount: number;
-    assetAddress: string;
+    assetAddress: OutputDestination;
     tokenAmount: number;
-    tokenAddress: string;
+    tokenAddress: OutputDestination;
     tokenAssetBlinder: string | Buffer;
 }
 export interface UpdaterInput {
@@ -82,3 +86,4 @@ export declare class Updater {
     private validateOutputIndex;
     private validateInputIndex;
 }
+export {};
