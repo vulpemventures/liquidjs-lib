@@ -345,13 +345,9 @@ export class Updater {
     );
 
     if (assetAmount > 0) {
-      if (!args.assetAddress)
-        throw new Error(
-          'Missing asset destination, cannot add the issued asset output',
-        );
       const issuedAsset = AssetHash.fromBytes(calculateAsset(entropy)).hex;
       const { blindingPublicKey, script } = processOutputDestination(
-        args.assetAddress,
+        args.assetAddress!,
       );
 
       const output = new CreatorOutput(
@@ -365,15 +361,11 @@ export class Updater {
     }
 
     if (tokenAmount > 0) {
-      if (!args.tokenAddress)
-        throw new Error(
-          'Missing token destination, cannot add the issued token output',
-        );
       const reissuanceToken = AssetHash.fromBytes(
         calculateReissuanceToken(entropy, args.blindedIssuance),
       ).hex;
       const { blindingPublicKey, script } = processOutputDestination(
-        args.tokenAddress,
+        args.tokenAddress!,
       );
 
       const output = new CreatorOutput(

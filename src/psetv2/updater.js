@@ -261,10 +261,6 @@ class Updater {
       issuance.assetEntropy,
     );
     if (assetAmount > 0) {
-      if (!args.assetAddress)
-        throw new Error(
-          'Missing asset destination, cannot add the issued asset output',
-        );
       const issuedAsset = asset_1.AssetHash.fromBytes(
         (0, issuance_1.calculateAsset)(entropy),
       ).hex;
@@ -281,10 +277,6 @@ class Updater {
       pset.addOutput(output.toPartialOutput());
     }
     if (tokenAmount > 0) {
-      if (!args.tokenAddress)
-        throw new Error(
-          'Missing token destination, cannot add the issued token output',
-        );
       const reissuanceToken = asset_1.AssetHash.fromBytes(
         (0, issuance_1.calculateReissuanceToken)(entropy, args.blindedIssuance),
       ).hex;
