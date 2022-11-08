@@ -54,7 +54,7 @@ class ElementsValue {
     }
     return (0, bufferutils_1.readUInt64LE)(reverseWithoutMutate(this.value), 0);
   }
-  isConfidential() {
+  get isConfidential() {
     return this.prefix !== ElementsValue.UNCONFIDENTIAL_PREFIX;
   }
 }

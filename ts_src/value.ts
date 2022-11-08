@@ -68,7 +68,7 @@ export class ElementsValue {
     return readUInt64LE(reverseWithoutMutate(this.value), 0);
   }
 
-  isConfidential(): boolean {
+  get isConfidential(): boolean {
     return this.prefix !== ElementsValue.UNCONFIDENTIAL_PREFIX;
   }
 }

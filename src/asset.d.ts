@@ -10,5 +10,5 @@ export declare class AssetHash {
     get hex(): string;
     get bytes(): Buffer;
     get bytesWithoutPrefix(): Buffer;
-    isConfidential(): boolean;
+    get isConfidential(): boolean;
 }

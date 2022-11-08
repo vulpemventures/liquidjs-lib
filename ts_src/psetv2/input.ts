@@ -709,14 +709,14 @@ export class PsetInput {
 
     if (this.explicitAsset) {
       const asset = AssetHash.fromBytes(this.explicitAsset);
-      if (asset.isConfidential()) {
+      if (asset.isConfidential) {
         throw new Error(`Explicit asset must be unconfidential`);
       }
     }
 
     const utxo = this.getUtxo();
     if (utxo && this.explicitAsset) {
-      if (!AssetHash.fromBytes(utxo.asset).isConfidential()) {
+      if (!AssetHash.fromBytes(utxo.asset).isConfidential) {
         throw new Error(
           'Explicit asset must be undefined if previous utxo is unconfidential',
         );
@@ -724,7 +724,7 @@ export class PsetInput {
     }
 
     if (utxo && this.explicitValue !== undefined) {
-      if (!ElementsValue.fromBytes(utxo.value).isConfidential()) {
+      if (!ElementsValue.fromBytes(utxo.value).isConfidential) {
         throw new Error(
           'Explicit value must be undefined if previout utxo is unconfidential',
         );

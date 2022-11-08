@@ -60,7 +60,7 @@ export class AssetHash {
     return this.value;
   }
 
-  isConfidential(): boolean {
+  get isConfidential(): boolean {
     return this.prefix !== AssetHash.UNCONFIDENTIAL_PREFIX;
   }
 }

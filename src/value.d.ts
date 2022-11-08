@@ -11,5 +11,5 @@ export declare class ElementsValue {
     get hex(): string;
     get bytes(): Buffer;
     get number(): number;
-    isConfidential(): boolean;
+    get isConfidential(): boolean;
 }

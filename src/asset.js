@@ -48,7 +48,7 @@ class AssetHash {
   get bytesWithoutPrefix() {
     return this.value;
   }
-  isConfidential() {
+  get isConfidential() {
     return this.prefix !== AssetHash.UNCONFIDENTIAL_PREFIX;
   }
 }
