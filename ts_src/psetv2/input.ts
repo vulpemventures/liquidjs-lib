@@ -29,6 +29,8 @@ import { ProprietaryData } from './proprietary_data';
 import { magicPrefix } from './pset';
 import * as bscript from '../script';
 import { isP2TR } from './utils';
+import { AssetHash } from '../asset';
+import { ElementsValue } from '../value';
 
 export class InputDuplicateFieldError extends Error {
   constructor(message?: string) {
@@ -512,6 +514,48 @@ export class PsetInput {
                 }
                 input.issuanceBlindInflationKeysProof = kp.value;
                 break;
+              case InputProprietaryTypes.EXPLICIT_VALUE:
+                if (input.explicitValue !== undefined) {
+                  throw new InputDuplicateFieldError('explicit value');
+                }
+                if (kp.value.length !== 8) {
+                  throw new Error('Invalid input explicit value length');
+                }
+                input.explicitValue = readUInt64LE(kp.value, 0);
+                break;
+              case InputProprietaryTypes.VALUE_PROOF:
+                if (
+                  input.explicitValueProof &&
+                  input.explicitValueProof.length > 0
+                ) {
+                  throw new InputDuplicateFieldError('explicit value proof');
+                }
+                input.explicitValueProof = kp.value;
+                break;
+              case InputProprietaryTypes.EXPLICIT_ASSET:
+                if (input.explicitAsset && input.explicitAsset.length > 0) {
+                  throw new InputDuplicateFieldError('explicit asset');
+                }
+                input.explicitAsset = kp.value;
+                break;
+              case InputProprietaryTypes.ASSET_PROOF:
+                if (
+                  input.explicitAssetProof &&
+                  input.explicitAssetProof.length > 0
+                ) {
+                  throw new InputDuplicateFieldError('explicit asset proof');
+                }
+                input.explicitAssetProof = kp.value;
+                break;
+              case InputProprietaryTypes.BLINDED_ISSUANCE:
+                if (input.blindedIssuance !== undefined) {
+                  throw new InputDuplicateFieldError('blinded issuance');
+                }
+                if (kp.value.length !== 1) {
+                  throw new Error('invalid blinded issuance length');
+                }
+                input.blindedIssuance = kp.value.equals(Buffer.of(0x01));
+                break;
               default:
                 if (!input.proprietaryData) {
                   input.proprietaryData = [];
@@ -570,6 +614,11 @@ export class PsetInput {
   utxoRangeProof?: Buffer;
   issuanceBlindValueProof?: Buffer;
   issuanceBlindInflationKeysProof?: Buffer;
+  explicitValue?: number;
+  explicitValueProof?: Buffer;
+  explicitAsset?: Buffer;
+  explicitAssetProof?: Buffer;
+  blindedIssuance?: boolean;
   proprietaryData?: ProprietaryData[];
   unknowns?: KeyPair[];
 
@@ -638,6 +687,48 @@ export class PsetInput {
       throw new Error('Invalid sighash type');
     }
 
+    if (this.explicitValue && !this.explicitValueProof) {
+      throw new Error(
+        'Explicit value proof is required if explicit value is set',
+      );
+    }
+
+    if (this.explicitValueProof && !this.explicitValue) {
+      throw new Error('Explicit value is required if value proof is set');
+    }
+
+    if (this.explicitAsset && !this.explicitAssetProof) {
+      throw new Error('Explicit asset proof is required if explicit asset set');
+    }
+
+    if (this.explicitAssetProof && !this.explicitAsset) {
+      throw new Error('Explicit asset is required if asset proof is set');
+    }
+
+    if (this.explicitAsset) {
+      const asset = AssetHash.fromBytes(this.explicitAsset);
+      if (asset.isConfidential) {
+        throw new Error(`Explicit asset must be unconfidential`);
+      }
+    }
+
+    const utxo = this.getUtxo();
+    if (utxo && this.explicitAsset) {
+      if (!AssetHash.fromBytes(utxo.asset).isConfidential) {
+        throw new Error(
+          'Explicit asset must be undefined if previous utxo is unconfidential',
+        );
+      }
+    }
+
+    if (utxo && this.explicitValue !== undefined) {
+      if (!ElementsValue.fromBytes(utxo.value).isConfidential) {
+        throw new Error(
+          'Explicit value must be undefined if previout utxo is unconfidential',
+        );
+      }
+    }
+
     return this;
   }
 
@@ -691,7 +782,7 @@ export class PsetInput {
     return calculateAsset(entropy);
   }
 
-  getIssuanceInflationKeysHash(blindedIssuance: boolean): Buffer | undefined {
+  getIssuanceInflationKeysHash(): Buffer | undefined {
     if (!this.hasIssuance() && !this.hasReissuance()) {
       return undefined;
     }
@@ -707,7 +798,7 @@ export class PsetInput {
         this.issuanceAssetEntropy!,
       );
     }
-    return calculateReissuanceToken(entropy, blindedIssuance);
+    return calculateReissuanceToken(entropy, this.blindedIssuance ?? true);
   }
 
   getUtxo(): Output | undefined {
@@ -1069,6 +1160,51 @@ export class PsetInput {
       );
       const key = new Key(InputTypes.PROPRIETARY, keyData);
       keyPairs.push(new KeyPair(key, this.issuanceBlindInflationKeysProof!));
+    }
+
+    if (this.explicitValue && this.explicitValue >= 0) {
+      const keyData = ProprietaryData.proprietaryKey(
+        InputProprietaryTypes.EXPLICIT_VALUE,
+      );
+
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
+      const value = Buffer.allocUnsafe(8);
+      writeUInt64LE(value, this.explicitValue, 0);
+      keyPairs.push(new KeyPair(key, value));
+    }
+
+    if (this.explicitValueProof && this.explicitValueProof.length > 0) {
+      const keyData = ProprietaryData.proprietaryKey(
+        InputProprietaryTypes.VALUE_PROOF,
+      );
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
+      keyPairs.push(new KeyPair(key, this.explicitValueProof));
+    }
+
+    if (this.explicitAsset && this.explicitAsset.length > 0) {
+      const keyData = ProprietaryData.proprietaryKey(
+        InputProprietaryTypes.EXPLICIT_ASSET,
+      );
+
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
+      keyPairs.push(new KeyPair(key, this.explicitAsset));
+    }
+
+    if (this.explicitAssetProof && this.explicitAssetProof.length > 0) {
+      const keyData = ProprietaryData.proprietaryKey(
+        InputProprietaryTypes.ASSET_PROOF,
+      );
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
+      keyPairs.push(new KeyPair(key, this.explicitAssetProof));
+    }
+
+    if (this.blindedIssuance !== undefined) {
+      const keyData = ProprietaryData.proprietaryKey(
+        InputProprietaryTypes.BLINDED_ISSUANCE,
+      );
+      const key = new Key(InputTypes.PROPRIETARY, keyData);
+      const value = Buffer.of(this.blindedIssuance ? 0x01 : 0x00);
+      keyPairs.push(new KeyPair(key, value));
     }
 
     if (this.proprietaryData! && this.proprietaryData!.length > 0) {

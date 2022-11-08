@@ -54,6 +54,9 @@ class ElementsValue {
     }
     return (0, bufferutils_1.readUInt64LE)(reverseWithoutMutate(this.value), 0);
   }
+  get isConfidential() {
+    return this.prefix !== ElementsValue.UNCONFIDENTIAL_PREFIX;
+  }
 }
 exports.ElementsValue = ElementsValue;
 ElementsValue.UNCONFIDENTIAL_PREFIX = 0x01;

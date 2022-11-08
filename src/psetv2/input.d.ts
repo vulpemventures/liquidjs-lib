@@ -51,6 +51,11 @@ export declare class PsetInput {
     utxoRangeProof?: Buffer;
     issuanceBlindValueProof?: Buffer;
     issuanceBlindInflationKeysProof?: Buffer;
+    explicitValue?: number;
+    explicitValueProof?: Buffer;
+    explicitAsset?: Buffer;
+    explicitAssetProof?: Buffer;
+    blindedIssuance?: boolean;
     proprietaryData?: ProprietaryData[];
     unknowns?: KeyPair[];
     constructor(previousTxid?: Buffer, previousTxIndex?: number, sequence?: number);
@@ -61,7 +66,7 @@ export declare class PsetInput {
     isFinalized(): boolean;
     isTaproot(): boolean;
     getIssuanceAssetHash(): Buffer | undefined;
-    getIssuanceInflationKeysHash(blindedIssuance: boolean): Buffer | undefined;
+    getIssuanceInflationKeysHash(): Buffer | undefined;
     getUtxo(): Output | undefined;
     toBuffer(): Buffer;
     private getKeyPairs;

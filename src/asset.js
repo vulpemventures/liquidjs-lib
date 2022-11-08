@@ -48,6 +48,9 @@ class AssetHash {
   get bytesWithoutPrefix() {
     return this.value;
   }
+  get isConfidential() {
+    return this.prefix !== AssetHash.UNCONFIDENTIAL_PREFIX;
+  }
 }
 exports.AssetHash = AssetHash;
 AssetHash.UNCONFIDENTIAL_PREFIX = 0x01;

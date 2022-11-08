@@ -59,6 +59,10 @@ export class AssetHash {
   get bytesWithoutPrefix(): Buffer {
     return this.value;
   }
+
+  get isConfidential(): boolean {
+    return this.prefix !== AssetHash.UNCONFIDENTIAL_PREFIX;
+  }
 }
 
 function reverseWithoutMutate(buf: Buffer): Buffer {

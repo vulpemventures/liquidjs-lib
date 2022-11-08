@@ -50,6 +50,18 @@ const asset_1 = require('../asset');
 const issuance_1 = require('../issuance');
 const creator_1 = require('./creator');
 const bscript = __importStar(require('../script'));
+function processOutputDestination(dest) {
+  if (typeof dest === 'string') {
+    const script = (0, address_1.toOutputScript)(dest);
+    if ((0, address_1.isConfidential)(dest))
+      return {
+        script,
+        blindingPublicKey: (0, address_1.fromConfidential)(dest).blindingKey,
+      };
+    return { script };
+  }
+  return dest;
+}
 class Updater {
   constructor(pset) {
     pset.sanityCheck();
@@ -93,6 +105,20 @@ class Updater {
         this.addInIssuance(inputIndex, input.issaunceOpts);
       if (input.reissuanceOpts)
         this.addInReissuance(inputIndex, input.reissuanceOpts);
+      if (input.explicitAsset) {
+        this.addInExplicitAsset(
+          inputIndex,
+          input.explicitAsset,
+          input.explicitAssetProof ?? Buffer.alloc(0),
+        );
+      }
+      if (input.explicitValue) {
+        this.addInExplicitValue(
+          inputIndex,
+          input.explicitValue,
+          input.explicitValueProof ?? Buffer.alloc(0),
+        );
+      }
     });
     pset.sanityCheck();
     this.pset.globals = pset.globals;
@@ -120,9 +146,7 @@ class Updater {
     return this;
   }
   addInNonWitnessUtxo(inIndex, nonWitnessUtxo) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     const txid = nonWitnessUtxo.getHash(false);
     if (!txid.equals(pset.inputs[inIndex].previousTxid)) {
@@ -136,11 +160,10 @@ class Updater {
     return this;
   }
   addInWitnessUtxo(inIndex, witnessUtxo) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     pset.inputs[inIndex].witnessUtxo = witnessUtxo;
+    pset.inputs[inIndex].utxoRangeProof = witnessUtxo.rangeProof;
     pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
@@ -148,9 +171,7 @@ class Updater {
     return this;
   }
   addInRedeemScript(inIndex, redeemScript) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     pset.inputs[inIndex].redeemScript = redeemScript;
     pset.sanityCheck();
@@ -160,9 +181,7 @@ class Updater {
     return this;
   }
   addInWitnessScript(inIndex, witnessScript) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     pset.inputs[inIndex].witnessScript = witnessScript;
     pset.sanityCheck();
@@ -172,9 +191,7 @@ class Updater {
     return this;
   }
   addInBIP32Derivation(inIndex, d) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid pubkey length');
     }
@@ -197,9 +214,7 @@ class Updater {
     return this;
   }
   addInSighashType(inIndex, sighashType) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (sighashType < 0) {
       throw new Error('Invalid sighash type');
     }
@@ -212,9 +227,7 @@ class Updater {
     return this;
   }
   addInUtxoRangeProof(inIndex, proof) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     pset.inputs[inIndex].utxoRangeProof = proof;
     pset.sanityCheck();
@@ -238,6 +251,8 @@ class Updater {
     pset.inputs[inIndex].issuanceInflationKeys = tokenAmount;
     pset.inputs[inIndex].issuanceAssetEntropy = issuance.assetEntropy;
     pset.inputs[inIndex].issuanceBlindingNonce = issuance.assetBlindingNonce;
+    pset.inputs[inIndex].blindedIssuance =
+      args.blindedIssuance !== undefined ? args.blindedIssuance : true;
     const entropy = (0, issuance_1.generateEntropy)(
       {
         txHash: pset.inputs[inIndex].previousTxid,
@@ -249,24 +264,15 @@ class Updater {
       const issuedAsset = asset_1.AssetHash.fromBytes(
         (0, issuance_1.calculateAsset)(entropy),
       ).hex;
-      let blinderIndex;
-      let blindingPublicKey;
-      if (
-        args.assetAddress &&
-        (0, address_1.isConfidential)(args.assetAddress)
-      ) {
-        blinderIndex = inIndex;
-        blindingPublicKey = (0, address_1.fromConfidential)(
-          args.assetAddress,
-        ).blindingKey;
-      }
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.assetAddress,
+      );
       const output = new creator_1.CreatorOutput(
         issuedAsset,
         assetAmount,
-        // Why this should be undefined? should'nt be always be mandatory?
-        (0, address_1.toOutputScript)(args.assetAddress),
+        script,
         blindingPublicKey,
-        blinderIndex,
+        blindingPublicKey ? inIndex : undefined,
       );
       pset.addOutput(output.toPartialOutput());
     }
@@ -274,23 +280,15 @@ class Updater {
       const reissuanceToken = asset_1.AssetHash.fromBytes(
         (0, issuance_1.calculateReissuanceToken)(entropy, args.blindedIssuance),
       ).hex;
-      let blinderIndex;
-      let blindingPublicKey;
-      if (
-        args.tokenAddress &&
-        (0, address_1.isConfidential)(args.tokenAddress)
-      ) {
-        blinderIndex = inIndex;
-        blindingPublicKey = (0, address_1.fromConfidential)(
-          args.tokenAddress,
-        ).blindingKey;
-      }
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.tokenAddress,
+      );
       const output = new creator_1.CreatorOutput(
         reissuanceToken,
         tokenAmount,
-        (0, address_1.toOutputScript)(args.tokenAddress),
+        script,
         blindingPublicKey,
-        blinderIndex,
+        blindingPublicKey ? inIndex : undefined,
       );
       pset.addOutput(output.toPartialOutput());
     }
@@ -322,28 +320,32 @@ class Updater {
     pset.inputs[inIndex].issuanceBlindingNonce = blindingNonce;
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = 0;
-    const assetBlindingPublicKey = (0, address_1.fromConfidential)(
-      args.assetAddress,
-    ).blindingKey;
-    const assetOutput = new creator_1.CreatorOutput(
-      asset,
-      args.assetAmount,
-      (0, address_1.toOutputScript)(args.assetAddress),
-      assetBlindingPublicKey,
-      inIndex,
-    );
-    const tokenBlindingPublicKey = (0, address_1.fromConfidential)(
-      args.tokenAddress,
-    ).blindingKey;
-    const tokenOutput = new creator_1.CreatorOutput(
-      reissuanceToken,
-      args.tokenAmount,
-      (0, address_1.toOutputScript)(args.tokenAddress),
-      tokenBlindingPublicKey,
-      inIndex,
-    );
-    pset.addOutput(assetOutput.toPartialOutput());
-    pset.addOutput(tokenOutput.toPartialOutput());
+    if (args.assetAddress) {
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.assetAddress,
+      );
+      const assetOutput = new creator_1.CreatorOutput(
+        asset,
+        args.assetAmount,
+        script,
+        blindingPublicKey,
+        blindingPublicKey ? inIndex : undefined,
+      );
+      pset.addOutput(assetOutput.toPartialOutput());
+    }
+    if (args.tokenAddress) {
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.tokenAddress,
+      );
+      const tokenOutput = new creator_1.CreatorOutput(
+        reissuanceToken,
+        args.tokenAmount,
+        script,
+        blindingPublicKey,
+        blindingPublicKey ? inIndex : undefined,
+      );
+      pset.addOutput(tokenOutput.toPartialOutput());
+    }
     pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
@@ -351,9 +353,7 @@ class Updater {
     return this;
   }
   addInPartialSignature(inIndex, ps, validator) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     // ensure the pubkey and signature are valid
     validatePartialSignature(ps);
     // check for duplicates
@@ -383,9 +383,7 @@ class Updater {
     return this;
   }
   addInTimeLocktime(inIndex, locktime) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (locktime < 0) {
       throw new Error('Invalid required time locktime');
     }
@@ -398,9 +396,7 @@ class Updater {
     return this;
   }
   addInHeightLocktime(inIndex, locktime) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (locktime < 0) {
       throw new Error('Invalid required height locktime');
     }
@@ -413,9 +409,7 @@ class Updater {
     return this;
   }
   addInTapKeySig(inIndex, sig, genesisBlockHash, validator) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (sig.length !== 64 && sig.length !== 65) {
       throw new Error('Invalid taproot key signature length');
     }
@@ -447,9 +441,7 @@ class Updater {
     return this;
   }
   addInTapScriptSig(inIndex, sig, genesisBlockHash, validator) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (sig.pubkey.length !== 32) {
       throw new Error('Invalid xonly pubkey length');
     }
@@ -487,9 +479,7 @@ class Updater {
     return this;
   }
   addInTapLeafScript(inIndex, tapLeafScript) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     if (!pset.inputs[inIndex].tapLeafScript) {
       pset.inputs[inIndex].tapLeafScript = [];
@@ -502,9 +492,7 @@ class Updater {
     return this;
   }
   addInTapBIP32Derivation(inIndex, d) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid input taproot pubkey length');
     }
@@ -527,9 +515,7 @@ class Updater {
     return this;
   }
   addInTapInternalKey(inIndex, tapInternalKey) {
-    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (tapInternalKey.length !== 32) {
       throw new Error('Invalid taproot internal key length');
     }
@@ -548,9 +534,7 @@ class Updater {
     return this;
   }
   addInTapMerkleRoot(inIndex, tapMerkleRoot) {
-    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (tapMerkleRoot.length !== 32) {
       throw new Error('Invalid taproot merkle root length');
     }
@@ -568,10 +552,30 @@ class Updater {
     this.pset.outputs = pset.outputs;
     return this;
   }
+  addInExplicitValue(inIndex, explicitValue, explicitValueProof) {
+    this.validateInputIndex(inIndex);
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].explicitValue = explicitValue;
+    pset.inputs[inIndex].explicitValueProof = explicitValueProof;
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+    return this;
+  }
+  addInExplicitAsset(inIndex, explicitAsset, explicitAssetProof) {
+    this.validateInputIndex(inIndex);
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].explicitAsset = explicitAsset;
+    pset.inputs[inIndex].explicitAssetProof = explicitAssetProof;
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+    return this;
+  }
   addOutBIP32Derivation(outIndex, d) {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid pubkey length');
     }
@@ -594,9 +598,7 @@ class Updater {
     return this;
   }
   addOutRedeemScript(outIndex, redeemScript) {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
     const pset = this.pset.copy();
     pset.outputs[outIndex].redeemScript = redeemScript;
     pset.sanityCheck();
@@ -606,9 +608,7 @@ class Updater {
     return this;
   }
   addOutWitnessScript(outIndex, witnessScript) {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
     const pset = this.pset.copy();
     pset.outputs[outIndex].witnessScript = witnessScript;
     pset.sanityCheck();
@@ -618,9 +618,7 @@ class Updater {
     return this;
   }
   addOutTapInternalKey(outIndex, tapInternalKey) {
-    if (outIndex < 0 || outIndex > this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
     if (tapInternalKey.length !== 32) {
       throw new Error('Invalid taproot internal key length');
     }
@@ -639,9 +637,7 @@ class Updater {
     return this;
   }
   addOutTapTree(outIndex, tapTree) {
-    if (outIndex < 0 || outIndex > this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
     if (this.pset.outputs[outIndex].tapTree) {
       throw new Error('Duplicated taproot tree');
     }
@@ -654,9 +650,7 @@ class Updater {
     return this;
   }
   addOutTapBIP32Derivation(outIndex, d) {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid output taproot pubkey length');
     }
@@ -679,18 +673,14 @@ class Updater {
     return this;
   }
   validateIssuanceInput(inIndex) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const input = this.pset.inputs[inIndex];
     if (input.issuanceAssetEntropy && input.issuanceAssetEntropy.length > 0) {
       throw new Error('Input ' + inIndex + ' already has an issuance');
     }
   }
   validateReissuanceInput(inIndex) {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const input = this.pset.inputs[inIndex];
     if (input.issuanceAssetEntropy && input.issuanceAssetEntropy.length > 0) {
       throw new Error(`Input ${inIndex} already has an issuance`);
@@ -703,6 +693,16 @@ class Updater {
       throw new Error('Input prevout (non-)witness utxo must be confidential');
     }
   }
+  validateOutputIndex(outIndex) {
+    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
+      throw new Error('Output index out of range');
+    }
+  }
+  validateInputIndex(inIndex) {
+    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
+    }
+  }
 }
 exports.Updater = Updater;
 function validateAddInIssuanceArgs(args) {
@@ -712,23 +712,21 @@ function validateAddInIssuanceArgs(args) {
     throw new Error('Either asset or token amounts must be a positive number');
   }
   if (assetAmount > 0) {
-    if (!args.assetAddress || args.assetAddress.length === 0) {
+    if (!args.assetAddress) {
       throw new Error(
         'Asset address must be defined if asset amount is non-zero',
       );
     }
   }
   if (tokenAmount > 0) {
-    if (!args.tokenAddress || args.tokenAddress.length === 0) {
+    if (!args.tokenAddress) {
       throw new Error(
         'Token address must be defined if token amount is non-zero',
       );
     }
   }
-  if (!matchAddressesType(args.assetAddress, args.tokenAddress)) {
-    throw new Error(
-      'Asset and token addresses must be of same network and both unconfidential or confidential',
-    );
+  if (!matchAddressesNetworkType(args.assetAddress, args.tokenAddress)) {
+    throw new Error('Asset and token addresses must be of same network');
   }
 }
 function validateAddInReissuanceArgs(args) {
@@ -752,34 +750,26 @@ function validateAddInReissuanceArgs(args) {
   if (args.tokenAmount <= 0) {
     throw new Error('Token amount must be a positive number');
   }
-  if (args.assetAddress.length === 0) {
+  if (!args.assetAddress) {
     throw new Error('Missing asset address');
   }
-  if (args.tokenAddress.length === 0) {
+  if (!args.assetAddress) {
     throw new Error('Missing token address');
   }
-  if (!matchAddressesType(args.assetAddress, args.tokenAddress)) {
+  if (!matchAddressesNetworkType(args.assetAddress, args.tokenAddress)) {
     throw new Error(
       'Asset and token addresses must be both of same network and both confidential',
     );
   }
-  if (!(0, address_1.isConfidential)(args.assetAddress)) {
-    throw new Error('Asset and token addresses must be both confidential');
-  }
 }
-function matchAddressesType(addrA, addrB) {
-  if (!addrA || addrA.length === 0 || !addrB || addrB.length === 0) {
+function matchAddressesNetworkType(addrA, addrB) {
+  if (!addrA || !addrB) {
     return true;
   }
-  const netA = (0, address_1.getNetwork)(addrA);
-  const netB = (0, address_1.getNetwork)(addrB);
-  if (netA.name !== netB.name) {
-    return false;
-  }
-  const isConfidentialA = (0, address_1.isConfidential)(addrA);
-  const isConfidentialB = (0, address_1.isConfidential)(addrB);
-  if (isConfidentialA !== isConfidentialB) {
-    return false;
+  if (typeof addrA === 'string' && typeof addrB === 'string') {
+    const netA = (0, address_1.getNetwork)(addrA);
+    const netB = (0, address_1.getNetwork)(addrB);
+    return netA.name === netB.name;
   }
   return true;
 }

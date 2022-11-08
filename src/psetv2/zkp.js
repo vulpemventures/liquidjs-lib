@@ -217,7 +217,11 @@ class ZKPGenerator {
       }
       if (input.issuanceInflationKeys > 0) {
         const token = input.issuanceInflationKeys.toString(10);
-        const asset = input.getIssuanceInflationKeysHash(true);
+        const asset = input.getIssuanceInflationKeysHash();
+        if (!asset)
+          throw new Error(
+            'something went wrong during the inflation token hash computation',
+          );
         const blinder = (0, utils_1.randomBytes)(this.opts);
         const assetCommit = this.confidential.assetCommitment(
           asset,
@@ -257,13 +261,10 @@ class ZKPGenerator {
       return blindingArgs;
     });
   }
-  blindOutputs(pset, keysGenerator, outIndexes, blindedIssuances) {
+  blindOutputs(pset, keysGenerator, outIndexes) {
     validatePset(pset);
     if (outIndexes) {
       validateOutIndexes(pset, outIndexes);
-    }
-    if (blindedIssuances && blindedIssuances.length > 0) {
-      validateBlindedIssuances(pset, blindedIssuances);
     }
     const outputIndexes =
       outIndexes && outIndexes.length > 0
@@ -272,10 +273,7 @@ class ZKPGenerator {
             (arr, out, i) => (out.needsBlinding() && arr.push(i), arr),
             [],
           );
-    const { assets, assetBlinders } = this.getInputAssetsAndBlinders(
-      pset,
-      blindedIssuances,
-    );
+    const { assets, assetBlinders } = this.getInputAssetsAndBlinders(pset);
     return outputIndexes.map((i) => {
       const output = pset.outputs[i];
       const assetBlinder = (0, utils_1.randomBytes)(this.opts);
@@ -394,34 +392,33 @@ class ZKPGenerator {
     }
     throw new Error('Could not unblind output with any blinding key');
   }
-  getInputAssetsAndBlinders(pset, issuanceBlindingArgs) {
-    const unblindedIns = this.maybeUnblindInUtxos(pset);
-    pset.inputs.forEach((input, i) => {
-      if (input.hasIssuance() || input.hasReissuance()) {
-        unblindedIns.push({
-          value: '',
-          valueBlindingFactor: Buffer.from([]),
-          asset: input.getIssuanceAssetHash(),
-          assetBlindingFactor: transaction_1.ZERO,
-        });
-        if (input.issuanceInflationKeys > 0) {
-          const isBlindedIssuance =
-            issuanceBlindingArgs &&
-            issuanceBlindingArgs.find(({ index }) => index === i) !== undefined;
-          unblindedIns.push({
-            value: '',
-            valueBlindingFactor: Buffer.from([]),
-            asset: input.getIssuanceInflationKeysHash(isBlindedIssuance),
-            assetBlindingFactor: transaction_1.ZERO,
-          });
-        }
-      }
-    });
+  getInputAssetsAndBlinders(pset) {
     const assets = [];
     const assetBlinders = [];
-    unblindedIns.forEach(({ asset, assetBlindingFactor }) => {
-      assets.push(asset);
-      assetBlinders.push(assetBlindingFactor);
+    const unblindedIns = this.maybeUnblindInUtxos(pset);
+    for (const unblindedIn of unblindedIns) {
+      assets.push(unblindedIn.asset);
+      assetBlinders.push(unblindedIn.assetBlindingFactor);
+    }
+    pset.inputs.forEach((input, i) => {
+      if (input.hasIssuance() || input.hasReissuance()) {
+        const issAssetHash = input.getIssuanceAssetHash();
+        if (!issAssetHash)
+          throw new Error(
+            `something went wrong while getting the issuance asset hash on input #${i}`,
+          );
+        assets.push(issAssetHash);
+        assetBlinders.push(transaction_1.ZERO);
+        if (!input.hasReissuance() && input.issuanceInflationKeys > 0) {
+          const inflationTokenAssetHash = input.getIssuanceInflationKeysHash();
+          if (!inflationTokenAssetHash)
+            throw new Error(
+              `something went wrong computing the issuance inflation keys hash on input #${i}`,
+            );
+          assets.push(inflationTokenAssetHash);
+          assetBlinders.push(transaction_1.ZERO);
+        }
+      }
     });
     return { assets, assetBlinders };
   }
@@ -513,13 +510,4 @@ function validateBlindingKeysByIndex(pset, keys) {
       throw new Error('Invalid private blinding key length for input ' + i);
     }
   });
-}
-function validateBlindedIssuances(pset, blindedIssuances) {
-  if (blindedIssuances.length > 0) {
-    blindedIssuances.forEach((issuance) => {
-      if (issuance.index < 0 || issuance.index >= pset.globals.inputCount) {
-        throw new Error('Input index of blinded issuance is out of range');
-      }
-    });
-  }
 }

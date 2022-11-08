@@ -109,6 +109,16 @@ var InputProprietaryTypes;
   InputProprietaryTypes[
     (InputProprietaryTypes['ISSUANCE_BLIND_INFLATION_KEYS_PROOF'] = 16)
   ] = 'ISSUANCE_BLIND_INFLATION_KEYS_PROOF';
+  InputProprietaryTypes[(InputProprietaryTypes['EXPLICIT_VALUE'] = 17)] =
+    'EXPLICIT_VALUE';
+  InputProprietaryTypes[(InputProprietaryTypes['VALUE_PROOF'] = 18)] =
+    'VALUE_PROOF';
+  InputProprietaryTypes[(InputProprietaryTypes['EXPLICIT_ASSET'] = 19)] =
+    'EXPLICIT_ASSET';
+  InputProprietaryTypes[(InputProprietaryTypes['ASSET_PROOF'] = 20)] =
+    'ASSET_PROOF';
+  InputProprietaryTypes[(InputProprietaryTypes['BLINDED_ISSUANCE'] = 21)] =
+    'BLINDED_ISSUANCE';
 })(
   (InputProprietaryTypes =
     exports.InputProprietaryTypes || (exports.InputProprietaryTypes = {})),

@@ -28,21 +28,39 @@ import {
 import { Pset, ValidateSigFunction } from './pset';
 import * as bscript from '../script';
 
+// address or script | blinding key pair
+type OutputDestination =
+  | string
+  | { script: Buffer; blindingPublicKey?: Buffer };
+
+function processOutputDestination(dest: OutputDestination): {
+  script: Buffer;
+  blindingPublicKey?: Buffer;
+} {
+  if (typeof dest === 'string') {
+    const script = toOutputScript(dest);
+    if (isConfidential(dest))
+      return { script, blindingPublicKey: fromConfidential(dest).blindingKey };
+    return { script };
+  }
+  return dest;
+}
+
 export interface IssuanceOpts {
   assetAmount?: number;
   tokenAmount?: number;
   contract?: IssuanceContract;
-  assetAddress?: string;
-  tokenAddress?: string;
-  blindedIssuance: boolean;
+  assetAddress?: OutputDestination;
+  tokenAddress?: OutputDestination;
+  blindedIssuance?: boolean;
 }
 
 export interface ReissuanceOpts {
   entropy: string | Buffer;
   assetAmount: number;
-  assetAddress: string;
+  assetAddress: OutputDestination;
   tokenAmount: number;
-  tokenAddress: string;
+  tokenAddress: OutputDestination;
   tokenAssetBlinder: string | Buffer;
 }
 
@@ -60,6 +78,10 @@ export interface UpdaterInput {
   tapMerkleRoot?: TapMerkleRoot;
   issaunceOpts?: IssuanceOpts;
   reissuanceOpts?: ReissuanceOpts;
+  explicitValue?: number;
+  explicitValueProof?: Buffer;
+  explicitAsset?: Buffer;
+  explicitAssetProof?: Buffer;
 }
 
 export interface UpdaterOutput {
@@ -128,6 +150,22 @@ export class Updater {
 
       if (input.reissuanceOpts)
         this.addInReissuance(inputIndex, input.reissuanceOpts);
+
+      if (input.explicitAsset) {
+        this.addInExplicitAsset(
+          inputIndex,
+          input.explicitAsset,
+          input.explicitAssetProof ?? Buffer.alloc(0),
+        );
+      }
+
+      if (input.explicitValue) {
+        this.addInExplicitValue(
+          inputIndex,
+          input.explicitValue,
+          input.explicitValueProof ?? Buffer.alloc(0),
+        );
+      }
     });
 
     pset.sanityCheck();
@@ -164,9 +202,7 @@ export class Updater {
   }
 
   addInNonWitnessUtxo(inIndex: number, nonWitnessUtxo: Transaction): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     const txid = nonWitnessUtxo.getHash(false);
     if (!txid.equals(pset.inputs[inIndex].previousTxid)) {
@@ -183,11 +219,10 @@ export class Updater {
   }
 
   addInWitnessUtxo(inIndex: number, witnessUtxo: TxOutput): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     pset.inputs[inIndex].witnessUtxo = witnessUtxo;
+    pset.inputs[inIndex].utxoRangeProof = witnessUtxo.rangeProof;
     pset.sanityCheck();
 
     this.pset.globals = pset.globals;
@@ -198,9 +233,7 @@ export class Updater {
   }
 
   addInRedeemScript(inIndex: number, redeemScript: Buffer): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     const pset = this.pset.copy();
     pset.inputs[inIndex].redeemScript = redeemScript;
     pset.sanityCheck();
@@ -213,9 +246,8 @@ export class Updater {
   }
 
   addInWitnessScript(inIndex: number, witnessScript: Buffer): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     const pset = this.pset.copy();
     pset.inputs[inIndex].witnessScript = witnessScript;
     pset.sanityCheck();
@@ -228,9 +260,7 @@ export class Updater {
   }
 
   addInBIP32Derivation(inIndex: number, d: Bip32Derivation): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid pubkey length');
@@ -258,9 +288,8 @@ export class Updater {
   }
 
   addInSighashType(inIndex: number, sighashType: number): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (sighashType < 0) {
       throw new Error('Invalid sighash type');
     }
@@ -277,9 +306,7 @@ export class Updater {
   }
 
   addInUtxoRangeProof(inIndex: number, proof: Buffer): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     const pset = this.pset.copy();
     pset.inputs[inIndex].utxoRangeProof = proof;
@@ -306,6 +333,8 @@ export class Updater {
     pset.inputs[inIndex].issuanceInflationKeys = tokenAmount;
     pset.inputs[inIndex].issuanceAssetEntropy = issuance.assetEntropy;
     pset.inputs[inIndex].issuanceBlindingNonce = issuance.assetBlindingNonce;
+    pset.inputs[inIndex].blindedIssuance =
+      args.blindedIssuance !== undefined ? args.blindedIssuance : true;
 
     const entropy = generateEntropy(
       {
@@ -317,21 +346,16 @@ export class Updater {
 
     if (assetAmount > 0) {
       const issuedAsset = AssetHash.fromBytes(calculateAsset(entropy)).hex;
-
-      let blinderIndex: number | undefined;
-      let blindingPublicKey: Buffer | undefined;
-      if (args.assetAddress && isConfidential(args.assetAddress)) {
-        blinderIndex = inIndex;
-        blindingPublicKey = fromConfidential(args.assetAddress).blindingKey;
-      }
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.assetAddress!,
+      );
 
       const output = new CreatorOutput(
         issuedAsset,
         assetAmount,
-        // Why this should be undefined? should'nt be always be mandatory?
-        toOutputScript(args.assetAddress!),
+        script,
         blindingPublicKey,
-        blinderIndex,
+        blindingPublicKey ? inIndex : undefined,
       );
       pset.addOutput(output.toPartialOutput());
     }
@@ -340,19 +364,16 @@ export class Updater {
       const reissuanceToken = AssetHash.fromBytes(
         calculateReissuanceToken(entropy, args.blindedIssuance),
       ).hex;
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.tokenAddress!,
+      );
 
-      let blinderIndex: number | undefined;
-      let blindingPublicKey: Buffer | undefined;
-      if (args.tokenAddress && isConfidential(args.tokenAddress)) {
-        blinderIndex = inIndex;
-        blindingPublicKey = fromConfidential(args.tokenAddress).blindingKey;
-      }
       const output = new CreatorOutput(
         reissuanceToken,
         tokenAmount,
-        toOutputScript(args.tokenAddress!),
+        script,
         blindingPublicKey,
-        blinderIndex,
+        blindingPublicKey ? inIndex : undefined,
       );
       pset.addOutput(output.toPartialOutput());
     }
@@ -390,29 +411,33 @@ export class Updater {
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = 0;
 
-    const assetBlindingPublicKey = fromConfidential(
-      args.assetAddress,
-    ).blindingKey;
-    const assetOutput = new CreatorOutput(
-      asset,
-      args.assetAmount,
-      toOutputScript(args.assetAddress),
-      assetBlindingPublicKey,
-      inIndex,
-    );
+    if (args.assetAddress) {
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.assetAddress,
+      );
+      const assetOutput = new CreatorOutput(
+        asset,
+        args.assetAmount,
+        script,
+        blindingPublicKey,
+        blindingPublicKey ? inIndex : undefined,
+      );
+      pset.addOutput(assetOutput.toPartialOutput());
+    }
 
-    const tokenBlindingPublicKey = fromConfidential(
-      args.tokenAddress,
-    ).blindingKey;
-    const tokenOutput = new CreatorOutput(
-      reissuanceToken,
-      args.tokenAmount,
-      toOutputScript(args.tokenAddress),
-      tokenBlindingPublicKey,
-      inIndex,
-    );
-    pset.addOutput(assetOutput.toPartialOutput());
-    pset.addOutput(tokenOutput.toPartialOutput());
+    if (args.tokenAddress) {
+      const { blindingPublicKey, script } = processOutputDestination(
+        args.tokenAddress,
+      );
+      const tokenOutput = new CreatorOutput(
+        reissuanceToken,
+        args.tokenAmount,
+        script,
+        blindingPublicKey,
+        blindingPublicKey ? inIndex : undefined,
+      );
+      pset.addOutput(tokenOutput.toPartialOutput());
+    }
 
     pset.sanityCheck();
 
@@ -428,9 +453,7 @@ export class Updater {
     ps: PartialSig,
     validator: ValidateSigFunction,
   ): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     // ensure the pubkey and signature are valid
     validatePartialSignature(ps);
@@ -469,9 +492,7 @@ export class Updater {
   }
 
   addInTimeLocktime(inIndex: number, locktime: number): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
     if (locktime < 0) {
       throw new Error('Invalid required time locktime');
     }
@@ -487,9 +508,8 @@ export class Updater {
   }
 
   addInHeightLocktime(inIndex: number, locktime: number): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (locktime < 0) {
       throw new Error('Invalid required height locktime');
     }
@@ -510,9 +530,8 @@ export class Updater {
     genesisBlockHash: Buffer,
     validator: ValidateSigFunction,
   ): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (sig.length !== 64 && sig.length !== 65) {
       throw new Error('Invalid taproot key signature length');
     }
@@ -556,9 +575,8 @@ export class Updater {
     genesisBlockHash: Buffer,
     validator: ValidateSigFunction,
   ): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (sig.pubkey.length !== 32) {
       throw new Error('Invalid xonly pubkey length');
     }
@@ -604,9 +622,7 @@ export class Updater {
   }
 
   addInTapLeafScript(inIndex: number, tapLeafScript: TapLeafScript): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     const pset = this.pset.copy();
     if (!pset.inputs[inIndex].tapLeafScript) {
@@ -623,9 +639,7 @@ export class Updater {
   }
 
   addInTapBIP32Derivation(inIndex: number, d: TapBip32Derivation): this {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid input taproot pubkey length');
@@ -653,9 +667,8 @@ export class Updater {
   }
 
   addInTapInternalKey(inIndex: number, tapInternalKey: TapInternalKey): this {
-    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (tapInternalKey.length !== 32) {
       throw new Error('Invalid taproot internal key length');
     }
@@ -678,9 +691,8 @@ export class Updater {
   }
 
   addInTapMerkleRoot(inIndex: number, tapMerkleRoot: TapMerkleRoot): this {
-    if (inIndex < 0 || inIndex > this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
+
     if (tapMerkleRoot.length !== 32) {
       throw new Error('Invalid taproot merkle root length');
     }
@@ -702,10 +714,45 @@ export class Updater {
     return this;
   }
 
+  addInExplicitValue(
+    inIndex: number,
+    explicitValue: number,
+    explicitValueProof: Buffer,
+  ): this {
+    this.validateInputIndex(inIndex);
+
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].explicitValue = explicitValue;
+    pset.inputs[inIndex].explicitValueProof = explicitValueProof;
+
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+
+    return this;
+  }
+
+  addInExplicitAsset(
+    inIndex: number,
+    explicitAsset: Buffer,
+    explicitAssetProof: Buffer,
+  ): this {
+    this.validateInputIndex(inIndex);
+
+    const pset = this.pset.copy();
+    pset.inputs[inIndex].explicitAsset = explicitAsset;
+    pset.inputs[inIndex].explicitAssetProof = explicitAssetProof;
+
+    pset.sanityCheck();
+    this.pset.globals = pset.globals;
+    this.pset.inputs = pset.inputs;
+    this.pset.outputs = pset.outputs;
+    return this;
+  }
+
   addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): this {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
 
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid pubkey length');
@@ -733,9 +780,8 @@ export class Updater {
   }
 
   addOutRedeemScript(outIndex: number, redeemScript: Buffer): this {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
+
     const pset = this.pset.copy();
     pset.outputs[outIndex].redeemScript = redeemScript;
     pset.sanityCheck();
@@ -748,9 +794,8 @@ export class Updater {
   }
 
   addOutWitnessScript(outIndex: number, witnessScript: Buffer): this {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
+
     const pset = this.pset.copy();
     pset.outputs[outIndex].witnessScript = witnessScript;
     pset.sanityCheck();
@@ -763,9 +808,8 @@ export class Updater {
   }
 
   addOutTapInternalKey(outIndex: number, tapInternalKey: TapInternalKey): this {
-    if (outIndex < 0 || outIndex > this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
+
     if (tapInternalKey.length !== 32) {
       throw new Error('Invalid taproot internal key length');
     }
@@ -788,9 +832,8 @@ export class Updater {
   }
 
   addOutTapTree(outIndex: number, tapTree: TapTree): this {
-    if (outIndex < 0 || outIndex > this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
+
     if (this.pset.outputs[outIndex].tapTree) {
       throw new Error('Duplicated taproot tree');
     }
@@ -807,9 +850,7 @@ export class Updater {
   }
 
   addOutTapBIP32Derivation(outIndex: number, d: TapBip32Derivation): this {
-    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
-      throw new Error('Output index out of range');
-    }
+    this.validateOutputIndex(outIndex);
 
     if (d.pubkey.length !== 33) {
       throw new Error('Invalid output taproot pubkey length');
@@ -837,23 +878,19 @@ export class Updater {
   }
 
   private validateIssuanceInput(inIndex: number): void {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     const input = this.pset.inputs[inIndex];
-    if (input.issuanceAssetEntropy! && input.issuanceAssetEntropy!.length > 0) {
+    if (input.issuanceAssetEntropy && input.issuanceAssetEntropy.length > 0) {
       throw new Error('Input ' + inIndex + ' already has an issuance');
     }
   }
 
   private validateReissuanceInput(inIndex: number): void {
-    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
-      throw new Error('Input index out of range');
-    }
+    this.validateInputIndex(inIndex);
 
     const input = this.pset.inputs[inIndex];
-    if (input.issuanceAssetEntropy! && input.issuanceAssetEntropy!.length > 0) {
+    if (input.issuanceAssetEntropy && input.issuanceAssetEntropy.length > 0) {
       throw new Error(`Input ${inIndex} already has an issuance`);
     }
     const prevout = input.getUtxo();
@@ -862,6 +899,18 @@ export class Updater {
     }
     if (prevout.nonce.length <= 1) {
       throw new Error('Input prevout (non-)witness utxo must be confidential');
+    }
+  }
+
+  private validateOutputIndex(outIndex: number): void {
+    if (outIndex < 0 || outIndex >= this.pset.globals.outputCount) {
+      throw new Error('Output index out of range');
+    }
+  }
+
+  private validateInputIndex(inIndex: number): void {
+    if (inIndex < 0 || inIndex >= this.pset.globals.inputCount) {
+      throw new Error('Input index out of range');
     }
   }
 }
@@ -874,24 +923,22 @@ function validateAddInIssuanceArgs(args: IssuanceOpts): void {
   }
 
   if (assetAmount > 0) {
-    if (!args.assetAddress || args.assetAddress!.length === 0) {
+    if (!args.assetAddress) {
       throw new Error(
         'Asset address must be defined if asset amount is non-zero',
       );
     }
   }
   if (tokenAmount > 0) {
-    if (!args.tokenAddress || args.tokenAddress!.length === 0) {
+    if (!args.tokenAddress) {
       throw new Error(
         'Token address must be defined if token amount is non-zero',
       );
     }
   }
 
-  if (!matchAddressesType(args.assetAddress, args.tokenAddress)) {
-    throw new Error(
-      'Asset and token addresses must be of same network and both unconfidential or confidential',
-    );
+  if (!matchAddressesNetworkType(args.assetAddress, args.tokenAddress)) {
+    throw new Error('Asset and token addresses must be of same network');
   }
 }
 
@@ -916,40 +963,33 @@ function validateAddInReissuanceArgs(args: ReissuanceOpts): void {
   if (args.tokenAmount <= 0) {
     throw new Error('Token amount must be a positive number');
   }
-  if (args.assetAddress.length === 0) {
+  if (!args.assetAddress) {
     throw new Error('Missing asset address');
   }
-  if (args.tokenAddress.length === 0) {
+  if (!args.assetAddress) {
     throw new Error('Missing token address');
   }
 
-  if (!matchAddressesType(args.assetAddress, args.tokenAddress)) {
+  if (!matchAddressesNetworkType(args.assetAddress, args.tokenAddress)) {
     throw new Error(
       'Asset and token addresses must be both of same network and both confidential',
     );
   }
-  if (!isConfidential(args.assetAddress)) {
-    throw new Error('Asset and token addresses must be both confidential');
-  }
 }
 
-function matchAddressesType(addrA?: string, addrB?: string): boolean {
-  if (!addrA || addrA!.length === 0 || !addrB || addrB!.length === 0) {
+function matchAddressesNetworkType(
+  addrA?: OutputDestination,
+  addrB?: OutputDestination,
+): boolean {
+  if (!addrA || !addrB) {
     return true;
   }
 
-  const netA = getNetwork(addrA);
-  const netB = getNetwork(addrB);
-  if (netA.name !== netB.name) {
-    return false;
+  if (typeof addrA === 'string' && typeof addrB === 'string') {
+    const netA = getNetwork(addrA);
+    const netB = getNetwork(addrB);
+    return netA.name === netB.name;
   }
-
-  const isConfidentialA = isConfidential(addrA);
-  const isConfidentialB = isConfidential(addrB);
-  if (isConfidentialA !== isConfidentialB) {
-    return false;
-  }
-
   return true;
 }
 

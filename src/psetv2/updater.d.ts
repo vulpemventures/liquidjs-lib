@@ -4,20 +4,24 @@ import { IssuanceContract } from '../issuance';
 import { Transaction } from '../transaction';
 import { Bip32Derivation, PartialSig, TapBip32Derivation, TapInternalKey, TapLeafScript, TapMerkleRoot, TapScriptSig, TapTree } from './interfaces';
 import { Pset, ValidateSigFunction } from './pset';
+declare type OutputDestination = string | {
+    script: Buffer;
+    blindingPublicKey?: Buffer;
+};
 export interface IssuanceOpts {
     assetAmount?: number;
     tokenAmount?: number;
     contract?: IssuanceContract;
-    assetAddress?: string;
-    tokenAddress?: string;
-    blindedIssuance: boolean;
+    assetAddress?: OutputDestination;
+    tokenAddress?: OutputDestination;
+    blindedIssuance?: boolean;
 }
 export interface ReissuanceOpts {
     entropy: string | Buffer;
     assetAmount: number;
-    assetAddress: string;
+    assetAddress: OutputDestination;
     tokenAmount: number;
-    tokenAddress: string;
+    tokenAddress: OutputDestination;
     tokenAssetBlinder: string | Buffer;
 }
 export interface UpdaterInput {
@@ -34,6 +38,10 @@ export interface UpdaterInput {
     tapMerkleRoot?: TapMerkleRoot;
     issaunceOpts?: IssuanceOpts;
     reissuanceOpts?: ReissuanceOpts;
+    explicitValue?: number;
+    explicitValueProof?: Buffer;
+    explicitAsset?: Buffer;
+    explicitAssetProof?: Buffer;
 }
 export interface UpdaterOutput {
     asset: string;
@@ -65,6 +73,8 @@ export declare class Updater {
     addInTapBIP32Derivation(inIndex: number, d: TapBip32Derivation): this;
     addInTapInternalKey(inIndex: number, tapInternalKey: TapInternalKey): this;
     addInTapMerkleRoot(inIndex: number, tapMerkleRoot: TapMerkleRoot): this;
+    addInExplicitValue(inIndex: number, explicitValue: number, explicitValueProof: Buffer): this;
+    addInExplicitAsset(inIndex: number, explicitAsset: Buffer, explicitAssetProof: Buffer): this;
     addOutBIP32Derivation(outIndex: number, d: Bip32Derivation): this;
     addOutRedeemScript(outIndex: number, redeemScript: Buffer): this;
     addOutWitnessScript(outIndex: number, witnessScript: Buffer): this;
@@ -73,4 +83,7 @@ export declare class Updater {
     addOutTapBIP32Derivation(outIndex: number, d: TapBip32Derivation): this;
     private validateIssuanceInput;
     private validateReissuanceInput;
+    private validateOutputIndex;
+    private validateInputIndex;
 }
+export {};
