@@ -554,9 +554,7 @@ export class PsetInput {
                 if (kp.value.length !== 1) {
                   throw new Error('invalid blinded issuance length');
                 }
-                input.blindedIssuance = kp.value.equals(Buffer.of(0x01))
-                  ? true
-                  : false;
+                input.blindedIssuance = kp.value.equals(Buffer.of(0x01));
                 break;
               default:
                 if (!input.proprietaryData) {
