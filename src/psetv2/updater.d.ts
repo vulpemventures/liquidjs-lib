@@ -32,6 +32,7 @@ export interface UpdaterInput {
     timeLocktime?: number;
     witnessUtxo?: TxOutput;
     nonWitnessUtxo?: Transaction;
+    witnessScript?: Buffer;
     sighashType?: number;
     tapInternalKey?: TapInternalKey;
     tapLeafScript?: TapLeafScript;

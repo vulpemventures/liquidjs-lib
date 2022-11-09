@@ -86,6 +86,8 @@ class Updater {
       if (input.witnessUtxo && input.witnessUtxo.rangeProof) {
         this.addInUtxoRangeProof(inputIndex, input.witnessUtxo.rangeProof);
       }
+      if (input.witnessScript)
+        this.addInWitnessScript(inputIndex, input.witnessScript);
       if (input.nonWitnessUtxo)
         this.addInNonWitnessUtxo(inputIndex, input.nonWitnessUtxo);
       if (input.nonWitnessUtxo && input.nonWitnessUtxo.outs[input.txIndex]) {
