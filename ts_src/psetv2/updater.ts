@@ -367,7 +367,7 @@ export class Updater {
 
     if (tokenAmount > 0) {
       const reissuanceToken = AssetHash.fromBytes(
-        calculateReissuanceToken(entropy, args.blindedIssuance),
+        calculateReissuanceToken(entropy, args.blindedIssuance ?? true),
       ).hex;
       const { blindingPublicKey, script } = processOutputDestination(
         args.tokenAddress!,

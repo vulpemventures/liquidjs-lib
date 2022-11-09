@@ -350,7 +350,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     );
     blinder.blindLast({ outputBlindingArgs });
     const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
-    console.log(rawTx.toHex());
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -629,9 +628,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     await regtestUtils.broadcast(reissuanceTx.toHex());
   });
 
-  it('can create (and broadcast via 3PBP) an unconfidential issuance and reissue with conf and unconf outputs', async () => {
+  it('can create (and broadcast via 3PBP) an unconfidential issuance and reissue (unconfidential) with confidential token output', async () => {
     const alice = createPayment('p2wpkh', undefined, undefined, true);
-    // const bob = createPayment('p2wpkh');
+    const bob = createPayment('p2wpkh');
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
 
     const inputs = [aliceInputData].map(({ hash, index }) => {
@@ -698,8 +697,8 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         lbtc,
         99998700,
         alice.payment.output,
-        // alice.payment.blindkey,
-        // 0,
+        alice.payment.blindkey,
+        0,
       ),
       new CreatorOutput(lbtc, 700),
     ];
@@ -716,7 +715,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInReissuance(1, {
       entropy: assetEntropy,
       assetAmount: 1000,
-      assetAddress: alice.payment.confidentialAddress!,
+      assetAddress: bob.payment.address!,
       tokenAmount: 1,
       tokenAddress: alice.payment.confidentialAddress!,
       tokenAssetBlinder: outputBlindingArgs[2].assetBlinder,
@@ -734,12 +733,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     );
 
     const reissuanceownedInputs = zkpGenerator2.unblindInputs(reissuancePset);
-    const reissuanceBlindingArgs = zkpGenerator2.blindIssuances(
-      reissuancePset,
-      {
-        1: alice.blindingKeys[0],
-      },
-    );
 
     const reissuanceOutputBlindingArgs = zkpGenerator2.blindOutputs(
       reissuancePset,
@@ -753,7 +746,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator2,
     );
     blinder.blindLast({
-      issuanceBlindingArgs: reissuanceBlindingArgs,
       outputBlindingArgs: reissuanceOutputBlindingArgs,
     });
 
@@ -762,7 +754,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       [alice.keys, alice.keys],
       Transaction.SIGHASH_ALL,
     );
-    console.log(reissuanceTx.toHex());
     await regtestUtils.broadcast(reissuanceTx.toHex());
   });
 

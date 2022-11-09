@@ -280,7 +280,10 @@ class Updater {
     }
     if (tokenAmount > 0) {
       const reissuanceToken = asset_1.AssetHash.fromBytes(
-        (0, issuance_1.calculateReissuanceToken)(entropy, args.blindedIssuance),
+        (0, issuance_1.calculateReissuanceToken)(
+          entropy,
+          args.blindedIssuance ?? true,
+        ),
       ).hex;
       const { blindingPublicKey, script } = processOutputDestination(
         args.tokenAddress,
@@ -316,12 +319,18 @@ class Updater {
       (0, issuance_1.calculateAsset)(entropy),
     ).hex;
     const reissuanceToken = asset_1.AssetHash.fromBytes(
-      (0, issuance_1.calculateReissuanceToken)(entropy, true),
+      (0, issuance_1.calculateReissuanceToken)(
+        entropy,
+        args.initialIssuanceBlinded ?? true,
+      ),
     ).hex;
     pset.inputs[inIndex].issuanceAssetEntropy = entropy;
     pset.inputs[inIndex].issuanceBlindingNonce = blindingNonce;
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = 0;
+    if (args.initialIssuanceBlinded !== undefined) {
+      pset.inputs[inIndex].blindedIssuance = args.initialIssuanceBlinded;
+    }
     if (args.assetAddress) {
       const { blindingPublicKey, script } = processOutputDestination(
         args.assetAddress,
