@@ -62,6 +62,7 @@ export interface ReissuanceOpts {
   tokenAmount: number;
   tokenAddress: OutputDestination;
   tokenAssetBlinder: string | Buffer;
+  initialIssuanceBlinded?: boolean;
 }
 
 export interface UpdaterInput {
@@ -407,13 +408,17 @@ export class Updater {
         : args.tokenAssetBlinder;
     const asset = AssetHash.fromBytes(calculateAsset(entropy)).hex;
     const reissuanceToken = AssetHash.fromBytes(
-      calculateReissuanceToken(entropy, true),
+      calculateReissuanceToken(entropy, args.initialIssuanceBlinded ?? true),
     ).hex;
 
     pset.inputs[inIndex].issuanceAssetEntropy = entropy;
     pset.inputs[inIndex].issuanceBlindingNonce = blindingNonce;
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = 0;
+
+    if (args.initialIssuanceBlinded !== undefined) {
+      pset.inputs[inIndex].blindedIssuance = args.initialIssuanceBlinded;
+    }
 
     if (args.assetAddress) {
       const { blindingPublicKey, script } = processOutputDestination(
