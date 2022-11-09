@@ -72,6 +72,7 @@ export interface UpdaterInput {
   timeLocktime?: number;
   witnessUtxo?: TxOutput;
   nonWitnessUtxo?: Transaction;
+  witnessScript?: Buffer;
   sighashType?: number;
   tapInternalKey?: TapInternalKey;
   tapLeafScript?: TapLeafScript;
@@ -123,6 +124,9 @@ export class Updater {
       if (input.witnessUtxo && input.witnessUtxo.rangeProof) {
         this.addInUtxoRangeProof(inputIndex, input.witnessUtxo.rangeProof);
       }
+
+      if (input.witnessScript)
+        this.addInWitnessScript(inputIndex, input.witnessScript);
 
       if (input.nonWitnessUtxo)
         this.addInNonWitnessUtxo(inputIndex, input.nonWitnessUtxo);
