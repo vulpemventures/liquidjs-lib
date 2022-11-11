@@ -5,6 +5,7 @@ const confidential_1 = require('../confidential');
 const transaction_1 = require('../transaction');
 const value_1 = require('../value');
 const utils_1 = require('./utils');
+const issuance_1 = require('../issuance');
 class ZKPValidator {
   constructor(zkpLib) {
     this.confidential = new confidential_1.Confidential(zkpLib);
@@ -217,7 +218,8 @@ class ZKPGenerator {
       }
       if (input.issuanceInflationKeys > 0) {
         const token = input.issuanceInflationKeys.toString(10);
-        const asset = input.getIssuanceInflationKeysHash();
+        const entropy = input.getIssuanceEntropy();
+        const asset = (0, issuance_1.calculateReissuanceToken)(entropy, true);
         if (!asset)
           throw new Error(
             'something went wrong during the inflation token hash computation',
@@ -410,7 +412,12 @@ class ZKPGenerator {
         assets.push(issAssetHash);
         assetBlinders.push(transaction_1.ZERO);
         if (!input.hasReissuance() && input.issuanceInflationKeys > 0) {
-          const inflationTokenAssetHash = input.getIssuanceInflationKeysHash();
+          const entropy = input.getIssuanceEntropy();
+          const inflationTokenAssetHash = (0,
+          issuance_1.calculateReissuanceToken)(
+            entropy,
+            input.blindedIssuance ?? true,
+          );
           if (!inflationTokenAssetHash)
             throw new Error(
               `something went wrong computing the issuance inflation keys hash on input #${i}`,

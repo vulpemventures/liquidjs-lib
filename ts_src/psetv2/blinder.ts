@@ -1,4 +1,5 @@
 import { UnblindOutputResult } from '../confidential';
+import { calculateReissuanceToken } from '../issuance';
 import { ZERO } from '../transaction';
 import { Pset } from './pset';
 import { ZKPGenerator, ZKPValidator } from './zkp';
@@ -475,8 +476,13 @@ export class Blinder {
           assetBlinder: ZERO,
         });
         if (input.issuanceInflationKeys! > 0) {
+          const entropy = input.getIssuanceEntropy();
+          const token = calculateReissuanceToken(
+            entropy,
+            input.blindedIssuance ?? true,
+          );
           inAssetsAndBlinders.push({
-            asset: input.getIssuanceInflationKeysHash()!,
+            asset: token,
             assetBlinder: ZERO,
           });
         }

@@ -6,11 +6,7 @@ import {
   varuint,
   writeUInt64LE,
 } from '../bufferutils';
-import {
-  calculateAsset,
-  calculateReissuanceToken,
-  generateEntropy,
-} from '../issuance';
+import { calculateAsset, generateEntropy } from '../issuance';
 import { Output, Transaction, ZERO } from '../transaction';
 import { decodeBip32Derivation, encodeBIP32Derivation } from './bip32';
 import { InputProprietaryTypes, InputTypes } from './fields';
@@ -782,9 +778,9 @@ export class PsetInput {
     return calculateAsset(entropy);
   }
 
-  getIssuanceInflationKeysHash(): Buffer | undefined {
+  getIssuanceEntropy(): Buffer {
     if (!this.hasIssuance() && !this.hasReissuance()) {
-      return undefined;
+      throw new Error('input is not an (re)issuance');
     }
 
     if (!this.issuanceAssetEntropy) {
@@ -798,7 +794,7 @@ export class PsetInput {
         this.issuanceAssetEntropy!,
       );
     }
-    return calculateReissuanceToken(entropy, this.blindedIssuance ?? true);
+    return entropy;
   }
 
   getUtxo(): Output | undefined {

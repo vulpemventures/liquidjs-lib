@@ -328,8 +328,8 @@ class Updater {
     pset.inputs[inIndex].issuanceBlindingNonce = blindingNonce;
     pset.inputs[inIndex].issuanceValue = args.assetAmount;
     pset.inputs[inIndex].issuanceInflationKeys = 0;
-    if (args.initialIssuanceBlinded !== undefined) {
-      pset.inputs[inIndex].blindedIssuance = args.initialIssuanceBlinded;
+    if (args.blindedIssuance !== undefined) {
+      pset.inputs[inIndex].blindedIssuance = args.blindedIssuance;
     }
     if (args.assetAddress) {
       const { blindingPublicKey, script } = processOutputDestination(
