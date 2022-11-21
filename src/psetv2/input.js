@@ -743,9 +743,9 @@ class PsetInput {
     }
     return (0, issuance_1.calculateAsset)(entropy);
   }
-  getIssuanceInflationKeysHash() {
+  getIssuanceEntropy() {
     if (!this.hasIssuance() && !this.hasReissuance()) {
-      return undefined;
+      throw new Error('input is not an (re)issuance');
     }
     if (!this.issuanceAssetEntropy) {
       throw new Error('missing issuance asset entropy');
@@ -757,10 +757,7 @@ class PsetInput {
         this.issuanceAssetEntropy,
       );
     }
-    return (0, issuance_1.calculateReissuanceToken)(
-      entropy,
-      this.blindedIssuance ?? true,
-    );
+    return entropy;
   }
   getUtxo() {
     if (!this.witnessUtxo && !this.nonWitnessUtxo) {

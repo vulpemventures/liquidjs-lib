@@ -1,6 +1,7 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Blinder = void 0;
+const issuance_1 = require('../issuance');
 const transaction_1 = require('../transaction');
 class Blinder {
   constructor(pset, ownedInputs, validator, generator) {
@@ -381,8 +382,13 @@ class Blinder {
           assetBlinder: transaction_1.ZERO,
         });
         if (input.issuanceInflationKeys > 0) {
+          const entropy = input.getIssuanceEntropy();
+          const token = (0, issuance_1.calculateReissuanceToken)(
+            entropy,
+            input.blindedIssuance ?? true,
+          );
           inAssetsAndBlinders.push({
-            asset: input.getIssuanceInflationKeysHash(),
+            asset: token,
             assetBlinder: transaction_1.ZERO,
           });
         }

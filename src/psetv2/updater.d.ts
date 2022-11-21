@@ -23,6 +23,8 @@ export interface ReissuanceOpts {
     tokenAmount: number;
     tokenAddress: OutputDestination;
     tokenAssetBlinder: string | Buffer;
+    initialIssuanceBlinded?: boolean;
+    blindedIssuance?: boolean;
 }
 export interface UpdaterInput {
     txid: string;

@@ -14,6 +14,7 @@ import type {
   OutputBlindingArgs,
   OwnedInput,
 } from './blinder';
+import { calculateReissuanceToken } from '../issuance';
 
 export class ZKPValidator {
   private confidential: Confidential;
@@ -284,7 +285,8 @@ export class ZKPGenerator {
 
       if (input.issuanceInflationKeys! > 0) {
         const token = input.issuanceInflationKeys!.toString(10);
-        const asset = input.getIssuanceInflationKeysHash();
+        const entropy = input.getIssuanceEntropy();
+        const asset = calculateReissuanceToken(entropy, true);
         if (!asset)
           throw new Error(
             'something went wrong during the inflation token hash computation',
@@ -510,7 +512,12 @@ export class ZKPGenerator {
         assetBlinders.push(ZERO);
 
         if (!input.hasReissuance() && input.issuanceInflationKeys! > 0) {
-          const inflationTokenAssetHash = input.getIssuanceInflationKeysHash();
+          const entropy = input.getIssuanceEntropy();
+
+          const inflationTokenAssetHash = calculateReissuanceToken(
+            entropy,
+            input.blindedIssuance ?? true,
+          );
           if (!inflationTokenAssetHash)
             throw new Error(
               `something went wrong computing the issuance inflation keys hash on input #${i}`,
