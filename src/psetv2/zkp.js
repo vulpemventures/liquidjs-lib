@@ -6,6 +6,7 @@ const transaction_1 = require('../transaction');
 const value_1 = require('../value');
 const utils_1 = require('./utils');
 const issuance_1 = require('../issuance');
+const asset_1 = require('../asset');
 class ZKPValidator {
   constructor(zkpLib) {
     this.confidential = new confidential_1.Confidential(zkpLib);
@@ -432,7 +433,7 @@ class ZKPGenerator {
   maybeUnblindInUtxos(pset) {
     if (this.ownedInputs && this.ownedInputs.length > 0) {
       return pset.inputs.map((input, i) => {
-        const ownedInput = this.ownedInputs.find(({ index }) => index === i);
+        const ownedInput = this.ownedInputs?.find(({ index }) => index === i);
         if (ownedInput) {
           return {
             value: '',
@@ -441,10 +442,14 @@ class ZKPGenerator {
             assetBlindingFactor: ownedInput.assetBlindingFactor,
           };
         }
+        const utxo = input.getUtxo();
+        if (!utxo) {
+          throw new Error(`Missing utxo for input #${i}`);
+        }
         return {
           value: '',
           valueBlindingFactor: Buffer.from([]),
-          asset: input.getUtxo().asset,
+          asset: asset_1.AssetHash.fromBytes(utxo.asset).bytesWithoutPrefix,
           assetBlindingFactor: transaction_1.ZERO,
         };
       });

@@ -15,6 +15,7 @@ import type {
   OwnedInput,
 } from './blinder';
 import { calculateReissuanceToken } from '../issuance';
+import { AssetHash } from '../asset';
 
 export class ZKPValidator {
   private confidential: Confidential;
@@ -533,21 +534,27 @@ export class ZKPGenerator {
   }
 
   private maybeUnblindInUtxos(pset: Pset): UnblindOutputResult[] {
-    if (this.ownedInputs! && this.ownedInputs!.length > 0) {
+    if (this.ownedInputs && this.ownedInputs.length > 0) {
       return pset.inputs.map((input, i) => {
-        const ownedInput = this.ownedInputs!.find(({ index }) => index === i);
-        if (ownedInput!) {
+        const ownedInput = this.ownedInputs?.find(({ index }) => index === i);
+        if (ownedInput) {
           return {
             value: '',
             valueBlindingFactor: Buffer.from([]),
-            asset: ownedInput!.asset,
-            assetBlindingFactor: ownedInput!.assetBlindingFactor,
+            asset: ownedInput.asset,
+            assetBlindingFactor: ownedInput.assetBlindingFactor,
           };
         }
+
+        const utxo: Output | undefined = input.getUtxo();
+        if (!utxo) {
+          throw new Error(`Missing utxo for input #${i}`);
+        }
+
         return {
           value: '',
           valueBlindingFactor: Buffer.from([]),
-          asset: input.getUtxo()!.asset,
+          asset: AssetHash.fromBytes(utxo.asset).bytesWithoutPrefix,
           assetBlindingFactor: ZERO,
         };
       });
