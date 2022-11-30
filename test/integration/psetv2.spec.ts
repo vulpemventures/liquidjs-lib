@@ -186,17 +186,23 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
-  it.only('can create (and broadcast via 3PBP) a confidential Transaction w/ confidential and unconfidential inputs', async () => {
+  it('can create (and broadcast via 3PBP) a confidential Transaction w/ confidential and unconfidential inputs', async () => {
     const alice = createPayment('p2pkh', undefined, undefined, true);
     const unconfidentialAlice = createPayment('p2pkh');
     const bob = createPayment('p2wpkh', undefined, undefined, true);
     const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
-    const unconfidentialAliceInputData = await getInputData(unconfidentialAlice.payment, true, 'noredeem');
+    const unconfidentialAliceInputData = await getInputData(
+      unconfidentialAlice.payment,
+      true,
+      'noredeem',
+    );
 
-    const inputs = [aliceInputData, unconfidentialAliceInputData].map(({ hash, index }) => {
-      const txid = hash.slice().reverse().toString('hex');
-      return new CreatorInput(txid, index);
-    });
+    const inputs = [aliceInputData, unconfidentialAliceInputData].map(
+      ({ hash, index }) => {
+        const txid = hash.slice().reverse().toString('hex');
+        return new CreatorInput(txid, index);
+      },
+    );
     const outputs = [
       new CreatorOutput(
         lbtc,
@@ -242,7 +248,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(pset, [alice.keys, unconfidentialAlice.keys], Transaction.SIGHASH_ALL);
+    const rawTx = signTransaction(
+      pset,
+      [alice.keys, unconfidentialAlice.keys],
+      Transaction.SIGHASH_ALL,
+    );
     console.log(rawTx.toHex());
     await regtestUtils.broadcast(rawTx.toHex());
   });
