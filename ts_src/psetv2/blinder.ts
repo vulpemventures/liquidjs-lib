@@ -1,3 +1,4 @@
+import { AssetHash } from '../asset';
 import { UnblindOutputResult } from '../confidential';
 import { calculateReissuanceToken } from '../issuance';
 import { ZERO } from '../transaction';
@@ -459,13 +460,14 @@ export class Blinder {
   ): void {
     const inAssetsAndBlinders = this.pset.inputs.map((input, i) => {
       const ownedInput = this.ownedInputs.find(({ index }) => index === i);
-      return ownedInput!
+      return ownedInput
         ? {
             asset: ownedInput.asset,
             assetBlinder: ownedInput.assetBlindingFactor,
           }
         : {
-            asset: input.getUtxo()!.asset,
+            asset: AssetHash.fromBytes(input.getUtxo()!.asset)
+              .bytesWithoutPrefix,
             assetBlinder: ZERO,
           };
     });

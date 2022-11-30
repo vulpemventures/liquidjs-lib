@@ -186,6 +186,77 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
+  it('can create (and broadcast via 3PBP) a confidential Transaction w/ confidential and unconfidential inputs', async () => {
+    const alice = createPayment('p2pkh', undefined, undefined, true);
+    const unconfidentialAlice = createPayment('p2pkh');
+    const bob = createPayment('p2wpkh', undefined, undefined, true);
+    const aliceInputData = await getInputData(alice.payment, true, 'noredeem');
+    const unconfidentialAliceInputData = await getInputData(
+      unconfidentialAlice.payment,
+      true,
+      'noredeem',
+    );
+
+    const inputs = [aliceInputData, unconfidentialAliceInputData].map(
+      ({ hash, index }) => {
+        const txid = hash.slice().reverse().toString('hex');
+        return new CreatorInput(txid, index);
+      },
+    );
+    const outputs = [
+      new CreatorOutput(
+        lbtc,
+        60000000,
+        bob.payment.output,
+        bob.payment.blindkey,
+        0,
+      ),
+      new CreatorOutput(
+        lbtc,
+        39999500 + 1_0000_0000,
+        alice.payment.output,
+        alice.payment.blindkey,
+        0,
+      ),
+      new CreatorOutput(lbtc, 500),
+    ];
+
+    const pset = PsetCreator.newPset({ inputs, outputs });
+    const updater = new PsetUpdater(pset);
+    updater.addInWitnessUtxo(0, aliceInputData.witnessUtxo);
+    updater.addInUtxoRangeProof(0, aliceInputData.witnessUtxo.rangeProof);
+    updater.addInSighashType(0, Transaction.SIGHASH_ALL);
+
+    updater.addInWitnessUtxo(1, unconfidentialAliceInputData.witnessUtxo);
+    updater.addInSighashType(1, Transaction.SIGHASH_ALL);
+
+    const zkpLib = await secp256k1();
+    const zkpValidator = new ZKPValidator(zkpLib);
+    const zkpGenerator = new ZKPGenerator(
+      zkpLib,
+      ZKPGenerator.WithBlindingKeysOfInputs(alice.blindingKeys),
+    );
+    const ownedInputs = zkpGenerator.unblindInputs(pset);
+    const outputBlindingArgs = zkpGenerator.blindOutputs(
+      pset,
+      Pset.ECCKeysGenerator(ecc),
+    );
+    const blinder = new PsetBlinder(
+      pset,
+      ownedInputs,
+      zkpValidator,
+      zkpGenerator,
+    );
+    blinder.blindLast({ outputBlindingArgs });
+    const rawTx = signTransaction(
+      pset,
+      [alice.keys, unconfidentialAlice.keys],
+      Transaction.SIGHASH_ALL,
+    );
+    console.log(rawTx.toHex());
+    await regtestUtils.broadcast(rawTx.toHex());
+  });
+
   it('can create (and broadcast via 3PBP) a confidential Transaction w/ dummy confidential output', async () => {
     const alice = createPayment('p2pkh', undefined, undefined, true);
     const bob = createPayment('p2wpkh');
