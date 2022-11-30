@@ -1,6 +1,7 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Blinder = void 0;
+const asset_1 = require('../asset');
 const issuance_1 = require('../issuance');
 const transaction_1 = require('../transaction');
 class Blinder {
@@ -371,7 +372,8 @@ class Blinder {
             assetBlinder: ownedInput.assetBlindingFactor,
           }
         : {
-            asset: input.getUtxo().asset,
+            asset: asset_1.AssetHash.fromBytes(input.getUtxo().asset)
+              .bytesWithoutPrefix,
             assetBlinder: transaction_1.ZERO,
           };
     });
