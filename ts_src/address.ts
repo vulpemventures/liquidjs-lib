@@ -74,11 +74,28 @@ export enum AddressType {
 }
 
 export enum ScriptType {
-  P2Pkh = 0,
-  P2Sh = 1,
-  P2Wpkh = 2,
-  P2Wsh = 3,
-  P2Tr = 4,
+  P2PK = 0,
+  P2PKH,
+  P2SH,
+  P2WPKH,
+  P2WSH,
+  P2TR,
+}
+
+export function getScriptSigSize(type: ScriptType): number {
+  switch (type) {
+    case ScriptType.P2PKH:
+      return 108;
+    case ScriptType.P2SH:
+      return 35;
+    case ScriptType.P2WPKH:
+      return 1;
+    case ScriptType.P2WSH:
+      return 1;
+    case ScriptType.P2TR:
+      return 1;
+  }
+  return 0;
 }
 
 function isConfidentialAddressType(addressType: AddressType): boolean {
@@ -504,15 +521,15 @@ export function getScriptType(script: Buffer): ScriptType {
   switch (script[0]) {
     case OPS.OP_0:
       if (script.slice(2).length === 20) {
-        return ScriptType.P2Wpkh;
+        return ScriptType.P2WPKH;
       }
-      return ScriptType.P2Wsh;
+      return ScriptType.P2WSH;
     case OPS.OP_HASH160:
-      return ScriptType.P2Sh;
+      return ScriptType.P2SH;
     case OPS.OP_DUP:
-      return ScriptType.P2Pkh;
+      return ScriptType.P2PKH;
     case OPS.OP_1:
-      return ScriptType.P2Tr;
+      return ScriptType.P2TR;
     default:
       throw new Error('unknow script type');
   }

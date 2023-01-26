@@ -5,6 +5,7 @@ import { Output, Transaction } from '../transaction';
 import { Bip32Derivation, PartialSig, TapBip32Derivation, TapInternalKey, TapKeySig, TapLeafScript, TapMerkleRoot, TapScriptSig } from './interfaces';
 import { KeyPair } from './key_pair';
 import { ProprietaryData } from './proprietary_data';
+import { ScriptType } from '../address';
 export declare class InputDuplicateFieldError extends Error {
     constructor(message?: string);
 }
@@ -68,6 +69,7 @@ export declare class PsetInput {
     getIssuanceAssetHash(): Buffer | undefined;
     getIssuanceEntropy(): Buffer;
     getUtxo(): Output | undefined;
+    scriptType(): ScriptType;
     toBuffer(): Buffer;
     private getKeyPairs;
 }

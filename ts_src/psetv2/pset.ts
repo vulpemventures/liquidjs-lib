@@ -1,5 +1,10 @@
 import { ECPairFactory, TinySecp256k1Interface } from 'ecpair';
-import { BufferReader, BufferWriter } from '../bufferutils';
+import {
+  BufferReader,
+  BufferWriter,
+  varSliceSize,
+  varuint,
+} from '../bufferutils';
 import { hash160 } from '../crypto';
 import { Issuance } from '../issuance';
 import { Transaction } from '../transaction';
@@ -9,11 +14,11 @@ import { PsetInput } from './input';
 import { PartialSig, RngOpts } from './interfaces';
 import { PsetOutput } from './output';
 import * as bscript from '../script';
-import { getScriptType, ScriptType } from '../address';
+import { getScriptSigSize, getScriptType, ScriptType } from '../address';
 import { p2pkh } from '../payments';
 import { ElementsValue } from '../value';
 import { AssetHash } from '../asset';
-import { bip341 } from '..';
+import { bip341, payments } from '..';
 import { randomBytes } from './utils';
 
 export const magicPrefix = Buffer.from([0x70, 0x73, 0x65, 0x74]);
@@ -421,10 +426,10 @@ export class Pset {
     const scriptType = getScriptType(script);
 
     switch (scriptType) {
-      case ScriptType.P2Pkh:
-      case ScriptType.P2Sh:
+      case ScriptType.P2PKH:
+      case ScriptType.P2SH:
         return unsignedTx.hashForSignature(index, script, sighashType);
-      case ScriptType.P2Wpkh:
+      case ScriptType.P2WPKH:
         const legacyScript = p2pkh({ hash: prevout.script.slice(2) }).output!;
         return unsignedTx.hashForWitnessV0(
           index,
@@ -432,7 +437,7 @@ export class Pset {
           prevout.value,
           sighashType,
         );
-      case ScriptType.P2Wsh:
+      case ScriptType.P2WSH:
         if (!input.witnessScript || input.witnessScript!.length === 0) {
           throw new Error('missing witness script for p2wsh input');
         }
@@ -480,6 +485,49 @@ export class Pset {
     return w.buffer;
   }
 
+  // https://github.com/vulpemventures/ocean/blob/3bf1a7e78aa4c4960ca9d48ec4088cdb3f347bc2/pkg/wallet/estimation.go#L25-L26
+  estimateVirtualSize(): number {
+    const inScriptSigsSize = [];
+    const inWitnessesSize = [];
+    for (const input of this.inputs) {
+      const type = input.scriptType();
+      const scriptSigSize = getScriptSigSize(type);
+      let witnessSize = 1 + 1 + 1; // add no issuance proof + no token proof + no pegin
+      if (input.redeemScript) {
+        // get multisig
+        witnessSize += varSliceSize(input.redeemScript);
+        const pay = payments.p2ms({ output: input.redeemScript });
+        if (pay && pay.m) {
+          witnessSize += pay.m * 75 + pay.m - 1;
+        }
+      } else {
+        // len + witness[sig, pubkey]
+        witnessSize += 1 + 107;
+      }
+      inScriptSigsSize.push(scriptSigSize);
+      inWitnessesSize.push(witnessSize);
+    }
+
+    const outSizes = [];
+    const outWitnessesSize = [];
+    for (const output of this.outputs) {
+      let outSize = 33 + 9 + 1; // asset + value + empty nonce
+      let witnessSize = 1 + 1; // no rangeproof + no surjectionproof
+      if (output.needsBlinding()) {
+        outSize = 33 + 33 + 33; // asset commitment + value commitment + nonce
+        witnessSize = 3 + 4174 + 1 + 131; // rangeproof + surjectionproof + their sizes
+      }
+      outSizes.push(outSize);
+      outWitnessesSize.push(witnessSize);
+    }
+
+    const baseSize = txBaseSize(inScriptSigsSize, outSizes);
+    const sizeWithWitness =
+      baseSize + txWitnessSize(inWitnessesSize, outWitnessesSize);
+    const weight = baseSize * 3 + sizeWithWitness;
+    return (weight + 3) / 4;
+  }
+
   private isDuplicatedInput(input: PsetInput): boolean {
     return this.inputs.some(
       (inp) =>
@@ -511,4 +559,31 @@ function pubkeyInScript(pubkey: Buffer, script: Buffer): boolean {
     if (typeof element === 'number') return false;
     return element.equals(pubkey) || element.equals(pubkeyHash);
   });
+}
+
+const INPUT_BASE_SIZE = 40; // 32 bytes for outpoint, 4 bytes for sequence, 4 for index
+
+function txBaseSize(
+  inScriptSigsSize: number[],
+  outNonWitnessesSize: number[],
+): number {
+  const inSize = inScriptSigsSize.reduce((a, b) => a + b + INPUT_BASE_SIZE, 0);
+  const outSize =
+    outNonWitnessesSize.reduce((a, b) => a + b, 0) + 33 + 9 + 1 + 1; // add unconf fee output size
+  return (
+    9 +
+    varuint.encodingLength(inScriptSigsSize.length) +
+    inSize +
+    varuint.encodingLength(outNonWitnessesSize.length + 1) +
+    outSize
+  );
+}
+
+function txWitnessSize(
+  inWitnessesSize: number[],
+  outWitnessesSize: number[],
+): number {
+  const inSize = inWitnessesSize.reduce((a, b) => a + b, 0);
+  const outSize = outWitnessesSize.reduce((a, b) => a + b, 0) + 1 + 1; // add the size of proof for unconf fee output
+  return inSize + outSize;
 }

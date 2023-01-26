@@ -27,6 +27,7 @@ import * as bscript from '../script';
 import { isP2TR } from './utils';
 import { AssetHash } from '../asset';
 import { ElementsValue } from '../value';
+import { getScriptType, ScriptType } from '../address';
 
 export class InputDuplicateFieldError extends Error {
   constructor(message?: string) {
@@ -808,6 +809,13 @@ export class PsetInput {
       return utxo;
     }
     return this.nonWitnessUtxo!.outs[this.previousTxIndex];
+  }
+
+  scriptType(): ScriptType {
+    const utxo = this.getUtxo();
+    if (!utxo)
+      throw new Error('missing input utxo, cannot determine script type');
+    return getScriptType(utxo.script);
   }
 
   toBuffer(): Buffer {

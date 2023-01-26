@@ -41,5 +41,6 @@ export declare class Pset {
     getInputPreimage(index: number, sighashType: number, genesisBlockHash?: Buffer, leafHash?: Buffer): Buffer;
     toBase64(): string;
     toBuffer(): Buffer;
+    estimateVirtualSize(): number;
     private isDuplicatedInput;
 }

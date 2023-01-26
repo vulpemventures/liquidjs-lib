@@ -30,12 +30,14 @@ export declare enum AddressType {
     ConfidentialP2Wsh = 7
 }
 export declare enum ScriptType {
-    P2Pkh = 0,
-    P2Sh = 1,
-    P2Wpkh = 2,
-    P2Wsh = 3,
-    P2Tr = 4
+    P2PK = 0,
+    P2PKH = 1,
+    P2SH = 2,
+    P2WPKH = 3,
+    P2WSH = 4,
+    P2TR = 5
 }
+export declare function getScriptSigSize(type: ScriptType): number;
 export declare function fromBase58Check(address: string): Base58CheckResult;
 export declare function fromBech32(address: string): Bech32Result;
 export declare function fromBlech32(address: string): Blech32Result;

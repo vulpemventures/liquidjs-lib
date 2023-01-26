@@ -58,6 +58,7 @@ const address_1 = require('../address');
 const payments_1 = require('../payments');
 const value_1 = require('../value');
 const asset_1 = require('../asset');
+const __1 = require('..');
 const utils_1 = require('./utils');
 exports.magicPrefix = Buffer.from([0x70, 0x73, 0x65, 0x74]);
 exports.magicPrefixWithSeparator = Buffer.concat([
@@ -387,10 +388,10 @@ class Pset {
     const script = input.redeemScript || prevout.script;
     const scriptType = (0, address_1.getScriptType)(script);
     switch (scriptType) {
-      case address_1.ScriptType.P2Pkh:
-      case address_1.ScriptType.P2Sh:
+      case address_1.ScriptType.P2PKH:
+      case address_1.ScriptType.P2SH:
         return unsignedTx.hashForSignature(index, script, sighashType);
-      case address_1.ScriptType.P2Wpkh:
+      case address_1.ScriptType.P2WPKH:
         const legacyScript = (0, payments_1.p2pkh)({
           hash: prevout.script.slice(2),
         }).output;
@@ -400,7 +401,7 @@ class Pset {
           prevout.value,
           sighashType,
         );
-      case address_1.ScriptType.P2Wsh:
+      case address_1.ScriptType.P2WSH:
         if (!input.witnessScript || input.witnessScript.length === 0) {
           throw new Error('missing witness script for p2wsh input');
         }
@@ -440,6 +441,46 @@ class Pset {
     });
     return w.buffer;
   }
+  // https://github.com/vulpemventures/ocean/blob/3bf1a7e78aa4c4960ca9d48ec4088cdb3f347bc2/pkg/wallet/estimation.go#L25-L26
+  estimateVirtualSize() {
+    const inScriptSigsSize = [];
+    const inWitnessesSize = [];
+    for (const input of this.inputs) {
+      const type = input.scriptType();
+      const scriptSigSize = (0, address_1.getScriptSigSize)(type);
+      let witnessSize = 1 + 1 + 1; // add no issuance proof + no token proof + no pegin
+      if (input.redeemScript) {
+        // get multisig
+        witnessSize += (0, bufferutils_1.varSliceSize)(input.redeemScript);
+        const pay = __1.payments.p2ms({ output: input.redeemScript });
+        if (pay && pay.m) {
+          witnessSize += pay.m * 75 + pay.m - 1;
+        }
+      } else {
+        // len + witness[sig, pubkey]
+        witnessSize += 1 + 107;
+      }
+      inScriptSigsSize.push(scriptSigSize);
+      inWitnessesSize.push(witnessSize);
+    }
+    const outSizes = [];
+    const outWitnessesSize = [];
+    for (const output of this.outputs) {
+      let outSize = 33 + 9 + 1; // asset + value + empty nonce
+      let witnessSize = 1 + 1; // no rangeproof + no surjectionproof
+      if (output.needsBlinding()) {
+        outSize = 33 + 33 + 33; // asset commitment + value commitment + nonce
+        witnessSize = 3 + 4174 + 1 + 131; // rangeproof + surjectionproof + their sizes
+      }
+      outSizes.push(outSize);
+      outWitnessesSize.push(witnessSize);
+    }
+    const baseSize = txBaseSize(inScriptSigsSize, outSizes);
+    const sizeWithWitness =
+      baseSize + txWitnessSize(inWitnessesSize, outWitnessesSize);
+    const weight = baseSize * 3 + sizeWithWitness;
+    return (weight + 3) / 4;
+  }
   isDuplicatedInput(input) {
     return this.inputs.some(
       (inp) =>
@@ -464,4 +505,22 @@ function pubkeyInScript(pubkey, script) {
     if (typeof element === 'number') return false;
     return element.equals(pubkey) || element.equals(pubkeyHash);
   });
+}
+const INPUT_BASE_SIZE = 40; // 32 bytes for outpoint, 4 bytes for sequence, 4 for index
+function txBaseSize(inScriptSigsSize, outNonWitnessesSize) {
+  const inSize = inScriptSigsSize.reduce((a, b) => a + b + INPUT_BASE_SIZE, 0);
+  const outSize =
+    outNonWitnessesSize.reduce((a, b) => a + b, 0) + 33 + 9 + 1 + 1; // add unconf fee output size
+  return (
+    9 +
+    bufferutils_1.varuint.encodingLength(inScriptSigsSize.length) +
+    inSize +
+    bufferutils_1.varuint.encodingLength(outNonWitnessesSize.length + 1) +
+    outSize
+  );
+}
+function txWitnessSize(inWitnessesSize, outWitnessesSize) {
+  const inSize = inWitnessesSize.reduce((a, b) => a + b, 0);
+  const outSize = outWitnessesSize.reduce((a, b) => a + b, 0) + 1 + 1; // add the size of proof for unconf fee output
+  return inSize + outSize;
 }

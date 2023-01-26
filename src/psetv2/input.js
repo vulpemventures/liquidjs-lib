@@ -58,6 +58,7 @@ const bscript = __importStar(require('../script'));
 const utils_1 = require('./utils');
 const asset_1 = require('../asset');
 const value_1 = require('../value');
+const address_1 = require('../address');
 class InputDuplicateFieldError extends Error {
   constructor(message) {
     if (message) {
@@ -769,6 +770,12 @@ class PsetInput {
       return utxo;
     }
     return this.nonWitnessUtxo.outs[this.previousTxIndex];
+  }
+  scriptType() {
+    const utxo = this.getUtxo();
+    if (!utxo)
+      throw new Error('missing input utxo, cannot determine script type');
+    return (0, address_1.getScriptType)(utxo.script);
   }
   toBuffer() {
     const keyPairs = this.getKeyPairs();

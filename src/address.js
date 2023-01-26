@@ -58,6 +58,7 @@ exports.getScriptType =
   exports.fromBlech32 =
   exports.fromBech32 =
   exports.fromBase58Check =
+  exports.getScriptSigSize =
   exports.ScriptType =
   exports.AddressType =
     void 0;
@@ -106,12 +107,29 @@ var AddressType;
 })((AddressType = exports.AddressType || (exports.AddressType = {})));
 var ScriptType;
 (function (ScriptType) {
-  ScriptType[(ScriptType['P2Pkh'] = 0)] = 'P2Pkh';
-  ScriptType[(ScriptType['P2Sh'] = 1)] = 'P2Sh';
-  ScriptType[(ScriptType['P2Wpkh'] = 2)] = 'P2Wpkh';
-  ScriptType[(ScriptType['P2Wsh'] = 3)] = 'P2Wsh';
-  ScriptType[(ScriptType['P2Tr'] = 4)] = 'P2Tr';
+  ScriptType[(ScriptType['P2PK'] = 0)] = 'P2PK';
+  ScriptType[(ScriptType['P2PKH'] = 1)] = 'P2PKH';
+  ScriptType[(ScriptType['P2SH'] = 2)] = 'P2SH';
+  ScriptType[(ScriptType['P2WPKH'] = 3)] = 'P2WPKH';
+  ScriptType[(ScriptType['P2WSH'] = 4)] = 'P2WSH';
+  ScriptType[(ScriptType['P2TR'] = 5)] = 'P2TR';
 })((ScriptType = exports.ScriptType || (exports.ScriptType = {})));
+function getScriptSigSize(type) {
+  switch (type) {
+    case ScriptType.P2PKH:
+      return 108;
+    case ScriptType.P2SH:
+      return 35;
+    case ScriptType.P2WPKH:
+      return 1;
+    case ScriptType.P2WSH:
+      return 1;
+    case ScriptType.P2TR:
+      return 1;
+  }
+  return 0;
+}
+exports.getScriptSigSize = getScriptSigSize;
 function isConfidentialAddressType(addressType) {
   return addressType >= 4;
 }
@@ -461,15 +479,15 @@ function getScriptType(script) {
   switch (script[0]) {
     case ops_1.OPS.OP_0:
       if (script.slice(2).length === 20) {
-        return ScriptType.P2Wpkh;
+        return ScriptType.P2WPKH;
       }
-      return ScriptType.P2Wsh;
+      return ScriptType.P2WSH;
     case ops_1.OPS.OP_HASH160:
-      return ScriptType.P2Sh;
+      return ScriptType.P2SH;
     case ops_1.OPS.OP_DUP:
-      return ScriptType.P2Pkh;
+      return ScriptType.P2PKH;
     case ops_1.OPS.OP_1:
-      return ScriptType.P2Tr;
+      return ScriptType.P2TR;
     default:
       throw new Error('unknow script type');
   }
