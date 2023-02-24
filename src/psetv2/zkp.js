@@ -11,12 +11,12 @@ class ZKPValidator {
   constructor(zkpLib) {
     this.confidential = new confidential_1.Confidential(zkpLib);
   }
-  verifyValueRangeProof(valueCommit, assetCommit, proof, script) {
+  verifyValueRangeProof(proof, valueCommitment, assetCommitment, script) {
     try {
       return this.confidential.rangeProofVerify(
-        valueCommit,
-        assetCommit,
         proof,
+        valueCommitment,
+        assetCommitment,
         script,
       );
     } catch (ignore) {
@@ -42,12 +42,12 @@ class ZKPValidator {
       return false;
     }
   }
-  verifyBlindValueProof(valueCommit, assetCommit, proof) {
+  verifyBlindValueProof(proof, valueCommitment, assetCommitment) {
     try {
       return this.confidential.rangeProofVerify(
-        valueCommit,
-        assetCommit,
         proof,
+        valueCommitment,
+        assetCommitment,
       );
     } catch (ignore) {
       return false;
@@ -107,18 +107,18 @@ class ZKPGenerator {
     if (scalar.equals(negScalarOffset)) {
       return transaction_1.ZERO;
     }
-    return ec.prvkeyTweakAdd(scalar, scalarOffset);
+    return Buffer.from(ec.prvkeyTweakAdd(scalar, scalarOffset));
   }
   subtractScalars(inputScalar, outputScalar) {
     if (outputScalar.equals(transaction_1.ZERO)) {
       return inputScalar.slice();
     }
     const { ec } = this.zkp;
-    const negOutputScalar = ec.prvkeyNegate(outputScalar);
+    const negOutputScalar = Buffer.from(ec.prvkeyNegate(outputScalar));
     if (inputScalar.equals(transaction_1.ZERO)) {
       return negOutputScalar;
     }
-    return ec.prvkeyTweakAdd(inputScalar, negOutputScalar);
+    return Buffer.from(ec.prvkeyTweakAdd(inputScalar, negOutputScalar));
   }
   lastValueCommitment(value, asset, blinder) {
     return this.confidential.valueCommitment(value, asset, blinder);
@@ -136,19 +136,21 @@ class ZKPGenerator {
   lastValueRangeProof(
     value,
     asset,
-    valueCommit,
+    valueCommitment,
+    assetCommitment,
     valueBlinder,
     assetBlinder,
-    script,
     nonce,
+    script,
   ) {
     return this.confidential.rangeProof(
       value,
-      nonce,
       asset,
-      assetBlinder,
+      valueCommitment,
+      assetCommitment,
       valueBlinder,
-      valueCommit,
+      assetBlinder,
+      nonce,
       script,
     );
   }
@@ -181,37 +183,38 @@ class ZKPGenerator {
         const value = input.issuanceValue.toString(10);
         const asset = input.getIssuanceAssetHash();
         const blinder = (0, utils_1.randomBytes)(this.opts);
-        const assetCommit = this.confidential.assetCommitment(
+        const assetCommitment = this.confidential.assetCommitment(
           asset,
           transaction_1.ZERO,
         );
-        const valueCommit = this.confidential.valueCommitment(
+        const valueCommitment = this.confidential.valueCommitment(
           value,
-          assetCommit,
+          assetCommitment,
           blinder,
         );
         const nonce = (0, utils_1.randomBytes)(this.opts);
         const blindproof = this.confidential.blindValueProof(
           value,
-          valueCommit,
-          assetCommit,
+          valueCommitment,
+          assetCommitment,
           blinder,
           nonce,
         );
         const rangeproof = this.confidential.rangeProof(
           value,
-          key,
           asset,
-          transaction_1.ZERO,
+          valueCommitment,
+          assetCommitment,
           blinder,
-          valueCommit,
+          transaction_1.ZERO,
+          key,
           Buffer.from([]),
         );
         blindingArgs = {
           ...blindingArgs,
           index: parseInt(i, 10),
           issuanceAsset: asset,
-          issuanceValueCommitment: valueCommit,
+          issuanceValueCommitment: valueCommitment,
           issuanceValueRangeProof: rangeproof,
           issuanceValueBlindProof: blindproof,
           issuanceValueBlinder: blinder,
@@ -226,36 +229,37 @@ class ZKPGenerator {
             'something went wrong during the inflation token hash computation',
           );
         const blinder = (0, utils_1.randomBytes)(this.opts);
-        const assetCommit = this.confidential.assetCommitment(
+        const assetCommitment = this.confidential.assetCommitment(
           asset,
           transaction_1.ZERO,
         );
-        const tokenCommit = this.confidential.valueCommitment(
+        const tokenCommitment = this.confidential.valueCommitment(
           token,
-          assetCommit,
+          assetCommitment,
           blinder,
         );
         const nonce = (0, utils_1.randomBytes)(this.opts);
         const blindproof = this.confidential.blindValueProof(
           token,
-          tokenCommit,
-          assetCommit,
+          tokenCommitment,
+          assetCommitment,
           blinder,
           nonce,
         );
         const rangeproof = this.confidential.rangeProof(
           token,
-          key,
           asset,
-          transaction_1.ZERO,
+          tokenCommitment,
+          assetCommitment,
           blinder,
-          tokenCommit,
+          transaction_1.ZERO,
+          key,
           Buffer.from([]),
         );
         blindingArgs = {
           ...blindingArgs,
           issuanceToken: asset,
-          issuanceTokenCommitment: tokenCommit,
+          issuanceTokenCommitment: tokenCommitment,
           issuanceTokenRangeProof: rangeproof,
           issuanceTokenBlindProof: blindproof,
           issuanceTokenBlinder: blinder,
@@ -283,13 +287,13 @@ class ZKPGenerator {
       const valueBlinder = (0, utils_1.randomBytes)(this.opts);
       const seed = (0, utils_1.randomBytes)(this.opts);
       const value = output.value.toString(10);
-      const assetCommit = this.confidential.assetCommitment(
+      const assetCommitment = this.confidential.assetCommitment(
         output.asset,
         assetBlinder,
       );
-      const valueCommit = this.confidential.valueCommitment(
+      const valueCommitment = this.confidential.valueCommitment(
         value,
-        assetCommit,
+        assetCommitment,
         valueBlinder,
       );
       const ephemeralKeyPair = keysGenerator();
@@ -301,11 +305,12 @@ class ZKPGenerator {
       const script = output.script || Buffer.from([]);
       const rangeproof = this.confidential.rangeProof(
         value,
-        ecdhNonce,
         output.asset,
-        assetBlinder,
+        valueCommitment,
+        assetCommitment,
         valueBlinder,
-        valueCommit,
+        assetBlinder,
+        ecdhNonce,
         script,
       );
       const surjectionproof = this.confidential.surjectionProof(
@@ -318,22 +323,22 @@ class ZKPGenerator {
       const nonce = (0, utils_1.randomBytes)(this.opts);
       const valueBlindProof = this.confidential.blindValueProof(
         value,
-        valueCommit,
-        assetCommit,
+        valueCommitment,
+        assetCommitment,
         valueBlinder,
         nonce,
       );
       const assetBlindProof = this.confidential.blindAssetProof(
         output.asset,
-        assetCommit,
+        assetCommitment,
         assetBlinder,
       );
       return {
         index: i,
         nonce: ecdhNonce,
         nonceCommitment,
-        valueCommitment: valueCommit,
-        assetCommitment: assetCommit,
+        valueCommitment,
+        assetCommitment,
         valueRangeProof: rangeproof,
         assetSurjectionProof: surjectionproof,
         valueBlindProof,
@@ -357,11 +362,11 @@ class ZKPGenerator {
     if (valueBlinder.length === 0) {
       throw new Error('Missing value blinder');
     }
-    const negVb = ec.prvkeyNegate(valueBlinder);
+    const negVb = Buffer.from(ec.prvkeyNegate(valueBlinder));
     if (negVb.equals(result)) {
       return transaction_1.ZERO;
     }
-    return ec.prvkeyTweakAdd(result, valueBlinder);
+    return Buffer.from(ec.prvkeyTweakAdd(result, valueBlinder));
   }
   unblindUtxo(out) {
     if (out.nonce.length === 1) {

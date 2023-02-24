@@ -1034,15 +1034,14 @@ class Psbt {
         }
         const issuanceRangeProof = await conf.rangeProof(
           blindingFactorsAsset.value,
-          assetBlindingPrivateKey,
           blindingFactorsAsset.asset,
-          blindingFactorsAsset.assetBlindingFactor,
-          blindingFactorsAsset.valueBlindingFactor,
           valueCommitment,
+          assetCommitment,
+          blindingFactorsAsset.valueBlindingFactor,
+          blindingFactorsAsset.assetBlindingFactor,
+          assetBlindingPrivateKey,
           Buffer.alloc(0),
           '0',
-          0,
-          52,
         );
         this.__CACHE.__TX.ins[inputIndex].issuanceRangeProof =
           issuanceRangeProof;
@@ -1070,15 +1069,13 @@ class Psbt {
           }
           const inflationRangeProof = await conf.rangeProof(
             blindingFactorsToken.value,
-            issuanceBlindingPrivKeys[inputIndex].tokenKey,
             token,
-            blindingFactorsToken.assetBlindingFactor,
-            blindingFactorsToken.valueBlindingFactor,
             tokenValueCommitment,
+            issuedTokenCommitment,
+            blindingFactorsToken.valueBlindingFactor,
+            blindingFactorsToken.assetBlindingFactor,
+            issuanceBlindingPrivKeys[inputIndex].tokenKey,
             Buffer.alloc(0),
-            '1',
-            0,
-            52,
           );
           this.__CACHE.__TX.ins[inputIndex].inflationRangeProof =
             inflationRangeProof;
@@ -1134,13 +1131,14 @@ class Psbt {
       );
       // proofs
       const rangeProof = await conf.rangeProofWithNonceHash(
-        outputBlindingData.value,
         blindingPubkeys[indexInArray],
         ephemeralKeys.privateKey,
+        outputBlindingData.value,
         outputBlindingData.asset,
-        outputBlindingData.assetBlindingFactor,
-        outputBlindingData.valueBlindingFactor,
         valueCommitment,
+        assetCommitment,
+        outputBlindingData.valueBlindingFactor,
+        outputBlindingData.assetBlindingFactor,
         this.__CACHE.__TX.outs[outputIndex].script,
       );
       const surjectionProof = await conf.surjectionProof(

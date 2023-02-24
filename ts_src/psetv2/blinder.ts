@@ -164,10 +164,11 @@ export class Blinder {
           value,
           targetOutput.asset!,
           valueCommitment,
+          assetCommitment,
           lastValueBlinder,
           assetBlinder,
-          targetOutput.script! || Buffer.alloc(0),
           nonce,
+          targetOutput.script! || Buffer.alloc(0),
         );
         valueBlindProof = this.blindingGenerator.lastBlindValueProof(
           value,
@@ -530,9 +531,9 @@ export class Blinder {
       if (!lastBlinder) {
         if (
           !this.blindingValidator.verifyValueRangeProof(
+            valueRangeProof,
             valueCommitment,
             assetCommitment,
-            valueRangeProof,
             targetOutput.script!,
           )
         ) {
@@ -540,9 +541,9 @@ export class Blinder {
         }
         if (
           !this.blindingValidator.verifyBlindValueProof(
+            valueBlindProof,
             valueCommitment,
             assetCommitment,
-            valueBlindProof,
           )
         ) {
           throw new Error('Invalid output value blind proof');

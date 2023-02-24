@@ -253,7 +253,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       [alice.keys, unconfidentialAlice.keys],
       Transaction.SIGHASH_ALL,
     );
-    console.log(rawTx.toHex());
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
