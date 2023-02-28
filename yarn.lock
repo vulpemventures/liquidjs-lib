@@ -341,7 +341,7 @@
 
 "@vulpemventures/secp256k1-zkp@git+https://github.com/vulpemventures/secp256k1-zkp.git":
   version "2.1.1"
-  resolved "git+https://github.com/vulpemventures/secp256k1-zkp.git#639e67ddfecf56f2b165d7e7072e4fc37dbccff3"
+  resolved "git+https://github.com/vulpemventures/secp256k1-zkp.git#c12b9d23b10db1f43612b28406adc724ec7f91b6"
   dependencies:
     "@types/node" "^13.9.2"
     long "^4.0.0"

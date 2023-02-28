@@ -1,23 +1,16 @@
 /// <reference types="node" />
-import { TinySecp256k1Interface as ECPairSecp256k1Interface } from 'ecpair';
+import type { Ecc as Secp256k1Interface } from '@vulpemventures/secp256k1-zkp';
 export declare const LEAF_VERSION_TAPSCRIPT = 196;
 export interface XOnlyPointAddTweakResult {
     parity: 1 | 0;
     xOnlyPubkey: Uint8Array;
-}
-export interface TinySecp256k1Interface extends ECPairSecp256k1Interface {
-    xOnlyPointAddTweak(p: Uint8Array, tweak: Uint8Array): XOnlyPointAddTweakResult | null;
-    privateAdd(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
-    privateSub(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
-    signSchnorr(h: Uint8Array, d: Uint8Array, e?: Uint8Array): Uint8Array;
-    verifySchnorr(h: Uint8Array, Q: Uint8Array, signature: Uint8Array): boolean;
 }
 export interface BIP341API {
     taprootSignKey(messageHash: Buffer, privateKey: Buffer): Buffer;
     taprootSignScriptStack(internalPublicKey: Buffer, leaf: TaprootLeaf, treeRootHash: Buffer, path: Buffer[]): Buffer[];
     taprootOutputScript(internalPublicKey: Buffer, tree?: HashTree): Buffer;
 }
-export declare function BIP341Factory(ecc: TinySecp256k1Interface): BIP341API;
+export declare function BIP341Factory(ecc: Secp256k1Interface): BIP341API;
 export interface TaprootLeaf {
     scriptHex: string;
     version?: number;

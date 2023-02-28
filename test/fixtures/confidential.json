@@ -80,6 +80,7 @@
         "scriptPubkey": "Buffer.from('a914d7da691a2b7256aa3bce759ef2b8ff5213fa327987', 'hex')",
         "asset": "Buffer.from('25b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a', 'hex')",
         "assetBlindingFactor": "Buffer.from('c4681a2583b714a31c5a0b997a6c107a96be4aef4847d9cde3035e8ef23642bf', 'hex')",
+        "assetCommitment": "Buffer.from('0a8d276fa2ab45fed0f622f818be77f456baa2f3b90456e30d2c561446b25b5458', 'hex')",
         "blindingPubkey": "Buffer.from('03c9714f5487ddcf3e3437abb5800861730fd3142c9bc6a47b5fcd5d5302a40add', 'hex')",
         "ephemeralPrivkey": "Buffer.from('fc009206ebaabab2cec5615bee86f500fd84a3fefbffcfb847572a25fa56c643', 'hex')",
         "valueCommitment": "Buffer.from('0953c4bf412d07fad5e05fe0f5ea2107a546f9cfef38ef2b962ffd84a89de03d7f', 'hex')",

@@ -2,7 +2,7 @@
 import type { Slip77Interface } from 'slip77';
 import type { KeysGenerator, Pset } from './pset';
 import type { IssuanceBlindingArgs, OutputBlindingArgs, OwnedInput } from './blinder';
-import { ZKPInterface } from '../secp256k1-zkp';
+import type { ZKP as ZKPInterface } from '@vulpemventures/secp256k1-zkp';
 export declare class ZKPValidator {
     private confidential;
     constructor(zkpLib: ZKPInterface);

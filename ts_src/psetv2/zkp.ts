@@ -12,7 +12,7 @@ import type {
 } from './blinder';
 import { calculateReissuanceToken } from '../issuance';
 import { AssetHash } from '../asset';
-import { ZKPInterface } from '../secp256k1-zkp';
+import type { ZKP as ZKPInterface } from '@vulpemventures/secp256k1-zkp';
 
 export class ZKPValidator {
   private confidential: Confidential;
@@ -145,26 +145,26 @@ export class ZKPGenerator {
       return scalarOffset;
     }
 
-    const { ec } = this.zkp;
-    const negScalarOffset = ec.prvkeyNegate(scalarOffset);
+    const { ecc } = this.zkp;
+    const negScalarOffset = ecc.privateNegate(scalarOffset);
 
     if (scalar.equals(negScalarOffset)) {
       return ZERO;
     }
 
-    return Buffer.from(ec.prvkeyTweakAdd(scalar, scalarOffset));
+    return Buffer.from(ecc.privateAdd(scalar, scalarOffset));
   }
 
   subtractScalars(inputScalar: Buffer, outputScalar: Buffer): Buffer {
     if (outputScalar.equals(ZERO)) {
       return inputScalar.slice();
     }
-    const { ec } = this.zkp;
-    const negOutputScalar = Buffer.from(ec.prvkeyNegate(outputScalar));
+    const { ecc } = this.zkp;
+    const negOutputScalar = Buffer.from(ecc.privateNegate(outputScalar));
     if (inputScalar.equals(ZERO)) {
       return negOutputScalar;
     }
-    return Buffer.from(ec.prvkeyTweakAdd(inputScalar, negOutputScalar));
+    return Buffer.from(ecc.privateAdd(inputScalar, negOutputScalar));
   }
 
   lastValueCommitment(value: string, asset: Buffer, blinder: Buffer): Buffer {
@@ -435,21 +435,21 @@ export class ZKPGenerator {
       return valueBlinder.slice();
     }
 
-    const { ec } = this.zkp;
+    const { ecc } = this.zkp;
     const val = Buffer.alloc(32, 0);
     val.writeBigUInt64BE(BigInt(value), 24);
-    const result = ec.prvkeyTweakMul(assetBlinder, val);
+    const result = ecc.privateMul(assetBlinder, val);
     if (valueBlinder.length === 0) {
       throw new Error('Missing value blinder');
     }
 
-    const negVb = Buffer.from(ec.prvkeyNegate(valueBlinder));
+    const negVb = Buffer.from(ecc.privateNegate(valueBlinder));
 
     if (negVb.equals(result)) {
       return ZERO;
     }
 
-    return Buffer.from(ec.prvkeyTweakAdd(result, valueBlinder));
+    return Buffer.from(ecc.privateAdd(result, valueBlinder));
   }
 
   private unblindUtxo(out: Output): OwnedInput {

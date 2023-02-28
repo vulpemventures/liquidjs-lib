@@ -1,4 +1,5 @@
-import { ECPairFactory, TinySecp256k1Interface } from 'ecpair';
+import { ECPairFactory } from 'ecpair';
+import type { Ecc as Secp256k1Interface } from '@vulpemventures/secp256k1-zkp';
 import { BufferReader, BufferWriter } from '../bufferutils';
 import { hash160 } from '../crypto';
 import { Issuance } from '../issuance';
@@ -13,7 +14,6 @@ import { getScriptType, ScriptType } from '../address';
 import { p2pkh } from '../payments';
 import { ElementsValue } from '../value';
 import { AssetHash } from '../asset';
-import { bip341 } from '..';
 import { randomBytes } from './utils';
 
 export const magicPrefix = Buffer.from([0x70, 0x73, 0x65, 0x74]);
@@ -65,7 +65,7 @@ export class Pset {
     return pset;
   }
 
-  static ECCKeysGenerator(ec: TinySecp256k1Interface): KeysGenerator {
+  static ECCKeysGenerator(ec: Secp256k1Interface): KeysGenerator {
     return (opts?: RngOpts) => {
       const privateKey = randomBytes(opts);
       const publicKey = ECPairFactory(ec).fromPrivateKey(privateKey).publicKey;
@@ -76,7 +76,7 @@ export class Pset {
     };
   }
 
-  static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction {
+  static ECDSASigValidator(ecc: Secp256k1Interface): ValidateSigFunction {
     return (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
       return ECPairFactory(ecc)
         .fromPublicKey(pubkey)
@@ -84,9 +84,7 @@ export class Pset {
     };
   }
 
-  static SchnorrSigValidator(
-    ecc: bip341.TinySecp256k1Interface,
-  ): ValidateSigFunction {
+  static SchnorrSigValidator(ecc: Secp256k1Interface): ValidateSigFunction {
     return (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
       ecc.verifySchnorr(msghash, pubkey, signature.slice(0, 64));
   }

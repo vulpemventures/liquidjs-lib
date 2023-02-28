@@ -102,23 +102,23 @@ class ZKPGenerator {
     if (scalar.equals(transaction_1.ZERO)) {
       return scalarOffset;
     }
-    const { ec } = this.zkp;
-    const negScalarOffset = ec.prvkeyNegate(scalarOffset);
+    const { ecc } = this.zkp;
+    const negScalarOffset = ecc.privateNegate(scalarOffset);
     if (scalar.equals(negScalarOffset)) {
       return transaction_1.ZERO;
     }
-    return Buffer.from(ec.prvkeyTweakAdd(scalar, scalarOffset));
+    return Buffer.from(ecc.privateAdd(scalar, scalarOffset));
   }
   subtractScalars(inputScalar, outputScalar) {
     if (outputScalar.equals(transaction_1.ZERO)) {
       return inputScalar.slice();
     }
-    const { ec } = this.zkp;
-    const negOutputScalar = Buffer.from(ec.prvkeyNegate(outputScalar));
+    const { ecc } = this.zkp;
+    const negOutputScalar = Buffer.from(ecc.privateNegate(outputScalar));
     if (inputScalar.equals(transaction_1.ZERO)) {
       return negOutputScalar;
     }
-    return Buffer.from(ec.prvkeyTweakAdd(inputScalar, negOutputScalar));
+    return Buffer.from(ecc.privateAdd(inputScalar, negOutputScalar));
   }
   lastValueCommitment(value, asset, blinder) {
     return this.confidential.valueCommitment(value, asset, blinder);
@@ -355,18 +355,18 @@ class ZKPGenerator {
     if (value === '0') {
       return valueBlinder.slice();
     }
-    const { ec } = this.zkp;
+    const { ecc } = this.zkp;
     const val = Buffer.alloc(32, 0);
     val.writeBigUInt64BE(BigInt(value), 24);
-    const result = ec.prvkeyTweakMul(assetBlinder, val);
+    const result = ecc.privateMul(assetBlinder, val);
     if (valueBlinder.length === 0) {
       throw new Error('Missing value blinder');
     }
-    const negVb = Buffer.from(ec.prvkeyNegate(valueBlinder));
+    const negVb = Buffer.from(ecc.privateNegate(valueBlinder));
     if (negVb.equals(result)) {
       return transaction_1.ZERO;
     }
-    return Buffer.from(ec.prvkeyTweakAdd(result, valueBlinder));
+    return Buffer.from(ecc.privateAdd(result, valueBlinder));
   }
   unblindUtxo(out) {
     if (out.nonce.length === 1) {
