@@ -12,7 +12,7 @@ import type {
 } from './blinder';
 import { calculateReissuanceToken } from '../issuance';
 import { AssetHash } from '../asset';
-import type { ZKP as ZKPInterface } from '@vulpemventures/secp256k1-zkp';
+import type { Secp256k1Interface as ZKPInterface } from '../secp256k1-zkp';
 
 export class ZKPValidator {
   private confidential: Confidential;

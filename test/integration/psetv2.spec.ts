@@ -26,7 +26,7 @@ import { address, bip341 } from '../../ts_src';
 import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
 import secp256k1 from '@vulpemventures/secp256k1-zkp';
-import type { Ecc } from '@vulpemventures/secp256k1-zkp';
+import type { Ecc } from '../../ts_src/secp256k1-zkp';
 import { issuanceEntropyFromInput } from '../../ts_src/issuance';
 
 const OPS = bscript.OPS;

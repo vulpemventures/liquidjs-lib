@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import type { Ecc as Secp256k1Interface } from '@vulpemventures/secp256k1-zkp';
+import type { Ecc as Secp256k1Interface } from '../secp256k1-zkp';
 import { Transaction } from '../transaction';
 import { PsetGlobal } from './globals';
 import { PsetInput } from './input';

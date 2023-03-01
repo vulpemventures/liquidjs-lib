@@ -1,5 +1,5 @@
+import type { Ecc as Secp256k1Interface } from '../secp256k1-zkp';
 import { ECPairFactory } from 'ecpair';
-import type { Ecc as Secp256k1Interface } from '@vulpemventures/secp256k1-zkp';
 import { BufferReader, BufferWriter } from '../bufferutils';
 import { hash160 } from '../crypto';
 import { Issuance } from '../issuance';

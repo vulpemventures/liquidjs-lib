@@ -1,7 +1,7 @@
 import * as crypto from './crypto';
 import { Output, ZERO } from './transaction';
 import { ElementsValue } from './value';
-import type { ZKP as ZKPInterface } from '@vulpemventures/secp256k1-zkp';
+import type { Secp256k1Interface as ZKPInterface } from './secp256k1-zkp';
 
 export interface UnblindOutputResult {
   value: string;

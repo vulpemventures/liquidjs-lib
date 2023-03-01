@@ -39,8 +39,9 @@ import * as bscript from './script';
 import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
 import { checkForInput } from 'bip174-liquid/src/lib/utils';
-import { TinySecp256k1Interface, ECPairFactory } from 'ecpair';
+import { ECPairFactory } from 'ecpair';
 import { ElementsValue } from './value';
+import { Ecc as TinySecp256k1Interface } from './secp256k1-zkp';
 
 // psbt.addIssuance options
 export interface AddIssuanceArgs {

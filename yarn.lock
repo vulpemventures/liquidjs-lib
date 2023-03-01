@@ -339,9 +339,10 @@
   dependencies:
     "@types/node" "*"
 
-"@vulpemventures/secp256k1-zkp@git+https://github.com/vulpemventures/secp256k1-zkp.git":
-  version "2.2.0"
-  resolved "git+https://github.com/vulpemventures/secp256k1-zkp.git#b322e995afc90b0d1bec3db1b59af04bc745d85f"
+"@vulpemventures/secp256k1-zkp@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@vulpemventures/secp256k1-zkp/-/secp256k1-zkp-3.0.0.tgz#96b7db89cbc3308c44414ad136a8f2b93c5f1872"
+  integrity sha512-63SSi3QxROV3N8ZjEwloPHwp/t2LygsTXwl+t7U36DPp6yROetZFe8SquKwbOKeQMM0aYDQWtMWpgqRRXdrldg==
   dependencies:
     "@types/node" "^13.9.2"
     long "^4.0.0"

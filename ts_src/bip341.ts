@@ -1,7 +1,7 @@
 import { taggedHash } from './crypto';
 import { ECPairFactory } from 'ecpair';
 import { BufferWriter, varSliceSize } from './bufferutils';
-import type { Ecc as Secp256k1Interface } from '@vulpemventures/secp256k1-zkp';
+import type { Ecc as Secp256k1Interface } from './secp256k1-zkp';
 
 export const LEAF_VERSION_TAPSCRIPT = 0xc4;
 
