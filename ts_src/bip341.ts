@@ -1,9 +1,7 @@
 import { taggedHash } from './crypto';
-import {
-  ECPairFactory,
-  TinySecp256k1Interface as ECPairSecp256k1Interface,
-} from 'ecpair';
+import { ECPairFactory } from 'ecpair';
 import { BufferWriter, varSliceSize } from './bufferutils';
+import type { Ecc as Secp256k1Interface } from './secp256k1-zkp';
 
 export const LEAF_VERSION_TAPSCRIPT = 0xc4;
 
@@ -12,19 +10,8 @@ export interface XOnlyPointAddTweakResult {
   xOnlyPubkey: Uint8Array;
 }
 
-export interface TinySecp256k1Interface extends ECPairSecp256k1Interface {
-  xOnlyPointAddTweak(
-    p: Uint8Array,
-    tweak: Uint8Array,
-  ): XOnlyPointAddTweakResult | null;
-  privateAdd(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
-  privateSub(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
-  signSchnorr(h: Uint8Array, d: Uint8Array, e?: Uint8Array): Uint8Array;
-  verifySchnorr(h: Uint8Array, Q: Uint8Array, signature: Uint8Array): boolean;
-}
-
 // All the "taproot" crypto functions
-// Use factory to inject TinySecp256k1Interface lib
+// Use factory to inject Secp256k1Interface lib
 export interface BIP341API {
   // tweak the internal key and sign the message hash (schnorr)
   taprootSignKey(messageHash: Buffer, privateKey: Buffer): Buffer;
@@ -39,7 +26,7 @@ export interface BIP341API {
   taprootOutputScript(internalPublicKey: Buffer, tree?: HashTree): Buffer;
 }
 
-export function BIP341Factory(ecc: TinySecp256k1Interface): BIP341API {
+export function BIP341Factory(ecc: Secp256k1Interface): BIP341API {
   return {
     taprootSignKey: taprootSignKey(ecc),
     taprootSignScriptStack: taprootSignScriptStack(ecc),
@@ -143,7 +130,7 @@ export function findScriptPath(node: HashTree, hash: Buffer): Buffer[] {
 function tweakPublicKey(
   publicKey: Buffer,
   hash: Buffer,
-  ecc: TinySecp256k1Interface,
+  ecc: Secp256k1Interface,
 ): XOnlyPointAddTweakResult {
   const XOnlyPubKey = publicKey.slice(1, 33);
   const toTweak = Buffer.concat([XOnlyPubKey, hash]);
@@ -155,7 +142,7 @@ function tweakPublicKey(
 
 // compute a segwit V1 output script
 function taprootOutputScript(
-  ecc: TinySecp256k1Interface,
+  ecc: Secp256k1Interface,
 ): BIP341API['taprootOutputScript'] {
   return (internalPublicKey: Buffer, tree?: HashTree): Buffer => {
     let treeHash = Buffer.alloc(0);
@@ -177,7 +164,7 @@ function taprootOutputScript(
  * @param path the path to the leaf in the MAST tree see findScriptPath function
  */
 function taprootSignScriptStack(
-  ecc: TinySecp256k1Interface,
+  ecc: Secp256k1Interface,
 ): BIP341API['taprootSignScriptStack'] {
   return (
     internalPublicKey: Buffer,
@@ -211,9 +198,7 @@ const ONE = Buffer.from(
 );
 
 // Compute the witness signature for a P2TR output (key path)
-function taprootSignKey(
-  ecc: TinySecp256k1Interface,
-): BIP341API['taprootSignKey'] {
+function taprootSignKey(ecc: Secp256k1Interface): BIP341API['taprootSignKey'] {
   return (messageHash: Buffer, key: Buffer): Buffer => {
     const signingEcPair = ECPairFactory(ecc).fromPrivateKey(key);
 
@@ -227,11 +212,7 @@ function taprootSignKey(
     );
     const newPrivateKey = ecc.privateAdd(privateKey!, tweakHash);
     if (newPrivateKey === null) throw new Error('Invalid Tweak');
-    const signed = ecc.signSchnorr(
-      messageHash,
-      newPrivateKey,
-      Buffer.alloc(32),
-    );
+    const signed = ecc.signSchnorr(messageHash, newPrivateKey);
 
     const ok = ecc.verifySchnorr(
       messageHash,

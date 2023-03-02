@@ -117,19 +117,20 @@ describe('confidential', () => {
   it('rangeProof', async () => {
     for (const f of fixtures.valid.rangeproof) {
       const minValue = '1';
-      const exp = 0;
-      const minBits = 36;
+      const exp = '0';
+      const minBits = '36';
 
       const zkpLib = await secp256k1();
       const confidential = new Confidential(zkpLib);
       const proof = confidential.rangeProofWithNonceHash(
-        f.value,
         Buffer.from(f.blindingPubkey, 'hex'),
         Buffer.from(f.ephemeralPrivkey, 'hex'),
+        f.value,
         Buffer.from(f.asset, 'hex'),
-        Buffer.from(f.assetBlindingFactor, 'hex'),
-        Buffer.from(f.valueBlindingFactor, 'hex'),
         Buffer.from(f.valueCommitment, 'hex'),
+        Buffer.from(f.assetCommitment, 'hex'),
+        Buffer.from(f.valueBlindingFactor, 'hex'),
+        Buffer.from(f.assetBlindingFactor, 'hex'),
         Buffer.from(f.scriptPubkey, 'hex'),
         minValue,
         exp,

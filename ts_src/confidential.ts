@@ -1,6 +1,7 @@
 import * as crypto from './crypto';
 import { Output, ZERO } from './transaction';
 import { ElementsValue } from './value';
+import type { Secp256k1Interface as ZKPInterface } from './secp256k1-zkp';
 
 export interface UnblindOutputResult {
   value: string;
@@ -16,158 +17,43 @@ export interface RangeProofInfoResult {
   maxValue: number;
 }
 
-type Ecdh = (pubkey: Buffer, scalar: Buffer) => Buffer;
-
-interface Ec {
-  prvkeyNegate: (key: Buffer) => Buffer;
-  prvkeyTweakAdd: (key: Buffer, tweak: Buffer) => Buffer;
-  prvkeyTweakMul: (key: Buffer, tweak: Buffer) => Buffer;
-}
-
-interface Generator {
-  generate: (seed: Buffer) => Buffer;
-  generateBlinded(key: Buffer, blind: Buffer): Buffer;
-  parse(input: Buffer): Buffer;
-  serialize(generator: Buffer): Buffer;
-}
-
-interface Pedersen {
-  commit(blindFactor: Buffer, value: string, generator: Buffer): Buffer;
-  commitSerialize(commitment: Buffer): Buffer;
-  commitParse(input: Buffer): Buffer;
-  blindSum(blinds: Array<Buffer>, nneg?: number): Buffer;
-  verifySum(commits: Array<Buffer>, negativeCommits: Array<Buffer>): boolean;
-  blindGeneratorBlindSum(
-    values: Array<string>,
-    nInputs: number,
-    blindGenerators: Array<Buffer>,
-    blindFactors: Array<Buffer>,
-  ): Buffer;
-}
-
-interface RangeProof {
-  info(proof: Buffer): {
-    exp: number;
-    mantissa: string;
-    minValue: string;
-    maxValue: string;
-  };
-  verify(
-    commit: Buffer,
-    proof: Buffer,
-    generator: Buffer,
-    extraCommit?: Buffer,
-  ): boolean;
-  sign(
-    commit: Buffer,
-    blind: Buffer,
-    nonce: Buffer,
-    value: string,
-    generator: Buffer,
-    minValue?: string,
-    base10Exp?: number,
-    minBits?: number,
-    message?: Buffer,
-    extraCommit?: Buffer,
-  ): Buffer;
-  rewind(
-    commit: Buffer,
-    proof: Buffer,
-    nonce: Buffer,
-    generator: Buffer,
-    extraCommit?: Buffer,
-  ): {
-    value: string;
-    minValue: string;
-    maxValue: string;
-    blindFactor: Buffer;
-    message: Buffer;
-  };
-}
-
-interface SurjectionProof {
-  serialize: (proof: {
-    nInputs: number;
-    usedInputs: Buffer;
-    data: Buffer;
-  }) => Buffer;
-  parse: (proof: Buffer) => {
-    nInputs: number;
-    usedInputs: Buffer;
-    data: Buffer;
-  };
-  initialize: (
-    inputTags: Array<Buffer>,
-    inputTagsToUse: number,
-    outputTag: Buffer,
-    maxIterations: number,
-    seed: Buffer,
-  ) => {
-    proof: { nInputs: number; usedInputs: Buffer; data: Buffer };
-    inputIndex: number;
-  };
-  generate: (
-    proof: { nInputs: number; usedInputs: Buffer; data: Buffer },
-    inputTags: Array<Buffer>,
-    outputTag: Buffer,
-    inputIndex: number,
-    inputBlindingKey: Buffer,
-    outputBlindingKey: Buffer,
-  ) => { nInputs: number; usedInputs: Buffer; data: Buffer };
-  verify: (
-    proof: { nInputs: number; usedInputs: Buffer; data: Buffer },
-    inputTags: Array<Buffer>,
-    outputTag: Buffer,
-  ) => boolean;
-}
-
-export interface ZKPInterface {
-  ecdh: Ecdh;
-  ec: Ec;
-  surjectionproof: SurjectionProof;
-  rangeproof: RangeProof;
-  pedersen: Pedersen;
-  generator: Generator;
-}
-
 export class Confidential {
   constructor(private zkp: ZKPInterface) {}
 
   nonceHash(pubkey: Buffer, privkey: Buffer): Buffer {
-    return crypto.sha256(this.zkp.ecdh(pubkey, privkey));
+    return crypto.sha256(Buffer.from(this.zkp.ecdh(pubkey, privkey)));
   }
 
   valueBlindingFactor(
     inValues: string[],
     outValues: string[],
-    inGenerators: Buffer[],
-    outGenerators: Buffer[],
-    inFactors: Buffer[],
-    outFactors: Buffer[],
+    inAssetBlinders: Buffer[],
+    outAssetBlinders: Buffer[],
+    inValueBlinders: Buffer[],
+    outValueBlinders: Buffer[],
   ): Buffer {
     const values = inValues.concat(outValues);
     const nInputs = inValues.length;
-    const generators = inGenerators.concat(outGenerators);
-    const factors = inFactors.concat(outFactors);
-    return this.zkp.pedersen.blindGeneratorBlindSum(
-      values,
-      nInputs,
-      generators,
-      factors,
+    const assetBlinders = inAssetBlinders.concat(outAssetBlinders);
+    const valueBlinders = inValueBlinders.concat(outValueBlinders);
+    return Buffer.from(
+      this.zkp.pedersen.blindGeneratorBlindSum(
+        values,
+        assetBlinders,
+        valueBlinders,
+        nInputs,
+      ),
     );
   }
 
-  valueCommitment(value: string, gen: Buffer, factor: Buffer): Buffer {
-    const { generator, pedersen } = this.zkp;
-    const generatorParsed = generator.parse(gen);
-    const commit = pedersen.commit(factor, value, generatorParsed);
-    return pedersen.commitSerialize(commit);
+  valueCommitment(value: string, generator: Buffer, blinder: Buffer): Buffer {
+    const { pedersen } = this.zkp;
+    return Buffer.from(pedersen.commitment(value, generator, blinder));
   }
 
   assetCommitment(asset: Buffer, factor: Buffer): Buffer {
     const { generator } = this.zkp;
-    const gen = generator.generateBlinded(asset, factor);
-    return generator.serialize(gen);
+    return Buffer.from(generator.generateBlinded(asset, factor));
   }
 
   unblindOutputWithKey(
@@ -183,20 +69,19 @@ export class Confidential {
       throw new Error('Missing rangeproof to rewind');
     }
     const secp = this.zkp;
-    const gen = secp.generator.parse(out.asset);
-    const { value, blindFactor, message } = secp.rangeproof.rewind(
-      out.value,
+    const { value, blinder, message } = secp.rangeproof.rewind(
       out.rangeProof!,
+      out.value,
+      out.asset,
       nonce,
-      gen,
       out.script,
     );
 
     return {
       value,
-      asset: message.slice(0, 32),
-      valueBlindingFactor: blindFactor,
-      assetBlindingFactor: message.slice(32),
+      asset: Buffer.from(message.slice(0, 32)),
+      valueBlindingFactor: Buffer.from(blinder),
+      assetBlindingFactor: Buffer.from(message.slice(32)),
     };
   }
 
@@ -206,7 +91,7 @@ export class Confidential {
     return {
       minValue: parseInt(minValue, 10),
       maxValue: parseInt(maxValue, 10),
-      ctExp: exp,
+      ctExp: parseInt(exp, 10),
       ctBits: parseInt(mantissa, 10),
     };
   }
@@ -215,26 +100,28 @@ export class Confidential {
    *  nonceHash from blinding key + ephemeral key and then rangeProof computation
    */
   rangeProofWithNonceHash(
-    value: string,
     blindingPubkey: Buffer,
     ephemeralPrivkey: Buffer,
+    value: string,
     asset: Buffer,
-    assetBlindingFactor: Buffer,
-    valueBlindFactor: Buffer,
-    valueCommit: Buffer,
+    valueCommitment: Buffer,
+    assetCommitment: Buffer,
+    valueBlinder: Buffer,
+    assetBlinder: Buffer,
     scriptPubkey: Buffer,
     minValue?: string,
-    exp?: number,
-    minBits?: number,
+    exp?: string,
+    minBits?: string,
   ): Buffer {
     const nonce = this.nonceHash(blindingPubkey, ephemeralPrivkey);
     return this.rangeProof(
       value,
-      nonce,
       asset,
-      assetBlindingFactor,
-      valueBlindFactor,
-      valueCommit,
+      valueCommitment,
+      assetCommitment,
+      valueBlinder,
+      assetBlinder,
+      nonce,
       scriptPubkey,
       minValue,
       exp,
@@ -243,15 +130,13 @@ export class Confidential {
   }
 
   rangeProofVerify(
-    valueCommit: Buffer,
-    assetCommit: Buffer,
     proof: Buffer,
+    valueCommitment: Buffer,
+    assetCommitment: Buffer,
     script?: Buffer,
   ): boolean {
-    const { generator, pedersen, rangeproof } = this.zkp;
-    const gen = generator.parse(assetCommit);
-    const commit = pedersen.commitParse(valueCommit);
-    return rangeproof.verify(commit, proof, gen, script);
+    const { rangeproof } = this.zkp;
+    return rangeproof.verify(proof, valueCommitment, assetCommitment, script);
   }
 
   /**
@@ -259,37 +144,34 @@ export class Confidential {
    */
   rangeProof(
     value: string,
-    nonce: Buffer,
     asset: Buffer,
-    assetBlindingFactor: Buffer,
-    valueBlindFactor: Buffer,
-    valueCommit: Buffer,
+    valueCommitment: Buffer,
+    assetCommitment: Buffer,
+    valueBlinder: Buffer,
+    assetBlinder: Buffer,
+    nonce: Buffer,
     scriptPubkey: Buffer,
-    minValue?: string,
-    exp?: number,
-    minBits?: number,
+    minValue: string = '1',
+    exp: string = '0',
+    minBits: string = '52',
   ): Buffer {
-    const { generator, pedersen, rangeproof } = this.zkp;
+    const { rangeproof } = this.zkp;
 
-    const gen = generator.generateBlinded(asset, assetBlindingFactor);
-    const message = Buffer.concat([asset, assetBlindingFactor]);
-    const commit = pedersen.commitParse(valueCommit);
+    const message = Buffer.concat([asset, assetBlinder]);
 
-    const mv = value === '0' ? '0' : minValue ? minValue : '1';
-    const e = exp ? exp : 0;
-    const mb = minBits ? minBits : 52;
-
-    return rangeproof.sign(
-      commit,
-      valueBlindFactor,
-      nonce,
-      value,
-      gen,
-      mv,
-      e,
-      mb,
-      message,
-      scriptPubkey,
+    return Buffer.from(
+      rangeproof.sign(
+        value,
+        valueCommitment,
+        assetCommitment,
+        valueBlinder,
+        nonce,
+        parseInt(value, 10) === 0 ? '0' : minValue,
+        exp,
+        minBits,
+        message,
+        scriptPubkey,
+      ),
     );
   }
 
@@ -309,27 +191,25 @@ export class Confidential {
     const inputGenerators = inputAssets.map((v, i) =>
       generator.generateBlinded(v, inputAssetBlindingFactors[i]),
     );
-    const nInputsToUse = inputAssets.length > 3 ? 3 : inputAssets.length;
     const maxIterations = 100;
 
     const init = surjectionproof.initialize(
       inputAssets,
-      nInputsToUse,
       outputAsset,
       maxIterations,
       seed,
     );
 
-    const proof = surjectionproof.generate(
-      init.proof,
-      inputGenerators,
-      outputGenerator,
-      init.inputIndex,
-      inputAssetBlindingFactors[init.inputIndex],
-      outputAssetBlindingFactor,
+    return Buffer.from(
+      surjectionproof.generate(
+        init.proof,
+        inputGenerators,
+        outputGenerator,
+        init.inputIndex,
+        inputAssetBlindingFactors[init.inputIndex],
+        outputAssetBlindingFactor,
+      ),
     );
-
-    return surjectionproof.serialize(proof);
   }
 
   surjectionProofVerify(
@@ -344,68 +224,67 @@ export class Confidential {
       generator.generateBlinded(v, inAssetBlinders[i]),
     );
     const outGenerator = generator.generateBlinded(outAsset, outAssetBlinder);
-    const sProof = surjectionproof.parse(proof);
-    return surjectionproof.verify(sProof, inGenerators, outGenerator);
+    return surjectionproof.verify(proof, inGenerators, outGenerator);
   }
 
   blindValueProof(
     value: string,
-    valueCommit: Buffer,
-    assetCommit: Buffer,
+    valueCommitment: Buffer,
+    assetCommitment: Buffer,
     valueBlinder: Buffer,
     nonce: Buffer,
   ): Buffer {
-    const { generator, pedersen, rangeproof } = this.zkp;
-
-    const gen = generator.parse(assetCommit);
-    const commit = pedersen.commitParse(valueCommit);
-
-    return rangeproof.sign(commit, valueBlinder, nonce, value, gen, value, -1);
+    const { rangeproof } = this.zkp;
+    return Buffer.from(
+      rangeproof.sign(
+        value,
+        valueCommitment,
+        assetCommitment,
+        valueBlinder,
+        nonce,
+        value,
+        '-1',
+      ),
+    );
   }
 
   blindAssetProof(
     asset: Buffer,
-    assetCommit: Buffer,
+    assetCommitment: Buffer,
     assetBlinder: Buffer,
   ): Buffer {
     const { generator, surjectionproof } = this.zkp;
 
-    const nInputsToUse = 1;
     const maxIterations = 100;
-
+    const gen = generator.generate(asset);
     const init = surjectionproof.initialize(
       [asset],
-      nInputsToUse,
       asset,
       maxIterations,
       ZERO,
     );
 
-    const gen = generator.generate(asset);
-    const assetGen = generator.parse(assetCommit);
-
-    const proof = surjectionproof.generate(
-      init.proof,
-      [gen],
-      assetGen,
-      init.inputIndex,
-      ZERO,
-      assetBlinder,
+    return Buffer.from(
+      surjectionproof.generate(
+        init.proof,
+        [gen],
+        assetCommitment,
+        init.inputIndex,
+        ZERO,
+        assetBlinder,
+      ),
     );
-
-    return surjectionproof.serialize(proof);
   }
 
   assetBlindProofVerify(
     asset: Buffer,
-    assetCommit: Buffer,
+    assetCommitment: Buffer,
     proof: Buffer,
   ): boolean {
     const { generator, surjectionproof } = this.zkp;
     const inGenerators = [generator.generate(asset)];
-    const outGenerator = generator.parse(assetCommit);
-    const sProof = surjectionproof.parse(proof);
-    return surjectionproof.verify(sProof, inGenerators, outGenerator);
+    const outGenerator = assetCommitment;
+    return surjectionproof.verify(proof, inGenerators, outGenerator);
   }
 }
 

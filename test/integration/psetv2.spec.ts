@@ -26,6 +26,7 @@ import { address, bip341 } from '../../ts_src';
 import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
 import secp256k1 from '@vulpemventures/secp256k1-zkp';
+import type { Ecc } from '../../ts_src/secp256k1-zkp';
 import { issuanceEntropyFromInput } from '../../ts_src/issuance';
 
 const OPS = bscript.OPS;
@@ -71,7 +72,13 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInputs(inputs);
     updater.addOutputs(outputs);
 
-    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
+    const { ecc: ecclib } = await secp256k1();
+    const rawTx = signTransaction(
+      pset,
+      [alice.keys],
+      Transaction.SIGHASH_ALL,
+      ecclib,
+    );
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -253,7 +260,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       [alice.keys, unconfidentialAlice.keys],
       Transaction.SIGHASH_ALL,
     );
-    console.log(rawTx.toHex());
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -991,7 +997,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
   it('can create (and broadcast via 3PBP) a transaction w/ unconfidential taproot keyspend input', async () => {
     const alice = ECPair.makeRandom({ network: regtest });
 
-    const output = BIP341Factory(ecc).taprootOutputScript(alice.publicKey);
+    const { ecc: ecclib } = await secp256k1();
+
+    const output = BIP341Factory(ecclib).taprootOutputScript(alice.publicKey);
     const taprootAddress = address.fromOutputScript(output, regtest); // UNCONFIDENTIAL
 
     const utxo = await regtestUtils.faucet(taprootAddress);
@@ -1030,7 +1038,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       Transaction.SIGHASH_ALL,
       regtest.genesisBlockHash,
     );
-    const signature = BIP341Factory(ecc).taprootSignKey(
+    const signature = BIP341Factory(ecclib).taprootSignKey(
       preimage,
       alice.privateKey!,
     );
@@ -1041,7 +1049,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       tapKeySig: serializeSchnnorrSig(signature, Transaction.SIGHASH_ALL),
       genesisBlockHash: regtest.genesisBlockHash,
     };
-    signer.addSignature(0, partialSig, Pset.SchnorrSigValidator(ecc));
+    signer.addSignature(0, partialSig, Pset.SchnorrSigValidator(ecclib));
 
     const finalizer = new PsetFinalizer(pset);
     finalizer.finalize();
@@ -1060,6 +1068,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       OPS.OP_CHECKSIG,
     ]);
 
+    const zkpLib = await secp256k1();
+    const { ecc: ecclib } = zkpLib;
+
     // in this exemple, alice is the internal key (can spend via keypath spend)
     // however, the script tree allows bob to spend the coin with a simple p2pkh
     const leaves: bip341.TaprootLeaf[] = [
@@ -1073,7 +1084,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     ];
 
     const hashTree = bip341.toHashTree(leaves);
-    const output = BIP341Factory(ecc).taprootOutputScript(
+    const output = BIP341Factory(ecclib).taprootOutputScript(
       alice.publicKey,
       hashTree,
     );
@@ -1129,7 +1140,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
     const leafHash = bip341.tapLeafHash(leaves[0]);
     const pathToBobLeaf = bip341.findScriptPath(hashTree, leafHash);
-    const [script, controlBlock] = BIP341Factory(ecc).taprootSignScriptStack(
+    const [script, controlBlock] = BIP341Factory(ecclib).taprootSignScriptStack(
       alice.publicKey,
       leaves[0],
       hashTree.hash,
@@ -1142,7 +1153,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       script,
     });
 
-    const zkpLib = await secp256k1();
     const zkpValidator = new ZKPValidator(zkpLib);
     const zkpGenerator = new ZKPGenerator(
       zkpLib,
@@ -1152,7 +1162,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     const ownedInputs = zkpGenerator.unblindInputs(pset);
     const outputBlindingArgs = zkpGenerator.blindOutputs(
       pset,
-      Pset.ECCKeysGenerator(ecc),
+      Pset.ECCKeysGenerator(ecclib),
     );
 
     const blinder = new PsetBlinder(
@@ -1180,7 +1190,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
         ),
       },
     };
-    signer.addSignature(0, partialSig, Pset.ECDSASigValidator(ecc));
+    signer.addSignature(0, partialSig, Pset.ECDSASigValidator(ecclib));
 
     // taproot input
     const hashType = pset.inputs[1].sighashType || Transaction.SIGHASH_ALL;
@@ -1191,7 +1201,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       leafHash,
     );
 
-    const sig = ecc.signSchnorr(sighashmsg, BOB.privateKey!, Buffer.alloc(32));
+    const sig = ecclib.signSchnorr(
+      sighashmsg,
+      BOB.privateKey!,
+      Buffer.alloc(32),
+    );
 
     const taprootData = {
       tapScriptSigs: [
@@ -1204,7 +1218,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       genesisBlockHash: regtest.genesisBlockHash,
     };
 
-    signer.addSignature(1, taprootData, Pset.SchnorrSigValidator(ecc));
+    signer.addSignature(1, taprootData, Pset.SchnorrSigValidator(ecclib));
 
     const finalizer = new PsetFinalizer(pset);
     finalizer.finalize();
@@ -1219,6 +1233,7 @@ function signTransaction(
   pset: Pset,
   signers: any[],
   sighashType: number,
+  ecclib: Ecc = ecc,
 ): Transaction {
   const signer = new PsetSigner(pset);
 
@@ -1231,11 +1246,11 @@ function signTransaction(
           signature: bscript.signature.encode(kp.sign(preimage), sighashType),
         },
       };
-      signer.addSignature(i, partialSig, Pset.ECDSASigValidator(ecc));
+      signer.addSignature(i, partialSig, Pset.ECDSASigValidator(ecclib));
     });
   });
 
-  if (!pset.validateAllSignatures(Pset.ECDSASigValidator(ecc))) {
+  if (!pset.validateAllSignatures(Pset.ECDSASigValidator(ecclib))) {
     throw new Error('Failed to sign pset');
   }
 

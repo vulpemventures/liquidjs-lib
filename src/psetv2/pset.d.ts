@@ -1,11 +1,10 @@
 /// <reference types="node" />
-import { TinySecp256k1Interface } from 'ecpair';
+import type { Ecc as Secp256k1Interface } from '../secp256k1-zkp';
 import { Transaction } from '../transaction';
 import { PsetGlobal } from './globals';
 import { PsetInput } from './input';
 import { PartialSig, RngOpts } from './interfaces';
 import { PsetOutput } from './output';
-import { bip341 } from '..';
 export declare const magicPrefix: Buffer;
 export declare const magicPrefixWithSeparator: Buffer;
 export declare type ValidateSigFunction = (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
@@ -16,9 +15,9 @@ export declare type KeysGenerator = (opts?: RngOpts) => {
 export declare class Pset {
     static fromBase64(data: string): Pset;
     static fromBuffer(buf: Buffer): Pset;
-    static ECCKeysGenerator(ec: TinySecp256k1Interface): KeysGenerator;
-    static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction;
-    static SchnorrSigValidator(ecc: bip341.TinySecp256k1Interface): ValidateSigFunction;
+    static ECCKeysGenerator(ec: Secp256k1Interface): KeysGenerator;
+    static ECDSASigValidator(ecc: Secp256k1Interface): ValidateSigFunction;
+    static SchnorrSigValidator(ecc: Secp256k1Interface): ValidateSigFunction;
     inputs: PsetInput[];
     outputs: PsetOutput[];
     globals: PsetGlobal;

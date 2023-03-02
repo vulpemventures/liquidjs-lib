@@ -154,11 +154,7 @@ function taprootSignKey(ecc) {
     );
     const newPrivateKey = ecc.privateAdd(privateKey, tweakHash);
     if (newPrivateKey === null) throw new Error('Invalid Tweak');
-    const signed = ecc.signSchnorr(
-      messageHash,
-      newPrivateKey,
-      Buffer.alloc(32),
-    );
+    const signed = ecc.signSchnorr(messageHash, newPrivateKey);
     const ok = ecc.verifySchnorr(
       messageHash,
       (0, ecpair_1.ECPairFactory)(ecc)
