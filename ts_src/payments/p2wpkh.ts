@@ -2,13 +2,12 @@ import * as baddress from '../address';
 import * as bcrypto from '../crypto';
 import { liquid as LIQUID_NETWORK } from '../networks';
 import * as bscript from '../script';
+import { isPoint, typeforce as typef } from '../types';
 import { Payment, PaymentOpts } from './index';
 import * as lazy from './lazy';
-const typef = require('typeforce');
-const OPS = bscript.OPS;
-const ecc = require('tiny-secp256k1');
+import { bech32 } from 'bech32';
 
-const bech32 = require('bech32');
+const OPS = bscript.OPS;
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -34,7 +33,7 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
       input: typef.maybe(typef.BufferN(0)),
       network: typef.maybe(typef.Object),
       output: typef.maybe(typef.BufferN(22)),
-      pubkey: typef.maybe(ecc.isPoint),
+      pubkey: typef.maybe(isPoint),
       signature: typef.maybe(bscript.isCanonicalScriptSignature),
       witness: typef.maybe(typef.arrayOf(typef.Buffer)),
     },
@@ -44,7 +43,7 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
   const network = a.network || LIQUID_NETWORK;
 
   const _address = lazy.value(() => {
-    const result = bech32.decode(a.address);
+    const result = bech32.decode(a.address!);
     const version = result.words.shift();
     const data = bech32.fromWords(result.words);
     return {
@@ -60,7 +59,7 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
       unconfidentialAddress: baddress.toBech32(
         result.data.slice(2),
         result.version,
-        network!.bech32,
+        network.bech32,
       ),
     };
   });
@@ -112,12 +111,14 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
   lazy.prop(o, 'confidentialAddress', () => {
     if (!o.address) return;
     if (!o.blindkey) return;
+    if (!o.network) return;
     const res = baddress.fromBech32(o.address);
     const data = Buffer.concat([
       Buffer.from([res.version, res.data.length]),
       res.data,
     ]);
-    return baddress.toBlech32(data, o.blindkey!, o.network!.blech32);
+    if (res.version !== 0) return;
+    return baddress.toBlech32(data, o.blindkey!, o.network.blech32, 0);
   });
 
   // extended validation
@@ -157,13 +158,15 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
       if (hash.length > 0 && !hash.equals(pkh))
         throw new TypeError('Hash mismatch');
       else hash = pkh;
+      if (!isPoint(a.pubkey) || a.pubkey.length !== 33)
+        throw new TypeError('Invalid pubkey for p2wpkh');
     }
 
     if (a.witness) {
       if (a.witness.length !== 2) throw new TypeError('Witness is invalid');
       if (!bscript.isCanonicalScriptSignature(a.witness[0]))
         throw new TypeError('Witness has invalid signature');
-      if (!ecc.isPoint(a.witness[1]))
+      if (!isPoint(a.witness[1]) || a.witness[1].length !== 33)
         throw new TypeError('Witness has invalid pubkey');
 
       if (a.signature && !a.signature.equals(a.witness[0]))
@@ -191,7 +194,7 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
     }
 
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;

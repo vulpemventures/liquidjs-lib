@@ -1,14 +1,11 @@
 import * as assert from 'assert';
 import { describe, it } from 'mocha';
-import {
-  // bip32,
-  ECPair,
-  networks as NETWORKS,
-  Psbt,
-} from '..';
-const { satoshiToConfidentialValue } = require('../src/confidential');
-const bscript = require('../src/script');
+import { networks as NETWORKS, script as bscript } from '../ts_src';
+import { Psbt } from '../ts_src/psbt';
+import { ECPair } from './ecc';
 import * as preFixtures from './fixtures/psbt.json';
+import { ElementsValue } from '../ts_src/value';
+const ecc = require('tiny-secp256k1');
 
 const initBuffers = (object: any): typeof preFixtures =>
   JSON.parse(JSON.stringify(object), (_, value) => {
@@ -25,7 +22,7 @@ const initBuffers = (object: any): typeof preFixtures =>
 const fixtures = initBuffers(preFixtures);
 
 const upperCaseFirstLetter = (str: string): string =>
-  str.replace(/^./, s => s.toUpperCase());
+  str.replace(/^./, (s) => s.toUpperCase());
 
 describe('Psbt', () => {
   describe('BIP174 Test Vectors', () => {
@@ -46,7 +43,7 @@ describe('Psbt', () => {
       });
     });
 
-    fixtures.bip174.updater.forEach(f => {
+    fixtures.bip174.updater.forEach((f) => {
       it('Updates PSBT to the expected result', () => {
         const psbt = Psbt.fromBase64(f.psbt);
 
@@ -69,7 +66,7 @@ describe('Psbt', () => {
       });
     });
 
-    fixtures.bip174.signer.forEach(f => {
+    fixtures.bip174.signer.forEach((f) => {
       it('Signs PSBT to the expected result', () => {
         const psbt = Psbt.fromBase64(f.psbt);
 
@@ -82,7 +79,7 @@ describe('Psbt', () => {
       });
     });
 
-    fixtures.bip174.finalizer.forEach(f => {
+    fixtures.bip174.finalizer.forEach((f) => {
       it('Finalizes PSBT to the expected result', () => {
         const psbt = Psbt.fromBase64(f.psbt);
         psbt.finalizeAllInputs();
@@ -90,7 +87,7 @@ describe('Psbt', () => {
       });
     });
 
-    fixtures.bip174.extractor.forEach(f => {
+    fixtures.bip174.extractor.forEach((f) => {
       it('Extracts PSBT to the expected result', () => {
         const psbt = Psbt.fromBase64(f.psbt);
         const tx = psbt.extractTransaction();
@@ -113,7 +110,7 @@ describe('Psbt', () => {
             'hex',
           ).reverse(),
         ]),
-        value: satoshiToConfidentialValue(10),
+        value: ElementsValue.fromNumber(10).bytes,
         nonce: Buffer.from(
           '031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f',
           'hex',
@@ -129,11 +126,9 @@ describe('Psbt', () => {
       };
 
       psbt.addInput({
-        hash:
-          '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
+        hash: '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
         index: 0,
         witnessUtxo,
-        sighashType: 1,
       });
       psbt.addOutput({
         asset: Buffer.concat([
@@ -148,7 +143,7 @@ describe('Psbt', () => {
           '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
           'hex',
         ),
-        value: satoshiToConfidentialValue(80000),
+        value: ElementsValue.fromNumber(80000).bytes,
       });
 
       const encodedBase64Tx = psbt.toBase64();
@@ -419,8 +414,7 @@ describe('Psbt', () => {
     it('fails if no script found', () => {
       const psbt = new Psbt();
       psbt.addInput({
-        hash:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+        hash: '0000000000000000000000000000000000000000000000000000000000000000',
         index: 0,
       });
       assert.throws(() => {
@@ -432,7 +426,7 @@ describe('Psbt', () => {
             '0014d85c2b71d0060b09c9886aeb815e50991dda124d',
             'hex',
           ),
-          value: satoshiToConfidentialValue(2e5),
+          value: ElementsValue.fromNumber(2e5).bytes,
           nonce: Buffer.from('00', 'hex'),
           asset: Buffer.concat([
             Buffer.from('01', 'hex'),
@@ -447,7 +441,7 @@ describe('Psbt', () => {
   });
 
   describe('addInput', () => {
-    fixtures.addInput.checks.forEach(f => {
+    fixtures.addInput.checks.forEach((f) => {
       it(f.description, () => {
         const psbt = new Psbt();
 
@@ -474,14 +468,14 @@ describe('Psbt', () => {
   });
 
   describe('addOutput', () => {
-    fixtures.addOutput.checks.forEach(f => {
+    fixtures.addOutput.checks.forEach((f) => {
       it(f.description, () => {
         const psbt = new Psbt();
         const out = {
           script: Buffer.from(f.outputData.script),
           value:
             typeof f.outputData.value === 'number'
-              ? satoshiToConfidentialValue(f.outputData.value)
+              ? ElementsValue.fromNumber(f.outputData.value).bytes
               : f.outputData.value,
           asset: Buffer.concat([
             Buffer.from('01', 'hex'),
@@ -532,8 +526,7 @@ describe('Psbt', () => {
     it('Sets the sequence number for a given input', () => {
       const psbt = new Psbt();
       psbt.addInput({
-        hash:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+        hash: '0000000000000000000000000000000000000000000000000000000000000000',
         index: 0,
       });
 
@@ -549,8 +542,7 @@ describe('Psbt', () => {
     it('throws if input index is too high', () => {
       const psbt = new Psbt();
       psbt.addInput({
-        hash:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+        hash: '0000000000000000000000000000000000000000000000000000000000000000',
         index: 0,
       });
 
@@ -567,7 +559,10 @@ describe('Psbt', () => {
       const notAClone = Object.assign(new Psbt(), psbt); // references still active
       const clone = psbt.clone();
 
-      assert.strictEqual(psbt.validateSignaturesOfAllInputs(), true);
+      assert.strictEqual(
+        psbt.validateSignaturesOfAllInputs(Psbt.ECDSASigValidator(ecc)),
+        true,
+      );
 
       assert.strictEqual(clone.toBase64(), psbt.toBase64());
       assert.strictEqual(clone.toBase64(), notAClone.toBase64());
@@ -594,20 +589,34 @@ describe('Psbt', () => {
     it('Correctly validates a signature', () => {
       const psbt = Psbt.fromBase64(f.psbt);
 
-      assert.strictEqual(psbt.validateSignaturesOfInput(f.index), true);
+      assert.strictEqual(
+        psbt.validateSignaturesOfInput(f.index, Psbt.ECDSASigValidator(ecc)),
+        true,
+      );
       assert.throws(() => {
-        psbt.validateSignaturesOfInput(f.nonExistantIndex);
+        psbt.validateSignaturesOfInput(
+          f.nonExistantIndex,
+          Psbt.ECDSASigValidator(ecc),
+        );
       }, new RegExp('No signatures to validate'));
     });
 
     it('Correctly validates a signature against a pubkey', () => {
       const psbt = Psbt.fromBase64(f.psbt);
       assert.strictEqual(
-        psbt.validateSignaturesOfInput(f.index, f.pubkey as any),
+        psbt.validateSignaturesOfInput(
+          f.index,
+          Psbt.ECDSASigValidator(ecc),
+          f.pubkey as any,
+        ),
         true,
       );
       assert.throws(() => {
-        psbt.validateSignaturesOfInput(f.index, f.incorrectPubkey as any);
+        psbt.validateSignaturesOfInput(
+          f.index,
+          Psbt.ECDSASigValidator(ecc),
+          f.incorrectPubkey as any,
+        );
       }, new RegExp('No signatures for this pubkey'));
     });
   });
@@ -649,7 +658,6 @@ describe('Psbt', () => {
           'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000000000190000000000000',
         'hex',
       ),
-      sighashType: 1,
     });
     psbt.addOutput({
       asset: Buffer.concat([
@@ -664,13 +672,13 @@ describe('Psbt', () => {
         '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
         'hex',
       ),
-      value: satoshiToConfidentialValue(80000),
+      value: ElementsValue.fromNumber(80000).bytes,
     });
     psbt.signInput(0, alice);
     assert.throws(() => {
       psbt.setVersion(3);
     }, new RegExp('Can not modify transaction, signatures exist.'));
-    psbt.validateSignaturesOfInput(0);
+    psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc));
     psbt.finalizeAllInputs();
     assert.throws(() => {
       psbt.setVersion(3);

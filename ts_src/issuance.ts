@@ -1,34 +1,25 @@
-import { isConfidential } from './address';
 import { BufferWriter } from './bufferutils';
-import { satoshiToConfidentialValue } from './confidential';
 import * as bcrypto from './crypto';
 import { sha256Midstate } from './sha256d';
+import { Input } from './transaction';
+import { ElementsValue } from './value';
 
 // one of the field of the IssuanceContract interface.
 export interface IssuanceEntity {
   domain: string;
 }
 
-// psbt.addIssuance options
-export interface AddIssuanceArgs {
-  assetAmount: number;
-  assetAddress: string;
-  tokenAmount: number;
-  tokenAddress?: string;
-  precision: number;
-  contract?: IssuanceContract;
-  confidential?: boolean; // used to compute the token, set to "true" if you aim to blind the issuance
-}
-
 /**
  * Ricardian asset contract.
  */
 export interface IssuanceContract {
+  entity: IssuanceEntity;
+  issuer_pubkey: string;
   name: string;
+  precision: number;
   ticker: string;
   version: number;
-  precision: number;
-  entity: IssuanceEntity;
+  [key: string]: any;
 }
 
 /**
@@ -75,39 +66,51 @@ export function hashContract(contract: IssuanceContract): Buffer {
   if (!validateIssuanceContract(contract))
     throw new Error('Invalid asset contract');
 
-  return bcrypto.sha256(Buffer.from(JSON.stringify(contract)));
+  const sortedKeys = Object.keys(contract).sort();
+  const sortedContract = sortedKeys.reduce(
+    (obj, key) => ({ ...obj, [key]: contract[key] }),
+    {},
+  );
+
+  return bcrypto
+    .sha256(Buffer.from(JSON.stringify(sortedContract)))
+    .slice()
+    .reverse();
 }
 
 /**
- * Returns an Issuance object for issuance transaction input.
- * @param assetAmount the number of asset to issue.
- * @param tokenAmount the number of token to issue.
- * @param precision the number of digit after the decimal point (8 for satoshi).
+ * Returns an unblinded Issuance object for issuance transaction input.
+ * @param assetSats the number of asset to issue.
+ * @param tokenSats the number of token to issue.
  * @param contract the asset ricarding contract of the issuance.
  */
 export function newIssuance(
-  assetAmount: number,
-  tokenAmount: number,
-  precision: number = 8,
+  assetSats: number,
+  tokenSats: number,
   contract?: IssuanceContract,
 ): Issuance {
-  if (assetAmount < 0) throw new Error('Invalid asset amount');
-  if (tokenAmount < 0) throw new Error('Invalid token amount');
-  if (precision < 0 || precision > 8) throw new Error('Invalid precision');
-  let contractHash = Buffer.alloc(32);
-  if (contract) {
-    if (contract.precision !== precision)
-      throw new Error('precision is not equal to the asset contract precision');
-    contractHash = hashContract(contract);
-  }
-  const iss: Issuance = {
-    assetAmount: toConfidentialAssetAmount(assetAmount, precision),
-    tokenAmount: toConfidentialTokenAmount(tokenAmount, precision),
+  if (assetSats < 0) throw new Error('Invalid asset amount');
+  if (tokenSats < 0) throw new Error('Invalid token amount');
+
+  const contractHash = contract ? hashContract(contract) : Buffer.alloc(32);
+  const issuanceObject: Issuance = {
+    assetAmount:
+      assetSats === 0
+        ? Buffer.of(0x00)
+        : ElementsValue.fromNumber(assetSats).bytes,
+    tokenAmount:
+      tokenSats === 0
+        ? Buffer.of(0x00)
+        : ElementsValue.fromNumber(tokenSats).bytes,
     assetBlindingNonce: Buffer.alloc(32),
     // in case of issuance, the asset entropy = the contract hash.
     assetEntropy: contractHash,
   };
-  return iss;
+  return issuanceObject;
+}
+
+export function isReissuance(issuance: Issuance): boolean {
+  return !issuance.assetBlindingNonce.equals(Buffer.alloc(32));
 }
 
 /**
@@ -129,6 +132,20 @@ export function generateEntropy(
   const prevoutHash = bcrypto.hash256(s.buffer);
   const concatened = Buffer.concat([prevoutHash, contractHash]);
   return sha256Midstate(concatened);
+}
+
+/**
+ * compute entropy from an input with issuance.
+ * @param input reissuance or issuance input.
+ */
+export function issuanceEntropyFromInput(input: Input): Buffer {
+  if (!input.issuance) throw new Error('input does not contain issuance data');
+  return isReissuance(input.issuance)
+    ? input.issuance.assetEntropy
+    : generateEntropy(
+        { txHash: input.hash, vout: input.index },
+        input.issuance.assetEntropy,
+      );
 }
 
 /**
@@ -166,43 +183,14 @@ function getTokenFlag(confidential: boolean): 1 | 0 {
 }
 
 /**
- * converts asset amount to confidential value.
+ * converts asset amount to satoshis.
+ * satoshis = assetAmount * 10^precision
  * @param assetAmount the asset amount.
- * @param precision the precision, 8 by default.
+ * @param precision the precision, 8 by default (like L-BTC).
  */
-function toConfidentialAssetAmount(
+export function amountWithPrecisionToSatoshis(
   assetAmount: number,
   precision: number = 8,
-): Buffer {
-  const amount = Math.pow(10, precision) * assetAmount;
-  return satoshiToConfidentialValue(amount);
-}
-
-/**
- * converts token amount to confidential value.
- * @param assetAmount the token amount.
- * @param precision the precision, 8 by default.
- */
-function toConfidentialTokenAmount(
-  tokenAmount: number,
-  precision: number = 8,
-): Buffer {
-  if (tokenAmount === 0) return Buffer.from('00', 'hex');
-  return toConfidentialAssetAmount(tokenAmount, precision);
-}
-
-export function validateAddIssuanceArgs(args: AddIssuanceArgs): void {
-  if (args.assetAmount <= 0)
-    throw new Error('asset amount must be greater than zero.');
-  if (args.tokenAmount < 0) throw new Error('token amount must be positive.');
-
-  if (args.tokenAddress) {
-    if (
-      isConfidential(args.assetAddress) !== isConfidential(args.tokenAddress)
-    ) {
-      throw new Error(
-        'tokenAddress and assetAddress are not of the same type (confidential or unconfidential).',
-      );
-    }
-  }
+): number {
+  return Math.pow(10, precision) * assetAmount;
 }

@@ -1,19 +1,62 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        var desc = Object.getOwnPropertyDescriptor(m, k);
+        if (
+          !desc ||
+          ('get' in desc ? !m.__esModule : desc.writable || desc.configurable)
+        ) {
+          desc = {
+            enumerable: true,
+            get: function () {
+              return m[k];
+            },
+          };
+        }
+        Object.defineProperty(o, k2, desc);
+      }
+    : function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function (o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function (o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.BufferReader =
+  exports.BufferWriter =
+  exports.cloneBuffer =
+  exports.reverseBuffer =
+  exports.writeUInt64LE =
+  exports.readUInt64LE =
+  exports.varSliceSize =
+  exports.varuint =
+    void 0;
 const types = __importStar(require('./types'));
-const typeforce = require('typeforce');
-const varuint = require('varuint-bitcoin');
+const { typeforce } = types;
+const varuint = __importStar(require('varuint-bitcoin'));
+exports.varuint = varuint;
 const CONFIDENTIAL_COMMITMENT = 33; // default size of confidential commitments (i.e. asset, value, nonce)
 const CONFIDENTIAL_VALUE = 9; // explicit size of confidential values
 // https://github.com/feross/buffer/blob/master/index.js#L1127
@@ -26,16 +69,21 @@ function verifuint(value, max) {
   if (Math.floor(value) !== value)
     throw new Error('value has a fractional component');
 }
+function varSliceSize(someScript) {
+  const length = someScript.length;
+  return varuint.encodingLength(length) + length;
+}
+exports.varSliceSize = varSliceSize;
 function readUInt64LE(buffer, offset) {
   const a = buffer.readUInt32LE(offset);
   let b = buffer.readUInt32LE(offset + 4);
   b *= 0x100000000;
-  verifuint(b + a, 0x001fffffffffffff);
+  verifuint(b + a, 0xffffffffffffffff);
   return b + a;
 }
 exports.readUInt64LE = readUInt64LE;
 function writeUInt64LE(buffer, value, offset) {
-  verifuint(value, 0x001fffffffffffff);
+  verifuint(value, 0xffffffffffffffff);
   buffer.writeInt32LE(value & -1, offset);
   buffer.writeUInt32LE(Math.floor(value / 0x100000000), offset + 4);
   return offset + 8;
@@ -54,6 +102,12 @@ function reverseBuffer(buffer) {
   return buffer;
 }
 exports.reverseBuffer = reverseBuffer;
+function cloneBuffer(buffer) {
+  const clone = Buffer.allocUnsafe(buffer.length);
+  buffer.copy(clone);
+  return clone;
+}
+exports.cloneBuffer = cloneBuffer;
 /**
  * Helper class for serialization of bitcoin data types into a pre-allocated buffer.
  */
@@ -62,6 +116,9 @@ class BufferWriter {
     this.buffer = buffer;
     this.offset = offset;
     typeforce(types.tuple(types.Buffer, types.UInt32), [buffer, offset]);
+  }
+  static withCapacity(size) {
+    return new BufferWriter(Buffer.alloc(size));
   }
   writeUInt8(i) {
     this.offset = this.buffer.writeUInt8(i, this.offset);
@@ -91,17 +148,23 @@ class BufferWriter {
   }
   writeVector(vector) {
     this.writeVarInt(vector.length);
-    vector.forEach(buf => this.writeVarSlice(buf));
+    vector.forEach((buf) => this.writeVarSlice(buf));
   }
   writeConfidentialInFields(input) {
-    this.writeVarSlice(input.issuanceRangeProof);
-    this.writeVarSlice(input.inflationRangeProof);
+    this.writeVarSlice(input.issuanceRangeProof || Buffer.alloc(0));
+    this.writeVarSlice(input.inflationRangeProof || Buffer.alloc(0));
     this.writeVector(input.witness);
-    this.writeVector(input.peginWitness);
+    this.writeVector(input.peginWitness || []);
   }
   writeConfidentialOutFields(output) {
-    this.writeVarSlice(output.surjectionProof);
-    this.writeVarSlice(output.rangeProof);
+    this.writeVarSlice(output.surjectionProof || Buffer.alloc(0));
+    this.writeVarSlice(output.rangeProof || Buffer.alloc(0));
+  }
+  end() {
+    if (this.buffer.length === this.offset) {
+      return this.buffer;
+    }
+    throw new Error(`buffer size ${this.buffer.length}, offset ${this.offset}`);
   }
 }
 exports.BufferWriter = BufferWriter;

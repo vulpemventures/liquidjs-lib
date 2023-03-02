@@ -1,7 +1,8 @@
 import * as assert from 'assert';
 import axios from 'axios';
 import { describe, it } from 'mocha';
-import * as liquid from '../..';
+import * as liquid from '../../ts_src';
+import { ECPair } from '../ecc';
 const REGTEST = liquid.networks.regtest;
 
 describe('liquidjs-lib (addresses)', () => {
@@ -9,7 +10,7 @@ describe('liquidjs-lib (addresses)', () => {
     'can generate a random address [and support the retrieval of ' +
       'transactions for that address (via 3PBP)]',
     async () => {
-      const keyPair = liquid.ECPair.makeRandom();
+      const keyPair = ECPair.makeRandom();
       const { address } = liquid.payments.p2pkh({ pubkey: keyPair.publicKey });
       // liquid P2PKH addresses start with a '2'
       assert.strictEqual(
@@ -27,7 +28,7 @@ describe('liquidjs-lib (addresses)', () => {
   );
 
   it('can import an address via WIF and blind with a blinding key', () => {
-    const keyPair = liquid.ECPair.fromWIF(
+    const keyPair = ECPair.fromWIF(
       'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn',
     );
     const { address } = liquid.payments.p2pkh({ pubkey: keyPair.publicKey });
@@ -51,7 +52,7 @@ describe('liquidjs-lib (addresses)', () => {
       '026477115981fe981a6918a6297d9803c4dc04f328f22041bedff886bbc2962e01',
       '02c96db2302d19b43d4c69368babace7854cc84eb9e061cde51cfa77ca4a22b8b9',
       '03c6103b3b83e4a24a0e33a4df246ef11772f9992663db0c35759a5e2ebf68d8e9',
-    ].map(hex => Buffer.from(hex, 'hex'));
+    ].map((hex) => Buffer.from(hex, 'hex'));
     const { address } = liquid.payments.p2sh({
       redeem: liquid.payments.p2ms({ m: 2, pubkeys }),
     });
@@ -71,7 +72,7 @@ describe('liquidjs-lib (addresses)', () => {
   });
 
   it('can generate a SegWit address and blind with blinding key', () => {
-    const keyPair = liquid.ECPair.fromWIF(
+    const keyPair = ECPair.fromWIF(
       'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn',
     );
     const { address } = liquid.payments.p2wpkh({ pubkey: keyPair.publicKey });
@@ -91,7 +92,7 @@ describe('liquidjs-lib (addresses)', () => {
   });
 
   it('can generate a SegWit address (via P2SH) and blind with blinding key', () => {
-    const keyPair = liquid.ECPair.fromWIF(
+    const keyPair = ECPair.fromWIF(
       'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn',
     );
     const { address } = liquid.payments.p2sh({
@@ -115,7 +116,7 @@ describe('liquidjs-lib (addresses)', () => {
       '02c96db2302d19b43d4c69368babace7854cc84eb9e061cde51cfa77ca4a22b8b9',
       '023e4740d0ba639e28963f3476157b7cf2fb7c6fdf4254f97099cf8670b505ea59',
       '03c6103b3b83e4a24a0e33a4df246ef11772f9992663db0c35759a5e2ebf68d8e9',
-    ].map(hex => Buffer.from(hex, 'hex'));
+    ].map((hex) => Buffer.from(hex, 'hex'));
     const { address } = liquid.payments.p2wsh({
       redeem: liquid.payments.p2ms({ m: 3, pubkeys }),
     });
@@ -145,7 +146,7 @@ describe('liquidjs-lib (addresses)', () => {
     const pubkeys = [
       '026477115981fe981a6918a6297d9803c4dc04f328f22041bedff886bbc2962e01',
       '02c96db2302d19b43d4c69368babace7854cc84eb9e061cde51cfa77ca4a22b8b9',
-    ].map(hex => Buffer.from(hex, 'hex'));
+    ].map((hex) => Buffer.from(hex, 'hex'));
     const { address } = liquid.payments.p2sh({
       redeem: liquid.payments.p2wsh({
         redeem: liquid.payments.p2ms({ m: 2, pubkeys }),
@@ -168,7 +169,7 @@ describe('liquidjs-lib (addresses)', () => {
 
   // examples using other network information
   it('can generate a Regtest address and blind with blinding key', () => {
-    const keyPair = liquid.ECPair.makeRandom({ network: REGTEST });
+    const keyPair = ECPair.makeRandom({ network: REGTEST });
     const { address } = liquid.payments.p2pkh({
       pubkey: keyPair.publicKey,
       network: REGTEST,

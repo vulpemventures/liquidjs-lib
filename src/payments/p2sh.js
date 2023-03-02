@@ -1,24 +1,57 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        var desc = Object.getOwnPropertyDescriptor(m, k);
+        if (
+          !desc ||
+          ('get' in desc ? !m.__esModule : desc.writable || desc.configurable)
+        ) {
+          desc = {
+            enumerable: true,
+            get: function () {
+              return m[k];
+            },
+          };
+        }
+        Object.defineProperty(o, k2, desc);
+      }
+    : function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function (o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function (o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.p2sh = void 0;
 const bcrypto = __importStar(require('../crypto'));
 const networks_1 = require('../networks');
 const bscript = __importStar(require('../script'));
+const types_1 = require('../types');
 const lazy = __importStar(require('./lazy'));
-const typef = require('typeforce');
+const bs58check = __importStar(require('bs58check'));
 const OPS = bscript.OPS;
-const ecc = require('tiny-secp256k1');
-const bs58check = require('bs58check');
 function stacksEqual(a, b) {
   if (a.length !== b.length) return false;
   return a.every((x, i) => {
@@ -39,22 +72,26 @@ function p2sh(a, opts) {
   )
     throw new TypeError('Not enough data');
   opts = Object.assign({ validate: true }, opts || {});
-  typef(
+  (0, types_1.typeforce)(
     {
-      network: typef.maybe(typef.Object),
-      address: typef.maybe(typef.String),
-      hash: typef.maybe(typef.BufferN(20)),
-      output: typef.maybe(typef.BufferN(23)),
-      redeem: typef.maybe({
-        network: typef.maybe(typef.Object),
-        output: typef.maybe(typef.Buffer),
-        input: typef.maybe(typef.Buffer),
-        witness: typef.maybe(typef.arrayOf(typef.Buffer)),
+      network: types_1.typeforce.maybe(types_1.typeforce.Object),
+      address: types_1.typeforce.maybe(types_1.typeforce.String),
+      hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(20)),
+      output: types_1.typeforce.maybe(types_1.typeforce.BufferN(23)),
+      redeem: types_1.typeforce.maybe({
+        network: types_1.typeforce.maybe(types_1.typeforce.Object),
+        output: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+        input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+        witness: types_1.typeforce.maybe(
+          types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
+        ),
       }),
-      input: typef.maybe(typef.Buffer),
-      witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-      blindkey: typef.maybe(ecc.isPoint),
-      confidentialAddress: typef.maybe(typef.String),
+      input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+      witness: types_1.typeforce.maybe(
+        types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
+      ),
+      blindkey: types_1.typeforce.maybe(types_1.isPoint),
+      confidentialAddress: types_1.typeforce.maybe(types_1.typeforce.String),
     },
     a,
   );
@@ -130,7 +167,8 @@ function p2sh(a, opts) {
   });
   lazy.prop(o, 'name', () => {
     const nameParts = ['p2sh'];
-    if (o.redeem !== undefined) nameParts.push(o.redeem.name);
+    if (o.redeem !== undefined && o.redeem.name !== undefined)
+      nameParts.push(o.redeem.name);
     return nameParts.join('-');
   });
   lazy.prop(o, 'blindkey', () => {
@@ -176,7 +214,7 @@ function p2sh(a, opts) {
       else hash = hash2;
     }
     // inlined to prevent 'no-inner-declarations' failing
-    const checkRedeem = redeem => {
+    const checkRedeem = (redeem) => {
       // is the redeem output empty/invalid?
       if (redeem.output) {
         const decompile = bscript.decompile(redeem.output);
@@ -242,7 +280,8 @@ function p2sh(a, opts) {
       else blindkey = _confidentialAddress().blindkey;
     }
     if (a.blindkey) {
-      if (!ecc.isPoint(a.blindkey)) throw new TypeError('Blindkey is invalid');
+      if (!(0, types_1.isPoint)(a.blindkey))
+        throw new TypeError('Blindkey is invalid');
       if (blindkey.length > 0 && !blindkey.equals(a.blindkey))
         throw new TypeError('Blindkey mismatch');
       else blindkey = a.blindkey;

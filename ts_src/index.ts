@@ -1,37 +1,28 @@
-import * as bip32 from 'bip32';
 import * as address from './address';
-import * as confidential from './confidential';
 import * as crypto from './crypto';
-import * as ECPair from './ecpair';
 import * as networks from './networks';
 import * as payments from './payments';
 import * as script from './script';
-
+import * as issuance from './issuance';
+import * as bip341 from './bip341';
+import * as confidential from './confidential';
 export {
-  ECPair,
   address,
-  bip32,
+  confidential,
   crypto,
   networks,
   payments,
   script,
-  confidential,
+  issuance,
+  bip341,
 };
-
-export { Block } from './block';
-export { Psbt } from './psbt';
-export { OPS as opcodes } from './script';
-export { Transaction } from './transaction';
-
-export { BIP32Interface } from 'bip32';
-export { ECPairInterface, Signer, SignerAsync } from './ecpair';
-export { Network } from './networks';
+export { OPS as opcodes } from './ops';
 export {
-  Payment,
-  PaymentCreator,
-  PaymentOpts,
-  Stack,
-  StackElement,
-} from './payments';
-export { OpCode } from './script';
-export { Input as TxInput, Output as TxOutput } from './transaction';
+  Input as TxInput,
+  Output as TxOutput,
+  Transaction,
+} from './transaction';
+export * from './asset';
+export * from './value';
+export * from './psetv2';
+export * from './secp256k1-zkp';

@@ -8,7 +8,7 @@ const NETWORKS = require('../src/networks');
 
 describe('address', () => {
   describe('fromBase58Check', () => {
-    fixtures.standard.forEach(f => {
+    fixtures.standard.forEach((f) => {
       if (!f.base58check) return;
 
       it('decodes ' + f.base58check, () => {
@@ -29,7 +29,7 @@ describe('address', () => {
   });
 
   describe('fromBech32', () => {
-    fixtures.standard.forEach(f => {
+    fixtures.standard.forEach((f) => {
       if (!f.bech32) return;
 
       it('decodes ' + f.bech32, () => {
@@ -51,7 +51,7 @@ describe('address', () => {
   });
 
   describe('fromBlech32', () => {
-    fixtures.standard.forEach(f => {
+    fixtures.standard.forEach((f) => {
       if (!f.bech32) return;
 
       it('decodes ' + f.confidentialAddress, () => {
@@ -76,7 +76,7 @@ describe('address', () => {
   });
 
   describe('fromOutputScript', () => {
-    fixtures.standard.forEach(f => {
+    fixtures.standard.forEach((f) => {
       it('encodes ' + f.script.slice(0, 30) + '... (' + f.network + ')', () => {
         const script = bscript.fromASM(f.script);
         const address = baddress.fromOutputScript(script, NETWORKS[f.network]);
@@ -97,7 +97,7 @@ describe('address', () => {
   });
 
   describe('fromConfidential', () => {
-    fixtures.standard.forEach(f => {
+    fixtures.standard.forEach((f) => {
       if (!f.confidentialAddress) return;
 
       it(
@@ -110,13 +110,17 @@ describe('address', () => {
             t.unconfidentialAddress,
             (f.base58check || f.bech32)!,
           );
+          assert.strictEqual(
+            t.scriptPubKey!.toString('hex'),
+            bscript.fromASM(f.script).toString('hex'),
+          );
         },
       );
     });
   });
 
   describe('toBase58Check', () => {
-    fixtures.standard.forEach(f => {
+    fixtures.standard.forEach((f) => {
       if (!f.base58check) return;
 
       it('encodes ' + f.hash + ' (' + f.network + ')', () => {
@@ -131,7 +135,7 @@ describe('address', () => {
   });
 
   describe('toBech32', () => {
-    fixtures.bech32.forEach(f => {
+    fixtures.bech32.forEach((f) => {
       if (!f.address) return;
       const data = Buffer.from(f.data, 'hex');
 
@@ -155,7 +159,7 @@ describe('address', () => {
   });
 
   describe('toBlech32', () => {
-    fixtures.blech32.forEach(f => {
+    fixtures.blech32.forEach((f) => {
       if (!f.address) return;
       const data = Buffer.concat([
         Buffer.from([f.version, f.data.length / 2]),
@@ -165,7 +169,7 @@ describe('address', () => {
 
       it('encode ' + f.address, () => {
         assert.deepStrictEqual(
-          baddress.toBlech32(data, blindkey, f.prefix),
+          baddress.toBlech32(data, blindkey, f.prefix, f.version),
           f.address,
         );
       });
@@ -183,7 +187,7 @@ describe('address', () => {
   });
 
   describe('toOutputScript', () => {
-    fixtures.standard.forEach(f => {
+    fixtures.standard.forEach((f) => {
       it('decodes ' + f.script.slice(0, 30) + '... (' + f.network + ')', () => {
         let script = baddress.toOutputScript(
           (f.base58check || f.bech32)!,
@@ -210,7 +214,7 @@ describe('address', () => {
   });
 
   describe('toConfidential', () => {
-    fixtures.standard.forEach(f => {
+    fixtures.standard.forEach((f) => {
       it(
         'create confidential address from ' +
           (f.base58check || f.bech32)! +

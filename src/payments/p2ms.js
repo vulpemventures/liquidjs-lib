@@ -1,22 +1,55 @@
 'use strict';
+var __createBinding =
+  (this && this.__createBinding) ||
+  (Object.create
+    ? function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        var desc = Object.getOwnPropertyDescriptor(m, k);
+        if (
+          !desc ||
+          ('get' in desc ? !m.__esModule : desc.writable || desc.configurable)
+        ) {
+          desc = {
+            enumerable: true,
+            get: function () {
+              return m[k];
+            },
+          };
+        }
+        Object.defineProperty(o, k2, desc);
+      }
+    : function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+      });
+var __setModuleDefault =
+  (this && this.__setModuleDefault) ||
+  (Object.create
+    ? function (o, v) {
+        Object.defineProperty(o, 'default', { enumerable: true, value: v });
+      }
+    : function (o, v) {
+        o['default'] = v;
+      });
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
       for (var k in mod)
-        if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result['default'] = mod;
+        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
+          __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
   };
 Object.defineProperty(exports, '__esModule', { value: true });
+exports.p2ms = void 0;
 const networks_1 = require('../networks');
 const bscript = __importStar(require('../script'));
+const types_1 = require('../types');
 const lazy = __importStar(require('./lazy'));
 const OPS = bscript.OPS;
-const typef = require('typeforce');
-const ecc = require('tiny-secp256k1');
 const OP_INT_BASE = OPS.OP_RESERVED; // OP_1 - 1
 function stacksEqual(a, b) {
   if (a.length !== b.length) return false;
@@ -41,15 +74,19 @@ function p2ms(a, opts) {
       (opts.allowIncomplete && x === OPS.OP_0) !== undefined
     );
   }
-  typef(
+  (0, types_1.typeforce)(
     {
-      network: typef.maybe(typef.Object),
-      m: typef.maybe(typef.Number),
-      n: typef.maybe(typef.Number),
-      output: typef.maybe(typef.Buffer),
-      pubkeys: typef.maybe(typef.arrayOf(ecc.isPoint)),
-      signatures: typef.maybe(typef.arrayOf(isAcceptableSignature)),
-      input: typef.maybe(typef.Buffer),
+      network: types_1.typeforce.maybe(types_1.typeforce.Object),
+      m: types_1.typeforce.maybe(types_1.typeforce.Number),
+      n: types_1.typeforce.maybe(types_1.typeforce.Number),
+      output: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+      pubkeys: types_1.typeforce.maybe(
+        types_1.typeforce.arrayOf(types_1.isPoint),
+      ),
+      signatures: types_1.typeforce.maybe(
+        types_1.typeforce.arrayOf(isAcceptableSignature),
+      ),
+      input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
     },
     a,
   );
@@ -112,14 +149,15 @@ function p2ms(a, opts) {
   if (opts.validate) {
     if (a.output) {
       decode(a.output);
-      if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid');
-      if (!typef.Number(chunks[chunks.length - 2]))
+      if (!types_1.typeforce.Number(chunks[0]))
+        throw new TypeError('Output is invalid');
+      if (!types_1.typeforce.Number(chunks[chunks.length - 2]))
         throw new TypeError('Output is invalid');
       if (chunks[chunks.length - 1] !== OPS.OP_CHECKMULTISIG)
         throw new TypeError('Output is invalid');
       if (o.m <= 0 || o.n > 16 || o.m > o.n || o.n !== chunks.length - 3)
         throw new TypeError('Output is invalid');
-      if (!o.pubkeys.every(x => ecc.isPoint(x)))
+      if (!o.pubkeys.every((x) => (0, types_1.isPoint)(x)))
         throw new TypeError('Output is invalid');
       if (a.m !== undefined && a.m !== o.m) throw new TypeError('m mismatch');
       if (a.n !== undefined && a.n !== o.n) throw new TypeError('n mismatch');

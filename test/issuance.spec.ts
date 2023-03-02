@@ -2,12 +2,14 @@ import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import * as issuance from '../ts_src/issuance';
 import * as types from '../ts_src/types';
-import { Psbt } from './../ts_src/psbt';
+import { AddIssuanceArgs, Psbt } from './../ts_src/psbt';
 import { Transaction } from './../ts_src/transaction';
 
-import { ECPair, networks } from '../ts_src';
-import { satoshiToConfidentialValue } from './../ts_src/confidential';
+import { networks } from '../ts_src';
+import { ECPair } from './ecc';
 import * as fixtures from './fixtures/issuance.json';
+import contractFixtures from './fixtures/contract_hash.json';
+import { ElementsValue } from '../ts_src/value';
 
 const typeforce = require('typeforce');
 
@@ -103,11 +105,17 @@ describe('Issuance', () => {
     });
 
     it('should create a valid Issuance object with an issuance contract', () => {
-      const contract = fixtureWithContract.contract as issuance.IssuanceContract;
+      const contract =
+        fixtureWithContract.contract as issuance.IssuanceContract;
       const iss: issuance.Issuance = issuance.newIssuance(
-        fixtureWithContract.assetAmount,
-        fixtureWithContract.tokenAmount,
-        fixtureWithContract.precision,
+        issuance.amountWithPrecisionToSatoshis(
+          fixtureWithContract.assetAmount,
+          fixtureWithContract.precision,
+        ),
+        issuance.amountWithPrecisionToSatoshis(
+          fixtureWithContract.tokenAmount,
+          fixtureWithContract.precision,
+        ),
         contract,
       );
       assert.strictEqual(validate(iss), true);
@@ -119,14 +127,13 @@ describe('Issuance', () => {
   });
 
   // a static set of arguments using with the function addIssuance.
-  const issueArgs: issuance.AddIssuanceArgs = {
-    assetAmount: 100,
+  const issueArgs: AddIssuanceArgs = {
+    assetSats: issuance.amountWithPrecisionToSatoshis(100),
     assetAddress:
       'AzpudM1xn9jKRwnDFyDPDPTQ8jaxEUaSwe5JSFtVdULh6CwJftVVZcQWZbNacvYLLG24jTpKKNsNUVii',
-    tokenAmount: 1,
+    tokenSats: issuance.amountWithPrecisionToSatoshis(1),
     tokenAddress:
       'AzpudM1xn9jKRwnDFyDPDPTQ8jaxEUaSwe5JSFtVdULh6CwJftVVZcQWZbNacvYLLG24jTpKKNsNUVii',
-    precision: 8,
   };
 
   describe('Psbt: add issuance to input', () => {
@@ -137,7 +144,10 @@ describe('Issuance', () => {
     );
 
     const input = {
-      hash: '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
+      hash: Buffer.from(
+        '9d64f0343e264f9992aa024185319b349586ec4cbbfcedcda5a05678ab10e580',
+        'hex',
+      ).reverse(),
       index: 0,
       nonWitnessUtxo: Buffer.from(
         '0200000000010caf381d44f094661f2da71a11946251a27d656d6c141577e27c483a6' +
@@ -150,7 +160,6 @@ describe('Issuance', () => {
           'b03ecc4ae0b5e77c4fc0e5cf6c95a010000000000000190000000000000',
         'hex',
       ),
-      sighashType: 1,
     };
 
     const output = {
@@ -166,7 +175,7 @@ describe('Issuance', () => {
         '76a91439397080b51ef22c59bd7469afacffbeec0da12e88ac',
         'hex',
       ),
-      value: satoshiToConfidentialValue(80000),
+      value: ElementsValue.fromNumber(80000).bytes,
     };
 
     function signAndfinalizeWithAlice(psbt: Psbt, inputIndex: number): Psbt {
@@ -222,19 +231,19 @@ describe('Issuance', () => {
 
     it('should throw an error if the token amount is < 0', () => {
       const psbt = createPsbt();
-      const argsInvalidToken = { ...issueArgs, tokenAmount: -2 };
+      const argsInvalidToken = { ...issueArgs, tokenSats: -2 };
       assert.throws(() => psbt.addIssuance(argsInvalidToken));
     });
 
-    it('should throw an error if the asset amount is 0', () => {
+    it('should throw an error if the asset amount is 0 & token amount is 0', () => {
       const psbt = createPsbt();
-      const argsInvalidAsset = { ...issueArgs, assetAmount: 0 };
+      const argsInvalidAsset = { ...issueArgs, assetSats: 0, tokenSats: 0 };
       assert.throws(() => psbt.addIssuance(argsInvalidAsset));
     });
 
     it('should throw an error if the asset amount is < 0', () => {
       const psbt = createPsbt();
-      const argsInvalidAsset = { ...issueArgs, assetAmount: -12 };
+      const argsInvalidAsset = { ...issueArgs, assetSats: -12 };
       assert.throws(() => psbt.addIssuance(argsInvalidAsset));
     });
 
@@ -250,7 +259,7 @@ describe('Issuance', () => {
       assert.doesNotThrow(() => {
         psbt.addIssuance({
           ...issueArgs,
-          tokenAmount: 0,
+          tokenSats: 0,
           tokenAddress: undefined,
         });
       });
@@ -267,7 +276,7 @@ describe('Issuance', () => {
     it('should add one output if token amount = 0', () => {
       const psbt = createPsbt();
       const lenOutsBeforeIssuance = psbt.data.outputs.length;
-      psbt.addIssuance({ ...issueArgs, tokenAmount: 0 });
+      psbt.addIssuance({ ...issueArgs, tokenSats: 0 });
       const lenOutsAfterIssuance = psbt.data.outputs.length;
       assert.strictEqual(lenOutsAfterIssuance - lenOutsBeforeIssuance, 1);
     });
@@ -296,6 +305,18 @@ describe('Issuance', () => {
           expectedEntropy,
         );
       });
+    });
+
+    describe('contract hash calculation', () => {
+      for (const contractFixture of contractFixtures) {
+        it(`should calculate the correct contract hash for ${contractFixture.contractJSON.name}`, () => {
+          const computed = issuance.hashContract(contractFixture.contractJSON);
+          assert.strictEqual(
+            computed.toString('hex'),
+            contractFixture.contractHash,
+          );
+        });
+      }
     });
   });
 });

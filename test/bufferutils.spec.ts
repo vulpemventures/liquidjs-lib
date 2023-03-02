@@ -8,11 +8,11 @@ const varuint = require('varuint-bitcoin');
 
 describe('bufferutils', () => {
   function concatToBuffer(values: number[][]): Buffer {
-    return Buffer.concat(values.map(data => Buffer.from(data)));
+    return Buffer.concat(values.map((data) => Buffer.from(data)));
   }
 
   describe('readUInt64LE', () => {
-    fixtures.valid.forEach(f => {
+    fixtures.valid.forEach((f) => {
       it('decodes ' + f.hex, () => {
         const buffer = Buffer.from(f.hex, 'hex');
         const num = bufferutils.readUInt64LE(buffer, 0);
@@ -20,20 +20,10 @@ describe('bufferutils', () => {
         assert.strictEqual(num, f.dec);
       });
     });
-
-    fixtures.invalid.readUInt64LE.forEach(f => {
-      it('throws on ' + f.description, () => {
-        const buffer = Buffer.from(f.hex, 'hex');
-
-        assert.throws(() => {
-          bufferutils.readUInt64LE(buffer, 0);
-        }, new RegExp(f.exception));
-      });
-    });
   });
 
   describe('writeUInt64LE', () => {
-    fixtures.valid.forEach(f => {
+    fixtures.valid.forEach((f) => {
       it('encodes ' + f.dec, () => {
         const buffer = Buffer.alloc(8, 0);
 
@@ -42,7 +32,7 @@ describe('bufferutils', () => {
       });
     });
 
-    fixtures.invalid.readUInt64LE.forEach(f => {
+    fixtures.invalid.writeUInt64LE.forEach((f) => {
       it('throws on ' + f.description, () => {
         const buffer = Buffer.alloc(8, 0);
 
@@ -65,6 +55,13 @@ describe('bufferutils', () => {
         expectedBuffer.slice(0, expectedOffset),
       );
     }
+
+    it('withCapacity', () => {
+      const expectedBuffer = Buffer.from('04030201', 'hex');
+      const withCapacity = BufferWriter.withCapacity(4);
+      withCapacity.writeInt32(0x01020304);
+      testBuffer(withCapacity, expectedBuffer);
+    });
 
     it('writeUint8', () => {
       const values = [0, 1, 254, 255];
@@ -276,6 +273,16 @@ describe('bufferutils', () => {
         testBuffer(bufferWriter, expectedBuffer, expectedOffset);
       });
       testBuffer(bufferWriter, expectedBuffer);
+    });
+
+    it('end', () => {
+      const expected = Buffer.from('0403020108070605', 'hex');
+      const bufferWriter = BufferWriter.withCapacity(8);
+      bufferWriter.writeUInt32(0x01020304);
+      bufferWriter.writeUInt32(0x05060708);
+      const result = bufferWriter.end();
+      testBuffer(bufferWriter, result);
+      testBuffer(bufferWriter, expected);
     });
   });
 
@@ -637,12 +644,8 @@ describe('bufferutils', () => {
         const exptectedOffset =
           bufferReader.offset +
           value.reduce((sum, v): number => sum + v.length, 0);
-        const {
-          assetBlindingNonce,
-          assetEntropy,
-          assetAmount,
-          tokenAmount,
-        } = bufferReader.readIssuance();
+        const { assetBlindingNonce, assetEntropy, assetAmount, tokenAmount } =
+          bufferReader.readIssuance();
         testValue(bufferReader, assetBlindingNonce, value[0], exptectedOffset);
         testValue(bufferReader, assetEntropy, value[1], exptectedOffset);
         testValue(bufferReader, assetAmount, value[2], exptectedOffset);

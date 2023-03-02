@@ -9,3 +9,6 @@ test/integration/*.js
 # for dev
 ts_src/**/*.js
 .idea
+
+# yarn
+yarn-error.log

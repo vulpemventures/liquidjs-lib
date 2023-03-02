@@ -1,3 +1,4 @@
+
 import { Transaction } from './transaction';
 export declare class Block {
     static fromBuffer(buffer: Buffer): Block;

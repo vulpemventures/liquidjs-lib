@@ -1,11 +1,15 @@
 import { describe, it } from 'mocha';
-import { networks as NETWORKS } from '../..';
-import * as liquid from '../..';
+import { networks as NETWORKS } from '../../ts_src';
+import * as liquid from '../../ts_src';
+import { Psbt } from '../../ts_src/psbt';
 import * as regtestUtils from './_regtest';
+import { ECPair } from '../ecc';
+
 const NETWORK = NETWORKS.regtest;
+
 const keyPairs = [
-  liquid.ECPair.makeRandom({ network: NETWORK }),
-  liquid.ECPair.makeRandom({ network: NETWORK }),
+  ECPair.makeRandom({ network: NETWORK }),
+  ECPair.makeRandom({ network: NETWORK }),
 ];
 
 async function buildAndSign(
@@ -22,7 +26,7 @@ async function buildAndSign(
   ]);
   const nonce = Buffer.from('00', 'hex');
 
-  const psbt = new liquid.Psbt({ network: NETWORK })
+  const psbt = new Psbt({ network: NETWORK })
     .addInput({
       hash: unspent.txid,
       index: unspent.vout,
@@ -34,7 +38,7 @@ async function buildAndSign(
       {
         asset,
         nonce,
-        value: liquid.confidential.satoshiToConfidentialValue(40000000),
+        value: liquid.ElementsValue.fromNumber(40000000).bytes,
         script: Buffer.from(
           '76a914659bedb5d3d3c7ab12d7f85323c3a1b6c060efbe88ac',
           'hex',
@@ -43,41 +47,37 @@ async function buildAndSign(
       {
         asset,
         nonce,
-        value: liquid.confidential.satoshiToConfidentialValue(
-          unspent.value - 40000000 - 600,
-        ),
+        value: liquid.ElementsValue.fromNumber(unspent.value - 40000000 - 600)
+          .bytes,
         script: sender.output,
       },
       {
         asset,
         nonce,
-        value: liquid.confidential.satoshiToConfidentialValue(600),
+        value: liquid.ElementsValue.fromNumber(600).bytes,
         script: Buffer.alloc(0),
       },
     ]);
 
   if (depends.signatures) {
-    keyPairs.forEach(keyPair => {
+    keyPairs.forEach((keyPair) => {
       psbt.signInput(0, keyPair);
     });
   } else if (depends.signature) {
     psbt.signInput(0, keyPairs[0]);
   }
-  const hex = psbt
-    .finalizeAllInputs()
-    .extractTransaction()
-    .toHex();
+  const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
   return regtestUtils.broadcast(hex);
 }
 
-['p2ms', 'p2pkh', 'p2wpkh'].forEach(k => {
+['p2ms', 'p2pkh', 'p2wpkh'].forEach((k) => {
   const fixtures = require('../fixtures/' + k);
   const { depends } = fixtures.dynamic;
   const fn: any = (liquid.payments as any)[k];
 
   const base: any = { network: NETWORK };
   if (depends.pubkey) base.pubkey = keyPairs[0].publicKey;
-  if (depends.pubkeys) base.pubkeys = keyPairs.map(x => x.publicKey);
+  if (depends.pubkeys) base.pubkeys = keyPairs.map((x) => x.publicKey);
   if (depends.m) base.m = base.pubkeys.length;
 
   const sender = fn(base);

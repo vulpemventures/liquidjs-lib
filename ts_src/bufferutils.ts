@@ -1,7 +1,8 @@
 import * as types from './types';
-
-const typeforce = require('typeforce');
-const varuint = require('varuint-bitcoin');
+const { typeforce } = types;
+import * as varuint from 'varuint-bitcoin';
+import { Input, Output } from './transaction';
+export { varuint };
 
 const CONFIDENTIAL_COMMITMENT = 33; // default size of confidential commitments (i.e. asset, value, nonce)
 const CONFIDENTIAL_VALUE = 9; // explicit size of confidential values
@@ -17,12 +18,17 @@ function verifuint(value: number, max: number): void {
     throw new Error('value has a fractional component');
 }
 
+export function varSliceSize(someScript: Buffer): number {
+  const length = someScript.length;
+  return varuint.encodingLength(length) + length;
+}
+
 export function readUInt64LE(buffer: Buffer, offset: number): number {
   const a = buffer.readUInt32LE(offset);
   let b = buffer.readUInt32LE(offset + 4);
   b *= 0x100000000;
 
-  verifuint(b + a, 0x001fffffffffffff);
+  verifuint(b + a, 0xffffffffffffffff);
   return b + a;
 }
 
@@ -31,7 +37,7 @@ export function writeUInt64LE(
   value: number,
   offset: number,
 ): number {
-  verifuint(value, 0x001fffffffffffff);
+  verifuint(value, 0xffffffffffffffff);
 
   buffer.writeInt32LE(value & -1, offset);
   buffer.writeUInt32LE(Math.floor(value / 0x100000000), offset + 4);
@@ -51,10 +57,20 @@ export function reverseBuffer(buffer: Buffer): Buffer {
   return buffer;
 }
 
+export function cloneBuffer(buffer: Buffer): Buffer {
+  const clone = Buffer.allocUnsafe(buffer.length);
+  buffer.copy(clone);
+  return clone;
+}
+
 /**
  * Helper class for serialization of bitcoin data types into a pre-allocated buffer.
  */
 export class BufferWriter {
+  static withCapacity(size: number): BufferWriter {
+    return new BufferWriter(Buffer.alloc(size));
+  }
+
   constructor(public buffer: Buffer, public offset: number = 0) {
     typeforce(types.tuple(types.Buffer, types.UInt32), [buffer, offset]);
   }
@@ -97,16 +113,23 @@ export class BufferWriter {
     vector.forEach((buf: Buffer) => this.writeVarSlice(buf));
   }
 
-  writeConfidentialInFields(input: any): void {
-    this.writeVarSlice(input.issuanceRangeProof);
-    this.writeVarSlice(input.inflationRangeProof);
+  writeConfidentialInFields(input: Input): void {
+    this.writeVarSlice(input.issuanceRangeProof || Buffer.alloc(0));
+    this.writeVarSlice(input.inflationRangeProof || Buffer.alloc(0));
     this.writeVector(input.witness);
-    this.writeVector(input.peginWitness);
+    this.writeVector(input.peginWitness || []);
   }
 
-  writeConfidentialOutFields(output: any): void {
-    this.writeVarSlice(output.surjectionProof);
-    this.writeVarSlice(output.rangeProof);
+  writeConfidentialOutFields(output: Output): void {
+    this.writeVarSlice(output.surjectionProof || Buffer.alloc(0));
+    this.writeVarSlice(output.rangeProof || Buffer.alloc(0));
+  }
+
+  end(): Buffer {
+    if (this.buffer.length === this.offset) {
+      return this.buffer;
+    }
+    throw new Error(`buffer size ${this.buffer.length}, offset ${this.offset}`);
   }
 }
 

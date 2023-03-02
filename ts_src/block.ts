@@ -1,3 +1,4 @@
+
 import { reverseBuffer } from './bufferutils';
 import * as bcrypto from './crypto';
 import { Transaction } from './transaction';
