@@ -1,8 +1,7 @@
-
 'use strict';
 var __importStar =
   (this && this.__importStar) ||
-  function(mod) {
+  function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
     if (mod != null)
@@ -65,7 +64,7 @@ class Block {
   static fromBuffer(buffer) {
     if (buffer.length < 80) throw new Error('Buffer too small (< 80 bytes)');
     let offset = 0;
-    const readSlice = n => {
+    const readSlice = (n) => {
       offset += n;
       return buffer.slice(offset - n, offset);
     };
@@ -226,7 +225,7 @@ class Block {
     if (transactions.length === 0) throw errorMerkleNoTxes;
     if (forWitness && !txesHaveWitnessCommit(transactions))
       throw errorWitnessNotSegwit;
-    const hashes = transactions.map(transaction =>
+    const hashes = transactions.map((transaction) =>
       transaction.getHash(forWitness),
     );
     const rootHash = fastMerkleRoot(hashes, bcrypto.hash256);
@@ -243,10 +242,10 @@ class Block {
     // The root is prepended with 0xaa21a9ed so check for 0x6a24aa21a9ed
     // If multiple commits are found, the output with highest index is assumed.
     const witnessCommits = this.transactions[0].outs
-      .filter(out =>
+      .filter((out) =>
         out.script.slice(0, 6).equals(Buffer.from('6a24aa21a9ed', 'hex')),
       )
-      .map(out => out.script.slice(6, 38));
+      .map((out) => out.script.slice(6, 38));
     if (witnessCommits.length === 0) return null;
     // Use the commit with the highest output (should only be one though)
     const result = witnessCommits[witnessCommits.length - 1];
@@ -293,15 +292,15 @@ class Block {
   toBuffer(headersOnly) {
     const buffer = Buffer.allocUnsafe(this.byteLength(headersOnly));
     let offset = 0;
-    const writeSlice = slice => {
+    const writeSlice = (slice) => {
       slice.copy(buffer, offset);
       offset += slice.length;
     };
-    const writeInt32 = i => {
+    const writeInt32 = (i) => {
       buffer.writeInt32LE(i, offset);
       offset += 4;
     };
-    const writeUInt32 = i => {
+    const writeUInt32 = (i) => {
       buffer.writeUInt32LE(i, offset);
       offset += 4;
     };
@@ -314,7 +313,7 @@ class Block {
     if (headersOnly || !this.transactions) return buffer;
     varuint.encode(this.transactions.length, buffer, offset);
     offset += varuint.encode.bytes;
-    this.transactions.forEach(tx => {
+    this.transactions.forEach((tx) => {
       const txSize = tx.byteLength(); // TODO: extract from toBuffer?
       tx.toBuffer(buffer, offset);
       offset += txSize;
@@ -371,11 +370,11 @@ function anyTxHasWitness(transactions) {
   return (
     transactions instanceof Array &&
     transactions.some(
-      tx =>
+      (tx) =>
         typeof tx === 'object' &&
         tx.ins instanceof Array &&
         tx.ins.some(
-          input =>
+          (input) =>
             typeof input === 'object' &&
             input.witness instanceof Array &&
             input.witness.length > 0,

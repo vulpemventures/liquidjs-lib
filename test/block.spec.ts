@@ -4,7 +4,7 @@ import * as fixtures from './fixtures/block_deserialize.json';
 import { Block } from '../ts_src/block';
 
 describe('block deserialization ', () => {
-  fixtures.test.forEach(f => {
+  fixtures.test.forEach((f) => {
     it(f.name, () => {
       const block = Block.fromBuffer(Buffer.from(f.hex, 'hex'));
 

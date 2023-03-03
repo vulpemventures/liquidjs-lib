@@ -1,4 +1,3 @@
-
 import { reverseBuffer } from './bufferutils';
 import * as bcrypto from './crypto';
 import { Transaction } from './transaction';
@@ -202,7 +201,7 @@ export class Block {
     if (forWitness && !txesHaveWitnessCommit(transactions))
       throw errorWitnessNotSegwit;
 
-    const hashes = transactions.map(transaction =>
+    const hashes = transactions.map((transaction) =>
       transaction.getHash(forWitness!),
     );
 
@@ -259,9 +258,9 @@ export class Block {
     // There is no rule for the index of the output, so use filter to find it.
     // The root is prepended with 0xaa21a9ed so check for 0x6a24aa21a9ed
     // If multiple commits are found, the output with highest index is assumed.
-    const witnessCommits = this.transactions![0].outs.filter(out =>
+    const witnessCommits = this.transactions![0].outs.filter((out) =>
       out.script.slice(0, 6).equals(Buffer.from('6a24aa21a9ed', 'hex')),
-    ).map(out => out.script.slice(6, 38));
+    ).map((out) => out.script.slice(6, 38));
     if (witnessCommits.length === 0) return null;
     // Use the commit with the highest output (should only be one though)
     const result = witnessCommits[witnessCommits.length - 1];
@@ -346,7 +345,7 @@ export class Block {
     varuint.encode(this.transactions.length, buffer, offset);
     offset += varuint.encode.bytes;
 
-    this.transactions.forEach(tx => {
+    this.transactions.forEach((tx) => {
       const txSize = tx.byteLength(); // TODO: extract from toBuffer?
       tx.toBuffer(buffer, offset);
       offset += txSize;
@@ -413,11 +412,11 @@ function anyTxHasWitness(transactions: Transaction[]): boolean {
   return (
     transactions instanceof Array &&
     transactions.some(
-      tx =>
+      (tx) =>
         typeof tx === 'object' &&
         tx.ins instanceof Array &&
         tx.ins.some(
-          input =>
+          (input) =>
             typeof input === 'object' &&
             input.witness instanceof Array &&
             input.witness.length > 0,
