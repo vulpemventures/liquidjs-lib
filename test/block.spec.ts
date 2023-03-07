@@ -11,7 +11,10 @@ describe('block deserialization ', () => {
       assert.strictEqual(block.toBuffer().toString('hex'), f.hex);
 
       if (f.name.includes('compact current')) {
-        assert.strictEqual(reverseBuffer(block.getHash()).toString('hex'), f.hash);
+        assert.strictEqual(
+          reverseBuffer(block.getHash()).toString('hex'),
+          f.hash,
+        );
         assert.strictEqual(block.version, parseInt(f.version || '', 16));
         assert.strictEqual(
           block.currentSignBlockWitnessLimit,
@@ -20,7 +23,10 @@ describe('block deserialization ', () => {
       }
 
       if (f.name.includes('full current')) {
-        assert.strictEqual(reverseBuffer(block.getHash()).toString('hex'), f.hash);
+        assert.strictEqual(
+          reverseBuffer(block.getHash()).toString('hex'),
+          f.hash,
+        );
       }
 
       assert.strictEqual(block.transactions!.length, f.numOfTx);

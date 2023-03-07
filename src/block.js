@@ -70,21 +70,27 @@ class Block {
     this.transactions = undefined;
     this.blockHeight = 0;
     // DYNAMIC FEDERATION PARAMS
+    this.isCurrent = false;
     // current compact params
+    this.isCurrentCompact = false;
     this.currentSignBlockScript = undefined;
     this.currentSignBlockWitnessLimit = 0;
     this.currentElidedRoot = undefined;
     // current full param
+    this.isCurrentFull = false;
     this.currentSignBlockScriptFull = undefined;
     this.currentSignBlockWitnessLimitFull = 0;
     this.currentFedpegProgram = undefined;
     this.currentFedpegScript = undefined;
     this.currentExtensionSpace = undefined;
+    this.isProposed = false;
     // proposed compact params
+    this.isProposedCompact = false;
     this.proposedSignBlockScript = undefined;
     this.proposedSignBlockWitnessLimit = 0;
     this.proposedElidedRoot = undefined;
     // proposed full param
+    this.isProposedFull = false;
     this.proposedSignBlockScriptFull = undefined;
     this.proposedSignBlockWitnessLimitFull = 0;
     this.proposedFedpegProgram = undefined;
@@ -92,6 +98,7 @@ class Block {
     this.proposedExtensionSpace = undefined;
     // SignBlockWitness
     this.signBlockWitness = undefined;
+    this.isDyna = false;
     this.challenge = undefined;
     this.solution = undefined;
   }
@@ -122,6 +129,7 @@ class Block {
     const isDyna = block.version >>> 31 === 1;
     if (isDyna) {
       block.version &= 2147483647;
+      block.isDyna = true;
     }
     block.prevHash = readSlice(32);
     block.merkleRoot = readSlice(32);
@@ -143,6 +151,8 @@ class Block {
           block.currentSignBlockScript = signBlockScriptCompact;
           block.currentSignBlockWitnessLimit = signBlockWitnessLimitCompact;
           block.currentElidedRoot = elidedRootCompact;
+          block.isCurrent = true;
+          block.isCurrentCompact = true;
           break;
         case 2: // full params
           const signBlockScriptLengthFull = readVarInt();
@@ -157,13 +167,15 @@ class Block {
           for (let i = 0; i < extensionSpaceLength; i++) {
             const tmpLen = readVarInt();
             const tmp = readSlice(tmpLen);
-            extensionSpace.unshift(tmp);
+            extensionSpace.push(tmp);
           }
           block.currentSignBlockScriptFull = signBlockScriptFull;
           block.currentSignBlockWitnessLimitFull = signBlockWitnessLimitFull;
           block.currentFedpegProgram = fedpegProgram;
           block.currentFedpegScript = fedpegScript;
           block.currentExtensionSpace = extensionSpace;
+          block.isCurrent = true;
+          block.isCurrentFull = true;
           break;
         default:
           throw new Error('bad serialize type for dynafed parameters');
@@ -183,6 +195,8 @@ class Block {
           block.proposedSignBlockScript = signBlockScriptCompact;
           block.proposedSignBlockWitnessLimit = signBlockWitnessLimitCompact;
           block.proposedElidedRoot = elidedRootCompact;
+          block.isProposed = true;
+          block.isProposedCompact = true;
           break;
         case 2: // full params
           const signBlockScriptLengthFull = readVarInt();
@@ -197,13 +211,15 @@ class Block {
           for (let i = 0; i < extensionSpaceLength; i++) {
             const tmpLen = readVarInt();
             const tmp = readSlice(tmpLen);
-            extensionSpace.unshift(tmp);
+            extensionSpace.push(tmp);
           }
           block.proposedSignBlockScriptFull = signBlockScriptFull;
           block.proposedSignBlockWitnessLimitFull = signBlockWitnessLimitFull;
           block.proposedFedpegProgram = fedpegProgram;
           block.proposedFedpegScript = fedpegScript;
           block.proposedExtensionSpace = extensionSpace;
+          block.isProposed = true;
+          block.isProposedFull = true;
           break;
         default:
           throw new Error('bad serialize type for dynafed parameters');
@@ -213,7 +229,7 @@ class Block {
       for (let i = 0; i < signBlockWitnessLength; i++) {
         const tmpLen = readVarInt();
         const tmp = readSlice(tmpLen);
-        signBlockWitness.unshift(tmp);
+        signBlockWitness.push(tmp);
       }
       block.signBlockWitness = signBlockWitness;
     } else {
@@ -303,14 +319,6 @@ class Block {
     const total = this.byteLength(false, true);
     return base * 3 + total;
   }
-  byteLength(headersOnly, allowWitness = true) {
-    if (headersOnly || !this.transactions) return 80;
-    return (
-      80 +
-      varuint.encodingLength(this.transactions.length) +
-      this.transactions.reduce((a, x) => a + x.byteLength(allowWitness), 0)
-    );
-  }
   getHash() {
     return bcrypto.hash256(this.toBuffer(true));
   }
@@ -338,15 +346,99 @@ class Block {
       buffer.writeUInt32LE(i, offset);
       offset += 4;
     };
-    writeInt32(this.version);
+    const writeUInt8 = (i) => {
+      buffer.writeUInt8(i, offset);
+      offset += 1;
+    };
+    const writeVarInt = (i) => {
+      varuint.encode(i, buffer, offset);
+      offset += varuint.encode.bytes;
+    };
+    let version = this.version;
+    if (this.isDyna) {
+      const mask = 1 << 31;
+      version |= mask;
+    }
+    writeInt32(version);
     writeSlice(this.prevHash);
     writeSlice(this.merkleRoot);
     writeUInt32(this.timestamp);
-    writeUInt32(this.bits);
-    writeUInt32(this.nonce);
+    writeUInt32(this.blockHeight);
+    if (this.isDyna) {
+      if (this.isCurrent) {
+        if (this.isCurrentCompact == null && this.isCurrentFull == null) {
+          writeUInt8(0);
+        }
+        if (this.isCurrentCompact) {
+          writeUInt8(1);
+          writeVarInt(this.currentSignBlockScript.length);
+          writeSlice(this.currentSignBlockScript);
+          writeUInt32(this.currentSignBlockWitnessLimit);
+          writeSlice(this.currentElidedRoot);
+        }
+        if (this.isCurrentFull) {
+          writeUInt8(2);
+          writeVarInt(this.currentSignBlockScriptFull.length);
+          writeSlice(this.currentSignBlockScriptFull);
+          writeUInt32(this.currentSignBlockWitnessLimitFull);
+          writeVarInt(this.currentFedpegProgram.length);
+          writeSlice(this.currentFedpegProgram);
+          writeVarInt(this.currentFedpegScript.length);
+          writeSlice(this.currentFedpegScript);
+          writeVarInt(this.currentExtensionSpace.length);
+          this.currentExtensionSpace.forEach((item) => {
+            writeVarInt(item.length);
+            writeSlice(item);
+          });
+        }
+      } else {
+        writeUInt8(0);
+      }
+      if (this.isProposed) {
+        if (this.isProposedCompact) {
+          writeUInt8(1);
+          writeVarInt(this.proposedSignBlockScript.length);
+          writeSlice(this.proposedSignBlockScript);
+          writeUInt32(this.proposedSignBlockWitnessLimit);
+          writeSlice(this.proposedElidedRoot);
+        }
+        if (this.isProposedFull) {
+          writeUInt8(2);
+          writeVarInt(this.proposedSignBlockScriptFull.length);
+          writeSlice(this.proposedSignBlockScriptFull);
+          writeUInt32(this.proposedSignBlockWitnessLimitFull);
+          writeVarInt(this.proposedFedpegProgram.length);
+          writeSlice(this.proposedFedpegProgram);
+          writeVarInt(this.proposedFedpegScript.length);
+          writeSlice(this.proposedFedpegScript);
+          writeVarInt(this.proposedExtensionSpace.length);
+          this.proposedExtensionSpace.forEach((item) => {
+            writeVarInt(item.length);
+            writeSlice(item);
+          });
+        } else {
+          writeUInt8(0);
+        }
+      } else {
+        writeUInt8(0);
+      }
+      if (!headersOnly) {
+        writeVarInt(this.signBlockWitness.length);
+        this.signBlockWitness.forEach((item) => {
+          writeVarInt(item.length);
+          writeSlice(item);
+        });
+      }
+    } else {
+      writeVarInt(this.challenge.length);
+      writeSlice(this.challenge);
+      if (!headersOnly) {
+        writeVarInt(this.solution.length);
+        writeSlice(this.solution);
+      }
+    }
     if (headersOnly || !this.transactions) return buffer;
-    varuint.encode(this.transactions.length, buffer, offset);
-    offset += varuint.encode.bytes;
+    writeVarInt(this.transactions.length);
     this.transactions.forEach((tx) => {
       const txSize = tx.byteLength(); // TODO: extract from toBuffer?
       tx.toBuffer(buffer, offset);
@@ -386,8 +478,104 @@ class Block {
     );
     return this.witnessCommit.compare(actualWitnessCommit) === 0;
   }
+  byteLength(forHash, allowWitness = true) {
+    let size = 0;
+    size += 4; // version
+    size += 32; // prevHash
+    size += 32; // merkleRoot
+    size += 4; // timestamp
+    size += 4; // height
+    if (this.isDyna) {
+      size += 2; // dyna params type current/propose
+      if (this.isCurrent) {
+        if (this.isCurrentCompact) {
+          size += getNumberMinByteSize(this.currentSignBlockScript.length); // currentSignBlockScript length
+          size += this.currentSignBlockScript.length; // currentSignBlockScript
+          size += 4; // currentSignBlockWitnessLimit
+          size += 32; // currentElidedRoot
+        }
+        if (this.isCurrentFull) {
+          size += getNumberMinByteSize(this.currentSignBlockScriptFull.length); // currentSignBlockScriptFull length
+          size += this.currentSignBlockScriptFull.length; // currentSignBlockScriptFull
+          size += 4; // currentSignBlockWitnessLimitFull
+          size += getNumberMinByteSize(this.currentFedpegProgram.length); // currentFedpegProgram length
+          size += this.currentFedpegProgram.length; // currentFedpegProgram
+          size += getNumberMinByteSize(this.currentFedpegScript.length); // currentFedpegScript length
+          size += this.currentFedpegScript.length; // currentFedpegScript
+          size += getNumberMinByteSize(this.currentExtensionSpace.length); // currentExtensionSpace length
+          this.currentExtensionSpace.forEach((item) => {
+            size += getNumberMinByteSize(item.length); // currentExtensionSpace item length
+            size += item.length; // currentExtensionSpace item
+          });
+        }
+      }
+      if (this.isProposed) {
+        if (this.isProposedCompact) {
+          size += getNumberMinByteSize(this.proposedSignBlockScript.length); // proposedSignBlockScript length
+          size += this.proposedSignBlockScript.length; // proposedSignBlockScript
+          size += 4; // proposedSignBlockWitnessLimit
+          size += 32; // proposedElidedRoot
+        }
+        if (this.isProposedFull) {
+          size += getNumberMinByteSize(this.proposedSignBlockScriptFull.length); // proposedSignBlockScriptFull length
+          size += this.proposedSignBlockScriptFull.length; // proposedSignBlockScriptFull
+          size += 4; // proposedSignBlockWitnessLimitFull
+          size += getNumberMinByteSize(this.proposedFedpegProgram.length); // proposedFedpegProgram length
+          size += this.proposedFedpegProgram.length; // proposedFedpegProgram
+          size += getNumberMinByteSize(this.proposedFedpegScript.length); // proposedFedpegScript length
+          size += this.proposedFedpegScript.length; // proposedFedpegScript
+          size += getNumberMinByteSize(this.proposedExtensionSpace.length); // proposedExtensionSpace length
+          this.proposedExtensionSpace.forEach((item) => {
+            size += getNumberMinByteSize(item.length); // proposedExtensionSpace item length
+            size += item.length; // proposedExtensionSpace item
+          });
+        }
+      }
+      if (!forHash) {
+        size += getNumberMinByteSize(this.signBlockWitness.length);
+        this.signBlockWitness.forEach((item) => {
+          size += getNumberMinByteSize(item.length); // signBlockWitness item length
+          size += item.length; // signBlockWitness item
+        });
+      }
+    } else {
+      const challengeLength = this.challenge?.length ?? 0;
+      size += getNumberMinByteSize(challengeLength);
+      size += challengeLength; // challenge
+      if (!forHash) {
+        const solutionLength = this.solution?.length ?? 0;
+        size += getNumberMinByteSize(solutionLength);
+        size += solutionLength; // solution
+      }
+    }
+    if (!forHash) {
+      size += this.transactions?.length
+        ? varuint.encodingLength(this.transactions.length)
+        : 0;
+      size +=
+        this.transactions?.reduce(
+          (a, x) => a + x.byteLength(allowWitness),
+          0,
+        ) ?? 0;
+    }
+    return size;
+  }
 }
 exports.Block = Block;
+function getNumberMinByteSize(num) {
+  if (num < 0) {
+    throw new Error('negative numbers are not supported.');
+  }
+  for (let i = 1; i <= 8; i++) {
+    const maxVal = Math.pow(2, i * 8) - 1;
+    if (num <= maxVal) {
+      return i;
+    }
+  }
+  throw new Error(
+    'number is too large to be represented as a JavaScript number.',
+  );
+}
 function txesHaveWitnessCommit(transactions) {
   return (
     transactions instanceof Array &&

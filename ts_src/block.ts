@@ -52,7 +52,7 @@ export class Block {
     }
     block.prevHash = readSlice(32);
     block.merkleRoot = readSlice(32);
-    block.timestamp =   readUInt32();
+    block.timestamp = readUInt32();
     block.blockHeight = readUInt32();
 
     if (isDyna) {
@@ -345,7 +345,7 @@ export class Block {
     const writeVarInt = (i: number): void => {
       varuint.encode(i, buffer, offset);
       offset += varuint.encode.bytes;
-    }
+    };
 
     let version: number = this.version;
     if (this.isDyna) {
@@ -496,69 +496,77 @@ export class Block {
     if (this.isDyna) {
       size += 2; // dyna params type current/propose
       if (this.isCurrent) {
-            if (this.isCurrentCompact) {
-              size += getNumberMinByteSize(this.currentSignBlockScript!.length); // currentSignBlockScript length
-              size += this.currentSignBlockScript!.length; // currentSignBlockScript
-              size += 4; // currentSignBlockWitnessLimit
-              size += 32; // currentElidedRoot
-            }
-            if (this.isCurrentFull) {
-              size += getNumberMinByteSize(this.currentSignBlockScriptFull!.length); // currentSignBlockScriptFull length
-              size += this.currentSignBlockScriptFull!.length; // currentSignBlockScriptFull
-              size += 4; // currentSignBlockWitnessLimitFull
-              size += getNumberMinByteSize(this.currentFedpegProgram!.length); // currentFedpegProgram length
-              size += this.currentFedpegProgram!.length; // currentFedpegProgram
-              size += getNumberMinByteSize(this.currentFedpegScript!.length); // currentFedpegScript length
-              size += this.currentFedpegScript!.length; // currentFedpegScript
-              size += getNumberMinByteSize(this.currentExtensionSpace!.length); // currentExtensionSpace length
-              this.currentExtensionSpace!.forEach((item) => {
-                size += getNumberMinByteSize(item!.length); // currentExtensionSpace item length
-                size += item!.length; // currentExtensionSpace item
-              });
-            }
+        if (this.isCurrentCompact) {
+          size += getNumberMinByteSize(this.currentSignBlockScript!.length); // currentSignBlockScript length
+          size += this.currentSignBlockScript!.length; // currentSignBlockScript
+          size += 4; // currentSignBlockWitnessLimit
+          size += 32; // currentElidedRoot
         }
-        if (this.isProposed) {
-            if (this.isProposedCompact) {
-              size += getNumberMinByteSize(this.proposedSignBlockScript!.length); // proposedSignBlockScript length
-              size += this.proposedSignBlockScript!.length; // proposedSignBlockScript
-              size += 4; // proposedSignBlockWitnessLimit
-              size += 32; // proposedElidedRoot
-            }
-            if (this.isProposedFull) {
-              size += getNumberMinByteSize(this.proposedSignBlockScriptFull!.length); // proposedSignBlockScriptFull length
-              size += this.proposedSignBlockScriptFull!.length; // proposedSignBlockScriptFull
-              size += 4; // proposedSignBlockWitnessLimitFull
-              size += getNumberMinByteSize(this.proposedFedpegProgram!.length); // proposedFedpegProgram length
-              size += this.proposedFedpegProgram!.length; // proposedFedpegProgram
-              size += getNumberMinByteSize(this.proposedFedpegScript!.length); // proposedFedpegScript length
-              size += this.proposedFedpegScript!.length; // proposedFedpegScript
-              size += getNumberMinByteSize(this.proposedExtensionSpace!.length); // proposedExtensionSpace length
-              this.proposedExtensionSpace!.forEach((item) => {
-                size += getNumberMinByteSize(item!.length); // proposedExtensionSpace item length
-                size += item!.length; // proposedExtensionSpace item
-              });
-            }
-        }
-        if (!forHash) {
-          size += getNumberMinByteSize(this.signBlockWitness!.length);
-          this.signBlockWitness!.forEach((item) => {
-            size += getNumberMinByteSize(item!.length); // signBlockWitness item length
-            size += item!.length; // signBlockWitness item
+        if (this.isCurrentFull) {
+          size += getNumberMinByteSize(this.currentSignBlockScriptFull!.length); // currentSignBlockScriptFull length
+          size += this.currentSignBlockScriptFull!.length; // currentSignBlockScriptFull
+          size += 4; // currentSignBlockWitnessLimitFull
+          size += getNumberMinByteSize(this.currentFedpegProgram!.length); // currentFedpegProgram length
+          size += this.currentFedpegProgram!.length; // currentFedpegProgram
+          size += getNumberMinByteSize(this.currentFedpegScript!.length); // currentFedpegScript length
+          size += this.currentFedpegScript!.length; // currentFedpegScript
+          size += getNumberMinByteSize(this.currentExtensionSpace!.length); // currentExtensionSpace length
+          this.currentExtensionSpace!.forEach((item) => {
+            size += getNumberMinByteSize(item!.length); // currentExtensionSpace item length
+            size += item!.length; // currentExtensionSpace item
           });
         }
-    }else {
-      const challengeLength = this.challenge?.length ?? 0
-      size += getNumberMinByteSize(challengeLength);
-      size += challengeLength;// challenge
+      }
+      if (this.isProposed) {
+        if (this.isProposedCompact) {
+          size += getNumberMinByteSize(this.proposedSignBlockScript!.length); // proposedSignBlockScript length
+          size += this.proposedSignBlockScript!.length; // proposedSignBlockScript
+          size += 4; // proposedSignBlockWitnessLimit
+          size += 32; // proposedElidedRoot
+        }
+        if (this.isProposedFull) {
+          size += getNumberMinByteSize(
+            this.proposedSignBlockScriptFull!.length,
+          ); // proposedSignBlockScriptFull length
+          size += this.proposedSignBlockScriptFull!.length; // proposedSignBlockScriptFull
+          size += 4; // proposedSignBlockWitnessLimitFull
+          size += getNumberMinByteSize(this.proposedFedpegProgram!.length); // proposedFedpegProgram length
+          size += this.proposedFedpegProgram!.length; // proposedFedpegProgram
+          size += getNumberMinByteSize(this.proposedFedpegScript!.length); // proposedFedpegScript length
+          size += this.proposedFedpegScript!.length; // proposedFedpegScript
+          size += getNumberMinByteSize(this.proposedExtensionSpace!.length); // proposedExtensionSpace length
+          this.proposedExtensionSpace!.forEach((item) => {
+            size += getNumberMinByteSize(item!.length); // proposedExtensionSpace item length
+            size += item!.length; // proposedExtensionSpace item
+          });
+        }
+      }
       if (!forHash) {
-        const solutionLength = this.solution?.length ?? 0
+        size += getNumberMinByteSize(this.signBlockWitness!.length);
+        this.signBlockWitness!.forEach((item) => {
+          size += getNumberMinByteSize(item!.length); // signBlockWitness item length
+          size += item!.length; // signBlockWitness item
+        });
+      }
+    } else {
+      const challengeLength = this.challenge?.length ?? 0;
+      size += getNumberMinByteSize(challengeLength);
+      size += challengeLength; // challenge
+      if (!forHash) {
+        const solutionLength = this.solution?.length ?? 0;
         size += getNumberMinByteSize(solutionLength);
-        size += solutionLength;// solution
+        size += solutionLength; // solution
       }
     }
     if (!forHash) {
-      size += this.transactions?.length ? varuint.encodingLength(this.transactions.length) : 0;
-      size += this.transactions?.reduce((a, x) => a + x.byteLength(allowWitness), 0) ?? 0;
+      size += this.transactions?.length
+        ? varuint.encodingLength(this.transactions.length)
+        : 0;
+      size +=
+        this.transactions?.reduce(
+          (a, x) => a + x.byteLength(allowWitness),
+          0,
+        ) ?? 0;
     }
     return size;
   }
@@ -574,7 +582,9 @@ function getNumberMinByteSize(num: number): number {
       return i;
     }
   }
-  throw new Error('number is too large to be represented as a JavaScript number.');
+  throw new Error(
+    'number is too large to be represented as a JavaScript number.',
+  );
 }
 
 function txesHaveWitnessCommit(transactions: Transaction[]): boolean {
