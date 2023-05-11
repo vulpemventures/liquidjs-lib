@@ -296,7 +296,7 @@ export class Pset {
             input.requiredHeightLocktime!,
           );
         }
-        if (input.partialSigs!.length > 0) {
+        if ((input.partialSigs ?? []).length > 0) {
           hasSigs = true;
         }
       });
