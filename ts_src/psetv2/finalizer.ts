@@ -34,8 +34,7 @@ export class Finalizer {
       this.finalizeInput(i);
     });
 
-    pset.sanityCheck;
-
+    pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;

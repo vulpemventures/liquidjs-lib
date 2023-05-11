@@ -22,7 +22,7 @@ import * as NETWORKS from '../../ts_src/networks';
 import { ecc, ECPair } from '../ecc';
 import { createPayment, getInputData } from './utils';
 import * as regtestUtils from './_regtest';
-import { address, bip341 } from '../../ts_src';
+import { address, bip341, networks } from '../../ts_src';
 import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
 import secp256k1 from '@vulpemventures/secp256k1-zkp';
@@ -1013,6 +1013,88 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
     await regtestUtils.broadcast(hex);
   });
+
+  it(
+    'can create (and broadcast via 3PBP) a transaction, w/ a ' +
+      'P2SH(P2WSH(P2MS(3 of 4))) (SegWit multisig) input',
+    async () => {
+      const p2sh = createPayment(
+        'p2sh-p2wsh-p2ms(3 of 4)',
+        undefined,
+        undefined,
+        true,
+      );
+      const receiver = createPayment('p2wpkh', undefined, undefined, true);
+      const inputData = await getInputData(p2sh.payment, true, 'p2sh-p2wsh');
+
+      const inputs = [inputData].map(({ hash, index }) => {
+        const txid: string = Buffer.from(hash).reverse().toString('hex');
+        return new CreatorInput(txid, index);
+      });
+      const pset = PsetCreator.newPset({
+        inputs,
+        outputs: [
+          new CreatorOutput(
+            networks.regtest.assetHash,
+            99999500,
+            receiver.payment.output,
+            p2sh.payment.blindkey as Buffer,
+            0,
+          ),
+          new CreatorOutput(networks.regtest.assetHash, 500),
+        ],
+      });
+
+      const updater = new PsetUpdater(pset);
+      updater.addInRedeemScript(0, inputData.redeemScript);
+      updater.addInWitnessUtxo(0, inputData.witnessUtxo);
+      updater.addInSighashType(0, Transaction.SIGHASH_ALL);
+      updater.addInWitnessScript(0, inputData.witnessScript);
+
+      const zkpLib = await secp256k1();
+      const zkpValidator = new ZKPValidator(zkpLib);
+      const zkpGenerator = new ZKPGenerator(
+        zkpLib,
+        ZKPGenerator.WithBlindingKeysOfInputs(p2sh.blindingKeys),
+      );
+
+      const ownedInputs = zkpGenerator.unblindInputs(pset);
+      const outputBlindingArgs = zkpGenerator.blindOutputs(
+        pset,
+        Pset.ECCKeysGenerator(ecc),
+      );
+
+      const blinder = new PsetBlinder(
+        pset,
+        ownedInputs,
+        zkpValidator,
+        zkpGenerator,
+      );
+
+      blinder.blindLast({ outputBlindingArgs });
+
+      const signer = new PsetSigner(pset);
+
+      // need 3 signers
+      const signersKeys = [...p2sh.keys].slice(0, 3);
+      for (const key of signersKeys) {
+        const partialSig: BIP174SigningData = {
+          partialSig: {
+            pubkey: key.publicKey,
+            signature: bscript.signature.encode(
+              key.sign(pset.getInputPreimage(0, Transaction.SIGHASH_ALL)),
+              Transaction.SIGHASH_ALL,
+            ),
+          },
+        };
+        signer.addSignature(0, partialSig, Pset.ECDSASigValidator(ecc));
+      }
+
+      new PsetFinalizer(pset).finalize();
+      const tx = PsetExtractor.extract(pset);
+      await regtestUtils.broadcast(tx.toHex());
+    },
+  );
 });
 
 function signTransaction(
