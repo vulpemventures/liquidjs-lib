@@ -14,7 +14,7 @@ class Finalizer {
     pset.inputs.forEach((_, i) => {
       this.finalizeInput(i);
     });
-    pset.sanityCheck;
+    pset.sanityCheck();
     this.pset.globals = pset.globals;
     this.pset.inputs = pset.inputs;
     this.pset.outputs = pset.outputs;

@@ -108,7 +108,10 @@ function hasSigs(neededSigs, partialSig, pubkeys) {
   } else {
     sigs = partialSig;
   }
-  if (sigs.length > neededSigs) throw new Error('Too many signatures');
+  if (sigs.length > neededSigs)
+    throw new Error(
+      `Too many signatures, needs ${neededSigs} has ${sigs.length}`,
+    );
   return sigs.length === neededSigs;
 }
 exports.hasSigs = hasSigs;
