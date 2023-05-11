@@ -370,7 +370,7 @@ export class Pset {
 
     const sighashType = ps.signature[ps.signature.length - 1];
     const preimage = this.getInputPreimage(index, sighashType);
-    const script = input.redeemScript || input.witnessScript || prevout.script;
+    const script = input.witnessScript || input.redeemScript || prevout.script;
     checkScriptForPubkey(ps.pubkey, script, 'verify');
     const { signature } = bscript.signature.decode(ps.signature);
     return validator(ps.pubkey, preimage, signature);

@@ -1073,25 +1073,9 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
       blinder.blindLast({ outputBlindingArgs });
 
-      const signer = new PsetSigner(pset);
-
       // need 3 signers
       const signersKeys = [...p2sh.keys].slice(0, 3);
-      for (const key of signersKeys) {
-        const partialSig: BIP174SigningData = {
-          partialSig: {
-            pubkey: key.publicKey,
-            signature: bscript.signature.encode(
-              key.sign(pset.getInputPreimage(0, Transaction.SIGHASH_ALL)),
-              Transaction.SIGHASH_ALL,
-            ),
-          },
-        };
-        signer.addSignature(0, partialSig, Pset.ECDSASigValidator(ecc));
-      }
-
-      new PsetFinalizer(pset).finalize();
-      const tx = PsetExtractor.extract(pset);
+      const tx = signTransaction(pset, [signersKeys], Transaction.SIGHASH_ALL);
       await regtestUtils.broadcast(tx.toHex());
     },
   );
