@@ -360,7 +360,7 @@ class ZKPGenerator {
     const { ecc } = this.zkp;
     const val = Buffer.alloc(32, 0);
     val.writeBigUInt64BE(BigInt(value), 24);
-    const result = ecc.privateMul(assetBlinder, val);
+    const result = Buffer.from(ecc.privateMul(assetBlinder, val));
     if (valueBlinder.length === 0) {
       throw new Error('Missing value blinder');
     }
