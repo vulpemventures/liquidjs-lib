@@ -105,7 +105,7 @@ class ZKPGenerator {
     const { ecc } = this.zkp;
     const negScalarOffset = scalarOffset.equals(transaction_1.ZERO)
       ? scalarOffset
-      : ecc.privateNegate(scalarOffset);
+      : Buffer.from(ecc.privateNegate(scalarOffset));
     if (scalar.equals(negScalarOffset)) {
       return transaction_1.ZERO;
     }
