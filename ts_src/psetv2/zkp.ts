@@ -430,14 +430,14 @@ export class ZKPGenerator {
     assetBlinder: Buffer,
     valueBlinder: Buffer,
   ): Buffer {
+    if (valueBlinder.length === 0) {
+      throw new Error('missing value blinder');
+    }
     if (assetBlinder.equals(ZERO)) {
       return valueBlinder.slice();
     }
     if (value === '0') {
       return valueBlinder.slice();
-    }
-    if (valueBlinder.length === 0) {
-      throw new Error('missing value blinder');
     }
 
     const { ecc } = this.zkp;

@@ -351,14 +351,14 @@ class ZKPGenerator {
     });
   }
   calculateScalarOffset(value, assetBlinder, valueBlinder) {
+    if (valueBlinder.length === 0) {
+      throw new Error('missing value blinder');
+    }
     if (assetBlinder.equals(transaction_1.ZERO)) {
       return valueBlinder.slice();
     }
     if (value === '0') {
       return valueBlinder.slice();
-    }
-    if (valueBlinder.length === 0) {
-      throw new Error('missing value blinder');
     }
     const { ecc } = this.zkp;
     const val = Buffer.alloc(32, 0);
