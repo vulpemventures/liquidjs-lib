@@ -103,7 +103,9 @@ class ZKPGenerator {
       return scalarOffset;
     }
     const { ecc } = this.zkp;
-    const negScalarOffset = ecc.privateNegate(scalarOffset);
+    const negScalarOffset = scalarOffset.equals(transaction_1.ZERO)
+      ? scalarOffset
+      : Buffer.from(ecc.privateNegate(scalarOffset));
     if (scalar.equals(negScalarOffset)) {
       return transaction_1.ZERO;
     }
@@ -349,6 +351,9 @@ class ZKPGenerator {
     });
   }
   calculateScalarOffset(value, assetBlinder, valueBlinder) {
+    if (valueBlinder.length === 0) {
+      throw new Error('missing value blinder');
+    }
     if (assetBlinder.equals(transaction_1.ZERO)) {
       return valueBlinder.slice();
     }
@@ -358,10 +363,7 @@ class ZKPGenerator {
     const { ecc } = this.zkp;
     const val = Buffer.alloc(32, 0);
     val.writeBigUInt64BE(BigInt(value), 24);
-    const result = ecc.privateMul(assetBlinder, val);
-    if (valueBlinder.length === 0) {
-      throw new Error('Missing value blinder');
-    }
+    const result = Buffer.from(ecc.privateMul(assetBlinder, val));
     const negVb = Buffer.from(ecc.privateNegate(valueBlinder));
     if (negVb.equals(result)) {
       return transaction_1.ZERO;

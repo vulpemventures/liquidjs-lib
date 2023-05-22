@@ -146,7 +146,9 @@ export class ZKPGenerator {
     }
 
     const { ecc } = this.zkp;
-    const negScalarOffset = ecc.privateNegate(scalarOffset);
+    const negScalarOffset = scalarOffset.equals(ZERO)
+      ? scalarOffset
+      : Buffer.from(ecc.privateNegate(scalarOffset));
 
     if (scalar.equals(negScalarOffset)) {
       return ZERO;
@@ -428,6 +430,9 @@ export class ZKPGenerator {
     assetBlinder: Buffer,
     valueBlinder: Buffer,
   ): Buffer {
+    if (valueBlinder.length === 0) {
+      throw new Error('missing value blinder');
+    }
     if (assetBlinder.equals(ZERO)) {
       return valueBlinder.slice();
     }
@@ -438,11 +443,7 @@ export class ZKPGenerator {
     const { ecc } = this.zkp;
     const val = Buffer.alloc(32, 0);
     val.writeBigUInt64BE(BigInt(value), 24);
-    const result = ecc.privateMul(assetBlinder, val);
-    if (valueBlinder.length === 0) {
-      throw new Error('Missing value blinder');
-    }
-
+    const result = Buffer.from(ecc.privateMul(assetBlinder, val));
     const negVb = Buffer.from(ecc.privateNegate(valueBlinder));
 
     if (negVb.equals(result)) {
