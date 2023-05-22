@@ -344,10 +344,10 @@
   dependencies:
     "@types/node" "*"
 
-"@vulpemventures/secp256k1-zkp@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@vulpemventures/secp256k1-zkp/-/secp256k1-zkp-3.0.0.tgz#96b7db89cbc3308c44414ad136a8f2b93c5f1872"
-  integrity sha512-63SSi3QxROV3N8ZjEwloPHwp/t2LygsTXwl+t7U36DPp6yROetZFe8SquKwbOKeQMM0aYDQWtMWpgqRRXdrldg==
+"@vulpemventures/secp256k1-zkp@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@vulpemventures/secp256k1-zkp/-/secp256k1-zkp-3.1.0.tgz#e54d0fae39d0e11c05df366a33fad7761d6111b3"
+  integrity sha512-64Ic62HK/JkjMzKPWcvlw7st/elRrozNqnN6oTaM+M7p1jsJRkCvPWskO5lYxtufKI0Zk2vDLfVBrTTVewBEwg==
   dependencies:
     "@types/node" "^13.9.2"
     long "^4.0.0"
