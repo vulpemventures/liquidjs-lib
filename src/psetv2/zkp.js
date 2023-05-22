@@ -357,13 +357,13 @@ class ZKPGenerator {
     if (value === '0') {
       return valueBlinder.slice();
     }
+    if (valueBlinder.length === 0) {
+      throw new Error('missing value blinder');
+    }
     const { ecc } = this.zkp;
     const val = Buffer.alloc(32, 0);
     val.writeBigUInt64BE(BigInt(value), 24);
     const result = Buffer.from(ecc.privateMul(assetBlinder, val));
-    if (valueBlinder.length === 0) {
-      throw new Error('Missing value blinder');
-    }
     const negVb = Buffer.from(ecc.privateNegate(valueBlinder));
     if (negVb.equals(result)) {
       return transaction_1.ZERO;

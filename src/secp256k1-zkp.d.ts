@@ -10,11 +10,12 @@ export interface Ecc {
     xOnlyPointAddTweak: (point: Uint8Array, tweak: Uint8Array) => {
         parity: 1 | 0;
         xOnlyPubkey: Uint8Array;
-    };
+    } | null;
     sign: (message: Uint8Array, privateKey: Uint8Array, extraEntropy?: Uint8Array) => Uint8Array;
     verify: (message: Uint8Array, publicKey: Uint8Array, signature: Uint8Array, strict?: boolean) => boolean;
     signSchnorr: (message: Uint8Array, privateKey: Uint8Array, extraEntropy?: Uint8Array) => Uint8Array;
     verifySchnorr: (message: Uint8Array, publicKey: Uint8Array, signature: Uint8Array) => boolean;
+    pointAddScalar: (point: Uint8Array, scalar: Uint8Array, compressed?: boolean) => Uint8Array | null;
 }
 declare type Ecdh = (pubkey: Uint8Array, scalar: Uint8Array) => Uint8Array;
 interface Generator {
