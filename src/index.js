@@ -95,4 +95,3 @@ Object.defineProperty(exports, 'Transaction', {
 __exportStar(require('./asset'), exports);
 __exportStar(require('./value'), exports);
 __exportStar(require('./psetv2'), exports);
-__exportStar(require('./secp256k1-zkp'), exports);

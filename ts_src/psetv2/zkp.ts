@@ -12,12 +12,12 @@ import type {
 } from './blinder';
 import { calculateReissuanceToken } from '../issuance';
 import { AssetHash } from '../asset';
-import type { Secp256k1Interface as ZKPInterface } from '../secp256k1-zkp';
+import { ConfidentialSecp256k1Interface } from '../types';
 
 export class ZKPValidator {
   private confidential: Confidential;
 
-  constructor(zkpLib: ZKPInterface) {
+  constructor(zkpLib: ConfidentialSecp256k1Interface) {
     this.confidential = new Confidential(zkpLib);
   }
 
@@ -96,7 +96,10 @@ export class ZKPGenerator {
   private opts?: RngOpts;
   private confidential: Confidential;
 
-  constructor(private zkp: ZKPInterface, ...options: ZKPGeneratorOption[]) {
+  constructor(
+    private zkp: ConfidentialSecp256k1Interface,
+    ...options: ZKPGeneratorOption[]
+  ) {
     this.confidential = new Confidential(zkp);
     for (const option of options) {
       option(this);

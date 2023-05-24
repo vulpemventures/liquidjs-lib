@@ -6,7 +6,7 @@ import { Output, Transaction } from './transaction';
 import { IssuanceContract, Outpoint } from './issuance';
 import { IssuanceBlindingKeys } from './types';
 import { Psbt as PsbtBase } from 'bip174-liquid';
-import { Ecc as TinySecp256k1Interface } from './secp256k1-zkp';
+import { TinySecp256k1Interface } from 'ecpair';
 export interface AddIssuanceArgs {
     assetSats: number;
     assetAddress?: string;

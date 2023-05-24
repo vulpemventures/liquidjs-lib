@@ -1,7 +1,7 @@
 import * as crypto from './crypto';
 import { Output, ZERO } from './transaction';
+import { ConfidentialSecp256k1Interface } from './types';
 import { ElementsValue } from './value';
-import type { Secp256k1Interface as ZKPInterface } from './secp256k1-zkp';
 
 export interface UnblindOutputResult {
   value: string;
@@ -18,7 +18,7 @@ export interface RangeProofInfoResult {
 }
 
 export class Confidential {
-  constructor(private zkp: ZKPInterface) {}
+  constructor(private zkp: ConfidentialSecp256k1Interface) {}
 
   nonceHash(pubkey: Buffer, privkey: Buffer): Buffer {
     return crypto.sha256(Buffer.from(this.zkp.ecdh(pubkey, privkey)));

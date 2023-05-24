@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { Output } from './transaction';
-import type { Secp256k1Interface as ZKPInterface } from './secp256k1-zkp';
+import { ConfidentialSecp256k1Interface } from './types';
 export interface UnblindOutputResult {
     value: string;
     valueBlindingFactor: Buffer;
@@ -15,7 +15,7 @@ export interface RangeProofInfoResult {
 }
 export declare class Confidential {
     private zkp;
-    constructor(zkp: ZKPInterface);
+    constructor(zkp: ConfidentialSecp256k1Interface);
     nonceHash(pubkey: Buffer, privkey: Buffer): Buffer;
     valueBlindingFactor(inValues: string[], outValues: string[], inAssetBlinders: Buffer[], outAssetBlinders: Buffer[], inValueBlinders: Buffer[], outValueBlinders: Buffer[]): Buffer;
     valueCommitment(value: string, generator: Buffer, blinder: Buffer): Buffer;

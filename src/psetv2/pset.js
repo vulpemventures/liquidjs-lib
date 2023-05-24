@@ -95,10 +95,10 @@ class Pset {
     pset.sanityCheck();
     return pset;
   }
-  static ECCKeysGenerator(ec) {
+  static ECCKeysGenerator(ecc) {
     return (opts) => {
       const privateKey = (0, utils_1.randomBytes)(opts);
-      const publicKey = (0, ecpair_1.ECPairFactory)(ec).fromPrivateKey(
+      const publicKey = (0, ecpair_1.ECPairFactory)(ecc).fromPrivateKey(
         privateKey,
       ).publicKey;
       return {
