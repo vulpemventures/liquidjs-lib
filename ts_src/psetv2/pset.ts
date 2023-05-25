@@ -1,4 +1,3 @@
-import { ECPairFactory, TinySecp256k1Interface } from 'ecpair';
 import { BufferReader, BufferWriter } from '../bufferutils';
 import { hash160 } from '../crypto';
 import { Issuance } from '../issuance';
@@ -64,22 +63,33 @@ export class Pset {
     return pset;
   }
 
-  static ECCKeysGenerator(ecc: TinySecp256k1Interface): KeysGenerator {
+  static ECCKeysGenerator(ecc: {
+    pointFromScalar(
+      privateKey: Uint8Array,
+      compressed?: boolean,
+    ): Uint8Array | null;
+  }): KeysGenerator {
     return (opts?: RngOpts) => {
       const privateKey = randomBytes(opts);
-      const publicKey = ECPairFactory(ecc).fromPrivateKey(privateKey).publicKey;
+      const publicKey = ecc.pointFromScalar(privateKey);
+      if (!publicKey) throw new Error('Failed to generate public key');
       return {
         privateKey,
-        publicKey,
+        publicKey: Buffer.from(publicKey),
       };
     };
   }
 
-  static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction {
+  static ECDSASigValidator(ecc: {
+    verify(
+      h: Uint8Array,
+      Q: Uint8Array,
+      signature: Uint8Array,
+      strict?: boolean,
+    ): boolean;
+  }): ValidateSigFunction {
     return (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-      return ECPairFactory(ecc)
-        .fromPublicKey(pubkey)
-        .verify(msghash, signature);
+      return ecc.verify(msghash, pubkey, signature);
     };
   }
 

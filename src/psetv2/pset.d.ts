@@ -1,5 +1,4 @@
 /// <reference types="node" />
-import { TinySecp256k1Interface } from 'ecpair';
 import { Transaction } from '../transaction';
 import { PsetGlobal } from './globals';
 import { PsetInput } from './input';
@@ -15,8 +14,12 @@ export declare type KeysGenerator = (opts?: RngOpts) => {
 export declare class Pset {
     static fromBase64(data: string): Pset;
     static fromBuffer(buf: Buffer): Pset;
-    static ECCKeysGenerator(ecc: TinySecp256k1Interface): KeysGenerator;
-    static ECDSASigValidator(ecc: TinySecp256k1Interface): ValidateSigFunction;
+    static ECCKeysGenerator(ecc: {
+        pointFromScalar(privateKey: Uint8Array, compressed?: boolean): Uint8Array | null;
+    }): KeysGenerator;
+    static ECDSASigValidator(ecc: {
+        verify(h: Uint8Array, Q: Uint8Array, signature: Uint8Array, strict?: boolean): boolean;
+    }): ValidateSigFunction;
     static SchnorrSigValidator(ecc: {
         verifySchnorr: (msghash: Buffer, pubkey: Uint8Array, signature: Uint8Array, extra?: Uint8Array) => boolean;
     }): ValidateSigFunction;

@@ -2,10 +2,10 @@
 import type { Slip77Interface } from 'slip77';
 import type { KeysGenerator, Pset } from './pset';
 import type { IssuanceBlindingArgs, OutputBlindingArgs, OwnedInput } from './blinder';
-import { ConfidentialSecp256k1Interface } from '../types';
+import { Secp256k1Interface as ZKPInterface } from '../secp256k1-zkp';
 export declare class ZKPValidator {
     private confidential;
-    constructor(zkpLib: ConfidentialSecp256k1Interface);
+    constructor(zkpLib: ZKPInterface);
     verifyValueRangeProof(proof: Buffer, valueCommitment: Buffer, assetCommitment: Buffer, script: Buffer): boolean;
     verifyAssetSurjectionProof(inAssets: Buffer[], inAssetBlinders: Buffer[], outAsset: Buffer, outAssetBlinder: Buffer, proof: Buffer): boolean;
     verifyBlindValueProof(proof: Buffer, valueCommitment: Buffer, assetCommitment: Buffer): boolean;
@@ -19,7 +19,7 @@ export declare class ZKPGenerator {
     private masterBlindingKey?;
     private opts?;
     private confidential;
-    constructor(zkp: ConfidentialSecp256k1Interface, ...options: ZKPGeneratorOption[]);
+    constructor(zkp: ZKPInterface, ...options: ZKPGeneratorOption[]);
     static WithBlindingKeysOfInputs(inBlindingKeys: Buffer[]): ZKPGeneratorOption;
     static WithMasterBlindingKey(masterKey: Slip77Interface): ZKPGeneratorOption;
     static WithOwnedInputs(ownedInputs: OwnedInput[]): ZKPGeneratorOption;

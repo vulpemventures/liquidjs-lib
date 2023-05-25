@@ -1,8 +1,6 @@
 /// <reference types="node" />
 import { TinySecp256k1Interface } from 'ecpair';
 export interface BIP341Secp256k1Interface extends TinySecp256k1Interface {
-    xOnlyPointAddTweak(p: Uint8Array, tweak: Uint8Array): XOnlyPointAddTweakResult | null;
-    privateAdd(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
     privateSub(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
     signSchnorr(h: Uint8Array, d: Uint8Array, e?: Uint8Array): Uint8Array;
     verifySchnorr(h: Uint8Array, Q: Uint8Array, signature: Uint8Array): boolean;

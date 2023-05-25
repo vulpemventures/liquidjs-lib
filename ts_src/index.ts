@@ -25,4 +25,4 @@ export {
 export * from './asset';
 export * from './value';
 export * from './psetv2';
-export { ConfidentialSecp256k1Interface } from './types';
+export * from './secp256k1-zkp';

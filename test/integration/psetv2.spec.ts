@@ -72,12 +72,12 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInputs(inputs);
     updater.addOutputs(outputs);
 
-    const { ecc: ecclib } = await secp256k1();
     const rawTx = signTransaction(
       pset,
       [alice.keys],
       Transaction.SIGHASH_ALL,
-      ecclib,
+      // this demonstrates that is still possible to use tiny-secp256k1 lib for signing steps
+      ecc,
     );
     await regtestUtils.broadcast(rawTx.toHex());
   });

@@ -45,7 +45,6 @@ var __importStar =
   };
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Pset = exports.magicPrefixWithSeparator = exports.magicPrefix = void 0;
-const ecpair_1 = require('ecpair');
 const bufferutils_1 = require('../bufferutils');
 const crypto_1 = require('../crypto');
 const transaction_1 = require('../transaction');
@@ -98,20 +97,17 @@ class Pset {
   static ECCKeysGenerator(ecc) {
     return (opts) => {
       const privateKey = (0, utils_1.randomBytes)(opts);
-      const publicKey = (0, ecpair_1.ECPairFactory)(ecc).fromPrivateKey(
-        privateKey,
-      ).publicKey;
+      const publicKey = ecc.pointFromScalar(privateKey);
+      if (!publicKey) throw new Error('Failed to generate public key');
       return {
         privateKey,
-        publicKey,
+        publicKey: Buffer.from(publicKey),
       };
     };
   }
   static ECDSASigValidator(ecc) {
     return (pubkey, msghash, signature) => {
-      return (0, ecpair_1.ECPairFactory)(ecc)
-        .fromPublicKey(pubkey)
-        .verify(msghash, signature);
+      return ecc.verify(msghash, pubkey, signature);
     };
   }
   static SchnorrSigValidator(ecc) {
