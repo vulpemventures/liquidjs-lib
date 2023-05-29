@@ -27,7 +27,7 @@ import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
 import secp256k1 from '@vulpemventures/secp256k1-zkp';
 import { issuanceEntropyFromInput } from '../../ts_src/issuance';
-import { TinySecp256k1Interface } from 'ecpair';
+import { ECDSAVerifier, SchnorrVerifier } from '../../ts_src/psetv2/pset';
 
 const OPS = bscript.OPS;
 const { BIP341Factory } = bip341;
@@ -1361,7 +1361,7 @@ function signTransaction(
   pset: Pset,
   signers: any[],
   sighashType: number,
-  ecclib: TinySecp256k1Interface = ecc,
+  ecclib: ECDSAVerifier & SchnorrVerifier = ecc,
 ): Transaction {
   const signer = new PsetSigner(pset);
 

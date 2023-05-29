@@ -32,6 +32,34 @@ export type KeysGenerator = (opts?: RngOpts) => {
   privateKey: Buffer;
 };
 
+// lets to inject ecc lib dependency into pset.KeysGenerator
+export interface KeysGeneratorSecp256k1Interface {
+  pointFromScalar(
+    privateKey: Uint8Array,
+    compressed?: boolean,
+  ): Uint8Array | null;
+}
+
+// lets to inject ecc lib dependency into pset.ECDSASigValidator
+export interface ECDSAVerifier {
+  verify(
+    h: Uint8Array,
+    Q: Uint8Array,
+    signature: Uint8Array,
+    strict?: boolean,
+  ): boolean;
+}
+
+// lets to inject ecc lib dependency into pset.SchnorrSigValidator
+export interface SchnorrVerifier {
+  verifySchnorr: (
+    msghash: Buffer,
+    pubkey: Uint8Array,
+    signature: Uint8Array,
+    extra?: Uint8Array,
+  ) => boolean;
+}
+
 export class Pset {
   static fromBase64(data: string): Pset {
     const buf = Buffer.from(data, 'base64');
@@ -63,12 +91,7 @@ export class Pset {
     return pset;
   }
 
-  static ECCKeysGenerator(ecc: {
-    pointFromScalar(
-      privateKey: Uint8Array,
-      compressed?: boolean,
-    ): Uint8Array | null;
-  }): KeysGenerator {
+  static ECCKeysGenerator(ecc: KeysGeneratorSecp256k1Interface): KeysGenerator {
     return (opts?: RngOpts) => {
       const privateKey = randomBytes(opts);
       const publicKey = ecc.pointFromScalar(privateKey);
@@ -80,27 +103,13 @@ export class Pset {
     };
   }
 
-  static ECDSASigValidator(ecc: {
-    verify(
-      h: Uint8Array,
-      Q: Uint8Array,
-      signature: Uint8Array,
-      strict?: boolean,
-    ): boolean;
-  }): ValidateSigFunction {
+  static ECDSASigValidator(ecc: ECDSAVerifier): ValidateSigFunction {
     return (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
       return ecc.verify(msghash, pubkey, signature);
     };
   }
 
-  static SchnorrSigValidator(ecc: {
-    verifySchnorr: (
-      msghash: Buffer,
-      pubkey: Uint8Array,
-      signature: Uint8Array,
-      extra?: Uint8Array,
-    ) => boolean;
-  }): ValidateSigFunction {
+  static SchnorrSigValidator(ecc: SchnorrVerifier): ValidateSigFunction {
     return (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
       ecc.verifySchnorr(msghash, pubkey, signature.slice(0, 64));
   }
