@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import { Secp256k1Interface as ZKPInterface } from './secp256k1-zkp';
 import { Output } from './transaction';
+import type { Secp256k1Interface as ZKPInterface } from './secp256k1-zkp';
 export interface UnblindOutputResult {
     value: string;
     valueBlindingFactor: Buffer;
