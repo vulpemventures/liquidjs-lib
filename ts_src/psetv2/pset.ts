@@ -1,5 +1,3 @@
-import type { Ecc as Secp256k1Interface } from '../secp256k1-zkp';
-import { ECPairFactory } from 'ecpair';
 import { BufferReader, BufferWriter } from '../bufferutils';
 import { hash160 } from '../crypto';
 import { Issuance } from '../issuance';
@@ -34,6 +32,34 @@ export type KeysGenerator = (opts?: RngOpts) => {
   privateKey: Buffer;
 };
 
+// lets to inject ecc lib dependency into pset.KeysGenerator
+export interface KeysGeneratorSecp256k1Interface {
+  pointFromScalar(
+    privateKey: Uint8Array,
+    compressed?: boolean,
+  ): Uint8Array | null;
+}
+
+// lets to inject ecc lib dependency into pset.ECDSASigValidator
+export interface ECDSAVerifier {
+  verify(
+    h: Uint8Array,
+    Q: Uint8Array,
+    signature: Uint8Array,
+    strict?: boolean,
+  ): boolean;
+}
+
+// lets to inject ecc lib dependency into pset.SchnorrSigValidator
+export interface SchnorrVerifier {
+  verifySchnorr: (
+    msghash: Buffer,
+    pubkey: Uint8Array,
+    signature: Uint8Array,
+    extra?: Uint8Array,
+  ) => boolean;
+}
+
 export class Pset {
   static fromBase64(data: string): Pset {
     const buf = Buffer.from(data, 'base64');
@@ -65,26 +91,25 @@ export class Pset {
     return pset;
   }
 
-  static ECCKeysGenerator(ec: Secp256k1Interface): KeysGenerator {
+  static ECCKeysGenerator(ecc: KeysGeneratorSecp256k1Interface): KeysGenerator {
     return (opts?: RngOpts) => {
       const privateKey = randomBytes(opts);
-      const publicKey = ECPairFactory(ec).fromPrivateKey(privateKey).publicKey;
+      const publicKey = ecc.pointFromScalar(privateKey);
+      if (!publicKey) throw new Error('Failed to generate public key');
       return {
         privateKey,
-        publicKey,
+        publicKey: Buffer.from(publicKey),
       };
     };
   }
 
-  static ECDSASigValidator(ecc: Secp256k1Interface): ValidateSigFunction {
+  static ECDSASigValidator(ecc: ECDSAVerifier): ValidateSigFunction {
     return (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-      return ECPairFactory(ecc)
-        .fromPublicKey(pubkey)
-        .verify(msghash, signature);
+      return ecc.verify(msghash, pubkey, signature);
     };
   }
 
-  static SchnorrSigValidator(ecc: Secp256k1Interface): ValidateSigFunction {
+  static SchnorrSigValidator(ecc: SchnorrVerifier): ValidateSigFunction {
     return (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
       ecc.verifySchnorr(msghash, pubkey, signature.slice(0, 64));
   }

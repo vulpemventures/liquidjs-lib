@@ -26,8 +26,8 @@ import { address, bip341, networks } from '../../ts_src';
 import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
 import secp256k1 from '@vulpemventures/secp256k1-zkp';
-import type { Ecc } from '../../ts_src/secp256k1-zkp';
 import { issuanceEntropyFromInput } from '../../ts_src/issuance';
+import { ECDSAVerifier, SchnorrVerifier } from '../../ts_src/psetv2/pset';
 
 const OPS = bscript.OPS;
 const { BIP341Factory } = bip341;
@@ -72,12 +72,12 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInputs(inputs);
     updater.addOutputs(outputs);
 
-    const { ecc: ecclib } = await secp256k1();
     const rawTx = signTransaction(
       pset,
       [alice.keys],
       Transaction.SIGHASH_ALL,
-      ecclib,
+      // this demonstrates that is still possible to use tiny-secp256k1 lib for signing steps
+      ecc,
     );
     await regtestUtils.broadcast(rawTx.toHex());
   });
@@ -1361,7 +1361,7 @@ function signTransaction(
   pset: Pset,
   signers: any[],
   sighashType: number,
-  ecclib: Ecc = ecc,
+  ecclib: ECDSAVerifier & SchnorrVerifier = ecc,
 ): Transaction {
   const signer = new PsetSigner(pset);
 
