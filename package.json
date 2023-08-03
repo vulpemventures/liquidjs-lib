@@ -49,12 +49,9 @@
   ],
   "dependencies": {
     "@types/randombytes": "^2.0.0",
-    "@types/wif": "^2.0.2",
-    "axios": "^0.21.1",
     "bech32": "^2.0.0",
     "bip174-liquid": "^1.0.3",
     "bip66": "^1.1.0",
-    "bitcoin-ops": "^1.4.0",
     "bitcoinjs-lib": "^6.0.2",
     "bitset": "^5.1.1",
     "blech32": "^1.0.1",
@@ -63,8 +60,7 @@
     "ecpair": "^2.1.0",
     "slip77": "^0.2.0",
     "typeforce": "^1.11.3",
-    "varuint-bitcoin": "^1.1.2",
-    "wif": "^2.0.1"
+    "varuint-bitcoin": "^1.1.2"
   },
   "devDependencies": {
     "@types/bs58": "^4.0.0",

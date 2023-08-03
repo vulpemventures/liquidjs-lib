@@ -337,13 +337,6 @@
   dependencies:
     "@types/node" "*"
 
-"@types/wif@^2.0.2":
-  version "2.0.2"
-  resolved "https://registry.npmjs.org/@types/wif/-/wif-2.0.2.tgz"
-  integrity sha512-IiIuBeJzlh4LWJ7kVTrX0nwB60OG0vvGTaWC/SgSbVFw7uYUTF6gEuvDZ1goWkeirekJDD58Y8g7NljQh2fNkA==
-  dependencies:
-    "@types/node" "*"
-
 "@vulpemventures/secp256k1-zkp@^3.1.0":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@vulpemventures/secp256k1-zkp/-/secp256k1-zkp-3.1.0.tgz#e54d0fae39d0e11c05df366a33fad7761d6111b3"
@@ -507,7 +500,7 @@ bip68@^1.0.3:
   resolved "https://registry.npmjs.org/bip68/-/bip68-1.0.4.tgz"
   integrity sha512-O1htyufFTYy3EO0JkHg2CLykdXEtV2ssqw47Gq9A0WByp662xpJnMEB9m43LZjsSDjIAOozWRExlFQk2hlV1XQ==
 
-bitcoin-ops@^1.3.0, bitcoin-ops@^1.4.0:
+bitcoin-ops@^1.3.0:
   version "1.4.1"
   resolved "https://registry.npmjs.org/bitcoin-ops/-/bitcoin-ops-1.4.1.tgz"
   integrity sha512-pef6gxZFztEhaE9RY9HmWVmiIHqCb2OyS4HPKkpc6CIiiOa3Qmuoylxc5P2EkU3w+5eTSifI9SEZC88idAIGow==
