@@ -1,7 +1,6 @@
 # LiquidJS
 
-[![Build Status](https://travis-ci.org/vulpemventures/liquidjs-lib.svg?branch=master)](https://travis-ci.org/vulpemventures/liquidjs-lib)
-
+![Build & Test](https://github.com/vulpemventures/liquidjs-lib/actions/workflows/ci.yml/badge.svg)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
 The following library forks `bitcoinjs/bitcoinjs-lib` and contains modifications that are necessary for support of elements-based blockchains such as [Blockstream Liquid](https://blockstream.com/liquid)
