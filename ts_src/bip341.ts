@@ -179,7 +179,7 @@ function taprootSignScriptStack(
   ): Buffer[] => {
     const { parity } = tweakPublicKey(internalPublicKey, treeRootHash, ecc);
     const parityBit = Buffer.of(
-      leaf.version || LEAF_VERSION_TAPSCRIPT + parity,
+      (leaf.version || LEAF_VERSION_TAPSCRIPT) + parity,
     );
     const control = Buffer.concat([
       parityBit,
