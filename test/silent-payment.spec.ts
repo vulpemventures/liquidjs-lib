@@ -1,6 +1,6 @@
 import secp256k1 from '@vulpemventures/secp256k1-zkp';
 import * as tinyecc from 'tiny-secp256k1';
-import assert from 'node:assert';
+import * as assert from 'assert';
 import { ECPairFactory } from 'ecpair';
 import { networks, silentpayment } from '../ts_src';
 const { SilentPayment } = silentpayment;
@@ -65,11 +65,11 @@ describe('silentPayments', () => {
       assert.deepStrictEqual(
         sp.pay(outpointsHash, sumPrivateKeys, recipients),
         testCase.expected.outputs.map((output) => {
-          const address = '5120' + output[0];
+          const scriptPubKey = '5120' + output[0];
           const value = output[1];
           return {
-            scriptPubKey: address,
-            value: value,
+            scriptPubKey,
+            value,
             asset: networks.regtest.assetHash,
           };
         }),

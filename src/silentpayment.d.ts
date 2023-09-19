@@ -17,7 +17,6 @@ export interface TinySecp256k1Interface extends bip341.BIP341Secp256k1Interface 
     pointFromScalar: (key: Uint8Array) => Uint8Array | null;
     privateAdd: (key: Uint8Array, tweak: Uint8Array) => Uint8Array | null;
     privateNegate: (key: Uint8Array) => Uint8Array;
-    ecdh: (pubkey: Uint8Array, privkey: Uint8Array) => Uint8Array;
 }
 export declare class SilentPaymentAddress {
     readonly spendPublicKey: Buffer;

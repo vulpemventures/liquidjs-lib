@@ -23,10 +23,9 @@ import { ECPair } from '../ecc';
 describe('Silent Payments', () => {
   let ecc: TinySecp256k1Interface;
   before(async () => {
-    const { ecc: stepEcc, ecdh } = await secp256k1();
+    const { ecc: stepEcc } = await secp256k1();
     ecc = {
       ...stepEcc,
-      ecdh: ecdh,
       privateMultiply: stepEcc.privateMul,
       pointAdd: tinyecc.pointAdd,
       pointMultiply: (p: Uint8Array, tweak: Uint8Array) =>
