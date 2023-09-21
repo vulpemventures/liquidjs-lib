@@ -21,12 +21,13 @@ import { broadcast, signTransaction } from './_regtest';
 import { ECPair } from '../ecc';
 
 describe('Silent Payments', () => {
-  let ecc: bip341.BIP341Secp256k1Interface;
+  let ecc: silentpayment.TinySecp256k1Interface &
+    bip341.BIP341Secp256k1Interface;
   let sp: silentpayment.SilentPayment;
 
   before(async () => {
     const { ecc: stepEcc } = await secp256k1();
-    const ecc = {
+    ecc = {
       ...stepEcc,
       privateMultiply: stepEcc.privateMul,
       pointAdd: tinyecc.pointAdd,
@@ -125,20 +126,22 @@ describe('Silent Payments', () => {
     bobUpdater.addInWitnessUtxo(0, outputToSpend);
     bobUpdater.addInSighashType(0, Transaction.SIGHASH_DEFAULT);
 
-    // bob can use its scan private key to check if the output can be unlocked by its spend key
+    // bob can use its scan private key and spend pubkey to check if the output can be unlocked by its spend key
     const isBob = sp.isMine(
       outputToSpend.script,
       inputs.map((i) => ({ txid: i.txid, vout: i.txIndex })),
       alice.keys[0].publicKey!,
       bobKeyPairScan.privateKey!,
+      bobKeyPairSpend.publicKey!,
     );
 
     assert.strictEqual(isBob, true, 'bob should be able to spend the output');
 
-    // bob can spend the output by computing the right signing key from the spend key
+    // bob can spend the output by computing the right signing key from the both silent address secret keys
     const privKey = sp.makeSigningKey(
       inputs.map((i) => ({ txid: i.txid, vout: i.txIndex })),
       alice.keys[0].publicKey!,
+      bobKeyPairScan.privateKey!,
       bobKeyPairSpend.privateKey!,
     );
 

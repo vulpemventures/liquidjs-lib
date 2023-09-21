@@ -134,6 +134,11 @@ class SilentPaymentImpl {
       index,
       sharedSecret,
     );
+    console.info(
+      'isMine',
+      scriptPubKey.slice(SEGWIT_V1_SCRIPT_PREFIX.length).toString('hex'),
+      outputPublicKey.slice(1).toString('hex'),
+    );
     return (
       Buffer.compare(
         scriptPubKey.slice(SEGWIT_V1_SCRIPT_PREFIX.length),

@@ -28,11 +28,13 @@ export interface SilentPayment {
     inputs: Outpoint[],
     inputPublicKey: Buffer,
     scanSecretKey: Buffer,
+    spendPublicKey: Buffer,
     index?: number,
   ): boolean;
   makeSigningKey(
     inputs: Outpoint[],
     inputPublicKey: Buffer,
+    scanSecretKey: Buffer,
     spendSecretKey: Buffer,
     index?: number,
   ): Buffer;
@@ -120,7 +122,8 @@ class SilentPaymentImpl implements SilentPayment {
    * @param scriptPubKey scriptPubKey to check
    * @param inputs list of ALL outpoints of the transaction sending to the silent payment address
    * @param inputPublicKey public key owning the spent outpoint. Sum of all public keys if multiple inputs
-   * @param scanSecretKey private key of the silent payment address
+   * @param scanSecretKey *scan* secret key of the silent payment address
+   * @param spendPublicKey *spend* public key of the silent payment address
    * @param index index of the silent payment address.
    */
   isMine(
@@ -128,6 +131,7 @@ class SilentPaymentImpl implements SilentPayment {
     inputs: Outpoint[],
     inputPublicKey: Buffer,
     scanSecretKey: Buffer,
+    spendPublicKey: Buffer,
     index = 0,
   ): boolean {
     const inputsHash = hashOutpoints(inputs);
@@ -139,16 +143,11 @@ class SilentPaymentImpl implements SilentPayment {
     );
 
     const outputPublicKey = this.makePublicKey(
-      inputPublicKey,
+      spendPublicKey,
       index,
       sharedSecret,
     );
 
-    console.info(
-      'isMine',
-      scriptPubKey.slice(SEGWIT_V1_SCRIPT_PREFIX.length).toString('hex'),
-      outputPublicKey.slice(1).toString('hex'),
-    );
     return (
       Buffer.compare(
         scriptPubKey.slice(SEGWIT_V1_SCRIPT_PREFIX.length),
@@ -168,6 +167,7 @@ class SilentPaymentImpl implements SilentPayment {
   makeSigningKey(
     inputs: Outpoint[],
     inputPublicKey: Buffer,
+    scanSecretKey: Buffer,
     spendSecretKey: Buffer,
     index = 0,
   ): Buffer {
@@ -175,7 +175,7 @@ class SilentPaymentImpl implements SilentPayment {
     const sharedSecret = this.makeSharedSecret(
       inputsHash,
       inputPublicKey,
-      spendSecretKey,
+      scanSecretKey,
     );
 
     return this.makeSecretKey(spendSecretKey, index, sharedSecret);
