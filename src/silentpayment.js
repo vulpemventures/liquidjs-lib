@@ -1,51 +1,6 @@
 'use strict';
-var __createBinding =
-  (this && this.__createBinding) ||
-  (Object.create
-    ? function (o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        var desc = Object.getOwnPropertyDescriptor(m, k);
-        if (
-          !desc ||
-          ('get' in desc ? !m.__esModule : desc.writable || desc.configurable)
-        ) {
-          desc = {
-            enumerable: true,
-            get: function () {
-              return m[k];
-            },
-          };
-        }
-        Object.defineProperty(o, k2, desc);
-      }
-    : function (o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        o[k2] = m[k];
-      });
-var __setModuleDefault =
-  (this && this.__setModuleDefault) ||
-  (Object.create
-    ? function (o, v) {
-        Object.defineProperty(o, 'default', { enumerable: true, value: v });
-      }
-    : function (o, v) {
-        o['default'] = v;
-      });
-var __importStar =
-  (this && this.__importStar) ||
-  function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null)
-      for (var k in mod)
-        if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k))
-          __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-  };
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.SPFactory = exports.SilentPaymentAddress = void 0;
-const crypto = __importStar(require('crypto'));
 const bech32_1 = require('bech32');
 const crypto_1 = require('./crypto');
 class SilentPaymentAddress {
@@ -99,15 +54,15 @@ class SilentPaymentImpl {
    * @param index index of the silent payment address. Prevent address reuse if multiple silent addresses are in the same transaction.
    * @returns the output scriptPubKey belonging to the silent payment address
    */
-  makeScriptPubKey(inputs, inputPrivateKey, silentPaymentAddress, index = 0) {
-    const inputsHash = hashOutpoints(inputs);
+  scriptPubKey(inputs, inputPrivateKey, silentPaymentAddress, index = 0) {
+    const inputsHash = (0, crypto_1.hashOutpoints)(inputs);
     const addr = SilentPaymentAddress.decode(silentPaymentAddress);
-    const sharedSecret = this.makeSharedSecret(
+    const sharedSecret = this.ecdhSharedSecret(
       inputsHash,
       addr.scanPublicKey,
       inputPrivateKey,
     );
-    const outputPublicKey = this.makePublicKey(
+    const outputPublicKey = this.publicKey(
       addr.spendPublicKey,
       index,
       sharedSecret,
@@ -115,59 +70,10 @@ class SilentPaymentImpl {
     return Buffer.concat([SEGWIT_V1_SCRIPT_PREFIX, outputPublicKey.slice(1)]);
   }
   /**
-   * Check if a scriptPubKey belongs to a silent payment address
-   * @param scriptPubKey scriptPubKey to check
-   * @param inputs list of ALL outpoints of the transaction sending to the silent payment address
-   * @param inputPublicKey public key owning the spent outpoint. Sum of all public keys if multiple inputs
-   * @param scanSecretKey private key of the silent payment address
-   * @param index index of the silent payment address.
-   */
-  isMine(scriptPubKey, inputs, inputPublicKey, scanSecretKey, index = 0) {
-    const inputsHash = hashOutpoints(inputs);
-    const sharedSecret = this.makeSharedSecret(
-      inputsHash,
-      inputPublicKey,
-      scanSecretKey,
-    );
-    const outputPublicKey = this.makePublicKey(
-      inputPublicKey,
-      index,
-      sharedSecret,
-    );
-    console.info(
-      'isMine',
-      scriptPubKey.slice(SEGWIT_V1_SCRIPT_PREFIX.length).toString('hex'),
-      outputPublicKey.slice(1).toString('hex'),
-    );
-    return (
-      Buffer.compare(
-        scriptPubKey.slice(SEGWIT_V1_SCRIPT_PREFIX.length),
-        outputPublicKey.slice(1),
-      ) === 0
-    );
-  }
-  /**
-   * Compute the secret key used to spend an output locked by a silent address script.
-   * @param inputs outpoints of the transaction sending to the silent payment address
-   * @param inputPublicKey public key owning the spent outpoint in the tx (may be sum of public keys)
-   * @param spendSecretKey private key of the silent payment address
-   * @param index index of the silent payment address in the transaction, default to 0
-   * @returns 32 bytes key
-   */
-  makeSigningKey(inputs, inputPublicKey, spendSecretKey, index = 0) {
-    const inputsHash = hashOutpoints(inputs);
-    const sharedSecret = this.makeSharedSecret(
-      inputsHash,
-      inputPublicKey,
-      spendSecretKey,
-    );
-    return this.makeSecretKey(spendSecretKey, index, sharedSecret);
-  }
-  /**
    * ECDH shared secret used to share outpoints hash of the transactions.
    * @param secret hash of the outpoints of the transaction sending to the silent payment address
    */
-  makeSharedSecret(secret, pubkey, seckey) {
+  ecdhSharedSecret(secret, pubkey, seckey) {
     const ecdhSharedSecretStep = Buffer.from(
       this.ecc.privateMultiply(secret, seckey),
     );
@@ -187,13 +93,11 @@ class SilentPaymentImpl {
    * @param ecdhSharedSecret ecdh shared secret identifying the transaction.
    * @returns 33 bytes public key
    */
-  makePublicKey(spendPubKey, index, ecdhSharedSecret) {
-    const tn = (0, crypto_1.sha256)(
-      Buffer.concat([ecdhSharedSecret, ser32(index)]),
-    );
-    const Tn = this.ecc.pointMultiply(G, tn);
-    if (!Tn) throw new Error('Invalid Tn');
-    const pubkey = this.ecc.pointAdd(Tn, spendPubKey);
+  publicKey(spendPubKey, index, ecdhSharedSecret) {
+    const hash = hashSharedSecret(ecdhSharedSecret, index);
+    const asPoint = this.ecc.pointMultiply(G, hash);
+    if (!asPoint) throw new Error('Invalid Tn');
+    const pubkey = this.ecc.pointAdd(asPoint, spendPubKey);
     if (!pubkey) throw new Error('Invalid pubkey');
     return Buffer.from(pubkey);
   }
@@ -204,11 +108,9 @@ class SilentPaymentImpl {
    * @param ecdhSharedSecret ecdh shared secret identifying the transaction
    * @returns 32 bytes key
    */
-  makeSecretKey(spendPrivKey, index, ecdhSharedSecret) {
-    const tn = (0, crypto_1.sha256)(
-      Buffer.concat([ecdhSharedSecret, ser32(index)]),
-    );
-    let privkey = this.ecc.privateAdd(spendPrivKey, tn);
+  secretKey(spendPrivKey, index, ecdhSharedSecret) {
+    const hash = hashSharedSecret(ecdhSharedSecret, index);
+    let privkey = this.ecc.privateAdd(spendPrivKey, hash);
     if (!privkey) throw new Error('Invalid privkey');
     if (this.ecc.pointFromScalar(privkey)?.[0] === 0x03) {
       privkey = this.ecc.privateNegate(privkey);
@@ -216,29 +118,8 @@ class SilentPaymentImpl {
     return Buffer.from(privkey);
   }
 }
-function ser32(i) {
-  const returnValue = Buffer.allocUnsafe(4);
-  returnValue.writeUInt32BE(i);
-  return returnValue;
-}
-/**
- * Sort outpoints and hash them
- * @param parameters list of outpoints
- */
-function hashOutpoints(parameters) {
-  let bufferConcat = Buffer.alloc(0);
-  const outpoints = [];
-  for (const parameter of parameters) {
-    outpoints.push(
-      Buffer.concat([
-        Buffer.from(parameter.txid, 'hex').reverse(),
-        ser32(parameter.vout).reverse(),
-      ]),
-    );
-  }
-  outpoints.sort(Buffer.compare);
-  for (const outpoint of outpoints) {
-    bufferConcat = Buffer.concat([bufferConcat, outpoint]);
-  }
-  return crypto.createHash('sha256').update(bufferConcat).digest();
+function hashSharedSecret(secret, index) {
+  const serializedIndex = Buffer.allocUnsafe(4);
+  serializedIndex.writeUint32BE(index, 0);
+  return (0, crypto_1.sha256)(Buffer.concat([secret, serializedIndex]));
 }

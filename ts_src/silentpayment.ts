@@ -1,6 +1,5 @@
-import * as crypto from 'crypto';
 import { bech32m } from 'bech32';
-import { sha256 } from './crypto';
+import { hashOutpoints, sha256 } from './crypto';
 
 export type Outpoint = {
   txid: string;
@@ -17,26 +16,22 @@ export interface TinySecp256k1Interface {
 }
 
 export interface SilentPayment {
-  makeScriptPubKey(
+  scriptPubKey(
     inputs: Outpoint[],
     inputPrivateKey: Buffer,
     silentPaymentAddress: string,
     index?: number,
   ): Buffer;
-  isMine(
-    scriptPubKey: Buffer,
-    inputs: Outpoint[],
-    inputPublicKey: Buffer,
-    scanSecretKey: Buffer,
-    spendPublicKey: Buffer,
-    index?: number,
-  ): boolean;
-  makeSigningKey(
-    inputs: Outpoint[],
-    inputPublicKey: Buffer,
-    scanSecretKey: Buffer,
-    spendSecretKey: Buffer,
-    index?: number,
+  ecdhSharedSecret(secret: Buffer, pubkey: Buffer, seckey: Buffer): Buffer;
+  publicKey(
+    spendPubKey: Buffer,
+    index: number,
+    ecdhSharedSecret: Buffer,
+  ): Buffer;
+  secretKey(
+    spendPrivKey: Buffer,
+    index: number,
+    ecdhSharedSecret: Buffer,
   ): Buffer;
 }
 
@@ -93,7 +88,7 @@ class SilentPaymentImpl implements SilentPayment {
    * @param index index of the silent payment address. Prevent address reuse if multiple silent addresses are in the same transaction.
    * @returns the output scriptPubKey belonging to the silent payment address
    */
-  makeScriptPubKey(
+  scriptPubKey(
     inputs: Outpoint[],
     inputPrivateKey: Buffer,
     silentPaymentAddress: string,
@@ -102,13 +97,13 @@ class SilentPaymentImpl implements SilentPayment {
     const inputsHash = hashOutpoints(inputs);
     const addr = SilentPaymentAddress.decode(silentPaymentAddress);
 
-    const sharedSecret = this.makeSharedSecret(
+    const sharedSecret = this.ecdhSharedSecret(
       inputsHash,
       addr.scanPublicKey,
       inputPrivateKey,
     );
 
-    const outputPublicKey = this.makePublicKey(
+    const outputPublicKey = this.publicKey(
       addr.spendPublicKey,
       index,
       sharedSecret,
@@ -118,78 +113,10 @@ class SilentPaymentImpl implements SilentPayment {
   }
 
   /**
-   * Check if a scriptPubKey belongs to a silent payment address
-   * @param scriptPubKey scriptPubKey to check
-   * @param inputs list of ALL outpoints of the transaction sending to the silent payment address
-   * @param inputPublicKey public key owning the spent outpoint. Sum of all public keys if multiple inputs
-   * @param scanSecretKey *scan* secret key of the silent payment address
-   * @param spendPublicKey *spend* public key of the silent payment address
-   * @param index index of the silent payment address.
-   */
-  isMine(
-    scriptPubKey: Buffer,
-    inputs: Outpoint[],
-    inputPublicKey: Buffer,
-    scanSecretKey: Buffer,
-    spendPublicKey: Buffer,
-    index = 0,
-  ): boolean {
-    const inputsHash = hashOutpoints(inputs);
-
-    const sharedSecret = this.makeSharedSecret(
-      inputsHash,
-      inputPublicKey,
-      scanSecretKey,
-    );
-
-    const outputPublicKey = this.makePublicKey(
-      spendPublicKey,
-      index,
-      sharedSecret,
-    );
-
-    return (
-      Buffer.compare(
-        scriptPubKey.slice(SEGWIT_V1_SCRIPT_PREFIX.length),
-        outputPublicKey.slice(1),
-      ) === 0
-    );
-  }
-
-  /**
-   * Compute the secret key used to spend an output locked by a silent address script.
-   * @param inputs outpoints of the transaction sending to the silent payment address
-   * @param inputPublicKey public key owning the spent outpoint in the tx (may be sum of public keys)
-   * @param spendSecretKey private key of the silent payment address
-   * @param index index of the silent payment address in the transaction, default to 0
-   * @returns 32 bytes key
-   */
-  makeSigningKey(
-    inputs: Outpoint[],
-    inputPublicKey: Buffer,
-    scanSecretKey: Buffer,
-    spendSecretKey: Buffer,
-    index = 0,
-  ): Buffer {
-    const inputsHash = hashOutpoints(inputs);
-    const sharedSecret = this.makeSharedSecret(
-      inputsHash,
-      inputPublicKey,
-      scanSecretKey,
-    );
-
-    return this.makeSecretKey(spendSecretKey, index, sharedSecret);
-  }
-
-  /**
    * ECDH shared secret used to share outpoints hash of the transactions.
    * @param secret hash of the outpoints of the transaction sending to the silent payment address
    */
-  private makeSharedSecret(
-    secret: Buffer,
-    pubkey: Buffer,
-    seckey: Buffer,
-  ): Buffer {
+  ecdhSharedSecret(secret: Buffer, pubkey: Buffer, seckey: Buffer): Buffer {
     const ecdhSharedSecretStep = Buffer.from(
       this.ecc.privateMultiply(secret, seckey),
     );
@@ -212,17 +139,16 @@ class SilentPaymentImpl implements SilentPayment {
    * @param ecdhSharedSecret ecdh shared secret identifying the transaction.
    * @returns 33 bytes public key
    */
-  private makePublicKey(
+  publicKey(
     spendPubKey: Buffer,
     index: number,
     ecdhSharedSecret: Buffer,
   ): Buffer {
-    const tn = sha256(Buffer.concat([ecdhSharedSecret, ser32(index)]));
+    const hash = hashSharedSecret(ecdhSharedSecret, index);
+    const asPoint = this.ecc.pointMultiply(G, hash);
+    if (!asPoint) throw new Error('Invalid Tn');
 
-    const Tn = this.ecc.pointMultiply(G, tn);
-    if (!Tn) throw new Error('Invalid Tn');
-
-    const pubkey = this.ecc.pointAdd(Tn, spendPubKey);
+    const pubkey = this.ecc.pointAdd(asPoint, spendPubKey);
     if (!pubkey) throw new Error('Invalid pubkey');
 
     return Buffer.from(pubkey);
@@ -235,14 +161,13 @@ class SilentPaymentImpl implements SilentPayment {
    * @param ecdhSharedSecret ecdh shared secret identifying the transaction
    * @returns 32 bytes key
    */
-  private makeSecretKey(
+  secretKey(
     spendPrivKey: Buffer,
     index: number,
     ecdhSharedSecret: Buffer,
   ): Buffer {
-    const tn = sha256(Buffer.concat([ecdhSharedSecret, ser32(index)]));
-
-    let privkey = this.ecc.privateAdd(spendPrivKey, tn);
+    const hash = hashSharedSecret(ecdhSharedSecret, index);
+    let privkey = this.ecc.privateAdd(spendPrivKey, hash);
     if (!privkey) throw new Error('Invalid privkey');
 
     if (this.ecc.pointFromScalar(privkey)?.[0] === 0x03) {
@@ -253,30 +178,8 @@ class SilentPaymentImpl implements SilentPayment {
   }
 }
 
-function ser32(i: number): Buffer {
-  const returnValue = Buffer.allocUnsafe(4);
-  returnValue.writeUInt32BE(i);
-  return returnValue;
-}
-
-/**
- * Sort outpoints and hash them
- * @param parameters list of outpoints
- */
-function hashOutpoints(parameters: Outpoint[]): Buffer {
-  let bufferConcat = Buffer.alloc(0);
-  const outpoints: Array<Buffer> = [];
-  for (const parameter of parameters) {
-    outpoints.push(
-      Buffer.concat([
-        Buffer.from(parameter.txid, 'hex').reverse(),
-        ser32(parameter.vout).reverse(),
-      ]),
-    );
-  }
-  outpoints.sort(Buffer.compare);
-  for (const outpoint of outpoints) {
-    bufferConcat = Buffer.concat([bufferConcat, outpoint]);
-  }
-  return crypto.createHash('sha256').update(bufferConcat).digest();
+function hashSharedSecret(secret: Buffer, index: number): Buffer {
+  const serializedIndex = Buffer.allocUnsafe(4);
+  serializedIndex.writeUint32BE(index, 0);
+  return sha256(Buffer.concat([secret, serializedIndex]));
 }

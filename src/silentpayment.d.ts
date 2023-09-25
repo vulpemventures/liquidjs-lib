@@ -12,9 +12,10 @@ export interface TinySecp256k1Interface {
     privateNegate: (key: Uint8Array) => Uint8Array;
 }
 export interface SilentPayment {
-    makeScriptPubKey(inputs: Outpoint[], inputPrivateKey: Buffer, silentPaymentAddress: string, index?: number): Buffer;
-    isMine(scriptPubKey: Buffer, inputs: Outpoint[], inputPublicKey: Buffer, scanSecretKey: Buffer, index?: number): boolean;
-    makeSigningKey(inputs: Outpoint[], inputPublicKey: Buffer, spendSecretKey: Buffer, index?: number): Buffer;
+    scriptPubKey(inputs: Outpoint[], inputPrivateKey: Buffer, silentPaymentAddress: string, index?: number): Buffer;
+    ecdhSharedSecret(secret: Buffer, pubkey: Buffer, seckey: Buffer): Buffer;
+    publicKey(spendPubKey: Buffer, index: number, ecdhSharedSecret: Buffer): Buffer;
+    secretKey(spendPrivKey: Buffer, index: number, ecdhSharedSecret: Buffer): Buffer;
 }
 export declare class SilentPaymentAddress {
     readonly spendPublicKey: Buffer;

@@ -19,6 +19,7 @@ import {
 import { createPayment, getInputData } from './utils';
 import { broadcast, signTransaction } from './_regtest';
 import { ECPair } from '../ecc';
+import { hashOutpoints } from '../../ts_src/crypto';
 
 describe('Silent Payments', () => {
   let ecc: silentpayment.TinySecp256k1Interface &
@@ -68,7 +69,7 @@ describe('Silent Payments', () => {
     const fee = 400;
     const change = 1_0000_0000 - sendAmount - fee;
 
-    const script = sp.makeScriptPubKey(
+    const script = sp.scriptPubKey(
       inputs.map((i) => ({ txid: i.txid, vout: i.txIndex })),
       alice.keys[0].privateKey!,
       bob,
@@ -126,24 +127,37 @@ describe('Silent Payments', () => {
     bobUpdater.addInWitnessUtxo(0, outputToSpend);
     bobUpdater.addInSighashType(0, Transaction.SIGHASH_DEFAULT);
 
-    // bob can use its scan private key and spend pubkey to check if the output can be unlocked by its spend key
-    const isBob = sp.isMine(
-      outputToSpend.script,
-      inputs.map((i) => ({ txid: i.txid, vout: i.txIndex })),
+    const outpoints = inputs.map((i) => ({ txid: i.txid, vout: i.txIndex }));
+    const inputsHash = hashOutpoints(outpoints);
+
+    const sharedSecret = sp.ecdhSharedSecret(
+      inputsHash,
       alice.keys[0].publicKey!,
       bobKeyPairScan.privateKey!,
+    );
+
+    const outputPublicKey = sp.publicKey(
       bobKeyPairSpend.publicKey!,
+      0,
+      sharedSecret,
     );
 
-    assert.strictEqual(isBob, true, 'bob should be able to spend the output');
+    const isBob = outputPublicKey
+      .subarray(1)
+      .equals(outputToSpend.script.subarray(2));
 
-    // bob can spend the output by computing the right signing key from the both silent address secret keys
-    const privKey = sp.makeSigningKey(
-      inputs.map((i) => ({ txid: i.txid, vout: i.txIndex })),
-      alice.keys[0].publicKey!,
-      bobKeyPairScan.privateKey!,
-      bobKeyPairSpend.privateKey!,
+    assert.strictEqual(
+      isBob,
+      true,
+      `outputPublicKey ${outputPublicKey.toString(
+        'hex',
+      )} is not equal to outputToSpend.script ${outputToSpend.script
+        .subarray(2)
+        .toString('hex')}}`,
     );
+
+    // then bob can use its private key (spend one) to recompute the signing key and spend the ouput
+    const privKey = sp.secretKey(bobKeyPairSpend.privateKey!, 0, sharedSecret);
 
     const preimage = bobPset.getInputPreimage(
       0,
