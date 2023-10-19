@@ -744,8 +744,12 @@ export class PsetInput {
 
   isFinalized(): boolean {
     return (
-      (this.finalScriptSig! && this.finalScriptSig!.length > 0) ||
-      (this.finalScriptWitness! && this.finalScriptWitness!.length > 0)
+      (this.finalScriptSig! &&
+        this.finalScriptSig!.length > 0 &&
+        !Buffer.alloc(1).equals(this.finalScriptSig)) ||
+      (this.finalScriptWitness! &&
+        this.finalScriptWitness!.length > 0 &&
+        !Buffer.alloc(1).equals(this.finalScriptWitness))
     );
   }
 
