@@ -43,7 +43,7 @@ describe('PSETv2', () => {
       );
       assert.ok(libWallyFixture);
       const pset = Pset.fromBase64(libWallyFixture.base64);
-      assert.strictEqual(pset.inputs.at(0)?.isFinalized(), false);
+      assert.strictEqual(pset.inputs[0].isFinalized(), false);
     });
   });
 });
