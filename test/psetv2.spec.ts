@@ -37,9 +37,13 @@ describe('PSETv2', () => {
   });
 
   describe('edge cases', () => {
-    it('should decode libwally psetv2', () => {
-      const pset = Pset.fromBase64(preFixtures.edgeCases.libwally);
-      assert.strictEqual(pset.inputs[0].isFinalized(), false);
+    it('should decode libwally psetv2 input with "00" finalScriptWitness', () => {
+      const libWallyFixture = preFixtures.roundtrip.valid.find(
+        ({ name }) => name === 'Libwally compatibility',
+      );
+      assert.ok(libWallyFixture);
+      const pset = Pset.fromBase64(libWallyFixture.base64);
+      assert.strictEqual(pset.inputs.at(0)?.isFinalized(), false);
     });
   });
 });
