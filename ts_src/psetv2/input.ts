@@ -195,7 +195,7 @@ export class PsetInput {
           input.sequence = kp.value.readUInt32LE();
           break;
         case InputTypes.REQUIRED_TIME_LOCKTIME:
-          if (input.requiredTimeLocktime! > 0) {
+          if (input.requiredTimeLocktime !== undefined) {
             throw new InputDuplicateFieldError('time locktime');
           }
           if (kp.value.length !== 4) {
@@ -204,7 +204,7 @@ export class PsetInput {
           input.requiredTimeLocktime = kp.value.readUInt32LE();
           break;
         case InputTypes.REQUIRED_HEIGHT_LOCKTIME:
-          if (input.requiredHeightLocktime! > 0) {
+          if (input.requiredHeightLocktime !== undefined) {
             throw new InputDuplicateFieldError('height locktime');
           }
           if (kp.value.length !== 4) {
@@ -931,21 +931,21 @@ export class PsetInput {
     prevTxIndex.writeUInt32LE(this.previousTxIndex);
     keyPairs.push(new KeyPair(prevTxIndexKey, prevTxIndex));
 
-    if (this.sequence! > 0) {
+    if (this.sequence !== undefined) {
       const sequenceKey = new Key(InputTypes.SEQUENCE);
       const sequence = Buffer.allocUnsafe(4);
-      sequence.writeUInt32LE(this.sequence!);
+      sequence.writeUInt32LE(this.sequence);
       keyPairs.push(new KeyPair(sequenceKey, sequence));
     }
 
-    if (this.requiredTimeLocktime! > 0) {
+    if (this.requiredTimeLocktime !== undefined) {
       const key = new Key(InputTypes.REQUIRED_TIME_LOCKTIME);
       const value = Buffer.allocUnsafe(4);
       value.writeUInt32LE(this.requiredTimeLocktime!);
       keyPairs.push(new KeyPair(key, value));
     }
 
-    if (this.requiredHeightLocktime! > 0) {
+    if (this.requiredHeightLocktime !== undefined) {
       const key = new Key(InputTypes.REQUIRED_HEIGHT_LOCKTIME);
       const value = Buffer.allocUnsafe(4);
       value.writeUInt32LE(this.requiredHeightLocktime!);
