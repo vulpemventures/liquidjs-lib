@@ -1,11 +1,11 @@
+import BitSet from 'bitset';
+import { AssetHash } from '../asset';
+import { reverseBuffer } from '../bufferutils';
+import { Transaction } from '../transaction';
 import { PsetGlobal } from './globals';
-import { Pset } from './pset';
 import { PsetInput } from './input';
 import { PsetOutput } from './output';
-import { reverseBuffer } from '../bufferutils';
-import { AssetHash } from '../asset';
-import { Transaction } from '../transaction';
-import BitSet from 'bitset';
+import { Pset } from './pset';
 
 export class CreatorInput {
   txid: string;
@@ -23,7 +23,7 @@ export class CreatorInput {
   ) {
     this.txid = txid;
     this.txIndex = txIndex;
-    this.sequence = sequence || Transaction.DEFAULT_SEQUENCE;
+    this.sequence = sequence ?? Transaction.DEFAULT_SEQUENCE;
     this.heightLocktime = heightLocktime || 0;
     this.timeLocktime = timeLocktime || 0;
   }

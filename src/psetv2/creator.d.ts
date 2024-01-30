@@ -1,7 +1,7 @@
 /// <reference types="node" />
-import { Pset } from './pset';
 import { PsetInput } from './input';
 import { PsetOutput } from './output';
+import { Pset } from './pset';
 export declare class CreatorInput {
     txid: string;
     txIndex: number;
