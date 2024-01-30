@@ -6,19 +6,19 @@ var __importDefault =
   };
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Creator = exports.CreatorOutput = exports.CreatorInput = void 0;
+const bitset_1 = __importDefault(require('bitset'));
+const asset_1 = require('../asset');
+const bufferutils_1 = require('../bufferutils');
+const transaction_1 = require('../transaction');
 const globals_1 = require('./globals');
-const pset_1 = require('./pset');
 const input_1 = require('./input');
 const output_1 = require('./output');
-const bufferutils_1 = require('../bufferutils');
-const asset_1 = require('../asset');
-const transaction_1 = require('../transaction');
-const bitset_1 = __importDefault(require('bitset'));
+const pset_1 = require('./pset');
 class CreatorInput {
   constructor(txid, txIndex, sequence, heightLocktime, timeLocktime) {
     this.txid = txid;
     this.txIndex = txIndex;
-    this.sequence = sequence || transaction_1.Transaction.DEFAULT_SEQUENCE;
+    this.sequence = sequence ?? transaction_1.Transaction.DEFAULT_SEQUENCE;
     this.heightLocktime = heightLocktime || 0;
     this.timeLocktime = timeLocktime || 0;
   }

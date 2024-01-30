@@ -264,7 +264,7 @@ export class Transaction {
         peginWitness: EMPTY_WITNESS,
         issuanceRangeProof: EMPTY_BUFFER,
         inflationRangeProof: EMPTY_BUFFER,
-        sequence: sequence || Transaction.DEFAULT_SEQUENCE,
+        sequence: sequence ?? Transaction.DEFAULT_SEQUENCE,
       }) - 1
     );
   }
