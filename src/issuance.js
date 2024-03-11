@@ -89,10 +89,7 @@ function hashContract(contract) {
     (obj, key) => ({ ...obj, [key]: contract[key] }),
     {},
   );
-  return bcrypto
-    .sha256(Buffer.from(JSON.stringify(sortedContract)))
-    .slice()
-    .reverse();
+  return bcrypto.sha256(Buffer.from(JSON.stringify(sortedContract)));
 }
 exports.hashContract = hashContract;
 /**

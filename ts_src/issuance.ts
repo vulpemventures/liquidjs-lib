@@ -72,10 +72,7 @@ export function hashContract(contract: IssuanceContract): Buffer {
     {},
   );
 
-  return bcrypto
-    .sha256(Buffer.from(JSON.stringify(sortedContract)))
-    .slice()
-    .reverse();
+  return bcrypto.sha256(Buffer.from(JSON.stringify(sortedContract)));
 }
 
 /**
