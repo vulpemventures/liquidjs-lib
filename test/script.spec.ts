@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import { script } from '../ts_src';
 
-describe.only('script', () => {
+describe('script', () => {
   describe('toASM', () => {
     it('converts OP_CHECKLOCKTIMEVERIFY correctly', () => {
       const asm = 'OP_CHECKLOCKTIMEVERIFY';
