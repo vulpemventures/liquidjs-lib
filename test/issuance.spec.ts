@@ -312,7 +312,7 @@ describe('Issuance', () => {
         it(`should calculate the correct contract hash for ${contractFixture.contractJSON.name}`, () => {
           const computed = issuance.hashContract(contractFixture.contractJSON);
           assert.strictEqual(
-            computed.toString('hex'),
+            computed.reverse().toString('hex'),
             contractFixture.contractHash,
           );
         });
