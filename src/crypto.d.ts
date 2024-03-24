@@ -7,4 +7,12 @@ export declare function hash256(buffer: Buffer): Buffer;
 declare const TAGS: readonly ["BIP0340/challenge", "BIP0340/aux", "BIP0340/nonce", "TapLeaf", "TapLeaf/elements", "TapBranch/elements", "TapSighash", "TapSighash/elements", "TapTweak", "TapTweak/elements", "KeyAgg list", "KeyAgg coefficient"];
 export declare type TaggedHashPrefix = typeof TAGS[number];
 export declare function taggedHash(prefix: TaggedHashPrefix, data: Buffer): Buffer;
+/**
+ * Serialize outpoint as txid | vout, sort them and sha256 the concatenated result
+ * @param parameters list of outpoints (txid, vout)
+ */
+export declare function hashOutpoints(parameters: {
+    txid: string;
+    vout: number;
+}[]): Buffer;
 export {};

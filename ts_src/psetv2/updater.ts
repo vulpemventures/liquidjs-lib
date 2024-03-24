@@ -560,9 +560,10 @@ export class Updater {
     }
 
     const tweakedKey = input.getUtxo()!.script.slice(2);
+
     const sighash = pset.getInputPreimage(
       inIndex,
-      input.sighashType!,
+      input.sighashType,
       genesisBlockHash,
     );
     if (!validator(tweakedKey, sighash, sig)) {

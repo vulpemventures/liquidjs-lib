@@ -27,7 +27,6 @@ import { BIP371SigningData } from '../../ts_src/psetv2';
 import { toXOnly } from '../../ts_src/psetv2/bip371';
 import secp256k1 from '@vulpemventures/secp256k1-zkp';
 import { issuanceEntropyFromInput } from '../../ts_src/issuance';
-import { ECDSAVerifier, SchnorrVerifier } from '../../ts_src/psetv2/pset';
 
 const OPS = bscript.OPS;
 const { BIP341Factory } = bip341;
@@ -72,7 +71,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     updater.addInputs(inputs);
     updater.addOutputs(outputs);
 
-    const rawTx = signTransaction(
+    const rawTx = regtestUtils.signTransaction(
       pset,
       [alice.keys],
       Transaction.SIGHASH_ALL,
@@ -134,7 +133,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
+    const rawTx = regtestUtils.signTransaction(
+      pset,
+      [alice.keys],
+      Transaction.SIGHASH_ALL,
+    );
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -189,7 +192,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
+    const rawTx = regtestUtils.signTransaction(
+      pset,
+      [alice.keys],
+      Transaction.SIGHASH_ALL,
+    );
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -255,7 +262,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(
+    const rawTx = regtestUtils.signTransaction(
       pset,
       [alice.keys, unconfidentialAlice.keys],
       Transaction.SIGHASH_ALL,
@@ -314,7 +321,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
+    const rawTx = regtestUtils.signTransaction(
+      pset,
+      [alice.keys],
+      Transaction.SIGHASH_ALL,
+    );
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -370,7 +381,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
+    const rawTx = regtestUtils.signTransaction(
+      pset,
+      [alice.keys],
+      Transaction.SIGHASH_ALL,
+    );
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -426,7 +441,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
+    const rawTx = regtestUtils.signTransaction(
+      pset,
+      [alice.keys],
+      Transaction.SIGHASH_ALL,
+    );
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -484,7 +503,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ issuanceBlindingArgs, outputBlindingArgs });
-    const issuanceTx = signTransaction(
+    const issuanceTx = regtestUtils.signTransaction(
       pset,
       [alice.keys],
       Transaction.SIGHASH_ALL,
@@ -559,7 +578,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       outputBlindingArgs: reissuanceOutputBlindingArgs,
     });
 
-    const reissuanceTx = signTransaction(
+    const reissuanceTx = regtestUtils.signTransaction(
       reissuancePset,
       [alice.keys, alice.keys],
       Transaction.SIGHASH_ALL,
@@ -622,7 +641,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ issuanceBlindingArgs, outputBlindingArgs });
-    const issuanceTx = signTransaction(
+    const issuanceTx = regtestUtils.signTransaction(
       pset,
       [alice.keys],
       Transaction.SIGHASH_ALL,
@@ -697,7 +716,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       outputBlindingArgs: reissuanceOutputBlindingArgs,
     });
 
-    const reissuanceTx = signTransaction(
+    const reissuanceTx = regtestUtils.signTransaction(
       reissuancePset,
       [alice.keys, alice.keys],
       Transaction.SIGHASH_ALL,
@@ -757,7 +776,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const issuanceTx = signTransaction(
+    const issuanceTx = regtestUtils.signTransaction(
       pset,
       [alice.keys],
       Transaction.SIGHASH_ALL,
@@ -826,7 +845,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       outputBlindingArgs: reissuanceOutputBlindingArgs,
     });
 
-    const reissuanceTx = signTransaction(
+    const reissuanceTx = regtestUtils.signTransaction(
       reissuancePset,
       [alice.keys, alice.keys],
       Transaction.SIGHASH_ALL,
@@ -889,7 +908,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ issuanceBlindingArgs, outputBlindingArgs });
-    const rawTx = signTransaction(pset, [alice.keys], Transaction.SIGHASH_ALL);
+    const rawTx = regtestUtils.signTransaction(
+      pset,
+      [alice.keys],
+      Transaction.SIGHASH_ALL,
+    );
     await regtestUtils.broadcast(rawTx.toHex());
   });
 
@@ -986,7 +1009,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(
+    const rawTx = regtestUtils.signTransaction(
       pset,
       [alice.keys, bob.keys],
       Transaction.SIGHASH_ALL,
@@ -1289,7 +1312,11 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
 
       // need 3 signers
       const signersKeys = [...p2sh.keys].slice(0, 3);
-      const tx = signTransaction(pset, [signersKeys], Transaction.SIGHASH_ALL);
+      const tx = regtestUtils.signTransaction(
+        pset,
+        [signersKeys],
+        Transaction.SIGHASH_ALL,
+      );
       await regtestUtils.broadcast(tx.toHex());
     },
   );
@@ -1348,7 +1375,7 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
       zkpGenerator,
     );
     blinder.blindLast({ outputBlindingArgs });
-    const rawTx = signTransaction(
+    const rawTx = regtestUtils.signTransaction(
       pset,
       [alice.keys, bob.keys],
       Transaction.SIGHASH_ALL,
@@ -1356,36 +1383,6 @@ describe('liquidjs-lib (transactions with psetv2)', () => {
     await regtestUtils.broadcast(rawTx.toHex());
   });
 });
-
-function signTransaction(
-  pset: Pset,
-  signers: any[],
-  sighashType: number,
-  ecclib: ECDSAVerifier & SchnorrVerifier = ecc,
-): Transaction {
-  const signer = new PsetSigner(pset);
-
-  signers.forEach((keyPairs, i) => {
-    const preimage = pset.getInputPreimage(i, sighashType);
-    keyPairs.forEach((kp: any) => {
-      const partialSig: BIP174SigningData = {
-        partialSig: {
-          pubkey: kp.publicKey,
-          signature: bscript.signature.encode(kp.sign(preimage), sighashType),
-        },
-      };
-      signer.addSignature(i, partialSig, Pset.ECDSASigValidator(ecclib));
-    });
-  });
-
-  if (!pset.validateAllSignatures(Pset.ECDSASigValidator(ecclib))) {
-    throw new Error('Failed to sign pset');
-  }
-
-  const finalizer = new PsetFinalizer(pset);
-  finalizer.finalize();
-  return PsetExtractor.extract(pset);
-}
 
 const serializeSchnnorrSig = (sig: Buffer, hashtype: number) =>
   Buffer.concat([
