@@ -26,4 +26,22 @@ describe('Transaction', () => {
       });
     }
   });
+
+  describe('calculates weight and virtualSize', () => {
+    const fixtures = jsonFixture.discountCT;
+    for (const test of fixtures) {
+      it(test.description, () => {
+        const tx = Transaction.fromHex(test.txHex);
+        assert.strictEqual(tx.weight(false), test.weight);
+        assert.strictEqual(tx.virtualSize(false), test.vSize);
+
+        assert.strictEqual(tx.weight(true), test.discountWeight);
+        assert.strictEqual(tx.virtualSize(true), test.discountVSize);
+
+        // Check that the default behavior is discounted CT
+        assert.strictEqual(tx.weight(), test.discountWeight);
+        assert.strictEqual(tx.virtualSize(), test.discountVSize);
+      });
+    }
+  });
 });

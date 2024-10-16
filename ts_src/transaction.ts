@@ -314,15 +314,47 @@ export class Transaction {
     );
   }
 
-  weight(): number {
-    const base = this.__byteLength(false);
-    const total = this.__byteLength(true);
-    return base * (WITNESS_SCALE_FACTOR - 1) + total;
+  weight(discountCT = true): number {
+    const base = this.__byteLength(false, false);
+    const total = this.__byteLength(true, false);
+    let weight = base * (WITNESS_SCALE_FACTOR - 1) + total;
+
+    if (!discountCT) {
+      return weight;
+    }
+
+    for (const txOut of this.outs) {
+      let witnessWeight = 0;
+
+      if (txOut.rangeProof !== undefined && txOut.rangeProof.length > 0) {
+        witnessWeight += txOut.rangeProof.length;
+        witnessWeight += varuint.encodingLength(txOut.rangeProof.length);
+      }
+      if (
+        txOut.surjectionProof !== undefined &&
+        txOut.surjectionProof.length > 0
+      ) {
+        witnessWeight += txOut.surjectionProof.length;
+        witnessWeight += varuint.encodingLength(txOut.surjectionProof.length);
+      }
+
+      // Explicit transactions have 1 byte for each empty proof
+      weight -= Math.max(witnessWeight - 2, 0);
+
+      // When the output has a range proof, it is safe to assume that the nonce and value are confidential
+      if (txOut.rangeProof !== undefined && txOut.rangeProof.length > 0) {
+        weight -= (33 - 9) * 4;
+        weight -= (33 - 1) * 4;
+      }
+    }
+
+    return weight;
   }
 
-  virtualSize(): number {
+  virtualSize(discountCT = true): number {
     const vsize =
-      (this.weight() + WITNESS_SCALE_FACTOR - 1) / WITNESS_SCALE_FACTOR;
+      (this.weight(discountCT) + WITNESS_SCALE_FACTOR - 1) /
+      WITNESS_SCALE_FACTOR;
     return Math.floor(vsize);
   }
 

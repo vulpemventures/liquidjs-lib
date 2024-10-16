@@ -45,8 +45,8 @@ export declare class Transaction {
     addInput(hash: Buffer, index: number, sequence?: number, scriptSig?: Buffer, issuance?: Issuance): number;
     addOutput(scriptPubKey: Buffer, value: Buffer, asset: Buffer, nonce: Buffer, rangeProof?: Buffer, surjectionProof?: Buffer): number;
     hasWitnesses(): boolean;
-    weight(): number;
-    virtualSize(): number;
+    weight(discountCT?: boolean): number;
+    virtualSize(discountCT?: boolean): number;
     byteLength(_ALLOW_WITNESS?: boolean): number;
     clone(): Transaction;
     /**
