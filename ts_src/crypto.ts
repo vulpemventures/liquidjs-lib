@@ -50,3 +50,32 @@ const TAGGED_HASH_PREFIXES = Object.fromEntries(
 export function taggedHash(prefix: TaggedHashPrefix, data: Buffer): Buffer {
   return sha256(Buffer.concat([TAGGED_HASH_PREFIXES[prefix], data]));
 }
+
+/**
+ * Serialize outpoint as txid | vout, sort them and sha256 the concatenated result
+ * @param parameters list of outpoints (txid, vout)
+ */
+export function hashOutpoints(
+  parameters: { txid: string; vout: number }[],
+): Buffer {
+  let bufferConcat = Buffer.alloc(0);
+  const outpoints: Array<Buffer> = [];
+  for (const parameter of parameters) {
+    const voutBuffer = Buffer.allocUnsafe(4);
+    voutBuffer.writeUint32BE(parameter.vout, 0);
+
+    outpoints.push(
+      Buffer.concat([
+        Buffer.from(parameter.txid, 'hex').reverse(),
+        voutBuffer.reverse(),
+      ]),
+    );
+  }
+
+  outpoints.sort(Buffer.compare);
+
+  for (const outpoint of outpoints) {
+    bufferConcat = Buffer.concat([bufferConcat, outpoint]);
+  }
+  return sha256(bufferConcat);
+}
