@@ -120,7 +120,7 @@ describe.skip('liquidjs-lib (transactions with psbt)', () => {
         'hex',
       ),
     ];
-    const bliningPubkeys = [''].map(
+    const blindingPubkeys = [''].map(
       () => ECPair.makeRandom({ network: regtest }).publicKey,
     );
 
@@ -154,7 +154,7 @@ describe.skip('liquidjs-lib (transactions with psbt)', () => {
     psbt.blindOutputs(
       Psbt.ECCKeysGenerator(ecc),
       blindingPrivkeys,
-      bliningPubkeys,
+      blindingPubkeys,
     );
     psbt.signInput(0, bob);
     psbt.validateSignaturesOfInput(0, Psbt.ECDSASigValidator(ecc));
