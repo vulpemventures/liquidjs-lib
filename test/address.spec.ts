@@ -52,7 +52,7 @@ describe('address', () => {
 
   describe('fromBlech32', () => {
     fixtures.standard.forEach((f) => {
-      if (!f.bech32) return;
+      if (!f.confidentialAddress) return;
 
       it('decodes ' + f.confidentialAddress, () => {
         const actual = baddress.fromBlech32(f.confidentialAddress);
