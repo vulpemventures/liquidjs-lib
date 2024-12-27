@@ -436,7 +436,7 @@ export class Pset {
         prevoutScripts,
         prevoutAssetsValues,
         sighashType,
-        genesisBlockHash!,
+        genesisBlockHash,
         leafHash,
       );
     }
