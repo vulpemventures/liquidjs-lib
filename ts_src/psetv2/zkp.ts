@@ -454,7 +454,11 @@ export class ZKPGenerator {
   }
 
   private unblindUtxo(out: Output): OwnedInput {
-    if (out.nonce.length === 1) {
+    if (
+      out.nonce.length === 1 ||
+      out.rangeProof === undefined ||
+      out.rangeProof.length === 0
+    ) {
       return {
         index: 0,
         value: ElementsValue.fromBytes(out.value).number.toString(10),
