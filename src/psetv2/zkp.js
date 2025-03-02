@@ -371,7 +371,11 @@ class ZKPGenerator {
     return Buffer.from(ecc.privateAdd(result, valueBlinder));
   }
   unblindUtxo(out) {
-    if (out.nonce.length === 1) {
+    if (
+      out.nonce.length === 1 ||
+      out.rangeProof === undefined ||
+      out.rangeProof.length === 0
+    ) {
       return {
         index: 0,
         value: value_1.ElementsValue.fromBytes(out.value).number.toString(10),
