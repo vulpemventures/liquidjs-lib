@@ -42,7 +42,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vulpemventures/liquidjs-lib.git"
+    "url": "git+https://github.com/vulpemventures/liquidjs-lib.git"
   },
   "files": [
     "src"
