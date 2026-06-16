@@ -53,31 +53,25 @@ var __exportStar =
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Transaction =
   exports.opcodes =
+  exports.silentpayment =
+  exports.confidential =
   exports.bip341 =
   exports.issuance =
   exports.script =
   exports.payments =
   exports.networks =
   exports.crypto =
-  exports.confidential =
   exports.address =
     void 0;
-const address = __importStar(require('./address'));
-exports.address = address;
-const crypto = __importStar(require('./crypto'));
-exports.crypto = crypto;
-const networks = __importStar(require('./networks'));
-exports.networks = networks;
-const payments = __importStar(require('./payments'));
-exports.payments = payments;
-const script = __importStar(require('./script'));
-exports.script = script;
-const issuance = __importStar(require('./issuance'));
-exports.issuance = issuance;
-const bip341 = __importStar(require('./bip341'));
-exports.bip341 = bip341;
-const confidential = __importStar(require('./confidential'));
-exports.confidential = confidential;
+exports.address = __importStar(require('./address'));
+exports.crypto = __importStar(require('./crypto'));
+exports.networks = __importStar(require('./networks'));
+exports.payments = __importStar(require('./payments'));
+exports.script = __importStar(require('./script'));
+exports.issuance = __importStar(require('./issuance'));
+exports.bip341 = __importStar(require('./bip341'));
+exports.confidential = __importStar(require('./confidential'));
+exports.silentpayment = __importStar(require('./silentpayment'));
 var ops_1 = require('./ops');
 Object.defineProperty(exports, 'opcodes', {
   enumerable: true,

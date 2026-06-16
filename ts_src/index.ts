@@ -1,21 +1,12 @@
-import * as address from './address';
-import * as crypto from './crypto';
-import * as networks from './networks';
-import * as payments from './payments';
-import * as script from './script';
-import * as issuance from './issuance';
-import * as bip341 from './bip341';
-import * as confidential from './confidential';
-export {
-  address,
-  confidential,
-  crypto,
-  networks,
-  payments,
-  script,
-  issuance,
-  bip341,
-};
+export * as address from './address';
+export * as crypto from './crypto';
+export * as networks from './networks';
+export * as payments from './payments';
+export * as script from './script';
+export * as issuance from './issuance';
+export * as bip341 from './bip341';
+export * as confidential from './confidential';
+export * as silentpayment from './silentpayment';
 export { OPS as opcodes } from './ops';
 export {
   Input as TxInput,

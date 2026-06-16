@@ -1,4 +1,15 @@
 import axios from 'axios';
+import * as ecc from 'tiny-secp256k1';
+import {
+  BIP174SigningData,
+  Extractor,
+  Finalizer,
+  Pset,
+  Signer,
+  Transaction,
+  script,
+} from '../../ts_src';
+import { ECDSAVerifier, SchnorrVerifier } from '../../ts_src/psetv2/pset';
 
 const APIURL = process.env.APIURL || 'http://localhost:3001';
 export const TESTNET_APIURL = 'https://blockstream.info/liquidtestnet/api';
@@ -100,4 +111,34 @@ export async function broadcast(
 
 function sleep(ms: number): Promise<any> {
   return new Promise((res: any): any => setTimeout(res, ms));
+}
+
+export function signTransaction(
+  pset: Pset,
+  signers: any[],
+  sighashType: number,
+  ecclib: ECDSAVerifier & SchnorrVerifier = ecc,
+): Transaction {
+  const signer = new Signer(pset);
+
+  signers.forEach((keyPairs, i) => {
+    const preimage = pset.getInputPreimage(i, sighashType);
+    keyPairs.forEach((kp: any) => {
+      const partialSig: BIP174SigningData = {
+        partialSig: {
+          pubkey: kp.publicKey,
+          signature: script.signature.encode(kp.sign(preimage), sighashType),
+        },
+      };
+      signer.addSignature(i, partialSig, Pset.ECDSASigValidator(ecclib));
+    });
+  });
+
+  if (!pset.validateAllSignatures(Pset.ECDSASigValidator(ecclib))) {
+    throw new Error('Failed to sign pset');
+  }
+
+  const finalizer = new Finalizer(pset);
+  finalizer.finalize();
+  return Extractor.extract(pset);
 }
