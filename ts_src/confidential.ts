@@ -297,9 +297,9 @@ export class Confidential {
     output: Output,
     unblinded: UnblindOutputResult,
   ): boolean =>
-    this
-      .assetCommitment(unblinded.asset, unblinded.assetBlindingFactor)
-      .equals(Buffer.from(output.asset));
+    this.assetCommitment(unblinded.asset, unblinded.assetBlindingFactor).equals(
+      Buffer.from(output.asset),
+    );
 }
 
 export function confidentialValueToSatoshi(value: Buffer): number {
