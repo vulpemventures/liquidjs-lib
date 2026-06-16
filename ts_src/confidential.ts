@@ -77,12 +77,18 @@ export class Confidential {
       out.script,
     );
 
-    return {
+    const res = {
       value,
       asset: Buffer.from(message.slice(0, 32)),
       valueBlindingFactor: Buffer.from(blinder),
       assetBlindingFactor: Buffer.from(message.slice(32)),
     };
+
+    if (!this.isUnblindedAssetValid(out, res)) {
+      throw new Error('Unblinded and output asset mistmatch');
+    }
+
+    return res;
   }
 
   rangeProofInfo(proof: Buffer): RangeProofInfoResult {
@@ -286,6 +292,14 @@ export class Confidential {
     const outGenerator = assetCommitment;
     return surjectionproof.verify(proof, inGenerators, outGenerator);
   }
+
+  isUnblindedAssetValid = (
+    output: Output,
+    unblinded: UnblindOutputResult,
+  ): boolean =>
+    this
+      .assetCommitment(unblinded.asset, unblinded.assetBlindingFactor)
+      .equals(Buffer.from(output.asset));
 }
 
 export function confidentialValueToSatoshi(value: Buffer): number {

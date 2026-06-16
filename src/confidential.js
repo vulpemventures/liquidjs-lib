@@ -54,6 +54,11 @@ const value_1 = require('./value');
 class Confidential {
   constructor(zkp) {
     this.zkp = zkp;
+    this.isUnblindedAssetValid = (output, unblinded) =>
+      this.assetCommitment(
+        unblinded.asset,
+        unblinded.assetBlindingFactor,
+      ).equals(Buffer.from(output.asset));
   }
   nonceHash(pubkey, privkey) {
     return crypto.sha256(Buffer.from(this.zkp.ecdh(pubkey, privkey)));
@@ -103,12 +108,16 @@ class Confidential {
       nonce,
       out.script,
     );
-    return {
+    const res = {
       value,
       asset: Buffer.from(message.slice(0, 32)),
       valueBlindingFactor: Buffer.from(blinder),
       assetBlindingFactor: Buffer.from(message.slice(32)),
     };
+    if (!this.isUnblindedAssetValid(out, res)) {
+      throw new Error('Unblinded and output asset mistmatch');
+    }
+    return res;
   }
   rangeProofInfo(proof) {
     const { rangeproof } = this.zkp;

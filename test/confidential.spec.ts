@@ -71,8 +71,8 @@ describe('confidential', () => {
     }
   });
 
-  it('unblind', () => {
-    fixtures.valid.unblind.forEach(async (f: any) => {
+  it('unblind', async () => {
+    for (const f of fixtures.valid.unblind as any[]) {
       const out: TxOutput = {
         value: f.valueCommitment,
         asset: f.assetGenerator,
@@ -97,7 +97,79 @@ describe('confidential', () => {
         unblindProof.assetBlindingFactor.toString('hex'),
         f.expected.assetBlindingFactor,
       );
-    });
+    }
+  });
+
+  it('isUnblindedAssetValid', async () => {
+    for (const f of fixtures.valid.rangeproof as any[]) {
+      const zkpLib = await secp256k1();
+      const confidential = new Confidential(zkpLib);
+
+      const asset = Buffer.from(f.asset, 'hex');
+      const assetCommitment = Buffer.from(f.assetCommitment, 'hex');
+      const valueCommitment = Buffer.from(f.valueCommitment, 'hex');
+      const valueBlindingFactor = Buffer.from(f.valueBlindingFactor, 'hex');
+      const assetBlindingFactor = Buffer.from(f.assetBlindingFactor, 'hex');
+      const scriptPubkey = Buffer.from(f.scriptPubkey, 'hex');
+
+      const nonce = confidential.nonceHash(
+        Buffer.from(f.blindingPubkey, 'hex'),
+        Buffer.from(f.ephemeralPrivkey, 'hex'),
+      );
+
+      const buildOutput = (proofAsset: Buffer): TxOutput => ({
+        value: valueCommitment,
+        asset: assetCommitment,
+        script: scriptPubkey,
+        // a range proof valid for the output's value/asset commitments whose
+        // embedded message claims `proofAsset`
+        rangeProof: confidential.rangeProof(
+          f.value,
+          proofAsset,
+          valueCommitment,
+          assetCommitment,
+          valueBlindingFactor,
+          assetBlindingFactor,
+          nonce,
+          scriptPubkey,
+          '1',
+          '0',
+          '36',
+        ),
+        nonce: Buffer.alloc(0),
+      });
+
+      // the asset the output actually commits to is accepted, and unblinding
+      // succeeds
+      const validOut = buildOutput(asset);
+      const unblinded = confidential.unblindOutputWithNonce(validOut, nonce);
+      assert.strictEqual(
+        confidential.isUnblindedAssetValid(validOut, unblinded),
+        true,
+      );
+
+      // an asset id different from the one the output commits to is rejected
+      const otherAsset = Buffer.from(f.asset, 'hex');
+      otherAsset[0] ^= 0x01;
+      const forgedOut = buildOutput(otherAsset);
+
+      assert.strictEqual(
+        confidential.isUnblindedAssetValid(forgedOut, {
+          value: f.value,
+          valueBlindingFactor,
+          asset: otherAsset,
+          assetBlindingFactor,
+        }),
+        false,
+      );
+
+      // unblinding the forged output must throw instead of returning a result
+      // with a spoofed asset
+      assert.throws(
+        () => confidential.unblindOutputWithNonce(forgedOut, nonce),
+        /Unblinded and output asset/,
+      );
+    }
   });
 
   it('rangeProofInfo', async () => {

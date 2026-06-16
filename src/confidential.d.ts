@@ -37,6 +37,7 @@ export declare class Confidential {
     blindValueProof(value: string, valueCommitment: Buffer, assetCommitment: Buffer, valueBlinder: Buffer, nonce: Buffer): Buffer;
     blindAssetProof(asset: Buffer, assetCommitment: Buffer, assetBlinder: Buffer): Buffer;
     assetBlindProofVerify(asset: Buffer, assetCommitment: Buffer, proof: Buffer): boolean;
+    isUnblindedAssetValid: (output: Output, unblinded: UnblindOutputResult) => boolean;
 }
 export declare function confidentialValueToSatoshi(value: Buffer): number;
 export declare function satoshiToConfidentialValue(amount: number): Buffer;
