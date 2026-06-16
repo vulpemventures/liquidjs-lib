@@ -11,3 +11,5 @@ ts_src/**/*.js
 
 # yarn
 yarn-error.log
+
+.idea
